@@ -257,6 +257,16 @@ export struct SettingPage {
                 }
               })
               ItemDescription({ description: $r('app.string.setting_safety_lock_des') })
+              SubItemToggle({
+                title: $r('app.string.setting_safety_ask'), isOn: AppPreference.getAppDbAskEnable(),
+                onChange: (IsOn: boolean) => {
+                  this.Is_loaded=true;
+                  AppPreference.setAppDbAskEnable(IsOn);
+                  //如果启用或者关闭均要更新密钥
+                  this.Is_loaded=false;
+                }
+              })
+              ItemDescription({ description: $r('app.string.setting_safety_ask_des') })
             }
           }
           .padding({ left: 10, right: 10 })

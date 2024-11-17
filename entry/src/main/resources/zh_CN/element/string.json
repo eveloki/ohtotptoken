@@ -267,6 +267,14 @@
     {
       "name": "dialog_cfg_steam_from_mafile",
       "value": "从 maFile 文件导入"
+    },
+    {
+      "name": "setting_safety_ask",
+      "value": "启用关键资产存储"
+    },
+    {
+      "name": "setting_safety_ask_des",
+      "value": "启用HUAWEI提供的Asset Store Kit（关键资产存储）存储密钥、即使系统被攻破，也能保证用户敏感数据不发生泄露。但是您必须启用锁屏密码"
     }
   ]
 }

@@ -11,7 +11,9 @@ export class AppPreference {
   // 数据库是否启用跨设备流转
   private static app_db_rds_sync_enable: boolean = false;
   //kv数据库同步时间
-  private static app_db_kv_sync_time:string ='';
+  private static app_db_kv_sync_time: string = '';
+  //是否将TokenSecret存入ASK（Asset Store Kit 关键资产存储开发套件）
+  private static app_db_ask_enable: boolean = false;
 
   //获取是否启用跨设备流转
   public static getRdbSyncEnable(): boolean {
@@ -29,9 +31,15 @@ export class AppPreference {
   public static getSafetyLockEnable(): boolean {
     return AppPreference.app_safety_lock_enable;
   }
+
   public static getAppDbKVSyncTime(): string {
     return AppPreference.app_db_kv_sync_time;
   }
+
+  public static getAppDbAskEnable(): boolean {
+    return AppPreference.app_db_ask_enable;
+  }
+
   public static setAppDbKVSyncTime(value: string): void {
     AppPreference.app_db_kv_sync_time = value;
     AppPreference.prefMgr.setValue<string>('app_db_kv_sync_time', value);
@@ -55,6 +63,11 @@ export class AppPreference {
   public static setSafetyLockEnable(enable: boolean): void {
     AppPreference.app_safety_lock_enable = enable;
     AppPreference.prefMgr.setValue<boolean>('app_safety_lock_enable', enable);
+  }
+
+  public static setAppDbAskEnable(enable: boolean): void {
+    AppPreference.app_db_ask_enable = enable;
+    AppPreference.prefMgr.setValue<boolean>('app_db_ask_enable', enable);
   }
 
   public static async getKey(key: string): Promise<string | null> {
@@ -89,6 +102,9 @@ export class AppPreference {
     })
     await AppPreference.prefMgr.getValue<string>('app_db_kv_sync_time').then((val) => {
       AppPreference.app_db_kv_sync_time = val ?? '';
+    })
+    await AppPreference.prefMgr.getValue<boolean>('app_db_ask_enable').then((val) => {
+      AppPreference.app_db_ask_enable = val ?? false;
     })
   }
 
