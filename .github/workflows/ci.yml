@@ -20,7 +20,27 @@ jobs:
       - name: Run my Action
         id: run-action
         uses: harmonyos-dev/setup-harmonyos-sdk@0.2.0
+      - name: Unzip Release Assets
+        run: |
+          unzip commandline-tools-mac-2.0.0.2.zip
 
+      - name: Install HarmonyOS SDK
+        run: |
+          # chmod +x commandline
+          # for handle Failed to request url https://devecostudio-dre.op.hicloud.com/sdkmanager/v5/hos/getSdkList
+          #[                    ]0%  
+          export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Duser.country=CN"
+          
+          chmod +x command-line-tools/sdkmanager/bin/sdkmgr
+          # 安装 HarmonyOS SDK
+          command-line-tools/sdkmanager/bin/sdkmgr install toolchains:9 OpenHarmony/toolchains:9 --accept-license
+          # get current dir and export to HOS_SDK_HOME
+
+      - name: Create OHPM package.json file
+        run: |
+          npm init -y
+          npm config set @ohos:registry=https://repo.harmonyos.com/npm/
+          npm install @ohos/hvigor@2.4.2 @ohos/hvigor-ohos-plugin@2.4.2
       - name: Build
         run: |
           # for ERROR: Unable to find 'hwsdk.dir' in 'local.properties' or 'HOS_SDK_HOME' in the system environment path.
