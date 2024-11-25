@@ -17,9 +17,12 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
       
-      - name: Download HarmonyOS SDK
+      - name: Run my Action
         id: run-action
         uses: harmonyos-dev/setup-harmonyos-sdk@0.2.0
+      - name: Unzip Release Assets
+        run: |
+          ls /Users/runner/harmonyos-sdk
 
       - name: Install HarmonyOS SDK
         run: |
