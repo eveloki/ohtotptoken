@@ -20,9 +20,6 @@ jobs:
       - name: Run my Action
         id: run-action
         uses: harmonyos-dev/setup-harmonyos-sdk@0.2.0
-      - name: Unzip Release Assets
-        run: |
-          unzip commandline-tools-mac-2.0.0.2.zip
 
       - name: Install HarmonyOS SDK
         run: |
@@ -31,9 +28,9 @@ jobs:
           #[                    ]0%  
           export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Duser.country=CN"
           
-          chmod +x command-line-tools/sdkmanager/bin/sdkmgr
+          chmod +x /Users/runner/harmonyos-sdk/sdkmanager/bin/sdkmgr
           # 安装 HarmonyOS SDK
-          command-line-tools/sdkmanager/bin/sdkmgr install toolchains:9 OpenHarmony/toolchains:9 --accept-license
+          /Users/runner/harmonyos-sdk/sdkmanager/bin/sdkmgr install toolchains:9 OpenHarmony/toolchains:9 --accept-license
           # get current dir and export to HOS_SDK_HOME
 
       - name: Create OHPM package.json file
