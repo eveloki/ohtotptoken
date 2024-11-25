@@ -17,7 +17,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
       
-      - name: Run my Action
+      - name: Download HarmonyOS SDK
         id: run-action
         uses: harmonyos-dev/setup-harmonyos-sdk@0.2.0
 
