@@ -33,7 +33,7 @@ jobs:
           
           #chmod +x /Users/runner/harmonyos-sdk/sdkmanager/bin/sdkmgr
           # 安装 HarmonyOS SDK
-          /Users/runner/harmonyos-sdk/command-line-tools/sdkmanager/bin/sdkmgr install toolchains:12 OpenHarmony/toolchains:12 --accept-license
+          /Users/runner/harmonyos-sdk/command-line-tools/sdkmanager/bin/sdkmgr install toolchains:9 OpenHarmony/toolchains:9 --accept-license
           # get current dir and export to HOS_SDK_HOME
 
       - name: Create OHPM package.json file
