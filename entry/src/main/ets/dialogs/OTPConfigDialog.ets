@@ -54,7 +54,6 @@ export struct TOTPConfigDialog {
     const pathParts = otp_url.pathname.slice(1).split('/');
     const labelParts = decodeURIComponent(pathParts[0]).split(':');
     this.conf.TokenIssuer = labelParts[0];
-    this.conf.TokenIcon = getIconPathByIssuer(labelParts[0])
     this.conf.TokenName = labelParts[1];
 
     const parameters: Record<string, string> = {};
@@ -78,7 +77,7 @@ export struct TOTPConfigDialog {
       }
       .height(10)
       Row() {
-        TokenIcon({ icon: this.conf.TokenIcon })
+        TokenIcon({ issuer: this.conf.TokenIssuer })
         Text($r('app.string.tab_token_add_key'))
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
@@ -123,7 +122,6 @@ export struct TOTPConfigDialog {
           TextInput({ text: this.conf.TokenIssuer, placeholder: this.conf.TokenIssuer })
             .onChange((value) => {
               this.conf.TokenIssuer=value;
-              this.conf.TokenIcon=getIconPathByIssuer(value)
             })
             .width('70%')
         }

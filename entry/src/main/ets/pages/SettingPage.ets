@@ -78,11 +78,13 @@ export struct SettingPage {
         if (this.backup_is_input) { // 如果是导出 就要调用导出加密函数
           showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.bak`], ['BAK|.bak']).then((uris) => {
             const backup: TokenBackup = new TokenBackup(this.versionCode ?? 0, this.arrConf);
-            saveBackupToFile(uris[0], backup, true, password).then(() => {
-              promptAction.showToast({ message: "Backup Success" });
-            }).catch((reason: BusinessError) => {
-              promptAction.showToast({ message: reason.message });
-            });
+            if (uris[0] !== undefined && uris[0] !== '') {
+              saveBackupToFile(uris[0], backup, true, password).then(() => {
+                promptAction.showToast({ message: "Backup Success" });
+              }).catch((reason: BusinessError) => {
+                promptAction.showToast({ message: reason.message });
+              });
+            }
           });
         } else { // 加密导入
           restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
@@ -90,8 +92,6 @@ export struct SettingPage {
           });
         }
       },
-      textValue: "",
-      inputValue: ""
     }),
     cancel: () => {},
     autoCancel: true,
@@ -129,11 +129,13 @@ export struct SettingPage {
             action: () => {
               showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.json`], ['JSON|.json']).then((uris) => {
                 const backup: TokenBackup = new TokenBackup(this.versionCode, this.arrConf);
-                saveBackupToFile(uris[0], backup).then(() => {
-                  promptAction.showToast({ message: "Backup Success" });
-                }).catch((reason: BusinessError) => {
-                  promptAction.showToast({ message: reason.message });
-                });
+                if (uris[0] !== undefined && uris[0] !== '') {
+                  saveBackupToFile(uris[0], backup).then(() => {
+                    promptAction.showToast({ message: "Backup Success" });
+                  }).catch((reason: BusinessError) => {
+                    promptAction.showToast({ message: reason.message });
+                  });
+                }
               });
             }
           },

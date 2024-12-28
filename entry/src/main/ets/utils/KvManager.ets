@@ -75,7 +75,7 @@ export class KvManager {
 
   async setValue<T>(key: string, value: T): Promise<void> {
     if (this._kvStore) {
-      await  this._kvStore.put(key, JSON.stringify(value));
+      await this._kvStore.put(key, JSON.stringify(value));
     }
   }
 
@@ -115,12 +115,12 @@ export class KvManager {
 
   async setTokenUUID(uuid: string): Promise<void> {
     const prefixKey = "$.SA_token_uuids_" + uuid;
-    this.setString(prefixKey, '1');
+    await this.setString(prefixKey, '1');
   }
 
   async delTokenUUID(uuid: string): Promise<void> {
     const prefixKey = "$.SA_token_uuids_" + uuid;
-    this.deleteValue(prefixKey);
+    await this.deleteValue(prefixKey);
   }
 
   //使用getEntries模拟一个可以兼容的数组 这样可以规避多设备覆盖的问题
@@ -173,12 +173,9 @@ export class KvManager {
     return null;
   }
 
-
   async deleteValue(key: string): Promise<void> {
     if (this._kvStore) {
-      this._kvStore.delete(key).then(() => {
-        return;
-      });
+      await this._kvStore.delete(key);
     }
   }
   //手动同步

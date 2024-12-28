@@ -4,6 +4,7 @@ import { base32Decode, base32Encode, intArrayToString, stringToIntArray } from "
 import { decryptFile, encryptFile } from "./CryptoUtils";
 import { JSON } from "@kit.ArkTS";
 import { promptAction } from "@kit.ArkUI";
+import { fileUri } from "@kit.CoreFileKit";
 
 const TOKEN_BACKUP_MAGIC = 0x55aaeebb;
 
@@ -37,5 +38,5 @@ export async function restoreFromBackup(file_uri: string, is_encrypt: boolean = 
     } else {
       reject('invalid backup file')
     }
-  })
+  });
 }

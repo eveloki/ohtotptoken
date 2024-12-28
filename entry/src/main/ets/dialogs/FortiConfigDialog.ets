@@ -50,7 +50,6 @@ export struct FortiConfigDialog {
   getRandDevID(): void {
     this.conf.FortiDevID = buffer.from(util.generateRandomBinaryUUID()).toString('hex').slice(0, 16);
     this.conf.TokenIssuer ='Forti';
-    this.conf.TokenIcon = getIconPathByIssuer('Forti')
     this.conf.TokenPeriod = 60;
   }
 
@@ -147,7 +146,7 @@ export struct FortiConfigDialog {
       }
       .height(10)
       Row() {
-        TokenIcon({ icon: this.conf.TokenIcon })
+        TokenIcon({ issuer: this.conf.TokenIssuer })
         Text($r('app.string.tab_token_add_forti_key'))
           .fontSize(30)
           .fontWeight(FontWeight.Bold)

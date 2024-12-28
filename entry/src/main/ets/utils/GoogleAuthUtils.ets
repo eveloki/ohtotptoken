@@ -70,7 +70,6 @@ export async function decodeProtobuf(payload: string): Promise<Array<TokenConfig
     token.TokenPeriod = 30;
     token.TokenCounter = ga.counter ?? 0;
     token.TokenDigits = GA_DIGIT_MAP.get(ga.digits) ?? 6;
-    token.TokenIcon = getIconPathByIssuer(token.TokenIssuer);
     result.push(token)
   });
 

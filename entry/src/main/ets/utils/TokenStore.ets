@@ -110,15 +110,15 @@ export class TokenStore {
       await this.saveToken(this.token_array[i]);
     }
     this.token_array = this.token_array.filter(token => token.TokenUUID !== token_uuid);
+    this.token_uuids = this.token_array.map(token => token.TokenUUID);
 
     await this.kvMgr.delTokenUUID(token_uuid);
-    this.kvMgr.deleteValue(token_uuid);
+    await this.kvMgr.deleteValue(token_uuid);
     this.emitTokenChanged();
   }
 
   //手动同步
   async DataSync(): Promise<void> {
-    // 警告KV数据库同步会存在覆盖问题 因为目前token_uuids用的是一个key 多设备会有问题
     await this.kvMgr.DataSync();
   }
 }

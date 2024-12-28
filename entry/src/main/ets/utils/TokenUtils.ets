@@ -229,6 +229,7 @@ const iconsArray: Array<string> =
     'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet', 'wargaming', 'wasabi',
     'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
     'zoho', 'zoom'];
+
 const iconsSet: HashSet<string> = new HashSet();
 for (let item of iconsArray) {
   iconsSet.add(item);

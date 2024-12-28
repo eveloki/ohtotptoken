@@ -21,7 +21,6 @@ export class TokenConfig {
   TokenCounter: number;
   FortiToken: string;
   FortiDevID: string;
-  TokenIcon: string;
   RankScore: number;
   SteamMaFile: maFile | undefined = undefined;
 
@@ -47,7 +46,6 @@ export class TokenConfig {
     this.FortiToken = '';
     this.FortiDevID = '';
     this.TokenUUID = util.generateRandomUUID();
-    this.TokenIcon = getIconPathByIssuer(issuer);
     this.RankScore = rank;
   }
 

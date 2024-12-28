@@ -66,7 +66,7 @@ export struct TokenItem {
 
   build() {
     Row({ space: 10 }) {
-      TokenIcon({ icon: this.Config.TokenIcon })
+      TokenIcon({ issuer: this.Config.TokenIssuer })
       Column() {
         Text(this.Config.TokenIssuer)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
