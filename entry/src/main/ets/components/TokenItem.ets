@@ -1,9 +1,7 @@
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
-import { generateOTP } from '../utils/TokenUtils';
+import { copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
-import { pasteboard } from '@kit.BasicServicesKit';
-import { promptAction } from '@kit.ArkUI';
 import { SteamUtils } from '../utils/SteamUtils';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
@@ -107,7 +105,7 @@ export struct TokenItem {
             .gesture(
               LongPressGesture()
                 .onAction(() => {
-                  copyText(this.TokenNumber);
+                  copyText(this.TokenNumber, `token ${this.TokenNumber} copied`);
                 })
             )
           if (this.Config.TokenType == otpType.HOTP) {
@@ -158,11 +156,4 @@ export struct TokenItem {
     .height(60)
     .backgroundColor($r("app.color.item_bg"))
   }
-}
-
-function copyText(text: string) {
-  const pasteboardData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, text);
-  const systemPasteboard = pasteboard.getSystemPasteboard();
-  systemPasteboard.setData(pasteboardData); // 将数据放入剪切板
-  promptAction.showToast({ message: 'Token copied: ' + text });
 }

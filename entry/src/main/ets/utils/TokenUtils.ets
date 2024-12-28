@@ -3,6 +3,8 @@ import { buffer, HashSet } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 import { TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
+import { pasteboard } from '@kit.BasicServicesKit';
+import { promptAction } from '@kit.ArkUI';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -198,6 +200,15 @@ export function base32Decode(input: string, variant: Base32Variant = 'RFC4648'):
   }
 
   return output;
+}
+
+export function copyText(text: string, msg: string = '') {
+  const pasteboardData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, text);
+  const systemPasteboard = pasteboard.getSystemPasteboard();
+  systemPasteboard.setData(pasteboardData);
+  if (msg !== undefined && msg !== '') {
+    promptAction.showToast({ message: msg });
+  }
 }
 
 const iconsArray: Array<string> =

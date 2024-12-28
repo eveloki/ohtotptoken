@@ -2,6 +2,7 @@ import { scanCore, generateBarcode } from '@kit.ScanKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { image } from '@kit.ImageKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { copyText } from '../utils/TokenUtils';
 
 @Preview
 @CustomDialog
@@ -33,8 +34,16 @@ export struct QRCodeDialog {
 
   build() {
     Flex({ justifyContent: FlexAlign.Center }) {
-      if (this.pixelMap) {
-        Image(this.pixelMap).width(300).height(300).objectFit(ImageFit.Contain)
+      Column({ space: 10 }){
+        if (this.pixelMap) {
+          Image(this.pixelMap).width(300).height(300).objectFit(ImageFit.Contain)
+        }
+        Text(this.content)
+          .fontSize(10)
+          .fontColor($r('app.color.str_gray'))
+          .onClick(() => {
+            copyText(this.content, "uri copied");
+          })
       }
     }
     .padding(20)

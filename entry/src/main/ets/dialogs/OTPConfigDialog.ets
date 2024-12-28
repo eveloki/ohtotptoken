@@ -1,6 +1,6 @@
 import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { url } from '@kit.ArkTS';
-import { getIconPathByIssuer, HMACAlgorithm, ScanBarCode } from '../utils/TokenUtils';
+import { HMACAlgorithm, ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
 
 @Entry

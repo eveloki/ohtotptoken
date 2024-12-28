@@ -24,6 +24,7 @@ import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup } from '../utils/TokenBackup';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { decodeProtobuf } from '../utils/GoogleAuthUtils';
+import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 
 const TAG = 'PrivacySubscribe';
 
@@ -43,6 +44,7 @@ struct Index {
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
 
+  private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
@@ -329,6 +331,18 @@ struct Index {
           this.dialog_totp_config.open()
         })
         .accessibilityText($r('app.string.tab_token_add_key'))
+      MenuItem({ content: $r('app.string.tab_token_add_uri') })
+        .onClick(() => {
+          this.dialog_uri_config = new CustomDialogController({
+            builder: URIConfigDialog({
+              confirm: (tokens) => {
+                this.updateTokenConfigs(tokens);
+              }
+            })
+          })
+          this.dialog_uri_config.open()
+        })
+        .accessibilityText($r('app.string.tab_token_add_uri'))
       MenuItem({ content: $r('app.string.tab_token_add_forti_key') })
         .onClick(() => {
           this.dialog_forti_config = new CustomDialogController({

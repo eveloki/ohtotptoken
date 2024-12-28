@@ -275,6 +275,18 @@
     {
       "name": "setting_safety_hide_token_des",
       "value": "默认不显示令牌以提高安全性。"
+    },
+    {
+      "name": "tab_token_add_uri",
+      "value": "文本链接"
+    },
+    {
+      "name": "tab_token_add_uri_title",
+      "value": "输入OTP URI"
+    },
+    {
+      "name": "tab_token_add_uri_desc",
+      "value": "OTP URI是以otpauth://开头的文本，支持多行。"
     }
   ]
 }
