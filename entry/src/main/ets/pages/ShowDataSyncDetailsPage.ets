@@ -7,6 +7,7 @@ import { deviceInfo } from '@kit.BasicServicesKit';
 import { AppPreference } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { TokenStore } from '../utils/TokenStore';
+import { SubItemDivider } from '../components/SubItemDivider';
 
 @Preview
 @Entry
@@ -51,24 +52,24 @@ struct ShowDataSyncDetailsPage {
               ListItem() {
                 SettingItem({ title: $r('app.string.data_dev_info') }) {
                   Row() {
-                    Blank()
-                      .width(10)
                     Text(deviceInfo.marketName)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
                       .textAlign(TextAlign.Start)
                   }
+                  .padding(10)
+
+                  SubItemDivider()
 
                   Row() {
-                    Blank()
-                      .width(10)
                     Text(deviceInfo.ODID)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
                       .textAlign(TextAlign.Start)
                   }
+                  .padding(10)
                 }
 
               }
@@ -77,32 +78,29 @@ struct ShowDataSyncDetailsPage {
               ListItem() {
                 SettingItem({ title: $r('app.string.data_kv_sync_time') }) {
                   Row() {
-                    Blank()
-                      .width(10)
-
                     Text(this.AppDbKVSyncTime)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
                       .textAlign(TextAlign.Start)
                   }
+                  .padding(10)
 
-                  Row() {
-                    SubItemButton({
-                      symbol: $r('sys.symbol.arrow_clockwise'),
-                      text: $r('app.string.data_sync_manual')
-                    })
-                      .onClick(() => {
-                        this.Is_loaded=true;
-                        TokenStore.getInstance().DataSync().then(()=>{
-                          setTimeout(()=>{
-                            this.Is_loaded=false;
-                            AppPreference.setAppDbKVSyncTime(new Date().toString());
-                            this.AppDbKVSyncTime=AppPreference.getAppDbKVSyncTime();
-                          },1500)
-                        })
+                  SubItemDivider()
+
+                  SubItemButton({
+                    symbol: $r('sys.symbol.arrow_clockwise'),
+                    text: $r('app.string.data_sync_manual')
+                  })
+                    .onClick(() => {
+                      this.Is_loaded=true;
+                      TokenStore.getInstance().DataSync().then(()=>{
+                        setTimeout(()=>{
+                          this.Is_loaded=false;
+                          AppPreference.setAppDbKVSyncTime(new Date().toString());
+                          this.AppDbKVSyncTime=AppPreference.getAppDbKVSyncTime();},1500)
                       })
-                  }
+                    })
                 }
               }
               .padding({ left: 10, right: 10 })

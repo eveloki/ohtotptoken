@@ -4,7 +4,6 @@ import { bundleManager, common } from '@kit.AbilityKit';
 import { generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
-import { ItemDescription } from '../components/ItemDescription'
 import { router } from '@kit.ArkUI';
 import { AppPreference } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
@@ -14,6 +13,7 @@ import { PermissionManager } from '../utils/PermissionManager';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
 import { showSaveFilePicker, showSelectFilePicker } from '../utils/FileUtils';
+import { SubItemDivider } from '../components/SubItemDivider';
 
 @Preview
 @ComponentV2
@@ -56,6 +56,7 @@ export struct SettingPage {
       "Github: paolostivanin/libcotp\n" +
       "Github: Netthaw/TOTP-MCU\n" +
       "Github: ss23/fortitoken-mobile-registration\n" +
+      "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
   }
 
@@ -218,15 +219,18 @@ export struct SettingPage {
               SubItemButton({
                 symbol: $r('sys.symbol.save'),
                 text: $r('app.string.setting_backup_export')
-              })//.layoutWeight(1)
+              })
                 .onClick(() => {
                   this.backup_is_input = true;
                   this.callFilePickerSaveFile()
                 })
+
+              SubItemDivider()
+
               SubItemButton({
                 symbol: $r('sys.symbol.folder'),
                 text: $r('app.string.setting_backup_import')
-              })//.layoutWeight(1)
+              })
                 .onClick(() => {
                   this.backup_is_input = false;
                   this.callFilePickerSelectFile()
@@ -238,14 +242,20 @@ export struct SettingPage {
           ListItem() {
             SettingItem({ title: $r('app.string.setting_safety') }) {
               SubItemToggle({
+                icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'), isOn: AppPreference.getSafetyPrivacyEnable(),
+                description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setSafetyPrivacyEnable(IsOn);
                 }
               })
-              ItemDescription({ description: $r('app.string.setting_safety_privacy_des') })
+
+              SubItemDivider()
+
               SubItemToggle({
+                icon: $r('sys.symbol.key_shield'),
                 title: $r('app.string.setting_safety_lock'), isOn: AppPreference.getSafetyLockEnable(),
+                description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
                     try {
@@ -259,15 +269,18 @@ export struct SettingPage {
                   AppPreference.setSafetyLockEnable(IsOn);
                 }
               })
-              ItemDescription({ description: $r('app.string.setting_safety_lock_des') })
+
+              SubItemDivider()
+
               SubItemToggle({
+                icon: $r('sys.symbol.eye_slash'),
                 title: $r('app.string.setting_hide_token'), isOn: AppPreference.getSafetyHideTokenEnable(),
+                description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setSafetyHideTokenEnable(IsOn);
                   this.updateSettings('app_safety_hide_token_enable');
                 }
               })
-              ItemDescription({ description: $r('app.string.setting_safety_hide_token_des') })
             }
           }
           .padding({ left: 10, right: 10 })
@@ -275,7 +288,9 @@ export struct SettingPage {
           ListItem() {
             SettingItem({ title: $r('app.string.data_sync') }) {
               SubItemToggle({
+                icon: $r('sys.symbol.link'),
                 title: $r('app.string.data_rdb_sync'), isOn: this.RdbSyncEnable,
+                description: $r('app.string.data_rdb_sync_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
@@ -284,9 +299,13 @@ export struct SettingPage {
                   AppPreference.setRdbSyncEnable(IsOn);
                 }
               })
-              ItemDescription({ description: $r('app.string.data_rdb_sync_des') })
+
+              SubItemDivider()
+
               SubItemToggle({
+                icon: $r('sys.symbol.icloud'),
                 title: $r('app.string.data_rdb_cloud_sync'), isOn: this.RdbCloudSyncEnable,
+                description: $r('app.string.data_rdb_cloud_sync_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
@@ -294,9 +313,10 @@ export struct SettingPage {
                   this.RdbCloudSyncEnable = IsOn;
                   AppPreference.setRdbCloudSyncEnable(IsOn);
                 }
-              }).visibility(Visibility.None)
-              ItemDescription({ description: $r('app.string.data_rdb_cloud_sync_des') }).visibility(Visibility.None)
-              Divider().vertical(false).height(2)
+              })
+
+              SubItemDivider()
+
               SubItemButton({
                 symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                 text: $r('app.string.data_rdb_sync_details')
@@ -314,6 +334,9 @@ export struct SettingPage {
                 .onClick(() => {
                   router.pushUrl({ url: 'pages/PrivacyPage' });
                 })
+
+              SubItemDivider()
+
               SubItemButton({
                 symbol: $r("sys.symbol.doc_plaintext_and_pencil"),
                 text: $r('app.string.user_agreement')
@@ -330,7 +353,7 @@ export struct SettingPage {
               Text(this.str_about_app)
                 .fontSize(10)
                 .fontColor($r('app.color.str_gray'))
-                .padding({ left: 10 })
+                .padding(10)
             }
           }
           .padding({ left: 10, right: 10 })
@@ -340,7 +363,7 @@ export struct SettingPage {
               Text(this.str_opensource_leg)
                 .fontSize(10)
                 .fontColor($r('app.color.str_gray'))
-                .padding({ left: 10 })
+                .padding(10)
             }
           }
           .padding({ left: 10, right: 10 })
