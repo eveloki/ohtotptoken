@@ -210,7 +210,7 @@
     },
     {
       "name": "data_sync",
-      "value": "Data Sync."
+      "value": "Data Sync"
     },
     {
       "name": "data_rdb_sync",
@@ -238,11 +238,11 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "Manual Sync."
+      "value": "Manual Sync"
     },
     {
       "name": "data_dev_info",
-      "value": "Device Info."
+      "value": "Device Info"
     },
     {
       "name": "app_ua_add_token",
@@ -286,7 +286,7 @@
     },
     {
       "name": "tab_token_add_uri_desc",
-      "value": "An OTP URI is a text that starts with otpauth:// and supports multiple lines."
+      "value": "An OTP URI is a text that starts with otpauth://, supports multiple lines."
     },
     {
       "name": "app_appearance",
