@@ -218,7 +218,7 @@
     },
     {
       "name": "data_rdb_sync_des",
-      "value": "The distributed application data sync allows the data of an application to be synced with other devices that are connected to form a Virtual Device.."
+      "value": "The distributed application data sync allows the data of an application to be synced with other devices that are connected to form a Virtual Device."
     },
     {
       "name": "data_rdb_cloud_sync",

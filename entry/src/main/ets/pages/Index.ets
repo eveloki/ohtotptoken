@@ -155,10 +155,12 @@ struct Index {
       });
 
     })
+
     //订阅RDB数据库同步完成事件
     getContext(this).eventHub.on('RDBStoreSyncComplete',() => {
       //todo 接收同步完成后刷新数据
     })
+
     //订阅权限变更 主页面不需要取消订阅 没有意义
     this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
       if (!isAccess) {
@@ -201,8 +203,6 @@ struct Index {
           });
         });
       },
-      textValue: "",
-      inputValue: ""
     }),
     cancel: () => {},
     autoCancel: true,

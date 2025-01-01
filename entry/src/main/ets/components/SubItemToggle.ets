@@ -18,6 +18,7 @@ export struct SubItemToggle {
   @Require @Param onChange: (isOn: boolean) => void = () => {};
   @Require @Param title: string | Resource = '';
   @Require @Param isOn: boolean = false;
+  @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = '';
 
@@ -45,6 +46,7 @@ export struct SubItemToggle {
           .onChange((isOn: boolean) => {
             this.onChange(isOn);
           })
+          .enabled(!this.disable)
           .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.95 })
       }
       .width('100%')

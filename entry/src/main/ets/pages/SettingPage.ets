@@ -306,6 +306,7 @@ export struct SettingPage {
                 icon: $r('sys.symbol.icloud'),
                 title: $r('app.string.data_rdb_cloud_sync'), isOn: this.RdbCloudSyncEnable,
                 description: $r('app.string.data_rdb_cloud_sync_des'),
+                disable: true,
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
@@ -314,8 +315,10 @@ export struct SettingPage {
                   AppPreference.setRdbCloudSyncEnable(IsOn);
                 }
               })
+                .visibility(Visibility.None)
 
               SubItemDivider()
+                .visibility(Visibility.None)
 
               SubItemButton({
                 symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
