@@ -3,6 +3,8 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
+import { AppPreference } from '../utils/AppPreference';
+import { faceDetector } from '@kit.CoreVisionKit';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 
@@ -11,9 +13,11 @@ let current_token_hide_map: Map<string, boolean> = new Map();
 export struct TokenItem {
   @Require @Param Config: TokenConfig = new TokenConfig();
   @Require @Param TokenHideEnable: boolean = false;
+  @Require @Param ShowNextTokenEnable: boolean = false;
   @Event Update: (conf: TokenConfig) => void = () => {};
 
   @Local TokenNumber: string = '000000';
+  @Local TokenNumberNext: string = '000000';
   @Local TokenCounter: string = '0';
   @Local TokenLeftPeriod: number = 0;
   @Local btn_hotp_clicked: number = 0;
@@ -51,14 +55,18 @@ export struct TokenItem {
   updateHOTPToken() {
     this.TokenCounter = this.Config.TokenCounter.toString();
     this.TokenNumber = generateOTP(this.Config, this.Config.TokenCounter).toString().padStart(this.Config.TokenDigits, '0');
+    this.TokenNumberNext = generateOTP(this.Config, this.Config.TokenCounter + 1).toString().padStart(this.Config.TokenDigits, '0');
   }
 
   updateTOTPToken() {
     let int_code = generateOTP(this.Config, this.token_steps);
+    let int_code_next = generateOTP(this.Config, this.token_steps + 1);
     if (this.Config.TokenType === otpType.Steam) {
       this.TokenNumber = SteamUtils.SteamTokenFromTOTP(int_code);
+      this.TokenNumberNext = SteamUtils.SteamTokenFromTOTP(int_code_next);
     } else {
       this.TokenNumber = int_code.toString().padStart(this.Config.TokenDigits, '0');
+      this.TokenNumberNext = int_code_next.toString().padStart(this.Config.TokenDigits, '0');
     }
   }
 
@@ -109,7 +117,14 @@ export struct TokenItem {
                 })
             )
           if (this.Config.TokenType == otpType.HOTP) {
-            Text(this.TokenCounter)
+            Text(this.TokenCounter + (this.ShowNextTokenEnable ? ":" + this.TokenNumberNext : ""))
+              .textAlign(TextAlign.End)
+              .textOverflow({ overflow: TextOverflow.MARQUEE })
+              .maxLines(1)
+              .fontColor($r('app.color.str_gray'))
+              .fontSize(10)
+          } else if (this.ShowNextTokenEnable) {
+            Text(this.TokenNumberNext)
               .textAlign(TextAlign.End)
               .textOverflow({ overflow: TextOverflow.MARQUEE })
               .maxLines(1)

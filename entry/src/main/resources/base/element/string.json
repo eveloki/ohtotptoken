@@ -287,6 +287,18 @@
     {
       "name": "tab_token_add_uri_desc",
       "value": "An OTP URI is a text that starts with otpauth:// and supports multiple lines."
+    },
+    {
+      "name": "app_appearance",
+      "value": "Appearance"
+    },
+    {
+      "name": "show_next_token",
+      "value": "Display Next Token"
+    },
+    {
+      "name": "show_next_token_des",
+      "value": "Display the next token below the current token to enhance usability."
     }
   ]
 }

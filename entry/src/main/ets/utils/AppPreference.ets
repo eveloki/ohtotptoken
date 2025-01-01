@@ -8,6 +8,8 @@ export class AppPreference {
   private static app_safety_lock_enable: boolean = false;
   // 隐藏令牌
   private static app_safety_hide_token_enable: boolean = false;
+  // 外观-显示下一个令牌
+  private static app_appearance_show_next_token_enable: boolean = false;
   // 数据库是否启用云同步
   private static app_db_rds_cloud_sync_enable: boolean = false;
   // 数据库是否启用跨设备流转
@@ -34,6 +36,10 @@ export class AppPreference {
 
   public static getSafetyHideTokenEnable(): boolean {
     return AppPreference.app_safety_hide_token_enable;
+  }
+
+  public static getAppearanceShowNextTokenEnable(): boolean {
+    return AppPreference.app_appearance_show_next_token_enable;
   }
 
   public static getAppDbKVSyncTime(): string {
@@ -70,6 +76,11 @@ export class AppPreference {
     AppPreference.prefMgr.setValue<boolean>('app_safety_hide_token_enable', enable);
   }
 
+  public static setAppearanceShowNextTokenEnable(enable: boolean): void {
+    AppPreference.app_appearance_show_next_token_enable = enable;
+    AppPreference.prefMgr.setValue<boolean>('app_appearance_show_next_token_enable', enable);
+  }
+
   public static async getKey(key: string): Promise<string | null> {
     try {
       return await AppPreference.prefMgr.getValue<string>(key);
@@ -95,6 +106,9 @@ export class AppPreference {
     })
     await AppPreference.prefMgr.getValue<boolean>('app_safety_hide_token_enable').then((val) => {
       AppPreference.app_safety_hide_token_enable = val ?? false;
+    })
+    await AppPreference.prefMgr.getValue<boolean>('app_appearance_show_next_token_enable').then((val) => {
+      AppPreference.app_appearance_show_next_token_enable = val ?? false;
     })
     await AppPreference.prefMgr.getValue<boolean>('app_db_rds_cloud_sync_enable').then((val) => {
       AppPreference.app_db_rds_cloud_sync_enable = val ?? false;

@@ -286,6 +286,21 @@ export struct SettingPage {
           .padding({ left: 10, right: 10 })
 
           ListItem() {
+            SettingItem({ title: $r('app.string.app_appearance') }) {
+              SubItemToggle({
+                icon: $r('sys.symbol.chevron_up_2_circle'),
+                title: $r('app.string.show_next_token'), isOn: AppPreference.getAppearanceShowNextTokenEnable(),
+                description: $r('app.string.show_next_token_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setAppearanceShowNextTokenEnable(IsOn);
+                  this.updateSettings('app_appearance_show_next_token_enable');
+                }
+              })
+            }
+          }
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
             SettingItem({ title: $r('app.string.data_sync') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.link'),

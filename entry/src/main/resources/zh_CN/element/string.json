@@ -287,6 +287,18 @@
     {
       "name": "tab_token_add_uri_desc",
       "value": "OTP URI是以otpauth://开头的文本，支持多行。"
+    },
+    {
+      "name": "app_appearance",
+      "value": "外观"
+    },
+    {
+      "name": "show_next_token",
+      "value": "显示下一个令牌"
+    },
+    {
+      "name": "show_next_token_des",
+      "value": "在当前令牌下方展示下一个令牌，提高易用性。"
     }
   ]
 }

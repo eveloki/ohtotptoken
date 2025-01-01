@@ -38,6 +38,7 @@ struct Index {
   @Local tab_bar_index: number = 0;
   @Local token_loaded: Boolean = true;
   @Local token_hide_enable: boolean = AppPreference.getSafetyHideTokenEnable();
+  @Local show_next_token_enable: boolean = AppPreference.getAppearanceShowNextTokenEnable();
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private windowClass = AppStorage.get("windowClass") as window.Window;
@@ -530,6 +531,7 @@ struct Index {
                         TokenItem({
                           Config: token,
                           TokenHideEnable: this.token_hide_enable,
+                          ShowNextTokenEnable: this.show_next_token_enable,
                           Update: async (conf_new) => {
                             this.updateTokenConfig(conf_new, false);
                           }
@@ -600,6 +602,8 @@ struct Index {
                 updateSettings: (key_name) => {
                   if (key_name === 'app_safety_hide_token_enable') {
                     this.token_hide_enable = AppPreference.getSafetyHideTokenEnable();
+                  } else if (key_name == 'app_appearance_show_next_token_enable') {
+                    this.show_next_token_enable = AppPreference.getAppearanceShowNextTokenEnable();
                   }
                 }
               })
