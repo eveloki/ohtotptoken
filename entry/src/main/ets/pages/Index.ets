@@ -548,7 +548,8 @@ struct Index {
                       return JSON.stringify(item)
                     })
                       .onMove((from, to) => {
-                        tkStore.updateTokenRank(from, to);
+                        // wait 500ms for animation done
+                        setTimeout(() => tkStore.updateTokenRank(from, to), 500);
                       })
                     ListItem() {
                       Row()
