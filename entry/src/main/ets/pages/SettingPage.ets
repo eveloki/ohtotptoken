@@ -296,6 +296,9 @@ export struct SettingPage {
                   this.updateSettings('app_appearance_show_next_token_enable');
                 }
               })
+
+              SubItemDivider()
+
               SubItemToggle({
                 icon: $r('sys.symbol.transfer_station'),
                 title: $r('app.string.swap_host_user'), isOn: AppPreference.getAppearanceSwapHostUserEnable(),
@@ -305,6 +308,9 @@ export struct SettingPage {
                   this.updateSettings('app_appearance_swap_host_user_enable');
                 }
               })
+
+              SubItemDivider()
+
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
                 title: $r('app.string.auto_unlock'), isOn: AppPreference.getAppearanceAutoUnlockEnable(),
