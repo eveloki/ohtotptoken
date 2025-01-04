@@ -14,6 +14,7 @@ export struct TokenItem {
   @Require @Param Config: TokenConfig = new TokenConfig();
   @Require @Param TokenHideEnable: boolean = false;
   @Require @Param ShowNextTokenEnable: boolean = false;
+  @Require @Param SwapHostUserEnable: boolean = false;
   @Event Update: (conf: TokenConfig) => void = () => {};
 
   @Local TokenNumber: string = '000000';
@@ -74,13 +75,13 @@ export struct TokenItem {
     Row({ space: 10 }) {
       TokenIcon({ issuer: this.Config.TokenIssuer })
       Column() {
-        Text(this.Config.TokenIssuer)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Text(this.SwapHostUserEnable ? this.Config.TokenName : this.Config.TokenIssuer)
+          .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
-          .fontSize(20)
+          .fontSize(18)
           .fontColor($r('app.color.str_main'))
-        Text(this.Config.TokenName)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Text(this.SwapHostUserEnable ? this.Config.TokenIssuer : this.Config.TokenName)
+          .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
           .fontSize(10)
           .fontColor($r('app.color.str_gray'))

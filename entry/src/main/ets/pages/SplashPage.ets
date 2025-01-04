@@ -58,6 +58,8 @@ struct SplashPage {
   onPageShow(): void {
     if (!AppPreference.getSafetyLockEnable()) {
       router.replaceUrl({ url: 'pages/Index' });
+    } else if (AppPreference.getAppearanceAutoUnlockEnable()) {
+      this.requireUserAuth();
     }
   }
 

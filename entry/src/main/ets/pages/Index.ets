@@ -39,6 +39,7 @@ struct Index {
   @Local token_loaded: Boolean = true;
   @Local token_hide_enable: boolean = AppPreference.getSafetyHideTokenEnable();
   @Local show_next_token_enable: boolean = AppPreference.getAppearanceShowNextTokenEnable();
+  @Local swap_host_user_enable: boolean = AppPreference.getAppearanceSwapHostUserEnable();
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private windowClass = AppStorage.get("windowClass") as window.Window;
@@ -532,6 +533,7 @@ struct Index {
                           Config: token,
                           TokenHideEnable: this.token_hide_enable,
                           ShowNextTokenEnable: this.show_next_token_enable,
+                          SwapHostUserEnable: this.swap_host_user_enable,
                           Update: async (conf_new) => {
                             this.updateTokenConfig(conf_new, false);
                           }
@@ -604,7 +606,10 @@ struct Index {
                     this.token_hide_enable = AppPreference.getSafetyHideTokenEnable();
                   } else if (key_name == 'app_appearance_show_next_token_enable') {
                     this.show_next_token_enable = AppPreference.getAppearanceShowNextTokenEnable();
+                  } else if (key_name == 'app_appearance_swap_host_user_enable') {
+                    this.swap_host_user_enable = AppPreference.getAppearanceSwapHostUserEnable();
                   }
+
                 }
               })
                 .height('100%')

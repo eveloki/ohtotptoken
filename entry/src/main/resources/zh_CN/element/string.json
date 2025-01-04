@@ -290,7 +290,7 @@
     },
     {
       "name": "app_appearance",
-      "value": "外观"
+      "value": "外观与功能"
     },
     {
       "name": "show_next_token",
@@ -299,6 +299,22 @@
     {
       "name": "show_next_token_des",
       "value": "在当前令牌下方展示下一个令牌，提高易用性。"
+    },
+    {
+      "name": "swap_host_user",
+      "value": "交换主机名与用户名"
+    },
+    {
+      "name": "swap_host_user_des",
+      "value": "交换显示用户名和主机名，用于需要优先分辨用户名的场景。"
+    },
+    {
+      "name": "auto_unlock",
+      "value": "尝试自动解锁"
+    },
+    {
+      "name": "auto_unlock_des",
+      "value": "当启用应用锁定后进入锁定页面时自动触发解锁。"
     }
   ]
 }

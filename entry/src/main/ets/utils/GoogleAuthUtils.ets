@@ -1,7 +1,7 @@
 import { decode_google_auth_pb } from "libotpcutils.so";
 import { otpType, TokenConfig } from "./TokenConfig";
 import { JSON } from "@kit.ArkTS";
-import { getIconPathByIssuer, HMACAlgorithm } from "./TokenUtils";
+import { HMACAlgorithm } from "./TokenUtils";
 
 enum GA_Algorithm {
   ALGORITHM_UNSPECIFIED = 0,

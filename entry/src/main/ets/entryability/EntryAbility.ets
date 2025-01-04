@@ -27,7 +27,10 @@ export default class EntryAbility extends UIAbility {
         console.info('applicationStateChangeCallback onApplicationBackground');
         //如果启用了锁定检查要回到开屏验证pin
         if (AppPreference.getSafetyLockEnable()) {
-          router.pushUrl({ url: 'pages/SplashPage' });
+          try {
+            router.pushUrl({ url: 'pages/SplashPage' });
+          } catch (err) {
+          }
         }
       }
     }

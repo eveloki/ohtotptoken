@@ -10,6 +10,10 @@ export class AppPreference {
   private static app_safety_hide_token_enable: boolean = false;
   // 外观-显示下一个令牌
   private static app_appearance_show_next_token_enable: boolean = false;
+  // 外观-交换主机名用户名
+  private static app_appearance_swap_host_user_enable: boolean = false;
+  // 外观-自动解锁
+  private static app_appearance_auto_unlock_enable: boolean = false;
   // 数据库是否启用云同步
   private static app_db_rds_cloud_sync_enable: boolean = false;
   // 数据库是否启用跨设备流转
@@ -40,6 +44,14 @@ export class AppPreference {
 
   public static getAppearanceShowNextTokenEnable(): boolean {
     return AppPreference.app_appearance_show_next_token_enable;
+  }
+
+  public static getAppearanceSwapHostUserEnable(): boolean {
+    return AppPreference.app_appearance_swap_host_user_enable;
+  }
+
+  public static getAppearanceAutoUnlockEnable(): boolean {
+    return AppPreference.app_appearance_auto_unlock_enable;
   }
 
   public static getAppDbKVSyncTime(): string {
@@ -81,6 +93,16 @@ export class AppPreference {
     AppPreference.prefMgr.setValue<boolean>('app_appearance_show_next_token_enable', enable);
   }
 
+  public static setAppearanceSwapHostUserEnable(enable: boolean): void {
+    AppPreference.app_appearance_swap_host_user_enable = enable;
+    AppPreference.prefMgr.setValue<boolean>('app_appearance_swap_host_user_enable', enable);
+  }
+
+  public static setAppearanceAutoUnlockEnable(enable: boolean): void {
+    AppPreference.app_appearance_auto_unlock_enable = enable;
+    AppPreference.prefMgr.setValue<boolean>('app_appearance_auto_unlock_enable', enable);
+  }
+
   public static async getKey(key: string): Promise<string | null> {
     try {
       return await AppPreference.prefMgr.getValue<string>(key);
@@ -109,6 +131,12 @@ export class AppPreference {
     })
     await AppPreference.prefMgr.getValue<boolean>('app_appearance_show_next_token_enable').then((val) => {
       AppPreference.app_appearance_show_next_token_enable = val ?? false;
+    })
+    await AppPreference.prefMgr.getValue<boolean>('app_appearance_swap_host_user_enable').then((val) => {
+      AppPreference.app_appearance_swap_host_user_enable = val ?? false;
+    })
+    await AppPreference.prefMgr.getValue<boolean>('app_appearance_auto_unlock_enable').then((val) => {
+      AppPreference.app_appearance_auto_unlock_enable = val ?? false;
     })
     await AppPreference.prefMgr.getValue<boolean>('app_db_rds_cloud_sync_enable').then((val) => {
       AppPreference.app_db_rds_cloud_sync_enable = val ?? false;

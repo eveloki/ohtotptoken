@@ -299,6 +299,22 @@
     {
       "name": "show_next_token_des",
       "value": "Display the next token below the current token to enhance usability."
+    },
+    {
+      "name": "swap_host_user",
+      "value": "Swap Displayed Hostname & Username"
+    },
+    {
+      "name": "swap_host_user_des",
+      "value": "Swap the hostname and username for scenarios where it is necessary to prioritize the identification of the username."
+    },
+    {
+      "name": "auto_unlock",
+      "value": "Auto Unlock"
+    },
+    {
+      "name": "auto_unlock_des",
+      "value": "Automatically trigger unlocking when the application is locked."
     }
   ]
 }
