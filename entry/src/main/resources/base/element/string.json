@@ -315,6 +315,26 @@
     {
       "name": "auto_unlock_des",
       "value": "Automatically trigger unlocking when the application is locked."
+    },
+    {
+      "name": "setting_color_mode",
+      "value": "Color Mode"
+    },
+    {
+      "name": "setting_color_mode_desc",
+      "value": "Control whether the application follows the system's dark mode or decides on its own."
+    },
+    {
+      "name": "setting_color_mode_system",
+      "value": "System"
+    },
+    {
+      "name": "setting_color_mode_dark",
+      "value": "Dark"
+    },
+    {
+      "name": "setting_color_mode_light",
+      "value": "Light"
     }
   ]
 }

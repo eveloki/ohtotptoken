@@ -1,10 +1,11 @@
 
 @Preview
 @ComponentV2
-export struct SubItemToggle {
-  @Require @Param onChange: (isOn: boolean) => void = () => {};
+export struct SubItemSelect {
+  @Require @Param onChange: (selected: number) => void = () => {};
   @Require @Param title: string | Resource = '';
-  @Require @Param isOn: boolean = false;
+  @Require @Param values: string[] | Resource[] = [];
+  @Require @Param selected: number = 0;
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = '';
@@ -26,15 +27,13 @@ export struct SubItemToggle {
 
         Blank()
 
-        Toggle({ type: ToggleType.Switch, isOn: this.isOn })
-          .id('ToggleSwitch')
-          .width(36)
-          .height(20)
-          .onChange((isOn: boolean) => {
-            this.onChange(isOn);
-          })
+        Select(this.values.map((val: string | Resource) => {return { value: val as string } as SelectOption }))
           .enabled(!this.disable)
-          .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.95 })
+          .value(this.values[this.selected])
+          .selected(this.selected)
+          .onSelect((index) => {
+            this.onChange(index);
+          })
       }
       .width('100%')
       if (this.description != '') {

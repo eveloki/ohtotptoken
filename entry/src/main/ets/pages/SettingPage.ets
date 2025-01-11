@@ -1,11 +1,11 @@
 import { TokenConfig } from '../utils/TokenConfig';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { bundleManager, common } from '@kit.AbilityKit';
+import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
 import { router } from '@kit.ArkUI';
-import { AppPreference, SettingValue } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingValue } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { SettingItem } from '../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -14,6 +14,7 @@ import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
 import { showSaveFilePicker, showSelectFilePicker } from '../utils/FileUtils';
 import { SubItemDivider } from '../components/SubItemDivider';
+import { SubItemSelect } from '../components/SubItemSelect';
 
 @Preview
 @ComponentV2
@@ -317,6 +318,25 @@ export struct SettingPage {
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_appearance_auto_unlock_enable', IsOn);
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemSelect({
+                icon: $r('sys.symbol.dark'),
+                title: $r('app.string.setting_color_mode'),
+                values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'), $r('app.string.setting_color_mode_light'),],
+                description: $r('app.string.setting_color_mode_desc'),
+                selected: AppPreference.getAppearance('app_appearance_color_mode') as number,
+                onChange: (index: number) => {
+                  AppPreference.setAppearance('app_appearance_color_mode', index);
+                  const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
+                    [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
+                    [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
+                    [SettingColorMode.Light, ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT],
+                  ]);
+                  this.appCtx.getApplicationContext().setColorMode(color_map.get(index));
                 }
               })
             }

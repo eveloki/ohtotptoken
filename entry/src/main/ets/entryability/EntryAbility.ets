@@ -1,9 +1,10 @@
-import { AbilityConstant, UIAbility, Want, Configuration,ApplicationStateChangeCallback  } from '@kit.AbilityKit';
+import { AbilityConstant, UIAbility, Want, Configuration,ApplicationStateChangeCallback,
+  ConfigurationConstant  } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { WindowUtil } from '../utils/WindowUtil';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode } from '../utils/AppPreference';
 import { router } from '@kit.ArkUI';
 import { relationalStore  } from '@kit.ArkData';
 
@@ -78,6 +79,9 @@ export default class EntryAbility extends UIAbility {
         AppStorage.setOrCreate("appBottomAvoidHeight", px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR).bottomRect.height));
         AppStorage.setOrCreate("appTopAvoidHeight", px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height));
 
+        // apply app settings
+        this.applySettings();
+
         hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
       });
     });
@@ -103,6 +107,17 @@ export default class EntryAbility extends UIAbility {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
   }
+
+  applySettings(): void {
+    const color_mode = AppPreference.getAppearance('app_appearance_color_mode') as number;
+    const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
+      [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
+      [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
+      [SettingColorMode.Light, ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT],
+    ]);
+    this.context.getApplicationContext().setColorMode(color_map.get(color_mode ?? 0));
+  }
+
   //初始化RDB数据库
   initRdbStore(): void{
     const STORE_CONFIG: relationalStore.StoreConfig = {

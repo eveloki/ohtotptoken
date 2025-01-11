@@ -1,6 +1,11 @@
 import { PreferenceManager } from "./PreferenceManager";
 
 export type SettingValue = boolean | string | number;
+export enum SettingColorMode {
+  System,
+  Dark,
+  Light,
+}
 
 export class AppPreference {
   private static prefMgr = PreferenceManager.getInstance();
@@ -18,12 +23,15 @@ export class AppPreference {
     ['app_appearance_swap_host_user_enable', false],
     // 外观-自动解锁
     ['app_appearance_auto_unlock_enable', false],
+    // 外观-颜色模式
+    ['app_appearance_color_mode', SettingColorMode.System],
     // 数据库是否启用云同步
     ['app_db_rds_cloud_sync_enable', false],
     // 数据库是否启用跨设备流转
     ['app_db_rds_sync_enable', false],
     // kv数据库同步时间
     ['app_db_kv_sync_time', ''],
+
   ]);
 
   public static getAppearance(key: string): SettingValue {
@@ -36,11 +44,12 @@ export class AppPreference {
   }
 
   public static async loadSettings(): Promise<void> {
-    AppPreference.settings.forEach((_, k) => {
-      AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
+    const promises = Array.from(AppPreference.settings.keys()).map(async (k) => {
+      await AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
         AppPreference.settings[k] = val;
       })
     });
+    await Promise.all(promises);
   }
 
   public static saveSettings(): void {

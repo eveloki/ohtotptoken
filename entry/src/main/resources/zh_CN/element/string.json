@@ -315,6 +315,26 @@
     {
       "name": "auto_unlock_des",
       "value": "当启用应用锁定后进入锁定页面时自动触发解锁。"
+    },
+    {
+      "name": "setting_color_mode",
+      "value": "颜色模式"
+    },
+    {
+      "name": "setting_color_mode_desc",
+      "value": "控制应用是否跟随系统深色模式或自行决定。"
+    },
+    {
+      "name": "setting_color_mode_system",
+      "value": "跟随系统"
+    },
+    {
+      "name": "setting_color_mode_dark",
+      "value": "深色"
+    },
+    {
+      "name": "setting_color_mode_light",
+      "value": "亮色"
     }
   ]
 }
