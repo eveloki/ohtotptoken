@@ -12,7 +12,7 @@ import { router } from '@kit.ArkUI';
 import promptAction from '@ohos.promptAction'
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { QRCodeDialog } from '../dialogs/QRCodeDialog';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, SettingValue } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -37,9 +37,9 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
   @Local token_loaded: Boolean = true;
-  @Local token_hide_enable: boolean = AppPreference.getSafetyHideTokenEnable();
-  @Local show_next_token_enable: boolean = AppPreference.getAppearanceShowNextTokenEnable();
-  @Local swap_host_user_enable: boolean = AppPreference.getAppearanceSwapHostUserEnable();
+  @Local token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
+  @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
+  @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private windowClass = AppStorage.get("windowClass") as window.Window;
@@ -131,7 +131,7 @@ struct Index {
     })
 
     //设置隐私模式
-    if (AppPreference.getSafetyPrivacyEnable()) {
+    if (AppPreference.getAppearance('app_safety_privacy_enable')) {
       try {
         this.windowClass.setWindowPrivacyMode(true, (err) => {
           const errCode = err.code;
@@ -153,7 +153,7 @@ struct Index {
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.token_loaded = false;
-        AppPreference.setAppDbKVSyncTime(new Date().toString());
+        AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
       });
 
     })
@@ -167,8 +167,8 @@ struct Index {
     this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setRdbSyncEnable(false);
-        AppPreference.setRdbCloudSyncEnable(false);
+        AppPreference.setAppearance('app_db_rds_sync_enable', false);
+        AppPreference.setAppearance('app_db_rds_cloud_sync_enable', false);
       }
     })
 
@@ -531,9 +531,9 @@ struct Index {
                       ListItem() {
                         TokenItem({
                           Config: token,
-                          TokenHideEnable: this.token_hide_enable,
-                          ShowNextTokenEnable: this.show_next_token_enable,
-                          SwapHostUserEnable: this.swap_host_user_enable,
+                          TokenHideEnable: this.token_hide_enable as boolean,
+                          ShowNextTokenEnable: this.show_next_token_enable as boolean,
+                          SwapHostUserEnable: this.swap_host_user_enable as boolean,
                           Update: async (conf_new) => {
                             this.updateTokenConfig(conf_new, false);
                           }
@@ -603,11 +603,11 @@ struct Index {
                 },
                 updateSettings: (key_name) => {
                   if (key_name === 'app_safety_hide_token_enable') {
-                    this.token_hide_enable = AppPreference.getSafetyHideTokenEnable();
+                    this.token_hide_enable = AppPreference.getAppearance('app_safety_hide_token_enable');
                   } else if (key_name == 'app_appearance_show_next_token_enable') {
-                    this.show_next_token_enable = AppPreference.getAppearanceShowNextTokenEnable();
+                    this.show_next_token_enable = AppPreference.getAppearance('app_appearance_show_next_token_enable');
                   } else if (key_name == 'app_appearance_swap_host_user_enable') {
-                    this.swap_host_user_enable = AppPreference.getAppearanceSwapHostUserEnable();
+                    this.swap_host_user_enable = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
                   }
 
                 }

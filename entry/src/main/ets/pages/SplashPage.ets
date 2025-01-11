@@ -56,9 +56,9 @@ struct SplashPage {
   }
 
   onPageShow(): void {
-    if (!AppPreference.getSafetyLockEnable()) {
+    if (!AppPreference.getAppearance('app_safety_lock_enable')) {
       router.replaceUrl({ url: 'pages/Index' });
-    } else if (AppPreference.getAppearanceAutoUnlockEnable()) {
+    } else if (AppPreference.getAppearance('app_appearance_auto_unlock_enable')) {
       this.requireUserAuth();
     }
   }
@@ -100,7 +100,7 @@ struct SplashPage {
     }
     .height('100%')
     .onClick(() => {
-      if (AppPreference.getSafetyLockEnable()) {
+      if (AppPreference.getAppearance('app_safety_lock_enable')) {
         this.requireUserAuth();
       } else {
         router.replaceUrl({ url: 'pages/Index' });

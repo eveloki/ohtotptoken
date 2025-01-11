@@ -5,7 +5,7 @@ import { generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
 import { router } from '@kit.ArkUI';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, SettingValue } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { SettingItem } from '../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -26,8 +26,8 @@ export struct SettingPage {
 
   @Local versionName?: string;
   @Local appName?: string;
-  @Local RdbSyncEnable: boolean = false;
-  @Local RdbCloudSyncEnable: boolean = false;
+  @Local RdbSyncEnable: SettingValue = false;
+  @Local RdbCloudSyncEnable: SettingValue = false;
   @Local Is_loaded: boolean = false;
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
@@ -42,8 +42,8 @@ export struct SettingPage {
     this.versionCode = bundleInfo?.versionCode;
     this.versionName = 'Version:' + bundleInfo?.versionName;
     this.appName = bundleInfo?.name;
-    this.RdbSyncEnable = AppPreference.getRdbSyncEnable();
-    this.RdbCloudSyncEnable = AppPreference.getRdbCloudSyncEnable();
+    this.RdbSyncEnable = AppPreference.getAppearance('app_db_rds_sync_enable');
+    this.RdbCloudSyncEnable = AppPreference.getAppearance('app_db_rds_cloud_sync_enable');
     //订阅权限变更
     this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
     this.str_about_app =
@@ -66,8 +66,8 @@ export struct SettingPage {
       //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setRdbSyncEnable(false);
-      AppPreference.setRdbCloudSyncEnable(false);
+      AppPreference.setAppearance('app_db_rds_sync_enable', false);
+      AppPreference.setAppearance('app_db_rds_cloud_sync_enable', false);
     }
   }
 
@@ -243,10 +243,10 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_safety') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
-                title: $r('app.string.setting_safety_privacy'), isOn: AppPreference.getSafetyPrivacyEnable(),
+                title: $r('app.string.setting_safety_privacy'), isOn: AppPreference.getAppearance('app_safety_privacy_enable') as boolean,
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setSafetyPrivacyEnable(IsOn);
+                  AppPreference.setAppearance('app_safety_privacy_enable', IsOn);
                 }
               })
 
@@ -254,7 +254,7 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.key_shield'),
-                title: $r('app.string.setting_safety_lock'), isOn: AppPreference.getSafetyLockEnable(),
+                title: $r('app.string.setting_safety_lock'), isOn: AppPreference.getAppearance('app_safety_lock_enable') as boolean,
                 description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -266,7 +266,7 @@ export struct SettingPage {
                       return;
                     }
                   }
-                  AppPreference.setSafetyLockEnable(IsOn);
+                  AppPreference.setAppearance('app_safety_lock_enable', IsOn);
                 }
               })
 
@@ -274,10 +274,10 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.eye_slash'),
-                title: $r('app.string.setting_hide_token'), isOn: AppPreference.getSafetyHideTokenEnable(),
+                title: $r('app.string.setting_hide_token'), isOn: AppPreference.getAppearance('app_safety_hide_token_enable') as boolean,
                 description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setSafetyHideTokenEnable(IsOn);
+                  AppPreference.setAppearance('app_safety_hide_token_enable', IsOn);
                   this.updateSettings('app_safety_hide_token_enable');
                 }
               })
@@ -289,10 +289,10 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.app_appearance') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.chevron_up_2_circle'),
-                title: $r('app.string.show_next_token'), isOn: AppPreference.getAppearanceShowNextTokenEnable(),
+                title: $r('app.string.show_next_token'), isOn: AppPreference.getAppearance('app_appearance_show_next_token_enable') as boolean,
                 description: $r('app.string.show_next_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearanceShowNextTokenEnable(IsOn);
+                  AppPreference.setAppearance('app_appearance_show_next_token_enable', IsOn);
                   this.updateSettings('app_appearance_show_next_token_enable');
                 }
               })
@@ -301,10 +301,10 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.transfer_station'),
-                title: $r('app.string.swap_host_user'), isOn: AppPreference.getAppearanceSwapHostUserEnable(),
+                title: $r('app.string.swap_host_user'), isOn: AppPreference.getAppearance('app_appearance_swap_host_user_enable') as boolean,
                 description: $r('app.string.swap_host_user_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearanceSwapHostUserEnable(IsOn);
+                  AppPreference.setAppearance('app_appearance_swap_host_user_enable', IsOn);
                   this.updateSettings('app_appearance_swap_host_user_enable');
                 }
               })
@@ -313,10 +313,10 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
-                title: $r('app.string.auto_unlock'), isOn: AppPreference.getAppearanceAutoUnlockEnable(),
+                title: $r('app.string.auto_unlock'), isOn: AppPreference.getAppearance('app_appearance_auto_unlock_enable') as boolean,
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearanceAutoUnlockEnable(IsOn);
+                  AppPreference.setAppearance('app_appearance_auto_unlock_enable', IsOn);
                 }
               })
             }
@@ -327,14 +327,14 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.data_sync') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.link'),
-                title: $r('app.string.data_rdb_sync'), isOn: this.RdbSyncEnable,
+                title: $r('app.string.data_rdb_sync'), isOn: this.RdbSyncEnable as boolean,
                 description: $r('app.string.data_rdb_sync_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbSyncEnable = IsOn;
-                  AppPreference.setRdbSyncEnable(IsOn);
+                  AppPreference.setAppearance('app_db_rds_sync_enable', IsOn);
                 }
               })
 
@@ -342,7 +342,7 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.icloud'),
-                title: $r('app.string.data_rdb_cloud_sync'), isOn: this.RdbCloudSyncEnable,
+                title: $r('app.string.data_rdb_cloud_sync'), isOn: this.RdbCloudSyncEnable as boolean,
                 description: $r('app.string.data_rdb_cloud_sync_des'),
                 disable: true,
                 onChange: (IsOn: boolean) => {
@@ -350,7 +350,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setRdbCloudSyncEnable(IsOn);
+                  AppPreference.setAppearance('app_db_rds_cloud_sync_enable', IsOn);
                 }
               })
                 .visibility(Visibility.None)

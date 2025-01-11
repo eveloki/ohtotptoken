@@ -1,10 +1,8 @@
 import { router } from '@kit.ArkUI';
-import { CommonConstants } from '../utils/CommonConstants';
 import { TopNavigationView } from '../components/TopNavigationView';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { SettingItem } from '../components/SettingItem';
 import { deviceInfo } from '@kit.BasicServicesKit';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, SettingValue } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { TokenStore } from '../utils/TokenStore';
 import { SubItemDivider } from '../components/SubItemDivider';
@@ -13,11 +11,11 @@ import { SubItemDivider } from '../components/SubItemDivider';
 @Entry
 @ComponentV2
 struct ShowDataSyncDetailsPage {
-  @Local AppDbKVSyncTime: string = '';
+  @Local AppDbKVSyncTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
 
   aboutToAppear(): void {
-    this.AppDbKVSyncTime = AppPreference.getAppDbKVSyncTime();
+    this.AppDbKVSyncTime = AppPreference.getAppearance('app_db_kv_sync_time');
     if (this.AppDbKVSyncTime == '' || this.AppDbKVSyncTime == null) {
       this.AppDbKVSyncTime = 'invalid';
     }
@@ -78,7 +76,7 @@ struct ShowDataSyncDetailsPage {
               ListItem() {
                 SettingItem({ title: $r('app.string.data_kv_sync_time') }) {
                   Row() {
-                    Text(this.AppDbKVSyncTime)
+                    Text(this.AppDbKVSyncTime as string)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
@@ -95,11 +93,12 @@ struct ShowDataSyncDetailsPage {
                     .onClick(() => {
                       this.Is_loaded=true;
                       TokenStore.getInstance().DataSync().then(()=>{
-                        setTimeout(()=>{
+                        setTimeout(() => {
                           this.Is_loaded=false;
-                          AppPreference.setAppDbKVSyncTime(new Date().toString());
-                          this.AppDbKVSyncTime=AppPreference.getAppDbKVSyncTime();},1500)
-                      })
+                          AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
+                          this.AppDbKVSyncTime = AppPreference.getAppearance('app_db_kv_sync_time');
+                          }, 1500);
+                      });
                     })
                 }
               }
