@@ -211,7 +211,7 @@ export function copyText(text: string, msg: string = '') {
   }
 }
 
-const iconsArray: Array<string> =
+const default_icon_pack: Array<string> =
   ['1and1', '1password', '23andme', 'adafruit', 'adguard', 'adobe', 'airbnb', 'airbrake', 'airtable', 'allegropl',
     'alwaysdata', 'amazon', 'amazonwebservices', 'angellist', 'animebytes', 'anonaddy', 'apache', 'apple', 'appveyor',
     'arenanet', 'atlantic_net', 'atlassian', 'avm', 'backblaze', 'battlenet', 'betterment', 'binance', 'bitbucket',
@@ -241,13 +241,13 @@ const iconsArray: Array<string> =
     'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
     'zoho', 'zoom'];
 
-const iconsSet: HashSet<string> = new HashSet();
-for (let item of iconsArray) {
-  iconsSet.add(item);
+const default_icon_pack_set: HashSet<string> = new HashSet();
+for (let item of default_icon_pack) {
+  default_icon_pack_set.add(item);
 }
 
 export function getIconPathByIssuer(issuer: string): string {
-  if (iconsSet.has(issuer.toLowerCase())) {
+  if (default_icon_pack_set.has(issuer.toLowerCase())) {
     return 'icons/token_image_' + issuer.toLowerCase() + '.svg';
   }
   return '';

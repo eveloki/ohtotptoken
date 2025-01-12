@@ -16,6 +16,7 @@ import { showSaveFilePicker, showSelectFilePicker } from '../utils/FileUtils';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
+import { SubItemIconManager } from '../components/SubItemIconManager';
 
 @Preview
 @ComponentV2
@@ -347,6 +348,12 @@ export struct SettingPage {
                   ]);
                   this.appCtx.getApplicationContext().setColorMode(color_map.get(index));
                 }
+              })
+
+              SubItemDivider()
+
+              SubItemIconManager({
+                onChange: () => {}
               })
             }
           }

@@ -35,7 +35,7 @@ export struct TokenIcon {
       Shape() {
         Text(this.issuer.charAt(0).toUpperCase() )
           .fontWeight(FontWeight.Bold)
-          .fontSize(30)
+          .fontSize(26)
           .fontColor(0xFFFFFF)
           .height(40).width(40)
           .textAlign(TextAlign.Center)

@@ -335,6 +335,18 @@
     {
       "name": "setting_color_mode_light",
       "value": "亮色"
+    },
+    {
+      "name": "setting_icon_pack",
+      "value": "图标包"
+    },
+    {
+      "name": "setting_icon_pack_desc",
+      "value": "管理和导入Aegis格式的图标包。"
+    },
+    {
+      "name": "setting_icon_pack_preview",
+      "value": "%d 个已安装"
     }
   ]
 }

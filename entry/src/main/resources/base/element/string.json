@@ -335,6 +335,18 @@
     {
       "name": "setting_color_mode_light",
       "value": "Light"
+    },
+    {
+      "name": "setting_icon_pack",
+      "value": "Icon Pack"
+    },
+    {
+      "name": "setting_icon_pack_desc",
+      "value": "Manage and import Aegis format icon packs."
+    },
+    {
+      "name": "setting_icon_pack_preview",
+      "value": "%d installed"
     }
   ]
 }

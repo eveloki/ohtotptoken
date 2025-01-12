@@ -49,8 +49,6 @@ struct Index {
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
-  private alert_dialog_str: string =
-    getContext(this).resourceManager.getStringSync($r('app.string.alert_remove_confirm_msg'))
   private DropFilesDialogIsOpen:boolean=false;
 
   private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
@@ -401,7 +399,7 @@ struct Index {
       .padding(10)
       .onClick(async () => {
         AlertDialog.show({
-          message: util.format(this.alert_dialog_str, conf.TokenName),
+          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
           autoCancel: true,
           alignment: DialogAlignment.Center,
           primaryButton: {
