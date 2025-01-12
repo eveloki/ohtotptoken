@@ -138,7 +138,7 @@
     },
     {
       "name": "setting_safety_privacy_des",
-      "value": "禁止其他应用程序捕获您的屏幕，包括一次性密码。请注意，如果更改此设置，请重启应用程序。"
+      "value": "禁止其他应用程序捕获您的屏幕，包括一次性密码。"
     },
     {
       "name": "setting_safety_lock",

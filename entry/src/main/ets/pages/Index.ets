@@ -1,4 +1,3 @@
-import { window } from '@kit.ArkUI';
 import { bundleManager,common } from '@kit.AbilityKit';
 import { TokenConfig, otpType } from '../utils/TokenConfig';
 import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
@@ -42,7 +41,6 @@ struct Index {
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  private windowClass = AppStorage.get("windowClass") as window.Window;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
 
@@ -129,22 +127,6 @@ struct Index {
         })
       }
     })
-
-    //设置隐私模式
-    if (AppPreference.getAppearance('app_safety_privacy_enable')) {
-      try {
-        this.windowClass.setWindowPrivacyMode(true, (err) => {
-          const errCode = err.code;
-          if (errCode) {
-            console.error('Failed to set the window to privacy mode. Cause:' + JSON.stringify(err));
-            return;
-          }
-          console.info('Succeeded in setting the window to privacy mode.');
-        });
-      } catch (exception) {
-        console.error('Failed to set the window to privacy mode. Cause:' + JSON.stringify(exception));
-      }
-    }
 
     this.GetPrivacyManageInfo();
     //订阅KV数据库同步完成事件

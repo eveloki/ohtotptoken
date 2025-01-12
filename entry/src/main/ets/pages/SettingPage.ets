@@ -15,6 +15,7 @@ import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/Token
 import { showSaveFilePicker, showSelectFilePicker } from '../utils/FileUtils';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
+import { window } from '@kit.ArkUI';
 
 @Preview
 @ComponentV2
@@ -34,6 +35,7 @@ export struct SettingPage {
   private backup_is_input: boolean = true;
   private backup_select_uri: string = '';
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+  private windowClass = AppStorage.get("windowClass") as window.Window;
   private versionCode?: number;
   private str_about_app: string = '';
   private str_opensource_leg: string = '';
@@ -248,6 +250,13 @@ export struct SettingPage {
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_safety_privacy_enable', IsOn);
+                  try {
+                    this.windowClass.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
+                      console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+                    });
+                  } catch (exception) {
+                    console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+                  }
                 }
               })
 

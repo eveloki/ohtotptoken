@@ -80,7 +80,7 @@ export default class EntryAbility extends UIAbility {
         AppStorage.setOrCreate("appTopAvoidHeight", px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height));
 
         // apply app settings
-        this.applySettings();
+        this.applySettings(windowClass);
 
         hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
       });
@@ -108,7 +108,8 @@ export default class EntryAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
   }
 
-  applySettings(): void {
+  applySettings(windowClass: window.Window): void {
+    // Color Mode
     const color_mode = AppPreference.getAppearance('app_appearance_color_mode') as number;
     const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
       [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
@@ -116,6 +117,18 @@ export default class EntryAbility extends UIAbility {
       [SettingColorMode.Light, ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT],
     ]);
     this.context.getApplicationContext().setColorMode(color_map.get(color_mode ?? 0));
+
+    // 设置隐私模式
+    let privacy_mode = AppPreference.getAppearance('app_safety_privacy_enable') as boolean;
+    if (privacy_mode) {
+      try {
+        windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {
+          console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+        });
+      } catch (exception) {
+        console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+      }
+    }
   }
 
   //初始化RDB数据库

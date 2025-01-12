@@ -138,7 +138,7 @@
     },
     {
       "name": "setting_safety_privacy_des",
-      "value": "Prohibit other applications from capturing your screen, including one-time passwords. Please note that if you change this setting, please restart the application."
+      "value": "Prohibit other applications from capturing your screen, including one-time passwords."
     },
     {
       "name": "setting_safety_lock",
