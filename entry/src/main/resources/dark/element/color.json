@@ -35,6 +35,10 @@
     {
       "name": "tab_bar_bg",
       "value": "#101010"
+    },
+    {
+      "name": "icon_pack_bg",
+      "value": "#FF484747"
     }
   ]
 }

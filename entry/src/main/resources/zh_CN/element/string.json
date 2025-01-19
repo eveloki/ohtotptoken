@@ -347,6 +347,30 @@
     {
       "name": "setting_icon_pack_preview",
       "value": "%d 个已安装"
+    },
+    {
+      "name": "app_guide_msg",
+      "value": "点击下方+添加令牌"
+    },
+    {
+      "name": "setting_add_icon_pack",
+      "value": "添加图标包"
+    },
+    {
+      "name": "alert_icon_pack_remove_confirm_msg",
+      "value": "确认删除%s图标包吗?"
+    },
+    {
+      "name": "setting_icon_pack_count",
+      "value": "共%d个图标"
+    },
+    {
+      "name": "setting_icon_pack_title",
+      "value": "%s(v%s)"
+    },
+    {
+      "name": "setting_icon_pack_info",
+      "value": "推荐的图标包:"
     }
   ]
 }

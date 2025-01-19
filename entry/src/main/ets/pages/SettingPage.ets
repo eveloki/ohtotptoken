@@ -338,7 +338,7 @@ export struct SettingPage {
                 title: $r('app.string.setting_color_mode'),
                 values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'), $r('app.string.setting_color_mode_light'),],
                 description: $r('app.string.setting_color_mode_desc'),
-                selected: AppPreference.getAppearance('app_appearance_color_mode') as number,
+                selected: AppPreference.getAppearance('app_appearance_color_mode') as number ?? SettingColorMode.System,
                 onChange: (index: number) => {
                   AppPreference.setAppearance('app_appearance_color_mode', index);
                   const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([

@@ -252,3 +252,17 @@ export function getIconPathByIssuer(issuer: string): string {
   }
   return '';
 }
+
+export class AegisIcon {
+  public filename: string = '';
+  public category: string = '';
+  public issuer: string[] = [];
+}
+
+export class AegisIconPack {
+  public on_device_path: string = '';
+  public uuid: string = '';
+  public name: string = '';
+  public version: number = 0;
+  public icons: AegisIcon[] = [];
+}

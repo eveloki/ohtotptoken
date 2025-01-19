@@ -43,6 +43,10 @@
     {
       "name": "itemInactivated",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "icon_pack_bg",
+      "value": "#FFECEBEB"
     }
   ]
 }

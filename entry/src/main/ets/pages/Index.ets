@@ -110,6 +110,14 @@ struct Index {
       });
     });
 
+    // create icon pack dir
+    const icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
+    fs.access(icon_pack_dir).then((res) => {
+      if (!res) {
+        fs.mkdir(icon_pack_dir);
+      }
+    });
+
     // save certification for forti token
     let cer_path = getContext(this).cacheDir + "/fmt.ks"
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
@@ -499,6 +507,18 @@ struct Index {
           Tabs() {
             TabContent() {
               Stack({ alignContent: Alignment.BottomEnd }) {
+                if (this.CurrentTokens.length === 0) {
+                  Row() {
+                    Text($r('app.string.app_guide_msg'))
+                      .textAlign(TextAlign.Center)
+                      .fontSize(20)
+                      .width('100%')
+                  }
+                  .alignItems(VerticalAlign.Center)
+                  .width('100%')
+                  .height('100%')
+
+                }
                 Column() {
 
                   List({ space: 10, initialIndex: 0 }) {

@@ -347,6 +347,30 @@
     {
       "name": "setting_icon_pack_preview",
       "value": "%d installed"
+    },
+    {
+      "name": "app_guide_msg",
+      "value": "Click the + below to add a token"
+    },
+    {
+      "name": "setting_add_icon_pack",
+      "value": "Add New ICON Pack"
+    },
+    {
+      "name": "alert_icon_pack_remove_confirm_msg",
+      "value": "Confirm to remove icon pack %s?"
+    },
+    {
+      "name": "setting_icon_pack_count",
+      "value": "total %d icon(s)"
+    },
+    {
+      "name": "setting_icon_pack_title",
+      "value": "%s(v%s)"
+    },
+    {
+      "name": "setting_icon_pack_info",
+      "value": "Recommended Icon Pack:"
     }
   ]
 }

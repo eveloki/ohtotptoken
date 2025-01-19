@@ -46,7 +46,9 @@ export class AppPreference {
   public static async loadSettings(): Promise<void> {
     const promises = Array.from(AppPreference.settings.keys()).map(async (k) => {
       await AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
-        AppPreference.settings[k] = val;
+        if (val !== undefined) {
+          AppPreference.settings[k] = val;
+        }
       })
     });
     await Promise.all(promises);
