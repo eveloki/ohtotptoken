@@ -1,4 +1,4 @@
-import { HMACAlgorithm, getIconPathByIssuer } from './TokenUtils';
+import { HMACAlgorithm } from './TokenUtils';
 import { util } from '@kit.ArkTS';
 import { maFile } from './SteamUtils';
 

@@ -1,10 +1,16 @@
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
-import { buffer, HashSet } from '@kit.ArkTS';
+import { buffer, HashMap, HashSet } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 import { TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
+import { image } from '@kit.ImageKit';
+import { readFileContent } from './FileUtils';
+import { fileIo } from '@kit.CoreFileKit';
+import { resourceManager } from '@kit.LocalizationKit';
+import { AppPreference } from './AppPreference';
+import { TokenIcon } from '../components/TokenIcon';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -211,46 +217,107 @@ export function copyText(text: string, msg: string = '') {
   }
 }
 
-const default_icon_pack: Array<string> =
-  ['1and1', '1password', '23andme', 'adafruit', 'adguard', 'adobe', 'airbnb', 'airbrake', 'airtable', 'allegropl',
-    'alwaysdata', 'amazon', 'amazonwebservices', 'angellist', 'animebytes', 'anonaddy', 'apache', 'apple', 'appveyor',
-    'arenanet', 'atlantic_net', 'atlassian', 'avm', 'backblaze', 'battlenet', 'betterment', 'binance', 'bitbucket',
-    'bitcoin', 'bitdefender', 'bitfinex', 'bitmex', 'bitpanda', 'bitstamp', 'bittrex', 'bitwala', 'bitwarden',
-    'blockchain_info', 'bugcrowd', 'cexio', 'church_tools', 'cisco', 'cloudflare', 'cloud_download', 'cobranded',
-    'codegiant', 'coinbase', 'coinjar', 'computerbase', 'connectwise_manage', 'cozycloud', 'crowdin', 'dashlane',
-    'debian', 'degiro', 'denic', 'deutsche_bahn', 'diaspora', 'digidentity', 'digital_ocean', 'discord', 'discourse',
-    'disroot', 'docker', 'docusign', 'dreamhost', 'dropbox', 'drupal', 'electronic_arts', 'email', 'epic_games', 'etsy',
-    'eveonline', 'evernote', 'facebook', 'faceit', 'fanatical', 'fastmail', 'figma', 'fingerprint', 'finnair',
-    'firefox', 'flight_takeoff', 'floatplane', 'forti', 'friendica', 'fritz', 'gamepad', 'gandi', 'git', 'gitea', 'github',
-    'gitlab', 'gmx', 'godaddy', 'gogs', 'google', 'govuk', 'grav', 'greenhost', 'hackerone', 'heroku', 'hetzner',
-    'hitbtc', 'hmrc', 'home_assistant', 'hover', 'humblebundle', 'hurricane_electric', 'ibm', 'iconomi', 'ifttt', 'ing',
-    'instagram', 'inwx', 'itchio', 'jagex', 'jetbrains', 'joomla', 'keeper', 'kickstarter', 'kraken', 'kucoin',
-    'lastpass', 'librenms', 'lichess', 'linkedin', 'linode', 'liqui', 'livelyme', 'lobsters', 'localbitcoins',
-    'localmonero', 'login_gov', 'logmein', 'mailbox', 'mailchimp', 'mailcow', 'mailgun', 'mailru', 'mapbox', 'mastodon',
-    'matomo', 'mega', 'mercadolibre', 'microsoft', 'microsoft_teams', 'migadu', 'miles_and_more', 'mint', 'miraheze',
-    'mixer', 'mongodb', 'mvpsnet', 'namecheap', 'namecom', 'nas', 'netcup', 'nextcloud', 'nintendo', 'no_starch_press',
-    'npm', 'oculus', 'office', 'okta', 'online', 'openvz', 'opnsense', 'orcid', 'origin', 'ovh', 'packet',
-    'parsecgaming', 'passwordstate', 'patreon', 'paypal', 'paysafecard', 'paywithprivacy', 'pcloud', 'phabricator',
-    'phpmyadmin', 'pluralsight', 'plurk', 'posteo', 'pretix', 'prey', 'private_internet_access', 'protonmail',
-    'proxmox', 'pushover', 'pypi', 'python_anywhere', 'rackspace', 'reddit', 'revolt', 'ripe_ncc', 'ripio', 'robinhood',
-    'rocketbeanstv', 'rockstar', 'rss', 'sap', 'scaleway', 'school', 'sciebo', 'sentry', 'sevdesk', 'skrill', 'slack',
-    'snapchat', 'sophos', 'sourceforge', 'squarespace', 'standardnotes', 'starcitizen', 'steam', 'stripe', 'sync',
-    'synology', 'teahub', 'teamviewer', 'terminal', 'todoalojamiento', 'transip', 'trello', 'tumblr', 'turbotax',
-    'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt', 'ubuntu_one', 'unity',
-    'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet', 'wargaming', 'wasabi',
-    'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
-    'zoho', 'zoom'];
+export class OTPDefaultIconPack {
+  public name: string = "Default";
+  public issuers: Array<string> =
+    ['1and1', '1password', '23andme', 'adafruit', 'adguard', 'adobe', 'airbnb', 'airbrake', 'airtable', 'allegropl',
+      'alwaysdata', 'amazon', 'amazonwebservices', 'angellist', 'animebytes', 'anonaddy', 'apache', 'apple', 'appveyor',
+      'arenanet', 'atlantic_net', 'atlassian', 'avm', 'backblaze', 'battlenet', 'betterment', 'binance', 'bitbucket',
+      'bitcoin', 'bitdefender', 'bitfinex', 'bitmex', 'bitpanda', 'bitstamp', 'bittrex', 'bitwala', 'bitwarden',
+      'blockchain_info', 'bugcrowd', 'cexio', 'church_tools', 'cisco', 'cloudflare', 'cloud_download', 'cobranded',
+      'codegiant', 'coinbase', 'coinjar', 'computerbase', 'connectwise_manage', 'cozycloud', 'crowdin', 'dashlane',
+      'debian', 'degiro', 'denic', 'deutsche_bahn', 'diaspora', 'digidentity', 'digital_ocean', 'discord', 'discourse',
+      'disroot', 'docker', 'docusign', 'dreamhost', 'dropbox', 'drupal', 'electronic_arts', 'email', 'epic_games', 'etsy',
+      'eveonline', 'evernote', 'facebook', 'faceit', 'fanatical', 'fastmail', 'figma', 'fingerprint', 'finnair',
+      'firefox', 'flight_takeoff', 'floatplane', 'forti', 'friendica', 'fritz', 'gamepad', 'gandi', 'git', 'gitea', 'github',
+      'gitlab', 'gmx', 'godaddy', 'gogs', 'google', 'govuk', 'grav', 'greenhost', 'hackerone', 'heroku', 'hetzner',
+      'hitbtc', 'hmrc', 'home_assistant', 'hover', 'humblebundle', 'hurricane_electric', 'ibm', 'iconomi', 'ifttt', 'ing',
+      'instagram', 'inwx', 'itchio', 'jagex', 'jetbrains', 'joomla', 'keeper', 'kickstarter', 'kraken', 'kucoin',
+      'lastpass', 'librenms', 'lichess', 'linkedin', 'linode', 'liqui', 'livelyme', 'lobsters', 'localbitcoins',
+      'localmonero', 'login_gov', 'logmein', 'mailbox', 'mailchimp', 'mailcow', 'mailgun', 'mailru', 'mapbox', 'mastodon',
+      'matomo', 'mega', 'mercadolibre', 'microsoft', 'microsoft_teams', 'migadu', 'miles_and_more', 'mint', 'miraheze',
+      'mixer', 'mongodb', 'mvpsnet', 'namecheap', 'namecom', 'nas', 'netcup', 'nextcloud', 'nintendo', 'no_starch_press',
+      'npm', 'oculus', 'office', 'okta', 'online', 'openvz', 'opnsense', 'orcid', 'origin', 'ovh', 'packet',
+      'parsecgaming', 'passwordstate', 'patreon', 'paypal', 'paysafecard', 'paywithprivacy', 'pcloud', 'phabricator',
+      'phpmyadmin', 'pluralsight', 'plurk', 'posteo', 'pretix', 'prey', 'private_internet_access', 'protonmail',
+      'proxmox', 'pushover', 'pypi', 'python_anywhere', 'rackspace', 'reddit', 'revolt', 'ripe_ncc', 'ripio', 'robinhood',
+      'rocketbeanstv', 'rockstar', 'rss', 'sap', 'scaleway', 'school', 'sciebo', 'sentry', 'sevdesk', 'skrill', 'slack',
+      'snapchat', 'sophos', 'sourceforge', 'squarespace', 'standardnotes', 'starcitizen', 'steam', 'stripe', 'sync',
+      'synology', 'teahub', 'teamviewer', 'terminal', 'todoalojamiento', 'transip', 'trello', 'tumblr', 'turbotax',
+      'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt', 'ubuntu_one', 'unity',
+      'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet', 'wargaming', 'wasabi',
+      'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
+      'zoho', 'zoom'];
 
-const default_icon_pack_set: HashSet<string> = new HashSet();
-for (let item of default_icon_pack) {
-  default_icon_pack_set.add(item);
+  private default_icon_pack_set: HashSet<string> = new HashSet();
+
+  public getIconPathByIssuer(issuer: string): string {
+    if (this.default_icon_pack_set.has(issuer.toLowerCase())) {
+      return 'icons/token_image_' + issuer.toLowerCase() + '.svg';
+    }
+    return '';
+  }
+
+  public constructor() {
+    for (let issuer of this.issuers) {
+      this.default_icon_pack_set.add(issuer);
+    }
+  }
 }
 
-export function getIconPathByIssuer(issuer: string): string {
-  if (default_icon_pack_set.has(issuer.toLowerCase())) {
-    return 'icons/token_image_' + issuer.toLowerCase() + '.svg';
+export class TokenIconPacks {
+  public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
+  public static aegis_icon_packs: AegisIconPack[] = [];
+  public static selected_icon_pack: number = AppPreference.getAppearance('app_appearance_icon_pack_selected') as number ?? 0;
+
+  public static async addAegisIconPack(path: string): Promise<void> {
+    const icon_path_json = path + "/pack.json";
+    if (!fileIo.accessSync(icon_path_json)) {
+      promptAction.showToast({ message: "not a valid aegis icon pack" });
+      return;
+    }
+    if (TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path === path).length > 0) {
+      promptAction.showToast({ message: "already installed" });
+      return;
+    }
+    return readFileContent(icon_path_json).then((val) => {
+      let pack: AegisIconPack = new AegisIconPack();
+      const tmp = JSON.parse(val) as AegisIconPack;
+      pack.uuid = tmp.uuid;
+      pack.name = tmp.name ?? 'invalid';
+      pack.version = tmp.version ?? 0;
+      pack.icons = tmp.icons ?? [];
+      pack.on_device_path = path;
+      pack.buildUpHashMap();
+      TokenIconPacks.aegis_icon_packs.push(pack);
+
+    })
   }
-  return '';
+
+  public static async removeAegisIconPack(icon_pack: AegisIconPack): Promise<void> {
+    TokenIconPacks.aegis_icon_packs = TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path !== icon_pack.on_device_path);
+    return fileIo.rmdir(icon_pack.on_device_path);
+  }
+
+  public static getIconByIssuer(issuer: string): ResourceStr | undefined {
+    if (TokenIconPacks.selected_icon_pack === 0) {
+      const icon_path = TokenIconPacks.default_icon_pack.getIconPathByIssuer(issuer);
+      if (icon_path === '') {
+        return undefined;
+      }
+      return $rawfile(icon_path);
+    } else {
+      const index = (TokenIconPacks.selected_icon_pack - 1) % TokenIconPacks.aegis_icon_packs.length;
+      if (TokenIconPacks.aegis_icon_packs.length === 0) {
+        return undefined;
+      }
+      const icon_path = TokenIconPacks.aegis_icon_packs[index].getIconPathByIssuer(issuer);
+      if (icon_path === '') {
+        return undefined;
+      }
+      return "file://" + icon_path;
+    }
+  }
 }
 
 export class AegisIcon {
@@ -265,4 +332,26 @@ export class AegisIconPack {
   public name: string = '';
   public version: number = 0;
   public icons: AegisIcon[] = [];
+
+  private aegis_icon_pack_set: HashMap<string, string> = new HashMap();
+
+  public buildUpHashMap(): void {
+    for (let icon of this.icons) {
+      for (let issuer of icon.issuer) {
+        this.aegis_icon_pack_set.set(issuer.toLowerCase(), icon.filename);
+      }
+    }
+  }
+
+  public getIconPathByIssuer(issuer: string): string {
+    const key = issuer.toLowerCase();
+    if (this.aegis_icon_pack_set.hasKey(key)) {
+      return this.on_device_path + "/" + this.aegis_icon_pack_set.get(key);
+    }
+    return '';
+  }
+
+  public constructor() {
+  }
+
 }

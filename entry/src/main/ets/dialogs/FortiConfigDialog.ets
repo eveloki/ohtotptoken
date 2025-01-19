@@ -1,5 +1,5 @@
 import { TokenConfig } from '../utils/TokenConfig';
-import { base32Decode, base32Encode, stringToIntArray, getIconPathByIssuer, ScanBarCode } from '../utils/TokenUtils'
+import { base32Decode, base32Encode, stringToIntArray, ScanBarCode } from '../utils/TokenUtils'
 import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';

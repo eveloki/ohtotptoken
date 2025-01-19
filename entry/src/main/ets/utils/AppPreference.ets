@@ -25,6 +25,8 @@ export class AppPreference {
     ['app_appearance_auto_unlock_enable', false],
     // 外观-颜色模式
     ['app_appearance_color_mode', SettingColorMode.System],
+    // 外观-图标包
+    ['app_appearance_icon_pack_selected', 0],
     // 数据库是否启用云同步
     ['app_db_rds_cloud_sync_enable', false],
     // 数据库是否启用跨设备流转

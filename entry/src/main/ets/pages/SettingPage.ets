@@ -353,7 +353,9 @@ export struct SettingPage {
               SubItemDivider()
 
               SubItemIconManager({
-                onChange: () => {}
+                onUpdate: () => {
+
+                }
               })
             }
           }

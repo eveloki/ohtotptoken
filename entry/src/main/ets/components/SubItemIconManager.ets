@@ -1,38 +1,22 @@
 import { common } from '@kit.AbilityKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
-import { readFileContent, showSelectFilePicker } from '../utils/FileUtils';
-import { AegisIconPack } from '../utils/TokenUtils';
+import { showSelectFilePicker } from '../utils/FileUtils';
+import { AegisIconPack, TokenIconPacks } from '../utils/TokenUtils';
 import { BusinessError, zlib } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { SubItemDivider } from './SubItemDivider';
+import { AppPreference } from '../utils/AppPreference';
 
 @Preview
 @ComponentV2
 export struct SubItemIconManager {
-  @Require @Param onChange: (selected: number) => void = () => {};
+  @Require @Param onUpdate: () => void = () => {};
   @Local collapsed: boolean = true;
-  @Local installed_icon_pack: AegisIconPack[] = [];
+  @Local installed_icon_pack: AegisIconPack[] = TokenIconPacks.aegis_icon_packs;
+  @Local selected_icon_pack: number = TokenIconPacks.selected_icon_pack;
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
-
-  aboutToAppear(): void {
-    this.refreshIconPack();
-  }
-
-  refreshIconPack(): void {
-    this.installed_icon_pack = [];
-    fs.listFile(this.icon_pack_dir).then((paths) => {
-      paths.forEach((path) => {
-        const icon_path_json = this.icon_pack_dir + "/" + path + "/pack.json";
-        readFileContent(icon_path_json).then((val) => {
-          let pack = JSON.parse(val) as AegisIconPack;
-          pack.on_device_path = this.icon_pack_dir + "/" + path;
-          this.installed_icon_pack.push(pack);
-        })
-      })
-    });
-  }
 
   build() {
     Column() {
@@ -101,6 +85,7 @@ export struct SubItemIconManager {
               .alignItems(HorizontalAlign.Center)
               .layoutWeight(1)
             }
+            .margin({ bottom: 5 })
             .padding(10)
             .borderRadius(10)
             .backgroundColor($r('app.color.icon_pack_bg'))
@@ -108,9 +93,50 @@ export struct SubItemIconManager {
             .justifyContent(FlexAlign.SpaceBetween)
           }
           List({ space: 5 }) {
-            ForEach(this.installed_icon_pack, (icon_pack: AegisIconPack) => {
-              ListItem(){
+            ListItem() {
+              Row() {
+                Radio({ value: '', group: 'icon_pack' })
+                  .checked( this.selected_icon_pack === 0)
+                  .onChange((checked) => {
+                    if (checked) {
+                      TokenIconPacks.selected_icon_pack = 0;
+                      this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
+                      AppPreference.setAppearance('app_appearance_icon_pack_selected', 0);
+                      this.appCtx.eventHub.emit('onIconPackChanged');
+                    }
+                  })
+                Column() {
+                  Text($r('app.string.setting_icon_pack_title', TokenIconPacks.default_icon_pack.name, "20250119"))
+                    .fontSize($r('sys.float.ohos_id_text_size_body1'))
+                    .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                    .fontWeight(FontWeight.Regular)
+                    .textAlign(TextAlign.Start)
+                  Text($r('app.string.setting_icon_pack_count', TokenIconPacks.default_icon_pack.issuers.length))
+                    .fontSize($r('sys.float.ohos_id_text_size_body3'))
+                    .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                    .fontWeight(FontWeight.Regular)
+                    .textAlign(TextAlign.Start)
+                }
+                .alignItems(HorizontalAlign.Start)
+              }
+              .padding(10)
+              .borderRadius(10)
+              .backgroundColor($r('app.color.icon_pack_bg'))
+              .width('100%')
+            }
+            ForEach(this.installed_icon_pack, (icon_pack: AegisIconPack, index: number) => {
+              ListItem() {
                 Row() {
+                  Radio({ value: '', group: 'icon_pack' })
+                    .checked(this.selected_icon_pack === index + 1)
+                    .onChange((checked) => {
+                      if (checked) {
+                        TokenIconPacks.selected_icon_pack = index + 1;
+                        this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
+                        AppPreference.setAppearance('app_appearance_icon_pack_selected', index + 1);
+                        this.appCtx.eventHub.emit('onIconPackChanged');
+                      }
+                    })
                   Column() {
                     Text($r('app.string.setting_icon_pack_title', icon_pack.name, icon_pack.version.toString()))
                       .fontSize($r('sys.float.ohos_id_text_size_body1'))
@@ -124,6 +150,7 @@ export struct SubItemIconManager {
                       .textAlign(TextAlign.Start)
                   }
                   .alignItems(HorizontalAlign.Start)
+                  Blank()
                   Row() {
                     SymbolGlyph($r('sys.symbol.trash'))
                       .fontSize(20)
@@ -146,8 +173,13 @@ export struct SubItemIconManager {
                         value: $r('app.string.dialog_btn_confirm'),
                         fontColor: Color.Red,
                         action: async () => {
-                          fs.rmdir(icon_pack.on_device_path).then(() => {
-                            this.refreshIconPack();
+                          TokenIconPacks.removeAegisIconPack(icon_pack).then(() => {
+                            if (this.selected_icon_pack > index) {
+                              TokenIconPacks.selected_icon_pack = this.selected_icon_pack - 1;
+                              this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
+                              AppPreference.setAppearance('app_appearance_icon_pack_selected', this.selected_icon_pack);
+                            }
+                            this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
                           });
                         }
                       }
@@ -158,7 +190,6 @@ export struct SubItemIconManager {
                 .borderRadius(10)
                 .backgroundColor($r('app.color.icon_pack_bg'))
                 .width('100%')
-                .justifyContent(FlexAlign.SpaceBetween)
               }
               .width('100%')
             }, (icon_pack: AegisIconPack) => {
@@ -172,18 +203,22 @@ export struct SubItemIconManager {
             .width('60%')
             .margin({ top: 10 })
             .onClick(() => {
-              showSelectFilePicker(1, ["ZIP File|.zip"]).then((paths) => {
-                fs.open(paths[0]).then((fd) => {
-                  const path_arr = fd.path.split('/');
-                  const file_name = path_arr[path_arr.length-1];
-                  const out_path = this.icon_pack_dir + "/" + file_name;
-                  fs.mkdir(out_path).finally(() => {
-                    zlib.decompressFile(fd.path, out_path).then(() => {
-                      this.refreshIconPack();
-                      fs.close(fd.fd);
-                    }).catch((reason: BusinessError) => {
-                      promptAction.showToast(reason)
-                      fs.close(fd.fd);
+              showSelectFilePicker(5, ["ZIP File|.zip"]).then((paths) => {
+                paths.forEach((path) => {
+                  fs.open(path).then((fd) => {
+                    const path_arr = fd.path.split('/');
+                    const file_name = path_arr[path_arr.length-1];
+                    const out_path = this.icon_pack_dir + "/" + file_name;
+                    fs.mkdir(out_path).finally(() => {
+                      zlib.decompressFile(fd.path, out_path).then(() => {
+                        TokenIconPacks.addAegisIconPack(out_path).then(() => {
+                          this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
+                          fs.close(fd.fd);
+                        });
+                      }).catch((reason: BusinessError) => {
+                        promptAction.showToast(reason)
+                        fs.close(fd.fd);
+                      });
                     });
                   });
                 });

@@ -1,17 +1,36 @@
 import { ConfigurationConstant } from "@kit.AbilityKit";
-import { getIconPathByIssuer } from "../utils/TokenUtils";
+import { TokenIconPacks } from "../utils/TokenUtils";
+import { image } from "@kit.ImageKit";
+import { drawing } from "@kit.ArkGraphics2D";
+import { BusinessError } from "@kit.BasicServicesKit";
+import { promptAction } from "@kit.ArkUI";
 
 @Preview
 @ComponentV2
 export struct TokenIcon {
   @Require @Param issuer: string = '';
-  @Local icon: string = getIconPathByIssuer(this.issuer.trim());
+  @Local icon: ResourceStr | undefined = TokenIconPacks.getIconByIssuer(this.issuer);
+  @Local applyColorFilter: boolean = TokenIconPacks.selected_icon_pack === 0;
 
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
     monitor.dirty.forEach((path: string) => {
-      this.icon = getIconPathByIssuer((monitor.value(path)?.now as string).trim())
+      this.refreshIcon((monitor.value(path)?.now as string).trim());
     })
+  }
+
+  refreshIcon(issuer: string): void {
+    this.icon = TokenIconPacks.getIconByIssuer(issuer);
+  }
+
+  onIconPackChanged(): void {
+    this.applyColorFilter = TokenIconPacks.selected_icon_pack === 0;
+    this.refreshIcon(this.issuer);
+  }
+
+  aboutToAppear(): void {
+    this.refreshIcon(this.issuer);
+    getContext(this).eventHub.on('onIconPackChanged', () => this.onIconPackChanged());
   }
 
   stringToColor(str: string): string {
@@ -31,7 +50,7 @@ export struct TokenIcon {
   }
 
   build() {
-    if (this.icon == '') {
+    if (this.icon === undefined) {
       Shape() {
         Text(this.issuer.charAt(0).toUpperCase() )
           .fontWeight(FontWeight.Bold)
@@ -44,14 +63,14 @@ export struct TokenIcon {
       .height(40).width(40)
       .borderRadius(20)
     } else {
-      if (AppStorage.get<number>('currentColorMode') === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
-        Image($rawfile(this.icon))
+      if (this.applyColorFilter && AppStorage.get<number>('currentColorMode') === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
+        Image(this.icon)
           .width(40)
           .height(40)
           .fillColor($r('app.color.item_fg'))
           .objectFit(ImageFit.Contain)
       } else {
-        Image($rawfile(this.icon))
+        Image(this.icon)
           .width(40)
           .height(40)
           .objectFit(ImageFit.Contain)

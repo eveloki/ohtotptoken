@@ -3,8 +3,6 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
-import { AppPreference } from '../utils/AppPreference';
-import { faceDetector } from '@kit.CoreVisionKit';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 

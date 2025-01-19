@@ -21,9 +21,10 @@ import { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup } from '../utils/TokenBackup';
-import { ScanBarCode } from '../utils/TokenUtils';
+import { AegisIconPack, ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
 import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
+import { readFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
 
@@ -43,6 +44,8 @@ struct Index {
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
+
+  private icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -111,10 +114,11 @@ struct Index {
     });
 
     // create icon pack dir
-    const icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
-    fs.access(icon_pack_dir).then((res) => {
+    fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
-        fs.mkdir(icon_pack_dir);
+        fs.mkdir(this.icon_pack_dir);
+      } else {
+        this.refreshIconPack();
       }
     });
 
@@ -123,7 +127,7 @@ struct Index {
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
       if (!exist) {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
-          let arr= getContext(this).resourceManager.getRawFileContentSync('ftm.ks')
+          let arr = getContext(this).resourceManager.getRawFileContentSync('ftm.ks')
           fs.write(cer_file.fd, arr.buffer).then((cnt) => {
             console.log('store fmt.ks to cache dir')
           })
@@ -213,6 +217,14 @@ struct Index {
     cornerRadius: 10,
   })
   //endregion
+
+  refreshIconPack(): void {
+    fs.listFile(this.icon_pack_dir).then((paths) => {
+      paths.forEach((path) => {
+        TokenIconPacks.addAegisIconPack(this.icon_pack_dir + "/" + path);
+      })
+    });
+  }
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);

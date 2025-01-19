@@ -1,6 +1,6 @@
 import { TokenConfig } from '../utils/TokenConfig';
 import { JSON, url } from '@kit.ArkTS';
-import { getIconPathByIssuer, ScanBarCode } from '../utils/TokenUtils';
+import { ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { readFileContent, showSelectFilePicker } from '../utils/FileUtils';
 import { maFile } from '../utils/SteamUtils';
