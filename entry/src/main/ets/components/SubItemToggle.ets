@@ -23,6 +23,7 @@ export struct SubItemToggle {
           .fontColor($r('sys.color.ohos_id_color_text_primary'))
           .fontWeight(FontWeight.Regular)
           .textAlign(TextAlign.Start)
+          .layoutWeight(2)
 
         Blank()
 
