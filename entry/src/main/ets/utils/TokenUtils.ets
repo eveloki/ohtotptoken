@@ -251,7 +251,7 @@ export class OTPDefaultIconPack {
 
   private default_icon_pack_set: HashSet<string> = new HashSet();
 
-  public default_icon_pack_path: string[] = [];
+  public default_icon_pack_path: HashSet<string> = new HashSet();
 
   public getIconPathByIssuer(issuer: string): string {
     if (this.default_icon_pack_set.has(issuer.toLowerCase())) {
@@ -263,7 +263,7 @@ export class OTPDefaultIconPack {
   public constructor() {
     for (let issuer of this.issuers) {
       this.default_icon_pack_set.add(issuer);
-      this.default_icon_pack_path.push('rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg');
+      this.default_icon_pack_path.add('rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg');
     }
   }
 }
@@ -321,7 +321,7 @@ export class AegisIcon {
   public filename: string = '';
   public category: string = '';
   public issuer: string[] = [];
-  public icon_pack_path: string[] = [];
+  public icon_pack_path: HashSet<string> = new HashSet();
 }
 
 export class AegisIconPack {
@@ -335,10 +335,10 @@ export class AegisIconPack {
 
   public buildUpHashMap(): void {
     for (let i = 0; i < this.icons.length; i++) {
-      this.icons[i].icon_pack_path = [];
+      this.icons[i].icon_pack_path = new HashSet();
       for (let issuer of this.icons[i].issuer) {
         this.aegis_icon_pack_set.set(issuer.toLowerCase(), this.icons[i].filename);
-        this.icons[i].icon_pack_path.push('file://' + this.on_device_path + "/" + this.icons[i].filename);
+        this.icons[i].icon_pack_path.add('file://' + this.on_device_path + "/" + this.icons[i].filename);
       }
     }
   }

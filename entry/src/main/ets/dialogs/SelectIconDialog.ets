@@ -36,7 +36,7 @@ export struct SelectIconDialog {
 
     // fill data source
     TokenIconPacks.default_icon_pack.default_icon_pack_path.forEach((path) => {
-      this.default_icon_data.pushData(path);
+      this.default_icon_data.pushData(path!);
     });
     TokenIconPacks.aegis_icon_packs.forEach((aegis_icon_pack) => {
       let data_source = new MyDataSource();
