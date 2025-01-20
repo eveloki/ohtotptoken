@@ -64,7 +64,7 @@ export struct SelectIconDialog {
         if (path === '') {
           Text($r('app.string.dialog_icon_default'))
         } else {
-          TokenIcon({ issuer: '', icon_path: path})
+          TokenIcon({ issuer: '', icon_path: path, bypassColorFilter: true })
         }
         Radio({ value: '', group: 'icon' })
           .width(20)

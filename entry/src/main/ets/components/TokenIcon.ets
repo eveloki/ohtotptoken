@@ -7,8 +7,9 @@ import { fileIo } from "@kit.CoreFileKit";
 export struct TokenIcon {
   @Require @Param issuer: string = '';
   @Param icon_path: string = '';
+  @Param bypassColorFilter: boolean = false;
   @Local icon: ResourceStr | undefined = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(this.issuer));
-  @Local applyColorFilter: boolean = TokenIconPacks.selected_icon_pack === 0;
+  @Local applyColorFilter: boolean = this.bypassColorFilter ? false : TokenIconPacks.selected_icon_pack === 0;
 
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
@@ -55,7 +56,7 @@ export struct TokenIcon {
   }
 
   onIconPackChanged(): void {
-    this.applyColorFilter = TokenIconPacks.selected_icon_pack === 0;
+    this.applyColorFilter = this.bypassColorFilter ? false : TokenIconPacks.selected_icon_pack === 0;
     this.refreshIcon(this.issuer);
   }
 
