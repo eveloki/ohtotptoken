@@ -251,9 +251,11 @@ export class OTPDefaultIconPack {
 
   private default_icon_pack_set: HashSet<string> = new HashSet();
 
+  public default_icon_pack_path: string[] = [];
+
   public getIconPathByIssuer(issuer: string): string {
     if (this.default_icon_pack_set.has(issuer.toLowerCase())) {
-      return 'icons/token_image_' + issuer.toLowerCase() + '.svg';
+      return 'rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg';
     }
     return '';
   }
@@ -261,6 +263,7 @@ export class OTPDefaultIconPack {
   public constructor() {
     for (let issuer of this.issuers) {
       this.default_icon_pack_set.add(issuer);
+      this.default_icon_pack_path.push('rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg');
     }
   }
 }
@@ -299,23 +302,17 @@ export class TokenIconPacks {
     return fileIo.rmdir(icon_pack.on_device_path);
   }
 
-  public static getIconByIssuer(issuer: string): ResourceStr | undefined {
+  public static getIconByIssuer(issuer: string): string {
     if (TokenIconPacks.selected_icon_pack === 0) {
       const icon_path = TokenIconPacks.default_icon_pack.getIconPathByIssuer(issuer);
-      if (icon_path === '') {
-        return undefined;
-      }
-      return $rawfile(icon_path);
+      return icon_path;
     } else {
       const index = (TokenIconPacks.selected_icon_pack - 1) % TokenIconPacks.aegis_icon_packs.length;
       if (TokenIconPacks.aegis_icon_packs.length === 0) {
-        return undefined;
+        return '';
       }
       const icon_path = TokenIconPacks.aegis_icon_packs[index].getIconPathByIssuer(issuer);
-      if (icon_path === '') {
-        return undefined;
-      }
-      return "file://" + icon_path;
+      return icon_path;
     }
   }
 }
@@ -324,6 +321,7 @@ export class AegisIcon {
   public filename: string = '';
   public category: string = '';
   public issuer: string[] = [];
+  public icon_pack_path: string[] = [];
 }
 
 export class AegisIconPack {
@@ -336,9 +334,11 @@ export class AegisIconPack {
   private aegis_icon_pack_set: HashMap<string, string> = new HashMap();
 
   public buildUpHashMap(): void {
-    for (let icon of this.icons) {
-      for (let issuer of icon.issuer) {
-        this.aegis_icon_pack_set.set(issuer.toLowerCase(), icon.filename);
+    for (let i = 0; i < this.icons.length; i++) {
+      this.icons[i].icon_pack_path = [];
+      for (let issuer of this.icons[i].issuer) {
+        this.aegis_icon_pack_set.set(issuer.toLowerCase(), this.icons[i].filename);
+        this.icons[i].icon_pack_path.push('file://' + this.on_device_path + "/" + this.icons[i].filename);
       }
     }
   }
@@ -346,7 +346,7 @@ export class AegisIconPack {
   public getIconPathByIssuer(issuer: string): string {
     const key = issuer.toLowerCase();
     if (this.aegis_icon_pack_set.hasKey(key)) {
-      return this.on_device_path + "/" + this.aegis_icon_pack_set.get(key);
+      return 'file://' + this.on_device_path + "/" + this.aegis_icon_pack_set.get(key);
     }
     return '';
   }

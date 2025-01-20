@@ -6,6 +6,7 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer, util } from '@kit.ArkTS';
 import promptAction from '@ohos.promptAction'
 import { TokenIcon } from '../components/TokenIcon';
+import { SelectIconDialog } from './SelectIconDialog';
 
 //"{\"d\":{\"__type\":\"SoftToken.MobileProvisionResponse\",\"__version\":\"\",\"__device_version\":\"\",\"__device_build\":\"\",\"mobile_id_hash\":\"\",\"seed\":\"\",\"token\":\"\",\"image_file\":\"\",\"pin_required\":\"\",\"pin_require_type\":\"\",\"pin_length\":0,\"counter\":0,\"encryption_key\":\"\",\"issuer\":\"\",\"result\":0,\"error\":{\"error_code\":40,\"error_message\":\"FTM token Activation Code is invalid\"}}}"
 class forti_server_resp_err {
@@ -33,11 +34,19 @@ export struct FortiConfigDialog {
   @State warn_dev_id_popup: boolean = false;
   @State btn_wait_from_forti: boolean = false;
 
-  private cache_dir: string = getContext(this).cacheDir;
-
   cancel?: () => void;
-
   confirm: (new_conf: string) => void = () => {};
+
+  dialog_icon_config = new CustomDialogController({
+    builder: SelectIconDialog({
+      issuer: this.conf.TokenIssuer,
+      confirm: (path) => {
+        this.conf.TokenIconPath = path;
+      }
+    })
+  });
+
+  private cache_dir: string = getContext(this).cacheDir;
 
   aboutToAppear(): void {
     if (this.conf_json != undefined && this.conf_json.length > 0) {
@@ -146,7 +155,10 @@ export struct FortiConfigDialog {
       }
       .height(10)
       Row() {
-        TokenIcon({ issuer: this.conf.TokenIssuer })
+        TokenIcon({ issuer: this.conf.TokenIssuer, icon_path: this.conf.TokenIconPath })
+          .onClick(() => {
+            this.dialog_icon_config.open()
+          })
         Text($r('app.string.tab_token_add_forti_key'))
           .fontSize(30)
           .fontWeight(FontWeight.Bold)

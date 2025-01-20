@@ -71,7 +71,7 @@ export struct TokenItem {
 
   build() {
     Row({ space: 10 }) {
-      TokenIcon({ issuer: this.Config.TokenIssuer })
+      TokenIcon({ issuer: this.Config.TokenIssuer, icon_path: this.Config.TokenIconPath })
       Column() {
         Text(this.SwapHostUserEnable ? this.Config.TokenName : this.Config.TokenIssuer)
           .textOverflow({ overflow: TextOverflow.MARQUEE })

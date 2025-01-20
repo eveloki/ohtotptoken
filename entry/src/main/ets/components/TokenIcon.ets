@@ -1,26 +1,57 @@
 import { ConfigurationConstant } from "@kit.AbilityKit";
 import { TokenIconPacks } from "../utils/TokenUtils";
-import { image } from "@kit.ImageKit";
-import { drawing } from "@kit.ArkGraphics2D";
-import { BusinessError } from "@kit.BasicServicesKit";
-import { promptAction } from "@kit.ArkUI";
+import { fileIo } from "@kit.CoreFileKit";
 
 @Preview
 @ComponentV2
 export struct TokenIcon {
   @Require @Param issuer: string = '';
-  @Local icon: ResourceStr | undefined = TokenIconPacks.getIconByIssuer(this.issuer);
+  @Param icon_path: string = '';
+  @Local icon: ResourceStr | undefined = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(this.issuer));
   @Local applyColorFilter: boolean = TokenIconPacks.selected_icon_pack === 0;
 
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
     monitor.dirty.forEach((path: string) => {
       this.refreshIcon((monitor.value(path)?.now as string).trim());
-    })
+    });
   }
 
-  refreshIcon(issuer: string): void {
-    this.icon = TokenIconPacks.getIconByIssuer(issuer);
+  @Monitor("icon_path")
+  onIconPathChange(monitor: IMonitor) {
+    monitor.dirty.forEach((path: string) => {
+      this.refreshIcon(this.issuer, (monitor.value(path)?.now as string).trim());
+    });
+  }
+
+  refreshIcon(issuer: string, path: string = ''): void {
+    this.icon = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(issuer), path);
+  }
+
+  validateUri(uri: string): ResourceStr | undefined {
+    if (uri === undefined) {
+      return undefined;
+    }
+    if (uri.length < 10) {
+      return undefined;
+    }
+    if (uri.startsWith('rawfile://')) {
+      return $rawfile(uri.slice(10));
+    }
+    if (!fileIo.accessSync(uri.slice(7))){
+      return undefined;
+    }
+    return uri;
+  }
+
+  getIconResourceStr(uri: string, path: string = ''): ResourceStr | undefined {
+    if (path === '') {
+      path = this.icon_path;
+    }
+    if (path !== '' && path !== undefined) {
+      return this.validateUri(this.icon_path);
+    }
+    return this.validateUri(uri);
   }
 
   onIconPackChanged(): void {

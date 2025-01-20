@@ -2,6 +2,7 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { url } from '@kit.ArkTS';
 import { HMACAlgorithm, ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
+import { SelectIconDialog } from './SelectIconDialog';
 
 @Entry
 @Preview
@@ -12,10 +13,19 @@ export struct TOTPConfigDialog {
   @State conf: TokenConfig = new TokenConfig();
   @State btn_camera_clicked: number = 0;
   //弹窗扫码值 初始化 给首页快速扫码使用
-  @State scan_code_original_Value:string='';
+  @State scan_code_original_Value:string = '';
 
   cancel?: () => void;
   confirm: (new_conf: string) => void = () => {};
+
+  dialog_icon_config = new CustomDialogController({
+    builder: SelectIconDialog({
+      issuer: this.conf.TokenIssuer,
+      confirm: (path) => {
+        this.conf.TokenIconPath = path;
+      }
+    })
+  });
 
   aboutToAppear(): void {
     if (this.conf_json != undefined && this.conf_json.length > 0) {
@@ -77,7 +87,10 @@ export struct TOTPConfigDialog {
       }
       .height(10)
       Row() {
-        TokenIcon({ issuer: this.conf.TokenIssuer })
+        TokenIcon({ issuer: this.conf.TokenIssuer, icon_path: this.conf.TokenIconPath })
+          .onClick(() => {
+            this.dialog_icon_config.open()
+          })
         Text($r('app.string.tab_token_add_key'))
           .fontSize(30)
           .fontWeight(FontWeight.Bold)

@@ -371,6 +371,14 @@
     {
       "name": "setting_icon_pack_info",
       "value": "Recommended Icon Pack:"
+    },
+    {
+      "name": "dialog_icon_recommend",
+      "value": "Recommend"
+    },
+    {
+      "name": "dialog_icon_default",
+      "value": "Default"
     }
   ]
 }

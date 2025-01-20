@@ -4,6 +4,7 @@ import { ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { readFileContent, showSelectFilePicker } from '../utils/FileUtils';
 import { maFile } from '../utils/SteamUtils';
+import { SelectIconDialog } from './SelectIconDialog';
 
 @Preview
 @CustomDialog
@@ -14,8 +15,16 @@ export struct SteamConfigDialog {
   @State btn_camera_clicked: number = 0;
 
   cancel?: () => void;
-
   confirm: (new_conf: string) => void = () => {};
+
+  dialog_icon_config = new CustomDialogController({
+    builder: SelectIconDialog({
+      issuer: this.conf.TokenIssuer,
+      confirm: (path) => {
+        this.conf.TokenIconPath = path;
+      }
+    })
+  });
 
   aboutToAppear(): void {
     if (this.conf_json != undefined && this.conf_json.length > 0) {
@@ -67,7 +76,10 @@ export struct SteamConfigDialog {
       }
       .height(10)
       Row() {
-        TokenIcon({ issuer: this.conf.TokenIssuer })
+        TokenIcon({ issuer: this.conf.TokenIssuer, icon_path: this.conf.TokenIconPath })
+          .onClick(() => {
+            this.dialog_icon_config.open()
+          })
         Text($r('app.string.tab_token_add_stream_key'))
           .fontSize(30)
           .fontWeight(FontWeight.Bold)

@@ -371,6 +371,14 @@
     {
       "name": "setting_icon_pack_info",
       "value": "推荐的图标包:"
+    },
+    {
+      "name": "dialog_icon_recommend",
+      "value": "推荐"
+    },
+    {
+      "name": "dialog_icon_default",
+      "value": "默认"
     }
   ]
 }

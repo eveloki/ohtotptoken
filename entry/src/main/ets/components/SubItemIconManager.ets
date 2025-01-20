@@ -213,6 +213,7 @@ export struct SubItemIconManager {
                       zlib.decompressFile(fd.path, out_path).then(() => {
                         TokenIconPacks.addAegisIconPack(out_path).then(() => {
                           this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
+                          this.appCtx.eventHub.emit('onIconPackChanged');
                           fs.close(fd.fd);
                         });
                       }).catch((reason: BusinessError) => {
