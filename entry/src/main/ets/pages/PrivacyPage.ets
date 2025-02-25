@@ -24,7 +24,7 @@ struct PrivacyPage {
   @State webViewController: webview.WebviewController = new webview.WebviewController();
   @State AppPrivacyManageInfoUrl:string ='';
   aboutToAppear(): void {
-     this.AppPrivacyManageInfoUrl=AppStorage.get("AppPrivacyManageInfoUrl") as string;
+     this.AppPrivacyManageInfoUrl = AppStorage.get("AppPrivacyManageInfoUrl") as string;
   }
 
   build() {

@@ -28,7 +28,9 @@ export struct TopNavigationView {
   build() {
     Row() {
       if (this.onBackClick) {
-        Image($r('app.media.ic_back'))
+        SymbolGlyph($r('sys.symbol.chevron_left'))
+          .fontSize(30)
+          .fontColor([$r('app.color.str_main')])
           .width($r('app.float.interactive_button_height'))
           .height($r('app.float.interactive_button_height'))
           .margin({ right: $r('app.float.lg_padding_margin') })
