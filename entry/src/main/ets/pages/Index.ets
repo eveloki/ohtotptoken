@@ -21,10 +21,9 @@ import { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup } from '../utils/TokenBackup';
-import { AegisIconPack, ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
+import { ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
 import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
-import { readFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
 
@@ -101,7 +100,7 @@ struct Index {
     router.clear();
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
-      AppStorage.setOrCreate("BundleInfo",bundleInfo);
+      AppStorage.setOrCreate("BundleInfo", bundleInfo);
     });
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl", 'https://www.duan.red/yylx/opt/privacy-statement-zh-cn.htm');
 
@@ -118,7 +117,9 @@ struct Index {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
       } else {
-        this.refreshIconPack();
+        if (TokenIconPacks.aegis_icon_packs.length === 0) {
+          this.refreshIconPack();
+        }
       }
     });
 
@@ -180,6 +181,7 @@ struct Index {
         this.DropFilesDialogController?.close();
         }, 250)
     });
+
     // periodically update timestamp for tokens
     setInterval(() => {
       this.updateTimestamp();
