@@ -379,6 +379,10 @@
     {
       "name": "dialog_icon_default",
       "value": "默认"
+    },
+    {
+      "name": "icon_alert_remove_confirm_msg",
+      "value": "是否删除这个图标?"
     }
   ]
 }

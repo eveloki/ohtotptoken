@@ -1,6 +1,7 @@
-import { common } from '@kit.AbilityKit';
 import { TokenIcon } from "../components/TokenIcon";
+import { showSelectFilePicker } from "../utils/FileUtils";
 import { AegisIconPack, TokenIconPacks } from "../utils/TokenUtils";
+import { fileIo } from "@kit.CoreFileKit";
 
 @Preview
 @CustomDialog
@@ -13,12 +14,12 @@ export struct SelectIconDialog {
   @State selected_icon_path: string = '';
 
   @State icon_matched_with_issuer: string[] = [''];
-  @State default_icon_pack_visable: boolean = true;
-  @State aegis_icon_pack_visable: boolean[] = [];
+  @State default_icon_pack_visible: boolean = true;
+  @State aegis_icon_pack_visible: boolean[] = [];
 
   private default_icon_data: MyDataSource = new MyDataSource();
+  private user_icon_data: MyDataSource = new MyDataSource();
   private aegis_icon_data: MyDataSource[] = [];
-  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
   aboutToAppear(): void {
     // find issuer's icon
@@ -28,7 +29,7 @@ export struct SelectIconDialog {
     }
     TokenIconPacks.aegis_icon_packs.forEach((aegis_icon_pack) => {
       const aegis_icon = aegis_icon_pack.getIconPathByIssuer(this.issuer);
-      this.aegis_icon_pack_visable.push(false);
+      this.aegis_icon_pack_visible.push(false);
       if (aegis_icon !== '') {
         this.icon_matched_with_issuer.push(aegis_icon);
       }
@@ -38,6 +39,11 @@ export struct SelectIconDialog {
     TokenIconPacks.default_icon_pack.default_icon_pack_path.forEach((path) => {
       this.default_icon_data.pushData(path!);
     });
+
+    TokenIconPacks.user_added_icon_packs.icon_path.forEach((path) => {
+      this.user_icon_data.pushData(path!);
+    });
+
     TokenIconPacks.aegis_icon_packs.forEach((aegis_icon_pack) => {
       let data_source = new MyDataSource();
       for (let icon of aegis_icon_pack.icons) {
@@ -58,25 +64,88 @@ export struct SelectIconDialog {
   }
 
   @Builder
-  ItemIcon(path: string, visable: boolean) {
+  ItemIcon(path: string, visible: boolean, removable: boolean) {
     ListItem() {
-      Stack() {
+      Stack( { alignContent: Alignment.TopStart } ) {
         if (path === '') {
           Text($r('app.string.dialog_icon_default'))
+            .margin({ top: 15 })
         } else {
           TokenIcon({ issuer: '', icon_path: path, bypassColorFilter: true })
         }
+
+        Button({ type: ButtonType.Circle }) {
+          SymbolGlyph($r('sys.symbol.plus'))
+            .fontSize(15)
+            .fontColor([Color.White])
+            .fontWeight(FontWeight.Medium)
+            .rotate({ angle: 45 })
+        }
+        .backgroundColor(Color.Red)
+        .width(20)
+        .height(20)
+        .margin({ left: 0, top: 0 })
+        .visibility(removable ? Visibility.Visible : Visibility.Hidden)
+        .onClick(() => {
+          AlertDialog.show({
+            message: $r('app.string.icon_alert_remove_confirm_msg'),
+            autoCancel: true,
+            alignment: DialogAlignment.Center,
+            primaryButton: {
+              defaultFocus: false,
+              value: $r('app.string.dialog_btn_cancel'),
+              action: () => {
+                return
+              }
+            },
+            secondaryButton: {
+              value: $r('app.string.dialog_btn_confirm'),
+              fontColor: Color.Red,
+              action: () => {
+                TokenIconPacks.user_added_icon_packs.removeIcon(path);
+                this.user_icon_data.removeData(path);
+              }
+            }
+          })
+        })
+
         Radio({ value: '', group: 'icon' })
           .width(20)
           .height(20)
-          .margin({ left:30, top: 30 })
+          .margin({ left: 20, top: 20 })
           .onChange((checked) => {
             if (checked) {
               this.selected_icon_path = path;
             }
           })
       }
-      .visibility(visable ? Visibility.Visible : Visibility.Hidden)
+      .visibility(visible ? Visibility.Visible : Visibility.Hidden)
+    }
+    .margin({ left: 10 })
+  }
+
+  @Builder
+  ItemIconAddButton() {
+    ListItem() {
+      Button({ type: ButtonType.Circle }) {
+        SymbolGlyph($r('sys.symbol.plus'))
+          .fontSize(30)
+          .fontWeight(FontWeight.Bold)
+          .fontColor([Color.Gray])
+      }
+      .backgroundColor(Color.Transparent)
+      .shadow({ radius: 10, color: Color.Gray })
+      .width(40)
+      .height(40)
+      .onClick(() => {
+        showSelectFilePicker(1, ["PNG|.png", "JPEG|.jpg"]).then((uris) => {
+          fileIo.open(uris[0]).then((file) => {
+            TokenIconPacks.user_added_icon_packs.addIcon(file);
+            this.user_icon_data.pushData(TokenIconPacks.user_added_icon_packs.latest_icon_path);
+          });
+
+        });
+      })
     }
     .margin({ left: 10 })
   }
@@ -86,25 +155,34 @@ export struct SelectIconDialog {
       List({ space: 10 }) {
         ListItemGroup({ header: this.itemHead($r('app.string.dialog_icon_recommend')) }) {
           ForEach(this.icon_matched_with_issuer, (icon_path: string) => {
-            this.ItemIcon(icon_path, true)
+            this.ItemIcon(icon_path, true, false)
           })
         }
+        ListItemGroup({ header: this.itemHead(TokenIconPacks.user_added_icon_packs.name) }) {
+          LazyForEach(this.user_icon_data, (path: string) => {
+            this.ItemIcon(path, true, true)
+          })
+          this.ItemIconAddButton()
+        }
+        .onClick(() => {
+          this.default_icon_pack_visible = !this.default_icon_pack_visible;
+        })
         ListItemGroup({ header: this.itemHead(TokenIconPacks.default_icon_pack.name) }) {
           LazyForEach(this.default_icon_data, (path: string) => {
-            this.ItemIcon(path, true)
+            this.ItemIcon(path, true, false)
           })
         }
         .onClick(() => {
-          this.default_icon_pack_visable = !this.default_icon_pack_visable;
+          this.default_icon_pack_visible = !this.default_icon_pack_visible;
         })
         ForEach(TokenIconPacks.aegis_icon_packs, (aegis_icon_pack: AegisIconPack, index: number) => {
           ListItemGroup({ header: this.itemHead(aegis_icon_pack.name) }) {
             LazyForEach(this.aegis_icon_data[index], (path: string) => {
-              this.ItemIcon(path, true)
+              this.ItemIcon(path, true, false)
             })
           }
           .onClick(() => {
-            this.aegis_icon_pack_visable[index] = !this.aegis_icon_pack_visable[index];
+            this.aegis_icon_pack_visible[index] = !this.aegis_icon_pack_visible[index];
           })
         }, (aegis_icon_pack: AegisIconPack) => {
           return aegis_icon_pack.on_device_path;
@@ -221,7 +299,6 @@ class BasicDataSource implements IDataSource {
   }
 }
 
-
 class MyDataSource extends BasicDataSource {
   private dataArray: string[] = [];
 
@@ -234,7 +311,15 @@ class MyDataSource extends BasicDataSource {
   }
 
   public pushData(data: string): void {
-    this.dataArray.push(data);
-    this.notifyDataAdd(this.dataArray.length - 1);
+    if (this.dataArray.findIndex(_ => _ === data) < 0) {
+      this.dataArray.push(data);
+      this.notifyDataAdd(this.dataArray.length - 1);
+    }
+  }
+
+  public removeData(data: string): void {
+    const index = this.dataArray.findIndex(_ => _ === data);
+    this.dataArray = this.dataArray.filter(_ => _ !== data);
+    this.notifyDataDelete(index);
   }
 }

@@ -5,12 +5,10 @@ import { TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
-import { image } from '@kit.ImageKit';
+import { fileIo as fs } from '@kit.CoreFileKit';
 import { readFileContent } from './FileUtils';
 import { fileIo } from '@kit.CoreFileKit';
-import { resourceManager } from '@kit.LocalizationKit';
 import { AppPreference } from './AppPreference';
-import { TokenIcon } from '../components/TokenIcon';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -268,10 +266,47 @@ export class OTPDefaultIconPack {
   }
 }
 
+export class UserAddedIconPack {
+  public name: string = "User Added";
+  public user_icon_path: string = '';
+  public icon_path: string[] = [];
+  public latest_icon_path: string = '';
+
+  public initIconPack(path: string): void {
+    this.user_icon_path = path;
+    if (fs.accessSync(path) === false) {
+      fs.mkdirSync(path);
+    }
+    fs.listFile(path).then((files) => {
+      files.forEach((file) => {
+        this.icon_path.push("file://" + this.user_icon_path + "/" + file);
+      })
+    });
+  }
+
+  public addIcon(file: fileIo.File): void {
+    this.latest_icon_path = "file://" + this.user_icon_path + "/" + file.name;
+    this.icon_path.push(this.latest_icon_path);
+    fs.copyFile(file.fd, this.user_icon_path + "/" + file.name);
+  }
+
+  public removeIcon(path: string): void {
+    this.icon_path = this.icon_path.filter(_ => _ !== path);
+    fs.unlink(path.slice(7));
+  }
+
+  public constructor() {}
+}
+
 export class TokenIconPacks {
   public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
   public static aegis_icon_packs: AegisIconPack[] = [];
+  public static user_added_icon_packs: UserAddedIconPack = new UserAddedIconPack();
   public static selected_icon_pack: number = AppPreference.getAppearance('app_appearance_icon_pack_selected') as number ?? 0;
+
+  public static async addUserIconPack(path: string): Promise<void> {
+    TokenIconPacks.user_added_icon_packs.initIconPack(path);
+  }
 
   public static async addAegisIconPack(path: string): Promise<void> {
     const icon_path_json = path + "/pack.json";

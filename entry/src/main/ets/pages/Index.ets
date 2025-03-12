@@ -45,6 +45,7 @@ struct Index {
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
 
   private icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
+  private user_icon_dir = this.appCtx.cacheDir + "/user_icon";
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -221,6 +222,7 @@ struct Index {
   //endregion
 
   refreshIconPack(): void {
+    TokenIconPacks.addUserIconPack(this.user_icon_dir);
     fs.listFile(this.icon_pack_dir).then((paths) => {
       paths.forEach((path) => {
         TokenIconPacks.addAegisIconPack(this.icon_pack_dir + "/" + path);
