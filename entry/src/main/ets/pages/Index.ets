@@ -404,8 +404,9 @@ struct Index {
         });
         this.dialog_qrcode.open();
       })
-      .margin({ right: 10 })
     }
+    .margin({ right: 10 })
+    .width(50)
   }
 
   @Builder
