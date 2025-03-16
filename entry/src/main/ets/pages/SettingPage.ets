@@ -53,7 +53,7 @@ export struct SettingPage {
     this.str_about_app =
       "Github: SolidFaker/ohtotptoken\n" +
       "E-mail: enbinli@outlook.com\n" +
-      "Contributors: @Solidfaker, @eveloki, @lsxuan12138\n" +
+      "Contributors: @Solidfaker, @eveloki, @lsxuan12138, @TomStilson\n" +
       "Bundle Name: " + bundleInfo?.name + "\n" +
       "Version: " + bundleInfo?.versionName;
     this.str_opensource_leg =
