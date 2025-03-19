@@ -39,6 +39,7 @@ struct Index {
   @Local token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
   @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
+  @Local token_copy_guide_popup: boolean = false;
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
@@ -246,6 +247,10 @@ struct Index {
 
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
+    if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
+      this.token_copy_guide_popup = !this.token_copy_guide_popup;
+      AppPreference.setAppearance('app_show_guide_tips', false)
+    }
     if (toast) {
       promptAction.showToast({message: `token ${conf.TokenIssuer}:${conf.TokenName} updated.`})
     }
@@ -555,6 +560,14 @@ struct Index {
                             this.updateTokenConfig(conf_new, false);
                           }
                         })
+                          .bindPopup(this.token_copy_guide_popup && index === 0, {
+                            message: getContext(this).resourceManager.getStringSync($r('app.string.token_copy_guide_popup')).toString(),
+                            onStateChange: (e)=> {
+                              if (!e.isVisible) {
+                                this.token_copy_guide_popup = false
+                              }
+                            }
+                          })
                       }
                       .padding({ left: 10, right: 10 })
                       .swipeAction({

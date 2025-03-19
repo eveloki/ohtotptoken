@@ -287,7 +287,7 @@ export class UserAddedIconPack {
   public addIcon(file: fileIo.File): void {
     this.latest_icon_path = "file://" + this.user_icon_path + "/" + file.name;
     this.icon_path.push(this.latest_icon_path);
-    fs.copyFile(file.fd, this.user_icon_path + "/" + file.name);
+    fs.copyFileSync(file.fd, this.user_icon_path + "/" + file.name);
   }
 
   public removeIcon(path: string): void {

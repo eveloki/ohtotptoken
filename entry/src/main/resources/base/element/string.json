@@ -383,6 +383,10 @@
     {
       "name": "icon_alert_remove_confirm_msg",
       "value": "Delete this icon?"
+    },
+    {
+      "name": "token_copy_guide_popup",
+      "value": "Long press to copy the token"
     }
   ]
 }

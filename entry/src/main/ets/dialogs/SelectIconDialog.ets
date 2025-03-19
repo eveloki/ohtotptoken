@@ -138,7 +138,7 @@ export struct SelectIconDialog {
       .width(40)
       .height(40)
       .onClick(() => {
-        showSelectFilePicker(1, ["PNG|.png", "JPEG|.jpg"]).then((uris) => {
+        showSelectFilePicker(1, ["PNG|.png", "JPEG|.jpg", "SVG|.svg"]).then((uris) => {
           fileIo.open(uris[0]).then((file) => {
             TokenIconPacks.user_added_icon_packs.addIcon(file);
             this.user_icon_data.pushData(TokenIconPacks.user_added_icon_packs.latest_icon_path);

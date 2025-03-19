@@ -383,6 +383,10 @@
     {
       "name": "icon_alert_remove_confirm_msg",
       "value": "是否删除这个图标?"
+    },
+    {
+      "name": "token_copy_guide_popup",
+      "value": "长按可复制令牌"
     }
   ]
 }

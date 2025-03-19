@@ -33,23 +33,24 @@ export class AppPreference {
     ['app_db_rds_sync_enable', false],
     // kv数据库同步时间
     ['app_db_kv_sync_time', ''],
-
+    // 是否显示引导提示
+    ['app_show_guide_tips', true],
   ]);
 
   public static getAppearance(key: string): SettingValue {
-    return AppPreference.settings[key];
+    return AppPreference.settings.get(key) ?? '';
   }
 
   public static setAppearance(key: string, value: SettingValue): void {
-    AppPreference.settings[key] = value;
+    AppPreference.settings.set(key, value);
     AppPreference.prefMgr.setValue<SettingValue>(key, value);
   }
 
   public static async loadSettings(): Promise<void> {
     const promises = Array.from(AppPreference.settings.keys()).map(async (k) => {
       await AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
-        if (val !== undefined) {
-          AppPreference.settings[k] = val;
+        if (val !== undefined && val !== null) {
+          AppPreference.settings.set(k, val);
         }
       })
     });
