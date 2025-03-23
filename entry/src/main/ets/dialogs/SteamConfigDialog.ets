@@ -1,4 +1,4 @@
-import { TokenConfig } from '../utils/TokenConfig';
+import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { JSON, url } from '@kit.ArkTS';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
@@ -11,7 +11,7 @@ import { SelectIconDialog } from './SelectIconDialog';
 export struct SteamConfigDialog {
   controller?: CustomDialogController;
   @Prop conf_json?: string = '';
-  @State conf: TokenConfig = new TokenConfig('', 3, 'Steam', 'User', 'SHA1', 30, 10);
+  @State conf: TokenConfig = new TokenConfig('', otpType.Steam, 'Steam', 'User', 'SHA1', 30, 10);
   @State btn_camera_clicked: number = 0;
 
   cancel?: () => void;
