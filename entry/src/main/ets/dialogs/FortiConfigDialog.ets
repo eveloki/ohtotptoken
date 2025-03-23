@@ -1,4 +1,4 @@
-import { TokenConfig } from '../utils/TokenConfig';
+import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { base32Decode, base32Encode, stringToIntArray, ScanBarCode } from '../utils/TokenUtils'
 import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -28,7 +28,7 @@ class  forti_server_resp {
 export struct FortiConfigDialog {
   controller?: CustomDialogController;
   @Prop conf_json?: string = '';
-  @State conf: TokenConfig = new TokenConfig('', 1, 'Forti', 'User', 'SHA1', 60, 6);
+  @State conf: TokenConfig = new TokenConfig('', otpType.Forti, 'Forti', 'User', 'SHA1', 60, 6);
   @State btn_camera_clicked: number = 0;
   @State btn_dev_id_clicked: number = 0;
   @State warn_dev_id_popup: boolean = false;

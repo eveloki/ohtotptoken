@@ -62,6 +62,14 @@ export struct URIConfigDialog {
       token.TokenCounter = parseInt(parameters['counter'] ?? '0');
       token.TokenDigits = parseInt(parameters['digits'] ?? '6');
 
+      // otpauth://totp/Steam:xxx?secret=XXXXXXXXXXXXXXXXXXXXXXX&issuer=Steam
+      if(token.TokenIssuer.toLowerCase()=='steam'){
+        token.TokenType = otpType.Steam;
+        token.TokenAlgorithm = 'SHA1'
+        token.TokenPeriod = 30
+        token.TokenDigits = 10
+      }
+
       tokens.push(token);
     });
 
