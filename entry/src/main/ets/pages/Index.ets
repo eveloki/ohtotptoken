@@ -144,13 +144,14 @@ struct Index {
     this.GetPrivacyManageInfo();
     //订阅KV数据库同步完成事件
     getContext(this).eventHub.on('KVStoreSyncComplete',() => {
-      //todo 接收同步完成后刷新数据
-      tkStore.getTokens().then((tokens) => {
-        this.CurrentTokens = tokens;
-        this.token_loaded = false;
-        AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
+      tkStore.LoadTokenByDataBase().then(()=>{
+        //todo 接收同步完成后刷新数据
+        tkStore.getTokens().then((tokens) => {
+          this.CurrentTokens = tokens;
+          this.token_loaded = false;
+          AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
+        });
       });
-
     })
 
     //订阅RDB数据库同步完成事件

@@ -32,8 +32,12 @@ export class TokenStore {
       return;
     }
     await this.kvMgr.initKvManager();
-    this.token_uuids = await this.kvMgr.getStringArray('token_uuids') ?? [];
-    if (this.token_uuids.length == 0) {
+    await this.LoadTokenByDataBase();
+    this.init_done = true;
+  }
+ public  async LoadTokenByDataBase(): Promise<void> {
+     this.token_uuids = await this.kvMgr.getStringArray('token_uuids') ?? [];
+      if (this.token_uuids.length == 0) {
       //尝试从旧缓存数据中恢复记录 兼容旧版本
       this.token_uuids = await this.kvMgr.getValue<string[]>('token_uuids') ?? [];
       await this.kvMgr.setStringArray('token_uuids', this.token_uuids);
@@ -44,9 +48,7 @@ export class TokenStore {
       this.token_array.push(token);
     }
     this.sortTokens();
-    this.init_done = true;
-  }
-
+ }
   public async getTokenUUIDs(): Promise<string[]> {
     return this.token_uuids;
   }
