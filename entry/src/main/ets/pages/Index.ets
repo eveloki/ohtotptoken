@@ -35,7 +35,7 @@ struct Index {
   @Local btn_token_add_clicked: number = 0;
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
-  @Local token_loaded: Boolean = true;
+  @Local token_loading: Boolean = true;
   @Local token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
   @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
@@ -97,7 +97,6 @@ struct Index {
 
   private backup_select_uri: string = '';
 
-  //build()函数之前执行 如果启用了隐私防截屏 在这里设置为隐私模式
   aboutToAppear(): void {
     router.clear();
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
@@ -110,7 +109,7 @@ struct Index {
       getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
-        this.token_loaded = false;
+        this.token_loading = false;
       });
     });
 
@@ -142,13 +141,13 @@ struct Index {
     })
 
     this.GetPrivacyManageInfo();
-    //订阅KV数据库同步完成事件
+    // 订阅KV数据库同步完成事件
     getContext(this).eventHub.on('KVStoreSyncComplete',() => {
-      tkStore.LoadTokenByDataBase().then(()=>{
-        //todo 接收同步完成后刷新数据
+      tkStore.LoadTokenByDataBase().then(() => {
+        // 接收同步完成后刷新数据
         tkStore.getTokens().then((tokens) => {
           this.CurrentTokens = tokens;
-          this.token_loaded = false;
+          this.token_loading = false;
           AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
         });
       });
@@ -511,7 +510,7 @@ struct Index {
 
   build() {
     Stack() {
-      if (this.token_loaded) {
+      if (this.token_loading) {
         Column() {
           LoadingProgress()
             .color(Color.White)

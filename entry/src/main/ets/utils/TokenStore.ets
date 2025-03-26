@@ -6,14 +6,14 @@ import { common } from '@kit.AbilityKit';
 export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
   private rdbMgr: RdbManager = RdbManager.getInstance();
-  private token_uuids: string[] = [];
   private token_array: TokenConfig[] = [];
   private appCtx: common.UIAbilityContext | undefined = undefined;
   private init_done: boolean = false;
   private static instance: TokenStore;
 
-  private constructor() {
+  private token_prefix: string = "_token_uuid_";
 
+  private constructor() {
   }
 
   private async emitTokenChanged(): Promise<void> {
@@ -35,22 +35,11 @@ export class TokenStore {
     await this.LoadTokenByDataBase();
     this.init_done = true;
   }
- public  async LoadTokenByDataBase(): Promise<void> {
-     this.token_uuids = await this.kvMgr.getStringArray('token_uuids') ?? [];
-      if (this.token_uuids.length == 0) {
-      //尝试从旧缓存数据中恢复记录 兼容旧版本
-      this.token_uuids = await this.kvMgr.getValue<string[]>('token_uuids') ?? [];
-      await this.kvMgr.setStringArray('token_uuids', this.token_uuids);
-    }
-    this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-    for (let i = 0; i < this.token_uuids.length; i++) {
-      let token = await this.queryToken(this.token_uuids[i]);
-      this.token_array.push(token);
-    }
-    this.sortTokens();
- }
-  public async getTokenUUIDs(): Promise<string[]> {
-    return this.token_uuids;
+
+  public async LoadTokenByDataBase(): Promise<void> {
+     this.token_array = await this.kvMgr.getTokenArray(this.token_prefix)
+     this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+     this.sortTokens();
   }
 
   public async getTokens(): Promise<TokenConfig[]> {
@@ -58,18 +47,17 @@ export class TokenStore {
   }
 
   public async queryToken(token_uuid: string): Promise<TokenConfig> {
-    let token = await this.kvMgr.getValue<TokenConfig>(`token_${token_uuid}`);
+    let token = await this.kvMgr.getValue<TokenConfig>(`${this.token_prefix}${token_uuid}`);
     return token ?? new TokenConfig();
   }
 
   public sortTokens(): void {
-    this.token_array = this.token_array.sort((a, b) => a.RankScore - b.RankScore);
-    this.token_uuids = this.token_array.map(token => token.TokenUUID);
+    this.token_array = this.token_array.sort((a, b) => a.RankScore - b.RankScore)
     this.emitTokenChanged();
   }
 
   private async saveToken(token: TokenConfig): Promise<void> {
-    await this.kvMgr.setValue<TokenConfig>(`token_${token.TokenUUID}`, token);
+    await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
   }
 
   public async updateTokenRank(from: number, to: number): Promise<void> {
@@ -91,13 +79,12 @@ export class TokenStore {
 
   public async updateToken(token: TokenConfig): Promise<void> {
     let token_new = token;
-    if (!this.token_uuids.includes(token_new.TokenUUID)) {
+    const token_uuids = this.token_array.map(t => t.TokenUUID);
+    if (!token_uuids.includes(token_new.TokenUUID)) {
       token_new.RankScore = this.token_array.length;
-      this.token_uuids.push(token_new.TokenUUID);
       this.token_array.push(token_new);
-      await this.kvMgr.setTokenUUID(token_new.TokenUUID);
     } else {
-      const token_index = this.token_uuids.findIndex(uuid => uuid === token_new.TokenUUID);
+      const token_index = token_uuids.findIndex(uuid => uuid === token_new.TokenUUID);
       token_new.RankScore = this.token_array[token_index].RankScore;
       this.token_array[token_index] = token_new;
     }
@@ -106,16 +93,14 @@ export class TokenStore {
   }
 
   public async deleteToken(token_uuid: string): Promise<void> {
-    const token_index = this.token_uuids.findIndex(uuid => uuid === token_uuid);
+    const token_uuids = this.token_array.map(t => t.TokenUUID);
+    const token_index = token_uuids.findIndex(uuid => uuid === token_uuid);
     for (let i = token_index; i < this.token_array.length; i++) {
       this.token_array[i].RankScore--;
       await this.saveToken(this.token_array[i]);
     }
-    this.token_array = this.token_array.filter(token => token.TokenUUID !== token_uuid);
-    this.token_uuids = this.token_array.map(token => token.TokenUUID);
-
-    await this.kvMgr.delTokenUUID(token_uuid);
-    await this.kvMgr.deleteValue(token_uuid);
+    this.token_array = this.token_array.filter(t => t.TokenUUID !== token_uuid);
+    await this.kvMgr.deleteValue(`${this.token_prefix}${token_uuid}`);
     this.emitTokenChanged();
   }
 
