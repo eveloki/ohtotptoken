@@ -15,9 +15,10 @@
 
 import { bundleManager, common } from '@kit.AbilityKit';
 import { distributedKVStore } from '@kit.ArkData';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { AppPreference } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
+import { intl } from '@kit.LocalizationKit';
 
 export class KvManager {
   //单版本分布式键值数据库
@@ -67,6 +68,11 @@ export class KvManager {
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
         console.info(`syncComplete ${data}`);
         ctx.eventHub.emit('KVStoreSyncComplete');
+      });
+
+      this._kvStore.on('dataChange', distributedKVStore.SubscribeType.SUBSCRIBE_TYPE_LOCAL, (data: distributedKVStore.ChangeNotification) => {
+        console.info(`dataChange callback call data: ${data}`);
+        //ctx.eventHub.emit('KVStoreSyncComplete');
       });
     }).catch((reason: BusinessError) => {
       console.error(reason.message);
@@ -187,19 +193,33 @@ export class KvManager {
         let deviceInfoList: Array<distributedDeviceManager.DeviceBasicInfo> = dmInstance.getAvailableDeviceListSync();
         if (deviceInfoList.length>0) {
           let deviceNetWorkIDList:string[] = [];
-          deviceInfoList.forEach(dev => {
-            //目前仅同步
-            // -14: PHONE。
-            // -17: PAD。
-            // -2607: 2in1。
-            if (dev.deviceType === "14" ||dev.deviceType === "17"||dev.deviceType === "2607") {
-              if (dev.networkId!=null) {
-                deviceNetWorkIDList.push(dev.networkId);
-              }
-            }
-          });
+          for (let i = 0; i < deviceInfoList.length; i++) {
+            deviceNetWorkIDList[i] = deviceInfoList[i].networkId as string;
+          }
+          // deviceInfoList.forEach(dev => {
+          //   //目前仅同步
+          //   // -14: PHONE。
+          //   // -17: PAD。
+          //   // -2607: 2in1。
+          //   if (dev.deviceType === "PHONE" ||dev.deviceType === "PAD"||dev.deviceType === "2in1") {
+          //     if (dev.networkId!=null) {
+          //       deviceNetWorkIDList.push(dev.networkId as string );
+          //     }
+          //   }
+          // });
           if (deviceNetWorkIDList.length>0) {
-            this._kvStore?.sync(deviceNetWorkIDList,distributedKVStore.SyncMode.PUSH_PULL,1000*10)
+            let formattedDate: string = Date.now().toString();
+            this._kvStore?.put("LastSyncTime",formattedDate)
+            const query = new distributedKVStore.Query();
+            query.prefixKey("$.SA");
+            //query.prefixKey("token_");
+
+            this._kvStore?.sync(deviceNetWorkIDList,query,distributedKVStore.SyncMode.PUSH_PULL,1000*10);
+            query.reset();
+            query.prefixKey("token_");
+            this._kvStore?.sync(deviceNetWorkIDList,query,distributedKVStore.SyncMode.PUSH_PULL,1000*10);
+            //let ctx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+            //ctx.eventHub.emit('KVStoreSyncComplete');
           }
         }
       } catch (err) {
