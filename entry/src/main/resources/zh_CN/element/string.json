@@ -387,6 +387,10 @@
     {
       "name": "token_copy_guide_popup",
       "value": "长按可复制令牌"
+    },
+    {
+      "name": "token_copied",
+      "value": "已拷贝"
     }
   ]
 }

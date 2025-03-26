@@ -387,6 +387,10 @@
     {
       "name": "token_copy_guide_popup",
       "value": "Long press to copy the token"
+    },
+    {
+      "name": "token_copied",
+      "value": "Copied"
     }
   ]
 }
