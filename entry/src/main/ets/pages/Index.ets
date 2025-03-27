@@ -226,7 +226,9 @@ struct Index {
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    if (getContext(this).eventHub!=undefined) {
+      getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    }
   }
 
   onPageShow(): void {
