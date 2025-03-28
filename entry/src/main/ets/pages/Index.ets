@@ -143,14 +143,7 @@ struct Index {
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     getContext(this).eventHub.on('KVStoreSyncComplete',() => {
-      tkStore.LoadTokenByDataBase().then(() => {
-        // 接收同步完成后刷新数据
-        tkStore.getTokens().then((tokens) => {
-          this.CurrentTokens = tokens;
-          this.token_loading = false;
-          AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
-        });
-      });
+      AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
@@ -233,12 +226,22 @@ struct Index {
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    if (getContext(this).eventHub!=undefined) {
+      getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    }
   }
 
   onPageShow(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     getContext(this).eventHub.emit('onTimestampChanged', timestamp, true);
+    //页面打开的时候刷新token
+    tkStore.LoadTokenByDataBase().then(() => {
+      // 接收同步完成后刷新数据
+      tkStore.getTokens().then((tokens) => {
+        this.CurrentTokens = tokens;
+        this.token_loading = false;
+      });
+    });
   }
 
   async onTokenChanged(): Promise<void> {
