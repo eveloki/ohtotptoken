@@ -107,7 +107,7 @@ struct Index {
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl", 'https://www.duan.red/yylx/opt/privacy-statement-zh-cn.htm');
 
     tkStore.initTokenStore().then(() => {
-      getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
+      if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.token_loading = false;
@@ -143,17 +143,17 @@ struct Index {
 
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
-    getContext(this).eventHub.on('KVStoreSyncComplete',() => {
+    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('KVStoreSyncComplete',() => {
       AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
-    getContext(this).eventHub.on('RDBStoreSyncComplete',() => {
+    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('RDBStoreSyncComplete',() => {
       //todo 接收同步完成后刷新数据
     })
 
     //订阅权限变更 主页面不需要取消订阅 没有意义
-    this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
         AppPreference.setAppearance('app_db_rds_sync_enable', false);
@@ -161,7 +161,7 @@ struct Index {
       }
     })
 
-    this.appCtx.eventHub.on('onFileDrop', (uri: string) => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onFileDrop', (uri: string) => {
       this.backup_select_uri = uri;
       if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
         this.password_input_dialog?.open();
@@ -178,7 +178,7 @@ struct Index {
         }, 250)
     });
 
-    this.appCtx.eventHub.on('onAppUnlock', () => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onAppUnlock', () => {
       this.app_lock = false;
     });
 
@@ -244,7 +244,7 @@ struct Index {
       }
     }
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    getContext(this).eventHub.emit('onTimestampChanged', timestamp, true);
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
     //页面打开的时候刷新token
     tkStore.LoadTokenByDataBase().then(() => {
       // 接收同步完成后刷新数据
