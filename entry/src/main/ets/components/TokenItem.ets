@@ -112,7 +112,7 @@ export struct TokenItem {
             .gesture(
               LongPressGesture()
                 .onAction(() => {
-                  copyText(this.TokenNumber, `token ${this.TokenNumber} copied`);
+                  copyText(this.TokenNumber, `token ${this.TokenNumber} `+ getContext(this).resourceManager.getStringSync($r('app.string.token_copied')).toString());
                 })
             )
           if (this.Config.TokenType == otpType.HOTP) {
