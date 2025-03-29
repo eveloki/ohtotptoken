@@ -253,6 +253,11 @@ struct Index {
         this.token_loading = false;
       });
     });
+    //如果已经点击了我知道了则永远不提示了
+    if (this.tab_bar_index == 0 && AppPreference.getAppearance('app_show_guide_tips') as boolean) {
+      this.token_copy_guide_popup=true;
+    }
+
   }
 
   async onTokenChanged(): Promise<void> {
@@ -261,10 +266,6 @@ struct Index {
 
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
-    if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
-      this.token_copy_guide_popup = !this.token_copy_guide_popup;
-      AppPreference.setAppearance('app_show_guide_tips', false)
-    }
     if (toast) {
       promptAction.showToast({message: `token ${conf.TokenIssuer}:${conf.TokenName} updated.`})
     }
@@ -656,10 +657,21 @@ struct Index {
                           }
                         })
                           .bindPopup(this.token_copy_guide_popup && index === 0, {
+                            placement: Placement.Left,
                             message: getContext(this).resourceManager.getStringSync($r('app.string.token_copy_guide_popup')).toString(),
                             onStateChange: (e)=> {
                               if (!e.isVisible) {
                                 this.token_copy_guide_popup = false
+                              }
+                            },
+                            primaryButton: {
+                              value: getContext(this).resourceManager.getStringSync($r('app.string.token_copy_guide_popup_Confirm')).toString(),
+                              action: () => {
+                                if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
+                                  AppPreference.setAppearance('app_show_guide_tips', false)
+                                }
+                                this.token_copy_guide_popup = false;
+                                console.info('confirm Button click')
                               }
                             }
                           })
