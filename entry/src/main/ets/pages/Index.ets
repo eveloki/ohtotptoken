@@ -7,7 +7,6 @@ import { SettingPage } from '../pages/SettingPage'
 import { url, util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
-import { router } from '@kit.ArkUI';
 import promptAction from '@ohos.promptAction'
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { QRCodeDialog } from '../dialogs/QRCodeDialog';
@@ -24,6 +23,8 @@ import { restoreFromBackup } from '../utils/TokenBackup';
 import { ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
 import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
+import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { userAuth } from '@kit.UserAuthenticationKit';
 
 const TAG = 'PrivacySubscribe';
 
@@ -40,6 +41,7 @@ struct Index {
   @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
   @Local token_copy_guide_popup: boolean = false;
+  @Local app_lock: boolean = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
@@ -98,7 +100,6 @@ struct Index {
   private backup_select_uri: string = '';
 
   aboutToAppear(): void {
-    router.clear();
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
@@ -177,6 +178,10 @@ struct Index {
         }, 250)
     });
 
+    this.appCtx.eventHub.on('onAppUnlock', () => {
+      this.app_lock = false;
+    });
+
     // periodically update timestamp for tokens
     setInterval(() => {
       this.updateTimestamp();
@@ -226,12 +231,18 @@ struct Index {
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    if (getContext(this).eventHub!=undefined) {
+    if (getContext(this).eventHub != undefined) {
       getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
     }
   }
 
   onPageShow(): void {
+    this.app_lock = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
+    if (this.app_lock) {
+      if (AppPreference.getAppearance('app_appearance_auto_unlock_enable')) {
+        this.requireUserAuth();
+      }
+    }
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     getContext(this).eventHub.emit('onTimestampChanged', timestamp, true);
     //页面打开的时候刷新token
@@ -391,6 +402,48 @@ struct Index {
       + period_or_counter;
   }
 
+  requireUserAuth(): void {
+    try {
+      const rand = cryptoFramework.createRandom();
+      const len: number = 16;
+      const randData: Uint8Array = rand?.generateRandomSync(len)?.data;
+      // 设置认证参数
+      const authParam: userAuth.AuthParam = {
+        challenge: randData,
+        authType: [userAuth.UserAuthType.PIN, userAuth.UserAuthType.FACE, userAuth.UserAuthType.FINGERPRINT],
+        authTrustLevel: userAuth.AuthTrustLevel.ATL3,
+      };
+      // 配置认证界面
+      const widgetParam: userAuth.WidgetParam = {
+        title: getContext(this).resourceManager.getStringSync($r('app.string.user_auth_prompt').id)
+      };
+      // 获取认证对象
+      const userAuthInstance = userAuth.getUserAuthInstance(authParam, widgetParam);
+      console.info('get userAuth instance success');
+      // 订阅认证结果
+      userAuthInstance.on('result', {
+        onResult(result) {
+          console.info(`userAuthInstance callback result: ${JSON.stringify(result)}`);
+          // 可在认证结束或其他业务需要场景，取消订阅认证结果
+          //let rr:userAuth.UserAuthResult =result;
+          if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
+            // 判断验证结果是否正确 只有正确验证了才能跳跃到首页
+            if (getContext(this).eventHub != undefined) {
+              getContext(this).eventHub.emit('onAppUnlock');
+            }
+          }
+          userAuthInstance.off('result');
+        }
+      });
+      console.info('auth on success');
+      userAuthInstance.start();
+      console.info('auth start success');
+    } catch (error) {
+      const err: BusinessError = error as BusinessError;
+      console.error(`auth catch error. Code is ${err?.code}, message is ${err?.message}`);
+    }
+  }
+
   @Builder
   TokenItemStart(conf: TokenConfig, index: number) {
     Row({ space: 10 }) {
@@ -513,7 +566,46 @@ struct Index {
 
   build() {
     Stack() {
-      if (this.token_loading) {
+      if (this.app_lock) {
+        Row() {
+          RelativeContainer() {
+            Row() {
+              Column() {
+                SymbolGlyph($r('sys.symbol.lock_fill'))
+                  .fontSize(70)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor([$r('app.color.str_main')])
+                  .alignRules({
+                    center: { anchor: '__container__', align: VerticalAlign.Center },
+                    middle: { anchor: '__container__', align: HorizontalAlign.Center }
+                  })
+                  .effectStrategy(2)
+                Divider().vertical(false).height(20)
+                Text($r('app.string.app_locking'))
+                  .fontSize(20)
+                Text($r('app.string.app_unlock'))
+                  .fontSize(20)
+                  .fontColor('#3498db')
+                  .offset({ top: '40%' })
+                  .textAlign(TextAlign.Center)
+              }
+            }
+            .width('80%')
+            .height('80%')
+            .alignRules({
+              top: {anchor: "__container__", align: VerticalAlign.Top},
+              bottom : {anchor : "__container__", align : VerticalAlign.Bottom},
+              left: {anchor: "__container__", align: HorizontalAlign.Start},
+              right : {anchor : "__container__", align: HorizontalAlign.End},
+              bias : {vertical : 0.3}
+            })
+          }
+        }
+        .height('100%')
+        .onClick(() => {
+          this.requireUserAuth();
+        })
+      } else if (this.token_loading) {
         Column() {
           LoadingProgress()
             .color(Color.White)

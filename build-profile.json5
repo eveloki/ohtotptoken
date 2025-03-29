@@ -15,19 +15,6 @@
         }
       },
       {
-        "name": "release",
-        "type": "HarmonyOS",
-        "material": {
-          "certpath": "D:/Dev/OpenHarmony/Key_and_CSR/Release.cer",
-          "storePassword": "0000001A635161C16501B030E196FD40ED44276559673BA471CBFA921B27E5CDDFDC8602AF80D37BBDE7",
-          "keyAlias": "release",
-          "keyPassword": "0000001AF531D9982D34FDFC8A5BDC08B4C455B15AE94B7841C836DF0F285A324A274593FBF14C6728E2",
-          "profile": "D:/Dev/OpenHarmony/Key_and_CSR/ReleaseRelease.p7b",
-          "signAlg": "SHA256withECDSA",
-          "storeFile": "D:/Dev/OpenHarmony/Key_and_CSR/.p12"
-        }
-      },
-      {
         "name": "debug",
         "type": "HarmonyOS",
         "material": {
@@ -38,6 +25,19 @@
           "profile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p12"
+        }
+      },
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/.p12",
+          "storePassword": "0000001A6E0DDD4EA5BCA114879C6AC5B2CC2C1BD2A402D32D97620B232E11F213A8CF9520863A787E3B",
+          "keyAlias": "totp_token",
+          "keyPassword": "0000001A798F73D348E3BA18CAA480B9C0FAA0EC252EC01FE2BCC32C3AE1EBD1DF8695ECF920CE2805FF",
+          "signAlg": "SHA256withECDSA",
+          "profile": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/SolidFakerRelease.p7b",
+          "certpath": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/github_SolidFaker.cer"
         }
       }
     ],
