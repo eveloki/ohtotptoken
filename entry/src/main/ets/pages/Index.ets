@@ -25,6 +25,7 @@ import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { userAuth } from '@kit.UserAuthenticationKit';
+import { faceDetector } from '@kit.CoreVisionKit';
 
 const TAG = 'PrivacySubscribe';
 
@@ -43,6 +44,7 @@ struct Index {
   @Local token_copy_guide_popup: boolean = false;
   @Local app_lock: boolean = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
 
+  private appIsShow= false;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
@@ -184,7 +186,9 @@ struct Index {
 
     // periodically update timestamp for tokens
     setInterval(() => {
-      this.updateTimestamp();
+      if (this.appCtx!= undefined&& this.appIsShow)
+        if (this.appCtx.eventHub!= undefined)
+           this.updateTimestamp();
     }, 1000);
   }
 
@@ -235,7 +239,9 @@ struct Index {
       getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
     }
   }
-
+  onPageHide(): void {
+    this.appIsShow=false;
+  }
   onPageShow(): void {
     this.app_lock = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
     if (this.app_lock) {
@@ -243,6 +249,7 @@ struct Index {
         this.requireUserAuth();
       }
     }
+    this.appIsShow=true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
     //页面打开的时候刷新token
