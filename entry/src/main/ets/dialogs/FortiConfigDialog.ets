@@ -46,7 +46,7 @@ export struct FortiConfigDialog {
     })
   });
 
-  private cache_dir: string = getContext(this).cacheDir;
+  private files_dir: string = getContext(this).filesDir;
 
   aboutToAppear(): void {
     if (this.conf_json != undefined && this.conf_json.length > 0) {
@@ -106,7 +106,7 @@ export struct FortiConfigDialog {
     let raw_token_hex = buffer.from(raw_token).toString('hex');
 
     let httpRequest = http.createHttp();
-    let cer_path = this.cache_dir + "/fmt.ks";
+    let cer_path = this.files_dir + "/fmt.ks";
 
     httpRequest.request(
       "https://globalftm.fortinet.net/SoftToken/Provisioning.asmx/Mobile",

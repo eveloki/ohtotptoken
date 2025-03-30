@@ -47,8 +47,8 @@ struct Index {
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
 
-  private icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
-  private user_icon_dir = this.appCtx.cacheDir + "/user_icon";
+  private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
+  private user_icon_dir = this.appCtx.filesDir + "/user_icons";
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -126,7 +126,7 @@ struct Index {
     });
 
     // save certification for forti token
-    let cer_path = getContext(this).cacheDir + "/fmt.ks"
+    let cer_path = getContext(this).filesDir + "/fmt.ks"
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
       if (!exist) {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
