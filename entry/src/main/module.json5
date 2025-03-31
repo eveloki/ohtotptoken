@@ -91,6 +91,18 @@
             "resource": "$profile:backup_config"
           }
         ],
+      },
+      {
+        "name": "BackupExtensionAbility",
+        "type": "backup",
+        "exported": false,
+        "metadata": [
+          {
+            "name": "ohos.extension.backup",
+            "resource": "$profile:backup_config"
+          }
+        ],
+        "srcEntry": "./ets/BackupExtension/BackupExtension.ets",
       }
     ]
   }

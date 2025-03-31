@@ -16,7 +16,7 @@ export struct SubItemIconManager {
   @Local selected_icon_pack: number = TokenIconPacks.selected_icon_pack;
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  private icon_pack_dir = this.appCtx.cacheDir + "/icon_packs";
+  private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
 
   build() {
     Column() {
