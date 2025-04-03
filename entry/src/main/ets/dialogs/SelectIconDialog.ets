@@ -68,8 +68,14 @@ export struct SelectIconDialog {
     ListItem() {
       Stack( { alignContent: Alignment.TopStart } ) {
         if (path === '') {
-          Text($r('app.string.dialog_icon_default'))
-            .margin({ top: 15 })
+          Shape() {
+            Text($r('app.string.dialog_icon_select_auto'))
+          }
+          .align(Alignment.Center)
+          .backgroundColor($r('app.color.item_bg'))
+          .height(40)
+          .width(40)
+          .borderRadius(20)
         } else {
           TokenIcon({ issuer: '', icon_path: path, bypassColorFilter: true })
         }

@@ -377,8 +377,8 @@
       "value": "Recommend"
     },
     {
-      "name": "dialog_icon_default",
-      "value": "Default"
+      "name": "dialog_icon_select_auto",
+      "value": "Auto"
     },
     {
       "name": "icon_alert_remove_confirm_msg",

@@ -377,8 +377,8 @@
       "value": "推荐"
     },
     {
-      "name": "dialog_icon_default",
-      "value": "默认"
+      "name": "dialog_icon_select_auto",
+      "value": "自动"
     },
     {
       "name": "icon_alert_remove_confirm_msg",
