@@ -23,6 +23,17 @@ export struct TokenItem {
   @Local TokenHide: boolean = current_token_hide_map[this.Config.TokenUUID] ?? true;
 
   private token_steps: number = 0;
+  private token_color_change_threshold = 5;
+  private token_progress_color_normal: LinearGradient = new LinearGradient(
+    [
+      {color: $r('app.color.token_progress_normal_color_start'), offset: 0},
+      {color: $r('app.color.token_progress_normal_color_end'), offset: 1},
+    ])
+  private token_progress_color_near_next: LinearGradient = new LinearGradient(
+    [
+      {color: $r('app.color.token_progress_next_color_start'), offset: 1},
+      {color: $r('app.color.token_progress_next_color_end'), offset: 0},
+    ])
 
   aboutToAppear(): void {
     getContext(this).eventHub.on('onTimestampChanged', (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
@@ -107,7 +118,7 @@ export struct TokenItem {
             .textAlign(TextAlign.End)
             .textOverflow({ overflow: TextOverflow.MARQUEE })
             .maxLines(1)
-            .fontColor($r('app.color.token_number'))
+            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold ? Color.Red : $r('app.color.token_number'))
             .fontSize(30)
             .gesture(
               LongPressGesture()
@@ -158,6 +169,9 @@ export struct TokenItem {
               .style({ strokeWidth: 8 })
               .width(40)
               .height(40)
+              .color(this.TokenLeftPeriod <= this.token_color_change_threshold ?
+                this.token_progress_color_near_next :
+                this.token_progress_color_normal)
           }
         }
       }
