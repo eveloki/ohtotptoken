@@ -118,7 +118,9 @@ export struct TokenItem {
             .textAlign(TextAlign.End)
             .textOverflow({ overflow: TextOverflow.MARQUEE })
             .maxLines(1)
-            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold ? Color.Red : $r('app.color.token_number'))
+            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold ?
+              $r('app.color.token_progress_next_color_end') :
+              $r('app.color.token_number'))
             .fontSize(30)
             .gesture(
               LongPressGesture()
