@@ -273,7 +273,6 @@ struct Index {
     if (this.tab_bar_index == 0 && AppPreference.getAppearance('app_show_guide_tips') as boolean) {
       this.token_copy_guide_popup=true;
     }
-
   }
 
   async onTokenChanged(): Promise<void> {
@@ -288,8 +287,8 @@ struct Index {
     }
     tkStore.getTokens().then((tokens) => {
       this.token_list_search_enable = true;
+      const lower_filter_word = filter_word.toLowerCase();
       this.CurrentTokens = tokens.filter((token) => {
-        const lower_filter_word = filter_word.toLowerCase();
         return token.TokenIssuer.toLowerCase().indexOf(lower_filter_word) >= 0 || token.TokenName.toLowerCase().indexOf(lower_filter_word) >= 0
       })
     })
@@ -757,7 +756,7 @@ struct Index {
                       if (event?.type === TouchType.Move) {
                         this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
                         if (this.token_list_reach_start) {
-                          if (this.token_list_touch_move_pos > 50) {
+                          if (this.token_list_touch_move_pos > 300) {
                             this.token_list_search_visible = true;
                             focusControl.requestFocus(this.id_list[0])
                           } else if (this.token_list_touch_move_pos < -50) {
@@ -831,6 +830,7 @@ struct Index {
           .barMode(BarMode.Fixed)
           .onChange((index) => {
             this.tab_bar_index = index;
+            this.token_list_search_visible = false;
           })
 
         }
