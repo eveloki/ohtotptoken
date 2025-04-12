@@ -47,6 +47,22 @@
     {
       "name": "icon_pack_bg",
       "value": "#FFECEBEB"
+    },
+    {
+      "name": "token_progress_normal_color_start",
+      "value": "#FF86c1ff"
+    },
+    {
+      "name": "token_progress_normal_color_end",
+      "value": "#FF254ff7"
+    },
+    {
+      "name": "token_progress_next_color_start",
+      "value": "#FFD71616"
+    },
+    {
+      "name": "token_progress_next_color_end",
+      "value": "#FFF18585"
     }
   ]
 }
