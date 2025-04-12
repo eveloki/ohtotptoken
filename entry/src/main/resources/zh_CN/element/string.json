@@ -118,7 +118,7 @@
     },
     {
       "name": "setting_backup",
-      "value": "备份"
+      "value": "备份与迁移"
     },
     {
       "name": "setting_backup_export",
@@ -395,6 +395,26 @@
     {
       "name": "token_copied",
       "value": "已拷贝"
+    },
+    {
+      "name": "setting_migration",
+      "value": "导出迁移文件"
+    },
+    {
+      "name": "setting_migration_output",
+      "value": "导出迁移文件?"
+    },
+    {
+      "name": "setting_migration_output_des",
+      "value": "导出的迁移文件由未经加密的纯文本OTP URI组成，极易导致令牌密钥泄露，请确认您了解相关风险。"
+    },
+    {
+      "name": "setting_migration_output_msg",
+      "value": "您确定要导出迁移文件吗?"
+    },
+    {
+      "name": "setting_migration_confirm",
+      "value": "确认"
     }
   ]
 }

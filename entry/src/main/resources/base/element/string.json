@@ -118,7 +118,7 @@
     },
     {
       "name": "setting_backup",
-      "value": "Backup"
+      "value": "Backup & Migration"
     },
     {
       "name": "setting_backup_export",
@@ -395,6 +395,26 @@
     {
       "name": "token_copied",
       "value": "Copied"
+    },
+    {
+      "name": "setting_migration",
+      "value": "Export Migration File"
+    },
+    {
+      "name": "setting_migration_output",
+      "value": "Export Migration File?"
+    },
+    {
+      "name": "setting_migration_output_des",
+      "value": "The exported migration file consists of unencrypted plain text OTP URIs, which can easily lead to the leakage of token keys. Please ensure you understand the associated risks."
+    },
+    {
+      "name": "setting_migration_output_msg",
+      "value": "Are you sure you want to export the migration file?"
+    },
+    {
+      "name": "setting_migration_confirm",
+      "value": "Confirm"
     }
   ]
 }

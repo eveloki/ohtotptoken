@@ -1,7 +1,7 @@
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer, HashMap, HashSet } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
-import { TokenConfig } from './TokenConfig';
+import { otpType, TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
@@ -82,6 +82,17 @@ export function generateOTP(conf: TokenConfig, steps: number): number {
   } catch (err) {
     return 0;
   }
+}
+
+export function convertToken2URI(conf: TokenConfig): string {
+  let prefix = 'otpauth://';
+  let otp_type = conf.TokenType == otpType.HOTP ? 'hotp' : 'totp';
+  let label = conf.TokenIssuer + ':' + conf.TokenName;
+  let period_or_counter = conf.TokenType == otpType.HOTP ? ('&counter=' + conf.TokenCounter) : ('&period=' + conf.TokenPeriod);
+  return prefix + otp_type + '/' + label + '?'
+    + 'secret=' + conf.TokenSecret + '&issuer=' + conf.TokenIssuer
+    + '&digits=' + conf.TokenDigits
+    + period_or_counter;
 }
 
 export function generateFileNameWithDate(): string {

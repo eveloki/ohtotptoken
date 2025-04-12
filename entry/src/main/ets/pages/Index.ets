@@ -20,12 +20,11 @@ import { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup } from '../utils/TokenBackup';
-import { ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
+import { convertToken2URI, ScanBarCode, TokenIconPacks } from '../utils/TokenUtils';
 import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { userAuth } from '@kit.UserAuthenticationKit';
-import { faceDetector } from '@kit.CoreVisionKit';
 
 const TAG = 'PrivacySubscribe';
 
@@ -239,9 +238,11 @@ struct Index {
       getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
     }
   }
+
   onPageHide(): void {
     this.appIsShow=false;
   }
+
   onPageShow(): void {
     this.app_lock = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
     if (this.app_lock) {
@@ -399,17 +400,6 @@ struct Index {
     }
   }
 
-  convertToken2URI(conf: TokenConfig): string {
-    let prefix = 'otpauth://';
-    let otp_type = conf.TokenType == otpType.HOTP ? 'hotp' : 'totp';
-    let label = conf.TokenIssuer + ':' + conf.TokenName;
-    let period_or_counter = conf.TokenType == otpType.HOTP ? ('&counter=' + conf.TokenCounter) : ('&period=' + conf.TokenPeriod);
-    return prefix + otp_type + '/' + label + '?'
-      + 'secret=' + conf.TokenSecret + '&issuer=' + conf.TokenIssuer
-      + '&digits=' + conf.TokenDigits
-      + period_or_counter;
-  }
-
   requireUserAuth(): void {
     try {
       const rand = cryptoFramework.createRandom();
@@ -468,7 +458,7 @@ struct Index {
       .onClick(() => {
         this.dialog_qrcode = new CustomDialogController({
           builder: QRCodeDialog({
-            content: this.convertToken2URI(conf)
+            content: convertToken2URI(conf)
           })
         });
         this.dialog_qrcode.open();

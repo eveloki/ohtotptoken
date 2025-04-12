@@ -1,7 +1,7 @@
 import { TokenConfig } from '../utils/TokenConfig';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
-import { generateFileNameWithDate } from '../utils/TokenUtils'
+import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
 import { router } from '@kit.ArkUI';
@@ -12,7 +12,7 @@ import { userAuth } from '@kit.UserAuthenticationKit';
 import { PermissionManager } from '../utils/PermissionManager';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
-import { showSaveFilePicker, showSelectFilePicker } from '../utils/FileUtils';
+import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../utils/FileUtils';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
@@ -116,6 +116,57 @@ export struct SettingPage {
     customStyle: false,
     cornerRadius: 10,
   })
+
+  async callFilePickerSaveMigrationFile(): Promise<void> {
+    this.getUIContext().showAlertDialog(
+      {
+        title: $r('app.string.setting_migration_output'),
+        subtitle: $r('app.string.setting_migration_output_des'),
+        message: $r('app.string.setting_migration_output_msg'),
+        autoCancel: true,
+        alignment: DialogAlignment.Bottom,
+        gridCount: 4,
+        offset: { dx: 0, dy: -20 },
+        buttonDirection: DialogButtonDirection.HORIZONTAL,
+        buttons: [
+          {
+            value: $r('app.string.setting_migration_confirm'),
+            action: () => {
+              showSaveFilePicker([`totp_migration_${generateFileNameWithDate()}.txt`], ['TEXT|.txt']).then((uris) => {
+                let migration_content: string = '';
+                this.arrConf.forEach((token) => {
+                  migration_content += convertToken2URI(token) + "\n";
+                })
+                if (uris[0] !== undefined && uris[0] !== '') {
+                  writeFileContent(uris[0], migration_content);
+                }
+              });
+            }
+          },
+          {
+            value: $r('app.string.setting_backup_cancel'),
+            enabled: true,
+            action: () => {
+              console.info('Callback when button3 is clicked')
+            }
+          },
+        ],
+        cancel: () => {
+          console.info('Closed callbacks')
+        },
+        onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
+          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
+          console.log("dialog onWillDismiss")
+          if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
+            dismissDialogAction.dismiss()
+          }
+          if (dismissDialogAction.reason == DismissReason.TOUCH_OUTSIDE) {
+            dismissDialogAction.dismiss()
+          }
+        }
+      }
+    );
+  }
 
   async callFilePickerSaveFile(): Promise<void> {
     this.getUIContext().showAlertDialog(
@@ -238,6 +289,16 @@ export struct SettingPage {
                 .onClick(() => {
                   this.backup_is_input = false;
                   this.callFilePickerSelectFile()
+                })
+
+              SubItemDivider()
+
+              SubItemButton({
+                symbol: $r('sys.symbol.briefcase'),
+                text: $r('app.string.setting_migration')
+              })
+                .onClick(() => {
+                  this.callFilePickerSaveMigrationFile()
                 })
             }
           }
