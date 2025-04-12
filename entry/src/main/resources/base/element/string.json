@@ -415,6 +415,10 @@
     {
       "name": "setting_migration_confirm",
       "value": "Confirm"
+    },
+    {
+      "name": "token_search_placeholder",
+      "value": "Search..."
     }
   ]
 }

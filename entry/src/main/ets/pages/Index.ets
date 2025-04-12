@@ -25,6 +25,7 @@ import { decodeProtobuf } from '../utils/GoogleAuthUtils';
 import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { userAuth } from '@kit.UserAuthenticationKit';
+import { curves } from '@kit.ArkUI';
 
 const TAG = 'PrivacySubscribe';
 
@@ -42,6 +43,13 @@ struct Index {
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
   @Local token_copy_guide_popup: boolean = false;
   @Local app_lock: boolean = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
+  @Local token_list_reach_start: boolean = false;
+  @Local token_list_search_visible: boolean = false;
+  @Local token_list_search_enable: boolean = false;
+  @Local token_list_touch_down_pos: number = 0;
+  @Local token_list_touch_move_pos: number = 0;
+  @Local token_list_search_str: string = '';
+  @Local id_list: string[] = ['search_bar'];
 
   private appIsShow= false;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
@@ -270,6 +278,21 @@ struct Index {
 
   async onTokenChanged(): Promise<void> {
     this.CurrentTokens = await tkStore.getTokens();
+  }
+
+  async filterCurrentTokens(filter_word: string): Promise<void> {
+    if (filter_word.length === 0) {
+      this.CurrentTokens = await tkStore.getTokens();
+      this.token_list_search_enable = false;
+      return;
+    }
+    tkStore.getTokens().then((tokens) => {
+      this.token_list_search_enable = true;
+      this.CurrentTokens = tokens.filter((token) => {
+        const lower_filter_word = filter_word.toLowerCase();
+        return token.TokenIssuer.toLowerCase().indexOf(lower_filter_word) >= 0 || token.TokenName.toLowerCase().indexOf(lower_filter_word) >= 0
+      })
+    })
   }
 
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
@@ -638,9 +661,31 @@ struct Index {
 
                   List({ space: 10, initialIndex: 0 }) {
                     ListItem() {
-                      Row()
-                        .height(50 + this.appTopAvoidHeight)
+                      Column() {
+                        Row()
+                          .height(50 + this.appTopAvoidHeight)
+                          .width('100%')
+                        Stack({ alignContent: Alignment.End}) {
+                          TextInput({ placeholder: $r('app.string.token_search_placeholder') })
+                            .id(this.id_list[0])
+                            .onChange((value) => {
+                              this.token_list_search_str = value;
+                            })
+                            .onSubmit(() => {
+                              this.filterCurrentTokens(this.token_list_search_str);
+                            })
+                          SymbolGlyph($r('sys.symbol.magnifyingglass'))
+                            .fontSize(20)
+                            .fontWeight(FontWeight.Medium)
+                            .padding({ right: 10 })
+                            .onClick(() => {
+                              this.filterCurrentTokens(this.token_list_search_str);
+                            })
+                        }
+                        .padding({ left: 10, right: 10, top: 10 })
                         .width('100%')
+                        .visibility(this.token_list_search_visible || this.token_list_search_enable ? Visibility.Visible : Visibility.None)
+                      }
                     }
                     ForEach(this.CurrentTokens, (token: TokenConfig, index: number) => {
                       ListItem() {
@@ -701,6 +746,30 @@ struct Index {
                   .chainAnimation(true)
                   .scrollBar(BarState.Off)
                   .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+                  .onScrollIndex((start) => {
+                    this.token_list_reach_start = (start === 0);
+                  })
+                  .onTouch((event?: TouchEvent) => {
+                    animateTo({ curve: curves.springMotion() }, () => {
+                      if (event?.type === TouchType.Down) {
+                        this.token_list_touch_down_pos = event.touches[0].y;
+                      }
+                      if (event?.type === TouchType.Move) {
+                        this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
+                        if (this.token_list_reach_start) {
+                          if (this.token_list_touch_move_pos > 50) {
+                            this.token_list_search_visible = true;
+                            focusControl.requestFocus(this.id_list[0])
+                          } else if (this.token_list_touch_move_pos < -50) {
+                            this.token_list_search_visible = false;
+                          }
+                        } else {
+                          this.token_list_search_visible = false;
+                        }
+                      }
+                    })
+
+                  })
                 }
                 Button({ type: ButtonType.Circle }) {
                   SymbolGlyph($r('sys.symbol.plus'))

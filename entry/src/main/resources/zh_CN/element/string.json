@@ -415,6 +415,10 @@
     {
       "name": "setting_migration_confirm",
       "value": "确认"
+    },
+    {
+      "name": "token_search_placeholder",
+      "value": "搜索..."
     }
   ]
 }
