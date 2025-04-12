@@ -58,11 +58,11 @@
     },
     {
       "name": "token_progress_next_color_start",
-      "value": "#FFD71616"
+      "value": "#FFF18585"
     },
     {
       "name": "token_progress_next_color_end",
-      "value": "#FFF18585"
+      "value": "#FFD71616"
     }
   ]
 }
