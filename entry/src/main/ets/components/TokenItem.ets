@@ -118,7 +118,7 @@ export struct TokenItem {
             .textAlign(TextAlign.End)
             .textOverflow({ overflow: TextOverflow.MARQUEE })
             .maxLines(1)
-            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold ?
+            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP ?
               $r('app.color.token_progress_next_color_end') :
               $r('app.color.token_number'))
             .fontSize(30)
