@@ -734,8 +734,10 @@ struct Index {
                       return JSON.stringify(item)
                     })
                       .onMove((from, to) => {
-                        // wait 500ms for animation done
-                        setTimeout(() => tkStore.updateTokenRank(from, to), 500);
+                        if (!this.token_list_search_enable) {
+                          // wait 500ms for animation done
+                          setTimeout(() => tkStore.updateTokenRank(from, to), 500);
+                        }
                       })
                     ListItem() {
                       Row()
