@@ -665,7 +665,7 @@ struct Index {
                           .height(50 + this.appTopAvoidHeight)
                           .width('100%')
                         Stack({ alignContent: Alignment.End}) {
-                          TextInput({ placeholder: $r('app.string.token_search_placeholder') })
+                          TextInput({ placeholder: $r('app.string.token_search_placeholder'), text: this.token_list_search_str })
                             .id(this.id_list[0])
                             .onChange((value) => {
                               this.token_list_search_str = value;
@@ -673,11 +673,15 @@ struct Index {
                             .onSubmit(() => {
                               this.filterCurrentTokens(this.token_list_search_str);
                             })
-                          SymbolGlyph($r('sys.symbol.magnifyingglass'))
+                          SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :$r('sys.symbol.magnifyingglass'))
                             .fontSize(20)
                             .fontWeight(FontWeight.Medium)
+                            .fontColor([$r('app.color.item_fg')])
                             .padding({ right: 10 })
                             .onClick(() => {
+                              if (this.token_list_search_enable) {
+                                this.token_list_search_str = '';
+                              }
                               this.filterCurrentTokens(this.token_list_search_str);
                             })
                         }
@@ -756,7 +760,7 @@ struct Index {
                       if (event?.type === TouchType.Move) {
                         this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
                         if (this.token_list_reach_start) {
-                          if (this.token_list_touch_move_pos > 300) {
+                          if (this.token_list_touch_move_pos > 200) {
                             this.token_list_search_visible = true;
                             focusControl.requestFocus(this.id_list[0])
                           } else if (this.token_list_touch_move_pos < -50) {
