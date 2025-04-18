@@ -426,7 +426,7 @@
     },
     {
       "name": "toast_wrong_forti_token",
-      "value": "错误：Forti Token不正确!"
+      "value": "错误：Forti令牌不正确!"
     },
     {
       "name": "toast_wrong_device_id",
