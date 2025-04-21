@@ -4,7 +4,6 @@ import { HMACAlgorithm, ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { SelectIconDialog } from './SelectIconDialog';
 
-@Entry
 @Preview
 @CustomDialog
 export struct TOTPConfigDialog {

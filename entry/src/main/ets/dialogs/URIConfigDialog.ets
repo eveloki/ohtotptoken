@@ -3,7 +3,6 @@ import { url } from "@kit.ArkTS";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { readFileContent, showSelectFilePicker } from "../utils/FileUtils";
 
-@Entry
 @Preview
 @CustomDialog
 export struct URIConfigDialog {

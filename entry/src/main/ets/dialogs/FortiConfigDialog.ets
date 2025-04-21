@@ -20,7 +20,7 @@ class  forti_server_resp_data {
   error?: forti_server_resp_err
 }
 class  forti_server_resp {
-  d!: forti_server_resp_data
+  d: forti_server_resp_data = {}
 }
 
 @Preview
