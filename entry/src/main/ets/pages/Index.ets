@@ -357,7 +357,7 @@ struct Index {
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
     if (toast) {
-      promptAction.showToast({message: `token ${conf.TokenIssuer}:${conf.TokenName} updated.`})
+      promptAction.showToast({ message: $r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName) })
     }
   }
 
@@ -368,7 +368,8 @@ struct Index {
       }
       await this.updateTokenConfig(tokens[i], false);
     }
-    promptAction.showToast({message: `${tokens.length} token(s) updated.`})
+    const message = $r('app.string.toast_multi_token_update');
+    promptAction.showToast({ message: $r('app.string.toast_multi_token_update', tokens.length) })
   }
 
   //准备接入标准化隐私托管
@@ -706,7 +707,7 @@ struct Index {
               Stack({ alignContent: Alignment.BottomEnd }) {
                 if (this.CurrentTokens.length === 0) {
                   Row() {
-                    Text($r('app.string.app_guide_msg'))
+                    Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') : $r('app.string.app_guide_msg'))
                       .textAlign(TextAlign.Center)
                       .fontSize(20)
                       .width('100%')
