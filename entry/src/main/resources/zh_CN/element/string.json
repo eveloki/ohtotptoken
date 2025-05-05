@@ -426,7 +426,7 @@
     },
     {
       "name": "toast_wrong_forti_token",
-      "value": "错误：Forti令牌不正确!"
+      "value": "错误：Forti激活码不正确!"
     },
     {
       "name": "toast_wrong_device_id",
@@ -438,11 +438,11 @@
     },
     {
       "name": "toast_token_update",
-      "value": "令牌 ISSUER:TOKEN_NAME 已更新。"
+      "value": "令牌 %s:%s 已更新"
     },
     {
       "name": "toast_multi_token_update",
-      "value": "LENGTH个令牌已更新。"
+      "value": "%d个令牌已更新"
     },
     {
       "name": "toast_icon_pack_invalid",
@@ -451,6 +451,10 @@
     {
       "name": "toast_icon_pack_already_installed",
       "value": "图标包已安装"
+    },
+    {
+      "name": "app_token_list_search_msg",
+      "value": "空"
     }
   ]
 }
