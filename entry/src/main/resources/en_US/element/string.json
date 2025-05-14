@@ -11,6 +11,450 @@
     {
       "name": "EntryAbility_label",
       "value": "TOTP Token"
+    },
+    {
+      "name": "tab_token",
+      "value": "Tokens"
+    },
+    {
+      "name": "tab_token_add_scan",
+      "value": "Scan QR Code"
+    },
+    {
+      "name": "tab_token_add_key",
+      "value": "Generic Token"
+    },
+    {
+      "name": "tab_token_add_forti_scan",
+      "value": "Scan Forti QR Code"
+    },
+    {
+      "name": "tab_token_add_forti_key",
+      "value": "Forti Token"
+    },
+    {
+      "name": "tab_token_add_hotp_key",
+      "value": "HOTP Token"
+    },
+    {
+      "name": "tab_token_add_stream_key",
+      "value": "Steam Token"
+    },
+    {
+      "name": "tab_setting",
+      "value": "Settings"
+    },
+    {
+      "name": "alert_remove_confirm_msg",
+      "value": "Are you sure you want to delete the token for %s?"
+    },
+    {
+      "name": "dialog_btn_confirm",
+      "value": "Confirm"
+    },
+    {
+      "name": "dialog_btn_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "dialog_cfg_tk_secret",
+      "value": "Secret"
+    },
+    {
+      "name": "dialog_cfg_tk_issuer",
+      "value": "Issuer"
+    },
+    {
+      "name": "dialog_cfg_tk_name",
+      "value": "Username"
+    },
+    {
+      "name": "dialog_cfg_tk_alg",
+      "value": "Algorithm"
+    },
+    {
+      "name": "dialog_cfg_tk_digits",
+      "value": "Token Length"
+    },
+    {
+      "name": "dialog_cfg_tk_timeout",
+      "value": "Refresh Interval"
+    },
+    {
+      "name": "dialog_cfg_tk_counter",
+      "value": "Counter"
+    },
+    {
+      "name": "dialog_cfg_forti_dev_id",
+      "value": "Device ID"
+    },
+    {
+      "name": "dialog_cfg_forti_token",
+      "value": "Activation Code"
+    },
+    {
+      "name": "dialog_cfg_forti_btn_gen_key",
+      "value": "Get Secret"
+    },
+    {
+      "name": "dialog_backup_password",
+      "value": "Password"
+    },
+    {
+      "name": "dialog_backup_password_placeholder",
+      "value": "Enter backup file password..."
+    },
+    {
+      "name": "warn_forti_dev_id_popup",
+      "value": "Forti only allows you to activate once and bind to this Device ID"
+    },
+    {
+      "name": "setting_opensource_leg",
+      "value": "Open Source Software Used"
+    },
+    {
+      "name": "setting_about",
+      "value": "About"
+    },
+    {
+      "name": "setting_backup",
+      "value": "Backup & Migration"
+    },
+    {
+      "name": "setting_backup_export",
+      "value": "Export Backup"
+    },
+    {
+      "name": "setting_backup_import",
+      "value": "Import Backup"
+    },
+    {
+      "name": "setting_safety",
+      "value": "Security"
+    },
+    {
+      "name": "setting_safety_privacy",
+      "value": "Privacy Mode"
+    },
+    {
+      "name": "setting_safety_privacy_des",
+      "value": "Prevent other apps from capturing your screen, including one-time passwords."
+    },
+    {
+      "name": "setting_safety_lock",
+      "value": "App Lock"
+    },
+    {
+      "name": "setting_safety_lock_des",
+      "value": "Require authentication when opening the app."
+    },
+    {
+      "name": "setting_backup_output",
+      "value": "Export passwords?"
+    },
+    {
+      "name": "setting_backup_output_des",
+      "value": "If you choose plain export, passwords will be shown in plain text to anyone with access to the file. Are you sure you want to export passwords?"
+    },
+    {
+      "name": "setting_backup_output_msg",
+      "value": "Please select export method"
+    },
+    {
+      "name": "setting_backup_type_default",
+      "value": "Plain Text"
+    },
+    {
+      "name": "setting_backup_type_enc",
+      "value": "Encrypted"
+    },
+    {
+      "name": "setting_backup_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "setting_backup_confirm",
+      "value": "Confirm"
+    },
+    {
+      "name": "setting_agreement_statement",
+      "value": "Agreements & Statements"
+    },
+    {
+      "name": "privacy_statement",
+      "value": "Privacy Statement"
+    },
+    {
+      "name": "user_agreement",
+      "value": "User Agreement"
+    },
+    {
+      "name": "opensource_license",
+      "value": "Open Source License"
+    },
+    {
+      "name": "user_auth_prompt",
+      "value": "Please authenticate"
+    },
+    {
+      "name": "app_locking",
+      "value": "App is locked"
+    },
+    {
+      "name": "app_unlock",
+      "value": "Unlock"
+    },
+    {
+      "name": "distributed_data_sync",
+      "value": "For seamless transfer across multiple devices."
+    },
+    {
+      "name": "data_sync",
+      "value": "Data Sync"
+    },
+    {
+      "name": "data_rdb_sync",
+      "value": "Cross-device Data Transfer"
+    },
+    {
+      "name": "data_rdb_sync_des",
+      "value": "Data will be synced to other devices logged into your Huawei account in the same network."
+    },
+    {
+      "name": "data_rdb_cloud_sync",
+      "value": "Cloud Sync"
+    },
+    {
+      "name": "data_rdb_cloud_sync_des",
+      "value": "Data will be synced via Huawei Cloud to other devices logged into your Huawei account."
+    },
+    {
+      "name": "data_rdb_sync_details",
+      "value": "Sync Details"
+    },
+    {
+      "name": "data_kv_sync_time",
+      "value": "Last Updated"
+    },
+    {
+      "name": "data_sync_manual",
+      "value": "Manual Sync"
+    },
+    {
+      "name": "data_dev_info",
+      "value": "Device Info"
+    },
+    {
+      "name": "app_ua_add_token",
+      "value": "Add Secret"
+    },
+    {
+      "name": "drop_file_import_data",
+      "value": "Drag file here to import data"
+    },
+    {
+      "name": "app_filing_information",
+      "value": "Filing Information"
+    },
+    {
+      "name": "app_issue_feedback",
+      "value": "Feedback"
+    },
+    {
+      "name": "app_scan_code",
+      "value": "Quick Scan"
+    },
+    {
+      "name": "dialog_cfg_steam_from_mafile",
+      "value": "Import from maFile"
+    },
+    {
+      "name": "setting_hide_token",
+      "value": "Hide Tokens"
+    },
+    {
+      "name": "setting_safety_hide_token_des",
+      "value": "Tokens are hidden by default for better security."
+    },
+    {
+      "name": "tab_token_add_uri",
+      "value": "Text Link"
+    },
+    {
+      "name": "tab_token_add_uri_title",
+      "value": "Enter OTP URI"
+    },
+    {
+      "name": "tab_token_add_uri_desc",
+      "value": "OTP URI starts with otpauth:// and supports multiple lines."
+    },
+    {
+      "name": "app_appearance",
+      "value": "Appearance & Features"
+    },
+    {
+      "name": "show_next_token",
+      "value": "Show Next Token"
+    },
+    {
+      "name": "show_next_token_des",
+      "value": "Display the next token below the current one for easier use."
+    },
+    {
+      "name": "swap_host_user",
+      "value": "Swap Issuer & Username"
+    },
+    {
+      "name": "swap_host_user_des",
+      "value": "Swap display of username and issuer for scenarios where username is prioritized."
+    },
+    {
+      "name": "auto_unlock",
+      "value": "Try Auto Unlock"
+    },
+    {
+      "name": "auto_unlock_des",
+      "value": "Automatically attempt to unlock when entering the lock screen after enabling app lock."
+    },
+    {
+      "name": "setting_color_mode",
+      "value": "Color Mode"
+    },
+    {
+      "name": "setting_color_mode_desc",
+      "value": "Control whether the app follows the system dark mode or uses its own setting."
+    },
+    {
+      "name": "setting_color_mode_system",
+      "value": "Follow System"
+    },
+    {
+      "name": "setting_color_mode_dark",
+      "value": "Dark"
+    },
+    {
+      "name": "setting_color_mode_light",
+      "value": "Light"
+    },
+    {
+      "name": "setting_icon_pack",
+      "value": "Icon Pack"
+    },
+    {
+      "name": "setting_icon_pack_desc",
+      "value": "Manage and import Aegis-format icon packs."
+    },
+    {
+      "name": "setting_icon_pack_preview",
+      "value": "%d installed"
+    },
+    {
+      "name": "app_guide_msg",
+      "value": "Tap + below to add a token"
+    },
+    {
+      "name": "setting_add_icon_pack",
+      "value": "Add Icon Pack"
+    },
+    {
+      "name": "alert_icon_pack_remove_confirm_msg",
+      "value": "Are you sure you want to delete the icon pack %s?"
+    },
+    {
+      "name": "setting_icon_pack_count",
+      "value": "Total %d icons"
+    },
+    {
+      "name": "setting_icon_pack_title",
+      "value": "%s (v%s)"
+    },
+    {
+      "name": "setting_icon_pack_info",
+      "value": "Recommended icon packs:"
+    },
+    {
+      "name": "dialog_icon_recommend",
+      "value": "Recommended"
+    },
+    {
+      "name": "dialog_icon_select_auto",
+      "value": "Auto"
+    },
+    {
+      "name": "icon_alert_remove_confirm_msg",
+      "value": "Delete this icon?"
+    },
+    {
+      "name": "token_copy_guide_popup",
+      "value": "Tip: Long press to copy token, tap to hide/show token"
+    },
+    {
+      "name": "token_copy_guide_popup_Confirm",
+      "value": "Got it"
+    },
+    {
+      "name": "token_copied",
+      "value": "Copied"
+    },
+    {
+      "name": "setting_migration",
+      "value": "Export Migration File"
+    },
+    {
+      "name": "setting_migration_output",
+      "value": "Export migration file?"
+    },
+    {
+      "name": "setting_migration_output_des",
+      "value": "The exported migration file consists of unencrypted plain text OTP URIs, which may easily leak token secrets. Please confirm you understand the risks."
+    },
+    {
+      "name": "setting_migration_output_msg",
+      "value": "Are you sure you want to export the migration file?"
+    },
+    {
+      "name": "setting_migration_confirm",
+      "value": "Confirm"
+    },
+    {
+      "name": "token_search_placeholder",
+      "value": "Search..."
+    },
+    {
+      "name": "toast_backup_success",
+      "value": "Backup successful"
+    },
+    {
+      "name": "toast_wrong_forti_token",
+      "value": "Error: Invalid Forti activation code!"
+    },
+    {
+      "name": "toast_wrong_device_id",
+      "value": "Error: Invalid Device ID!"
+    },
+    {
+      "name": "toast_wrong_user_token",
+      "value": "Error: Invalid user token!"
+    },
+    {
+      "name": "toast_token_update",
+      "value": "Token %s:%s updated"
+    },
+    {
+      "name": "toast_multi_token_update",
+      "value": "%d tokens updated"
+    },
+    {
+      "name": "toast_icon_pack_invalid",
+      "value": "Invalid Aegis icon pack"
+    },
+    {
+      "name": "toast_icon_pack_already_installed",
+      "value": "Icon pack already installed"
+    },
+    {
+      "name": "app_token_list_search_msg",
+      "value": "Empty"
     }
   ]
 }
