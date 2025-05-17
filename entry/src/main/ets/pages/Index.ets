@@ -642,7 +642,7 @@ struct Index {
       } else {
 
         Column() {
-          Tabs() {
+          Tabs({ index: this.tab_bar_index }) {
             TabContent() {
               Stack({ alignContent: Alignment.BottomEnd }) {
                 if (this.CurrentTokens.length === 0) {
@@ -826,6 +826,7 @@ struct Index {
             }
             .backgroundColor($r('app.color.window_background'))
             .tabBar(this.tabBar($r('app.string.tab_setting'), 1))
+            .tabIndex(1)
           }
           .barBackgroundColor($r('app.color.tab_bar_bg'))
           .backgroundColor($r('app.color.window_background'))
