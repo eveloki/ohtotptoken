@@ -1,0 +1,460 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "一次性密碼令牌管理軟體"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "一次性密碼令牌管理軟體"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "OTP令牌"
+    },
+    {
+      "name": "tab_token",
+      "value": "令牌"
+    },
+    {
+      "name": "tab_token_add_scan",
+      "value": "掃描QR碼"
+    },
+    {
+      "name": "tab_token_add_key",
+      "value": "通用令牌"
+    },
+    {
+      "name": "tab_token_add_forti_scan",
+      "value": "掃描Forti提供的QR碼"
+    },
+    {
+      "name": "tab_token_add_forti_key",
+      "value": "Forti令牌"
+    },
+    {
+      "name": "tab_token_add_hotp_key",
+      "value": "HOTP令牌"
+    },
+    {
+      "name": "tab_token_add_stream_key",
+      "value": "Steam令牌"
+    },
+    {
+      "name": "tab_setting",
+      "value": "設定"
+    },
+    {
+      "name": "alert_remove_confirm_msg",
+      "value": "確認刪除%s的令牌嗎?"
+    },
+    {
+      "name": "dialog_btn_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "dialog_btn_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "dialog_cfg_tk_secret",
+      "value": "密鑰"
+    },
+    {
+      "name": "dialog_cfg_tk_issuer",
+      "value": "主機名稱"
+    },
+    {
+      "name": "dialog_cfg_tk_name",
+      "value": "使用者名稱"
+    },
+    {
+      "name": "dialog_cfg_tk_alg",
+      "value": "演算法"
+    },
+    {
+      "name": "dialog_cfg_tk_digits",
+      "value": "令牌長度"
+    },
+    {
+      "name": "dialog_cfg_tk_timeout",
+      "value": "更新時間"
+    },
+    {
+      "name": "dialog_cfg_tk_counter",
+      "value": "計數"
+    },
+    {
+      "name": "dialog_cfg_forti_dev_id",
+      "value": "裝置ID"
+    },
+    {
+      "name": "dialog_cfg_forti_token",
+      "value": "啟用碼"
+    },
+    {
+      "name": "dialog_cfg_forti_btn_gen_key",
+      "value": "取得密鑰"
+    },
+    {
+      "name": "dialog_backup_password",
+      "value": "密碼"
+    },
+    {
+      "name": "dialog_backup_password_placeholder",
+      "value": "輸入備份檔案的密碼..."
+    },
+    {
+      "name": "warn_forti_dev_id_popup",
+      "value": "Forti只允許你啟用一次並綁定此裝置ID"
+    },
+    {
+      "name": "setting_opensource_leg",
+      "value": "使用到的開源軟體"
+    },
+    {
+      "name": "setting_about",
+      "value": "關於"
+    },
+    {
+      "name": "setting_backup",
+      "value": "備份與遷移"
+    },
+    {
+      "name": "setting_backup_export",
+      "value": "匯出備份"
+    },
+    {
+      "name": "setting_backup_import",
+      "value": "匯入備份"
+    },
+    {
+      "name": "setting_safety",
+      "value": "安全性"
+    },
+    {
+      "name": "setting_safety_privacy",
+      "value": "隱私模式"
+    },
+    {
+      "name": "setting_safety_privacy_des",
+      "value": "禁止其他應用程式擷取您的螢幕畫面，包括一次性密碼。"
+    },
+    {
+      "name": "setting_safety_lock",
+      "value": "應用鎖定"
+    },
+    {
+      "name": "setting_safety_lock_des",
+      "value": "要求在開啟應用時鎖定螢幕驗證您的身份資訊。"
+    },
+    {
+      "name": "setting_backup_output",
+      "value": "匯出密碼？"
+    },
+    {
+      "name": "setting_backup_output_des",
+      "value": "如果您選擇普通匯出方式，密碼將以純文字形式顯示給有權存取該檔案的任何人。是否確實要匯出密碼？"
+    },
+    {
+      "name": "setting_backup_output_msg",
+      "value": "請選擇匯出方式"
+    },
+    {
+      "name": "setting_backup_type_default",
+      "value": "明文"
+    },
+    {
+      "name": "setting_backup_type_enc",
+      "value": "加密"
+    },
+    {
+      "name": "setting_backup_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "setting_backup_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "setting_agreement_statement",
+      "value": "協議與聲明"
+    },
+    {
+      "name": "privacy_statement",
+      "value": "隱私聲明"
+    },
+    {
+      "name": "user_agreement",
+      "value": "使用者協議"
+    },
+    {
+      "name": "opensource_license",
+      "value": "開放原始碼授權"
+    },
+    {
+      "name": "user_auth_prompt",
+      "value": "請進行使用者驗證"
+    },
+    {
+      "name": "app_locking",
+      "value": "應用已被鎖定"
+    },
+    {
+      "name": "app_unlock",
+      "value": "解鎖"
+    },
+    {
+      "name": "distributed_data_sync",
+      "value": "用於多裝置自由流轉."
+    },
+    {
+      "name": "data_sync",
+      "value": "資料同步"
+    },
+    {
+      "name": "data_rdb_sync",
+      "value": "跨裝置資料流轉"
+    },
+    {
+      "name": "data_rdb_sync_des",
+      "value": "資料將會同步到一個組網環境中您華為帳號登入的其他裝置。"
+    },
+    {
+      "name": "data_rdb_cloud_sync",
+      "value": "雲端同步"
+    },
+    {
+      "name": "data_rdb_cloud_sync_des",
+      "value": "資料將會透過華為雲同步至您華為帳號登入的其他裝置上。"
+    },
+    {
+      "name": "data_rdb_sync_details",
+      "value": "同步詳情"
+    },
+    {
+      "name": "data_kv_sync_time",
+      "value": "更新時間"
+    },
+    {
+      "name": "data_sync_manual",
+      "value": "手動同步"
+    },
+    {
+      "name": "data_dev_info",
+      "value": "裝置資訊"
+    },
+    {
+      "name": "app_ua_add_token",
+      "value": "新增密鑰"
+    },
+    {
+      "name": "drop_file_import_data",
+      "value": "拖入檔案匯入資料"
+    },
+    {
+      "name": "app_filing_information",
+      "value": "備案資訊"
+    },
+    {
+      "name": "app_issue_feedback",
+      "value": "問題回饋"
+    },
+    {
+      "name": "app_scan_code",
+      "value": "快速掃碼"
+    },
+    {
+      "name": "dialog_cfg_steam_from_mafile",
+      "value": "從 maFile 檔案匯入"
+    },
+    {
+      "name": "setting_hide_token",
+      "value": "隱藏令牌"
+    },
+    {
+      "name": "setting_safety_hide_token_des",
+      "value": "預設不顯示令牌以提高安全性。"
+    },
+    {
+      "name": "tab_token_add_uri",
+      "value": "文字連結"
+    },
+    {
+      "name": "tab_token_add_uri_title",
+      "value": "輸入OTP URI"
+    },
+    {
+      "name": "tab_token_add_uri_desc",
+      "value": "OTP URI是以otpauth://開頭的文字，支援多行。"
+    },
+    {
+      "name": "app_appearance",
+      "value": "外觀與功能"
+    },
+    {
+      "name": "show_next_token",
+      "value": "顯示下一個令牌"
+    },
+    {
+      "name": "show_next_token_des",
+      "value": "在目前令牌下方展示下一個令牌，提高易用性。"
+    },
+    {
+      "name": "swap_host_user",
+      "value": "交換主機名稱與使用者名稱"
+    },
+    {
+      "name": "swap_host_user_des",
+      "value": "交換顯示使用者名稱和主機名稱，用於需要優先分辨使用者名稱的場景。"
+    },
+    {
+      "name": "auto_unlock",
+      "value": "嘗試自動解鎖"
+    },
+    {
+      "name": "auto_unlock_des",
+      "value": "當啟用應用鎖定後進入鎖定頁面時自動觸發解鎖。"
+    },
+    {
+      "name": "setting_color_mode",
+      "value": "色彩模式"
+    },
+    {
+      "name": "setting_color_mode_desc",
+      "value": "控制應用是否跟隨系統深色模式或自行決定。"
+    },
+    {
+      "name": "setting_color_mode_system",
+      "value": "跟隨系統"
+    },
+    {
+      "name": "setting_color_mode_dark",
+      "value": "深色"
+    },
+    {
+      "name": "setting_color_mode_light",
+      "value": "亮色"
+    },
+    {
+      "name": "setting_icon_pack",
+      "value": "圖示包"
+    },
+    {
+      "name": "setting_icon_pack_desc",
+      "value": "管理和匯入Aegis格式的圖示包。"
+    },
+    {
+      "name": "setting_icon_pack_preview",
+      "value": "%d 個已安裝"
+    },
+    {
+      "name": "app_guide_msg",
+      "value": "點選下方+新增令牌"
+    },
+    {
+      "name": "setting_add_icon_pack",
+      "value": "新增圖示包"
+    },
+    {
+      "name": "alert_icon_pack_remove_confirm_msg",
+      "value": "確認刪除%s圖示包嗎?"
+    },
+    {
+      "name": "setting_icon_pack_count",
+      "value": "共%d個圖示"
+    },
+    {
+      "name": "setting_icon_pack_title",
+      "value": "%s(v%s)"
+    },
+    {
+      "name": "setting_icon_pack_info",
+      "value": "推薦的圖示包:"
+    },
+    {
+      "name": "dialog_icon_recommend",
+      "value": "推薦"
+    },
+    {
+      "name": "dialog_icon_select_auto",
+      "value": "自動"
+    },
+    {
+      "name": "icon_alert_remove_confirm_msg",
+      "value": "是否刪除這個圖示?"
+    },
+    {
+      "name": "token_copy_guide_popup",
+      "value": "小提示:長按可複製令牌、點選可切換隱藏/顯示令牌狀態"
+    },
+    {
+      "name": "token_copy_guide_popup_Confirm",
+      "value": "我知道啦"
+    },
+    {
+      "name": "token_copied",
+      "value": "已複製"
+    },
+    {
+      "name": "setting_migration",
+      "value": "匯出遷移檔案"
+    },
+    {
+      "name": "setting_migration_output",
+      "value": "匯出遷移檔案?"
+    },
+    {
+      "name": "setting_migration_output_des",
+      "value": "匯出的遷移檔案由未經加密的純文字OTP URI組成，極易導致令牌密鑰洩露，請確認您瞭解相關風險。"
+    },
+    {
+      "name": "setting_migration_output_msg",
+      "value": "您確定要匯出遷移檔案嗎?"
+    },
+    {
+      "name": "setting_migration_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "token_search_placeholder",
+      "value": "搜尋..."
+    },
+    {
+      "name": "toast_backup_success",
+      "value": "備份成功"
+    },
+    {
+      "name": "toast_wrong_forti_token",
+      "value": "錯誤：Forti啟用碼不正確!"
+    },
+    {
+      "name": "toast_wrong_device_id",
+      "value": "錯誤：裝置ID不正確!"
+    },
+    {
+      "name": "toast_wrong_user_token",
+      "value": "錯誤：使用者Token不正確!"
+    },
+    {
+      "name": "toast_token_update",
+      "value": "令牌 %s:%s 已更新"
+    },
+    {
+      "name": "toast_multi_token_update",
+      "value": "%d個令牌已更新"
+    },
+    {
+      "name": "toast_icon_pack_invalid",
+      "value": "無效的Aegis圖示包"
+    },
+    {
+      "name": "toast_icon_pack_already_installed",
+      "value": "圖示包已安裝"
+    },
+    {
+      "name": "app_token_list_search_msg",
+      "value": "空"
+    }
+  ]
+}
