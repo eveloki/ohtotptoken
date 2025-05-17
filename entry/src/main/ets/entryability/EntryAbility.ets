@@ -1,11 +1,14 @@
-import { AbilityConstant, UIAbility, Want, Configuration,ApplicationStateChangeCallback,
-  ConfigurationConstant  } from '@kit.AbilityKit';
+import {
+  AbilityConstant,
+  UIAbility, Want, Configuration,
+  ApplicationStateChangeCallback,
+  ConfigurationConstant
+} from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { WindowUtil } from '../utils/WindowUtil';
 import { AppPreference, SettingColorMode } from '../utils/AppPreference';
-import { router } from '@kit.ArkUI';
 import { relationalStore  } from '@kit.ArkData';
 
 //单版本分布式键值数据库
@@ -26,13 +29,7 @@ export default class EntryAbility extends UIAbility {
       },
       onApplicationBackground() {
         console.info('applicationStateChangeCallback onApplicationBackground');
-        //如果启用了锁定检查要回到开屏验证pin
-        if (AppPreference.getAppearance('app_safety_lock_enable')) {
-          try {
-            router.pushUrl({ url: 'pages/SplashPage' });
-          } catch (err) {
-          }
-        }
+        AppStorage.setOrCreate("appSwitchedOut", true);
       }
     }
 
@@ -106,7 +103,6 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
-    AppStorage.setOrCreate("appSwitchedOut", true);
   }
 
   applySettings(windowClass: window.Window): void {

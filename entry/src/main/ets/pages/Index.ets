@@ -51,6 +51,8 @@ struct Index {
   @Local token_list_search_str: string = '';
   @Local id_list: string[] = ['search_bar'];
 
+  @Local token_list_lanes: number = 1;
+
   private appIsShow = false;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
@@ -662,40 +664,42 @@ struct Index {
                 Column() {
 
                   List({ space: 10, initialIndex: 0 }) {
-                    ListItem() {
-                      Column() {
-                        Row()
-                          .height(50 + this.appTopAvoidHeight)
+                    ListItemGroup() {
+                      ListItem() {
+                        Column() {
+                          Row()
+                            .height(50 + this.appTopAvoidHeight)
+                            .width('100%')
+                          Stack({ alignContent: Alignment.End }) {
+                            TextInput({
+                              placeholder: $r('app.string.token_search_placeholder'),
+                              text: this.token_list_search_str
+                            })
+                              .id(this.id_list[0])
+                              .onChange((value) => {
+                                this.token_list_search_str = value;
+                              })
+                              .onSubmit(() => {
+                                this.filterCurrentTokens(this.token_list_search_str);
+                              })
+                            SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
+                            $r('sys.symbol.magnifyingglass'))
+                              .fontSize(20)
+                              .fontWeight(FontWeight.Medium)
+                              .fontColor([$r('app.color.item_fg')])
+                              .padding({ right: 10 })
+                              .onClick(() => {
+                                if (this.token_list_search_enable) {
+                                  this.token_list_search_str = '';
+                                }
+                                this.filterCurrentTokens(this.token_list_search_str);
+                              })
+                          }
+                          .padding({ left: 10, right: 10, top: 10 })
                           .width('100%')
-                        Stack({ alignContent: Alignment.End }) {
-                          TextInput({
-                            placeholder: $r('app.string.token_search_placeholder'),
-                            text: this.token_list_search_str
-                          })
-                            .id(this.id_list[0])
-                            .onChange((value) => {
-                              this.token_list_search_str = value;
-                            })
-                            .onSubmit(() => {
-                              this.filterCurrentTokens(this.token_list_search_str);
-                            })
-                          SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
-                          $r('sys.symbol.magnifyingglass'))
-                            .fontSize(20)
-                            .fontWeight(FontWeight.Medium)
-                            .fontColor([$r('app.color.item_fg')])
-                            .padding({ right: 10 })
-                            .onClick(() => {
-                              if (this.token_list_search_enable) {
-                                this.token_list_search_str = '';
-                              }
-                              this.filterCurrentTokens(this.token_list_search_str);
-                            })
+                          .visibility(this.token_list_search_visible || this.token_list_search_enable ?
+                          Visibility.Visible : Visibility.None)
                         }
-                        .padding({ left: 10, right: 10, top: 10 })
-                        .width('100%')
-                        .visibility(this.token_list_search_visible || this.token_list_search_enable ?
-                        Visibility.Visible : Visibility.None)
                       }
                     }
 
@@ -749,6 +753,9 @@ struct Index {
                           },
                         }
                       })
+                      .onTouch(() => {
+                        this.token_list_reach_start = false;
+                      })
                     }, (item: TokenConfig) => {
                       return JSON.stringify(item)
                     })
@@ -758,12 +765,15 @@ struct Index {
                           setTimeout(() => tkStore.updateTokenRank(from, to), 500);
                         }
                       })
-                    ListItem() {
-                      Row()
-                        .width('100%')
-                        .height(this.appBottomAvoidHeight + 40)
+                    ListItemGroup() {
+                      ListItem() {
+                        Row()
+                          .width('100%')
+                          .height(this.appBottomAvoidHeight + 40)
+                      }
                     }
                   }
+                  .lanes(this.token_list_lanes)
                   .layoutWeight(1)
                   .width('100%')
                   .height('100%')
@@ -772,6 +782,9 @@ struct Index {
                   .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
                   .onScrollIndex((start) => {
                     this.token_list_reach_start = (start === 0);
+                  })
+                  .onSizeChange((_, newValue: SizeOptions) => {
+                    this.token_list_lanes = (newValue.width as number ?? 400) / 400;
                   })
                   .onTouch((event?: TouchEvent) => {
                     animateTo({ curve: curves.springMotion() }, () => {
