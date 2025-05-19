@@ -308,7 +308,8 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_safety') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
-                title: $r('app.string.setting_safety_privacy'), isOn: AppPreference.getAppearance('app_safety_privacy_enable') as boolean,
+                title: $r('app.string.setting_safety_privacy'),
+                isOn: AppPreference.getAppearance('app_safety_privacy_enable') as boolean,
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_safety_privacy_enable', IsOn);
@@ -326,7 +327,8 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.key_shield'),
-                title: $r('app.string.setting_safety_lock'), isOn: AppPreference.getAppearance('app_safety_lock_enable') as boolean,
+                title: $r('app.string.setting_safety_lock'),
+                isOn: AppPreference.getAppearance('app_safety_lock_enable') as boolean,
                 description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -346,7 +348,8 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.eye_slash'),
-                title: $r('app.string.setting_hide_token'), isOn: AppPreference.getAppearance('app_safety_hide_token_enable') as boolean,
+                title: $r('app.string.setting_hide_token'),
+                isOn: AppPreference.getAppearance('app_safety_hide_token_enable') as boolean,
                 description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_safety_hide_token_enable', IsOn);
@@ -361,7 +364,8 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.app_appearance') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.chevron_up_2_circle'),
-                title: $r('app.string.show_next_token'), isOn: AppPreference.getAppearance('app_appearance_show_next_token_enable') as boolean,
+                title: $r('app.string.show_next_token'),
+                isOn: AppPreference.getAppearance('app_appearance_show_next_token_enable') as boolean,
                 description: $r('app.string.show_next_token_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_appearance_show_next_token_enable', IsOn);
@@ -373,7 +377,8 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.transfer_station'),
-                title: $r('app.string.swap_host_user'), isOn: AppPreference.getAppearance('app_appearance_swap_host_user_enable') as boolean,
+                title: $r('app.string.swap_host_user'),
+                isOn: AppPreference.getAppearance('app_appearance_swap_host_user_enable') as boolean,
                 description: $r('app.string.swap_host_user_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_appearance_swap_host_user_enable', IsOn);
@@ -385,7 +390,8 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
-                title: $r('app.string.auto_unlock'), isOn: AppPreference.getAppearance('app_appearance_auto_unlock_enable') as boolean,
+                title: $r('app.string.auto_unlock'),
+                isOn: AppPreference.getAppearance('app_appearance_auto_unlock_enable') as boolean,
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setAppearance('app_appearance_auto_unlock_enable', IsOn);
@@ -397,9 +403,11 @@ export struct SettingPage {
               SubItemSelect({
                 icon: $r('sys.symbol.dark'),
                 title: $r('app.string.setting_color_mode'),
-                values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'), $r('app.string.setting_color_mode_light'),],
+                values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'),
+                  $r('app.string.setting_color_mode_light'),],
                 description: $r('app.string.setting_color_mode_desc'),
-                selected: AppPreference.getAppearance('app_appearance_color_mode') as number ?? SettingColorMode.System,
+                selected: AppPreference.getAppearance('app_appearance_color_mode') as number ??
+                SettingColorMode.System,
                 onChange: (index: number) => {
                   AppPreference.setAppearance('app_appearance_color_mode', index);
                   const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
@@ -426,7 +434,8 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.data_sync') }) {
               SubItemToggle({
                 icon: $r('sys.symbol.link'),
-                title: $r('app.string.data_rdb_sync'), isOn: this.RdbSyncEnable as boolean,
+                title: $r('app.string.data_rdb_sync'),
+                isOn: this.RdbSyncEnable as boolean,
                 description: $r('app.string.data_rdb_sync_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -441,7 +450,8 @@ export struct SettingPage {
 
               SubItemToggle({
                 icon: $r('sys.symbol.icloud'),
-                title: $r('app.string.data_rdb_cloud_sync'), isOn: this.RdbCloudSyncEnable as boolean,
+                title: $r('app.string.data_rdb_cloud_sync'),
+                isOn: this.RdbCloudSyncEnable as boolean,
                 description: $r('app.string.data_rdb_cloud_sync_des'),
                 disable: true,
                 onChange: (IsOn: boolean) => {
@@ -509,7 +519,7 @@ export struct SettingPage {
           .padding({ left: 10, right: 10 })
 
           ListItem() {
-            Row(){
+            Row() {
               Hyperlink('https://github.com/SolidFaker/ohtotptoken/issues', $r('app.string.app_issue_feedback'))
                 .height(10)
                 .padding({ left: 10 })

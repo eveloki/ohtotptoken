@@ -53,7 +53,9 @@ struct Index {
   @Local token_list_search_str: string = '';
   @Local id_list: string[] = ['search_bar'];
 
-  private appIsShow= false;
+  @Local token_list_lanes: number = 1;
+
+  private appIsShow = false;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   private appBottomAvoidHeight = AppStorage.get("appBottomAvoidHeight") as number;
   private appTopAvoidHeight = AppStorage.get("appTopAvoidHeight") as number;
@@ -210,15 +212,17 @@ struct Index {
 
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onAppUnlock', () => {
       this.app_lock = false;
+      AppStorage.setOrCreate("appSwitchedOut", false);
     });
 
     // periodically update timestamp for tokens
     setInterval(() => {
-      if (this.appCtx!= undefined&& this.appIsShow)
-        if (this.appCtx.eventHub!= undefined)
+      if (this.appCtx != undefined && this.appIsShow)
+        if (this.appCtx.eventHub != undefined)
            this.updateTimestamp();
     }, 1000);
   }
+
   //region 导入
   private password_input_dialog: CustomDialogController | null = new CustomDialogController({
     builder: EncryptionPassWordDialog({
@@ -268,8 +272,9 @@ struct Index {
   }
 
   onPageHide(): void {
-    this.appIsShow=false;
+    this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
+    //备份还原场景检测是否有备份数据
     if (this.CurrentTokens.length>0) {
       //todo需要申请锁屏后读取权限 需要实现后台任务备份
       try {
@@ -312,13 +317,13 @@ struct Index {
   }
 
   onPageShow(): void {
-    this.app_lock = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
+    this.app_lock = (AppPreference.getAppearance('app_safety_lock_enable') as boolean) && (AppStorage.get('appSwitchedOut') ?? false);
     if (this.app_lock) {
       if (AppPreference.getAppearance('app_appearance_auto_unlock_enable')) {
         this.requireUserAuth();
       }
     }
-    this.appIsShow=true;
+    this.appIsShow = true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
     //页面打开的时候刷新token
@@ -674,11 +679,11 @@ struct Index {
             .width('80%')
             .height('80%')
             .alignRules({
-              top: {anchor: "__container__", align: VerticalAlign.Top},
-              bottom : {anchor : "__container__", align : VerticalAlign.Bottom},
-              left: {anchor: "__container__", align: HorizontalAlign.Start},
-              right : {anchor : "__container__", align: HorizontalAlign.End},
-              bias : {vertical : 0.3}
+              top: { anchor: "__container__", align: VerticalAlign.Top },
+              bottom: { anchor: "__container__", align: VerticalAlign.Bottom },
+              left: { anchor: "__container__", align: HorizontalAlign.Start },
+              right: { anchor: "__container__", align: HorizontalAlign.End },
+              bias: { vertical: 0.3 }
             })
           }
         }
@@ -702,12 +707,13 @@ struct Index {
       } else {
 
         Column() {
-          Tabs() {
+          Tabs({ index: this.tab_bar_index }) {
             TabContent() {
               Stack({ alignContent: Alignment.BottomEnd }) {
                 if (this.CurrentTokens.length === 0) {
                   Row() {
-                    Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') : $r('app.string.app_guide_msg'))
+                    Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') :
+                    $r('app.string.app_guide_msg'))
                       .textAlign(TextAlign.Center)
                       .fontSize(20)
                       .width('100%')
@@ -720,37 +726,45 @@ struct Index {
                 Column() {
 
                   List({ space: 10, initialIndex: 0 }) {
-                    ListItem() {
-                      Column() {
-                        Row()
-                          .height(50 + this.appTopAvoidHeight)
+                    ListItemGroup() {
+                      ListItem() {
+                        Column() {
+                          Row()
+                            .height(50 + this.appTopAvoidHeight)
+                            .width('100%')
+                          Stack({ alignContent: Alignment.End }) {
+                            TextInput({
+                              placeholder: $r('app.string.token_search_placeholder'),
+                              text: this.token_list_search_str
+                            })
+                              .id(this.id_list[0])
+                              .onChange((value) => {
+                                this.token_list_search_str = value;
+                              })
+                              .onSubmit(() => {
+                                this.filterCurrentTokens(this.token_list_search_str);
+                              })
+                            SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
+                            $r('sys.symbol.magnifyingglass'))
+                              .fontSize(20)
+                              .fontWeight(FontWeight.Medium)
+                              .fontColor([$r('app.color.item_fg')])
+                              .padding({ right: 10 })
+                              .onClick(() => {
+                                if (this.token_list_search_enable) {
+                                  this.token_list_search_str = '';
+                                }
+                                this.filterCurrentTokens(this.token_list_search_str);
+                              })
+                          }
+                          .padding({ left: 10, right: 10, top: 10 })
                           .width('100%')
-                        Stack({ alignContent: Alignment.End}) {
-                          TextInput({ placeholder: $r('app.string.token_search_placeholder'), text: this.token_list_search_str })
-                            .id(this.id_list[0])
-                            .onChange((value) => {
-                              this.token_list_search_str = value;
-                            })
-                            .onSubmit(() => {
-                              this.filterCurrentTokens(this.token_list_search_str);
-                            })
-                          SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :$r('sys.symbol.magnifyingglass'))
-                            .fontSize(20)
-                            .fontWeight(FontWeight.Medium)
-                            .fontColor([$r('app.color.item_fg')])
-                            .padding({ right: 10 })
-                            .onClick(() => {
-                              if (this.token_list_search_enable) {
-                                this.token_list_search_str = '';
-                              }
-                              this.filterCurrentTokens(this.token_list_search_str);
-                            })
+                          .visibility(this.token_list_search_visible || this.token_list_search_enable ?
+                          Visibility.Visible : Visibility.None)
                         }
-                        .padding({ left: 10, right: 10, top: 10 })
-                        .width('100%')
-                        .visibility(this.token_list_search_visible || this.token_list_search_enable ? Visibility.Visible : Visibility.None)
                       }
                     }
+
                     ForEach(this.CurrentTokens, (token: TokenConfig, index: number) => {
                       ListItem() {
                         TokenItem({
@@ -764,14 +778,20 @@ struct Index {
                         })
                           .bindPopup(this.token_copy_guide_popup && index === 0, {
                             placement: Placement.Left,
-                            message: getContext(this).resourceManager.getStringSync($r('app.string.token_copy_guide_popup')).toString(),
-                            onStateChange: (e)=> {
+                            message: getContext(this)
+                              .resourceManager
+                              .getStringSync($r('app.string.token_copy_guide_popup'))
+                              .toString(),
+                            onStateChange: (e) => {
                               if (!e.isVisible) {
                                 this.token_copy_guide_popup = false
                               }
                             },
                             primaryButton: {
-                              value: getContext(this).resourceManager.getStringSync($r('app.string.token_copy_guide_popup_Confirm')).toString(),
+                              value: getContext(this)
+                                .resourceManager
+                                .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
+                                .toString(),
                               action: () => {
                                 if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
                                   AppPreference.setAppearance('app_show_guide_tips', false)
@@ -785,11 +805,18 @@ struct Index {
                       .padding({ left: 10, right: 10 })
                       .swipeAction({
                         start: {
-                          builder: () => { this.TokenItemStart(token, index) }
+                          builder: () => {
+                            this.TokenItemStart(token, index)
+                          }
                         },
                         end: {
-                          builder: () => { this.TokenItemEnd(token) },
+                          builder: () => {
+                            this.TokenItemEnd(token)
+                          },
                         }
+                      })
+                      .onTouch(() => {
+                        this.token_list_reach_start = false;
                       })
                     }, (item: TokenConfig) => {
                       return JSON.stringify(item)
@@ -800,12 +827,15 @@ struct Index {
                           setTimeout(() => tkStore.updateTokenRank(from, to), 500);
                         }
                       })
-                    ListItem() {
-                      Row()
-                        .width('100%')
-                        .height(this.appBottomAvoidHeight + 40)
+                    ListItemGroup() {
+                      ListItem() {
+                        Row()
+                          .width('100%')
+                          .height(this.appBottomAvoidHeight + 40)
+                      }
                     }
                   }
+                  .lanes(this.token_list_lanes)
                   .layoutWeight(1)
                   .width('100%')
                   .height('100%')
@@ -814,6 +844,9 @@ struct Index {
                   .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
                   .onScrollIndex((start) => {
                     this.token_list_reach_start = (start === 0);
+                  })
+                  .onSizeChange((_, newValue: SizeOptions) => {
+                    this.token_list_lanes = (newValue.width as number ?? 400) / 400;
                   })
                   .onTouch((event?: TouchEvent) => {
                     animateTo({ curve: curves.springMotion() }, () => {
@@ -837,6 +870,7 @@ struct Index {
 
                   })
                 }
+
                 Button({ type: ButtonType.Circle }) {
                   SymbolGlyph($r('sys.symbol.plus'))
                     .fontSize(40)
@@ -874,7 +908,8 @@ struct Index {
                   if (key_name === 'app_safety_hide_token_enable') {
                     this.token_hide_enable = AppPreference.getAppearance('app_safety_hide_token_enable');
                   } else if (key_name == 'app_appearance_show_next_token_enable') {
-                    this.show_next_token_enable = AppPreference.getAppearance('app_appearance_show_next_token_enable');
+                    this.show_next_token_enable =
+                      AppPreference.getAppearance('app_appearance_show_next_token_enable');
                   } else if (key_name == 'app_appearance_swap_host_user_enable') {
                     this.swap_host_user_enable = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
                   }
@@ -886,6 +921,7 @@ struct Index {
             }
             .backgroundColor($r('app.color.window_background'))
             .tabBar(this.tabBar($r('app.string.tab_setting'), 1))
+            .tabIndex(1)
           }
           .barBackgroundColor($r('app.color.tab_bar_bg'))
           .backgroundColor($r('app.color.window_background'))
@@ -899,7 +935,6 @@ struct Index {
             this.tab_bar_index = index;
             this.token_list_search_visible = false;
           })
-
         }
       }
     }
@@ -907,26 +942,26 @@ struct Index {
     .height('100%')
     .allowDrop([uniformTypeDescriptor.UniformDataType.FILE])
     .onDrop((event?: DragEvent, extraParams?: string) => {
-      this.DropFilesDialogIsOpen=false;
+      this.DropFilesDialogIsOpen = false;
       this.DropFilesDialogController?.close();
     })
     .onDragEnter((event) => {
       //promptAction.showToast({message: `onDragEnter`})
       //检测到开始拖拽
       if (!this.DropFilesDialogIsOpen) {
-        this.DropFilesDialogIsOpen=true;
+        this.DropFilesDialogIsOpen = true;
         this.DropFilesDialogController?.open();
       }
     })
     .onDragLeave((event) => {
       //promptAction.showToast({message: `onDragLeave`})
       //检测到离开拖拽区域
-      this.DropFilesDialogIsOpen=false;
+      this.DropFilesDialogIsOpen = false;
       this.DropFilesDialogController?.close();
     })
-    .onDragEnd((event)=>{
+    .onDragEnd((event) => {
 
     })
-
   }
+
 }
