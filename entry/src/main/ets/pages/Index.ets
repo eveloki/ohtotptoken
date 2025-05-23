@@ -43,7 +43,7 @@ struct Index {
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
   @Local token_copy_guide_popup: boolean = false;
   @Local app_lock: boolean = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
-  @Local token_list_reach_start: boolean = false;
+  @Local token_list_search_start: boolean = false;
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
   @Local token_list_touch_down_pos: number = 0;
@@ -739,6 +739,7 @@ struct Index {
                               }
                             }
                           })
+
                       }
                       .padding({ left: 10, right: 10 })
                       .swipeAction({
@@ -753,8 +754,18 @@ struct Index {
                           },
                         }
                       })
-                      .onTouch(() => {
-                        this.token_list_reach_start = false;
+                      .onTouch((event?: TouchEvent) => {
+                        let isMoving = false;
+                        if (event?.type === TouchType.Down) {
+                          setTimeout(() => {
+                            if (!isMoving) this.token_list_search_start = false;
+                          }, 200)
+                        }
+                        if (event?.type === TouchType.Move) {
+                          isMoving = true;
+                        } else {
+                          this.token_list_search_start = true;
+                        }
                       })
                     }, (item: TokenConfig) => {
                       return JSON.stringify(item)
@@ -780,9 +791,6 @@ struct Index {
                   .chainAnimation(true)
                   .scrollBar(BarState.Off)
                   .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-                  .onScrollIndex((start) => {
-                    this.token_list_reach_start = (start === 0);
-                  })
                   .onSizeChange((_, newValue: SizeOptions) => {
                     this.token_list_lanes = (newValue.width as number ?? 400) / 400;
                   })
@@ -793,7 +801,7 @@ struct Index {
                       }
                       if (event?.type === TouchType.Move) {
                         this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
-                        if (this.token_list_reach_start) {
+                        if (this.token_list_search_start) {
                           if (this.token_list_touch_move_pos > 200) {
                             this.token_list_search_visible = true;
                             focusControl.requestFocus(this.id_list[0])
