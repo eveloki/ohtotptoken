@@ -3,6 +3,7 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
+import { AppPreference } from '../utils/AppPreference';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 
@@ -99,6 +100,15 @@ export struct TokenItem {
       .alignItems(HorizontalAlign.Start)
 
       Blank()
+
+      if (AppPreference.getAppearance('app_debug_mode_on')) {
+        Text(this.Config.RankScore.toString())
+          .textAlign(TextAlign.Center)
+          .textOverflow({ overflow: TextOverflow.MARQUEE })
+          .maxLines(1)
+          .fontSize(30)
+      }
+
       if (this.TokenHide && this.TokenHideEnable) {
         Stack() {
           Text() {

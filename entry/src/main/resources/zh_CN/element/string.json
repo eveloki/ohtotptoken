@@ -455,6 +455,14 @@
     {
       "name": "app_token_list_search_msg",
       "value": "空"
+    },
+    {
+      "name": "debug_mode",
+      "value": "DEBUG模式"
+    },
+    {
+      "name": "debug_mode_des",
+      "value": "仅用于开发者，若您不小心打开了此开关请立刻关闭以免运行过程中不可预知的风险。"
     }
   ]
 }

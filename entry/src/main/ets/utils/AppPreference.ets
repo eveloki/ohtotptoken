@@ -35,6 +35,8 @@ export class AppPreference {
     ['app_db_kv_sync_time', ''],
     // 是否显示引导提示
     ['app_show_guide_tips', true],
+    // 是否处于debug模式
+    ['app_debug_mode_on', false],
   ]);
 
   public static getAppearance(key: string): SettingValue {

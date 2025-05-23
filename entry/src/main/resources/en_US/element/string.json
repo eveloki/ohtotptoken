@@ -455,6 +455,14 @@
     {
       "name": "app_token_list_search_msg",
       "value": "Empty"
+    },
+    {
+      "name": "debug_mode",
+      "value": "DEBUG MODE"
+    },
+    {
+      "name": "debug_mode_des",
+      "value": "Intended solely for developers. If you have accidentally enabled this switch, please immediately turn it off to avoid unforeseen risks during operation."
     }
   ]
 }
