@@ -256,6 +256,7 @@ struct Index {
 
   onPageShow(): void {
     this.app_lock = (AppPreference.getAppearance('app_safety_lock_enable') as boolean) && (AppStorage.get('appSwitchedOut') ?? true);
+    AppStorage.set('appSwitchedOut', false);
     if (this.app_lock) {
       if (AppPreference.getAppearance('app_appearance_auto_unlock_enable')) {
         this.requireUserAuth();
