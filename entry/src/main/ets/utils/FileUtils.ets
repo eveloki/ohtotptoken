@@ -35,24 +35,27 @@ export async function writeFileContent(uri: string, content: string): Promise<vo
 }
 //写入文件确认文件是否重复 如果重复放弃写入
 export async function writeFileContentCheckHashEqual(uri: string, content: string): Promise<void> {
-  let isWrite=true;
+  let isWrite = true;
   if (await fs.access(uri)) {
-    let fileContent= await readFileContent(uri);
-    let fileHash=await Sha256Hash(fileContent);
-    let contentHash=await Sha256Hash(content);
-    isWrite= !constantTimeCompare(fileHash,contentHash);//比对哈希不同才写入
+    let fileContent = await readFileContent(uri);
+    let fileHash = await Sha256Hash(fileContent);
+    let contentHash = await Sha256Hash(content);
+    isWrite = !constantTimeCompare(fileHash,contentHash);//比对哈希不同才写入
   }
-
-  if (isWrite)//比对哈希不同才写入
-  {
+  // 比对哈希不同才写入
+  if (isWrite) {
     //调整为覆盖写入 只写入 并且创建新文件
     await fs.open(uri, fs.OpenMode.WRITE_ONLY | fs.OpenMode.TRUNC | fs.OpenMode.CREATE).then((f) => {
+      fs.write(f.fd, content).then(() => {
+        fs.close(f.fd);
+      });
     }).catch((reason: BusinessError)=>{
       console.log(reason.message)
     });
   }
 
 }
+
 export async function Sha256Hash(content: string) {
   let mdAlgName = 'SHA256'; // 摘要算法名。
   let message = 'mdTestMessage'; // 待摘要的数据。
@@ -63,6 +66,7 @@ export async function Sha256Hash(content: string) {
   console.info('Md result:' + mdResult.data);
   return mdResult.data;
 }
+
 export async function showSelectFilePicker(max_num: number, filters: string[]): Promise<string[]> {
   const documentSelectOptions = new picker.DocumentSelectOptions();
   documentSelectOptions.maxSelectNumber = max_num;

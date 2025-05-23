@@ -455,6 +455,14 @@
     {
       "name": "app_token_list_search_msg",
       "value": "空"
+    },
+    {
+      "name": "debug_mode",
+      "value": "DEBUG模式"
+    },
+    {
+      "name": "debug_mode_des",
+      "value": "僅限開發者使用。若您不慎開啟此開關，請立即關閉以避免運行過程中產生不可預知的風險。"
     }
   ]
 }

@@ -4,7 +4,7 @@ import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
-import { router } from '@kit.ArkUI';
+import { curves, router } from '@kit.ArkUI';
 import { AppPreference, SettingColorMode, SettingValue } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { SettingItem } from '../components/SettingItem';
@@ -31,7 +31,8 @@ export struct SettingPage {
   @Local appName?: string;
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
-  @Local Is_loaded: boolean = false;
+  @Local is_loaded: boolean = false;
+  @Local debug_mode_is_on: boolean = AppPreference.getAppearance('app_debug_mode_on') as boolean;
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
   private backup_select_uri: string = '';
@@ -40,6 +41,7 @@ export struct SettingPage {
   private versionCode?: number;
   private str_about_app: string = '';
   private str_opensource_leg: string = '';
+  private debug_mode_counter: number = 0;
 
   aboutToAppear(): void {
     let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
@@ -249,7 +251,7 @@ export struct SettingPage {
 
   build() {
     Stack() {
-      if (this.Is_loaded) {
+      if (this.is_loaded) {
         Column() {
           LoadingProgress()
             .color(Color.White)
@@ -388,6 +390,23 @@ export struct SettingPage {
 
               SubItemDivider()
 
+              if (this.debug_mode_is_on) {
+                SubItemToggle({
+                  icon: $r('sys.symbol.gearshape'),
+                  title: $r('app.string.debug_mode'),
+                  isOn: AppPreference.getAppearance('app_debug_mode_on') as boolean,
+                  description: $r('app.string.debug_mode_des'),
+                  onChange: (IsOn: boolean) => {
+                    animateTo({ curve: curves.springMotion() }, () => {
+                      this.debug_mode_is_on = IsOn;
+                    })
+                    AppPreference.setAppearance('app_debug_mode_on', IsOn);
+                  }
+                })
+
+                SubItemDivider()
+              }
+
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
                 title: $r('app.string.auto_unlock'),
@@ -507,6 +526,22 @@ export struct SettingPage {
             }
           }
           .padding({ left: 10, right: 10 })
+          .onClick(() => {
+            if (!this.debug_mode_is_on) {
+              setTimeout(() => {
+                this.debug_mode_counter = 0;
+              }, 2000);
+              if (this.debug_mode_counter > 7) {
+                animateTo({ curve: curves.springMotion() }, () => {
+                  this.debug_mode_is_on = true;
+                  AppPreference.setAppearance('app_debug_mode_on', true);
+                  promptAction.showToast({ message: "DEBUG MODE ON" });
+                })
+
+              }
+              this.debug_mode_counter++;
+            }
+          })
 
           ListItem() {
             SettingItem({ title: $r('app.string.setting_opensource_leg') }) {
