@@ -265,7 +265,7 @@ export struct TokenListPage {
         .shadow({ radius: 10, color: $r('app.color.shadow') })
         .margin({ bottom: 10, right: 10 })
         .padding(10)
-        .bindMenu(this.TokenAddMenu())
+        .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
         .onClick(() => {
           this.btn_token_add_clicked += 1
         })
