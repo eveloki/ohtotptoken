@@ -188,7 +188,7 @@ export struct FortiConfigDialog {
         Row() {
           Text($r('app.string.dialog_cfg_forti_token'))
             .width('30%')
-          TextInput({ text: this.conf.FortiToken, placeholder: this.conf.FortiToken })
+          TextInput({ text: this.conf.FortiToken, placeholder: $r('app.string.dialog_cfg_forti_token') })
             .onChange((value) => {
               this.conf.FortiToken = value
             })
@@ -231,7 +231,7 @@ export struct FortiConfigDialog {
             })
             .zIndex(2)
             .height(30)
-            TextInput({ text: this.conf.FortiDevID, placeholder: this.conf.FortiDevID })
+            TextInput({ text: this.conf.FortiDevID, placeholder: $r('app.string.dialog_cfg_forti_dev_id') })
               .onChange((value) => {
                 this.conf.FortiDevID = value
               })
@@ -263,7 +263,7 @@ export struct FortiConfigDialog {
         Row() {
           Text($r("app.string.dialog_cfg_tk_secret"))
             .width('30%')
-          TextInput({ text: this.conf.TokenSecret, placeholder: this.conf.TokenSecret })
+          TextInput({ text: this.conf.TokenSecret, placeholder: $r("app.string.dialog_cfg_tk_secret") })
             .onChange((value) => {
               this.conf.TokenSecret = value
             })
@@ -276,7 +276,7 @@ export struct FortiConfigDialog {
         Row() {
           Text($r("app.string.dialog_cfg_tk_name"))
             .width('30%')
-          TextInput({ text: this.conf.TokenName, placeholder: this.conf.TokenName })
+          TextInput({ text: this.conf.TokenName, placeholder: $r("app.string.dialog_cfg_tk_name") })
             .onChange((value) => {
               this.conf.TokenName = value
             })
@@ -300,6 +300,7 @@ export struct FortiConfigDialog {
           })
           .width('100%')
         Button($r('app.string.dialog_btn_confirm'))
+          .enabled(!!(this.conf.FortiToken && this.conf.FortiDevID && this.conf.TokenSecret && this.conf.TokenName))
           .fontColor(Color.Red)
           .backgroundColor(Color.Transparent)
           .onClick(() => {
