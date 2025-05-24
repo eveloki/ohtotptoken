@@ -205,9 +205,16 @@ export struct TokenListPage {
             })
           ListItemGroup() {
             ListItem() {
-              Row()
-                .width('100%')
-                .height(this.appBottomAvoidHeight > this.plus_btn_height ? this.appBottomAvoidHeight : this.plus_btn_height)
+              if (this.TabBarVisible) {
+                Row()
+                  .width('100%')
+                  .height(this.appBottomAvoidHeight > this.plus_btn_height ? this.appBottomAvoidHeight : this.plus_btn_height)
+              } else {
+                Row()
+                  .width('100%')
+                  .height(this.appBottomAvoidHeight)
+              }
+
             }
           }
         }
