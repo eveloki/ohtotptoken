@@ -7,7 +7,7 @@ import { AppPreference, SettingValue } from "../utils/AppPreference";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
-import { curves } from "@kit.ArkUI";
+import { curves, window } from "@kit.ArkUI";
 import { url } from "@kit.ArkTS";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
@@ -20,6 +20,7 @@ export struct TokenListPage {
   @Require @Param Tokens: TokenConfig[] = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
+  @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
@@ -289,7 +290,8 @@ export struct TokenListPage {
       .onClick(() => {
         this.dialog_qrcode = new CustomDialogController({
           builder: QRCodeDialog({
-            content: convertToken2URI(conf)
+            content: convertToken2URI(conf),
+            winSize: this.appWindowSize
           })
         });
         this.dialog_qrcode.open();

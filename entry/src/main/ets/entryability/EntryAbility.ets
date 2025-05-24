@@ -20,6 +20,7 @@ export class AppWindowInfo {
   @Trace AvoidBottomHeight: number = 0;
   @Trace WidthBreakpoint: WidthBreakpoint = 0;
   @Trace HeightBreakpoint: HeightBreakpoint = 0;
+  @Trace Size: window.Size = { width: 0, height: 0};
 }
 
 export default class EntryAbility extends UIAbility {
@@ -30,6 +31,7 @@ export default class EntryAbility extends UIAbility {
     let heightBp: HeightBreakpoint = this.uiContext!.getWindowHeightBreakpoint();
     win.WidthBreakpoint = widthBp;
     win.HeightBreakpoint = heightBp;
+    win.Size = windowSize;
   };
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
