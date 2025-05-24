@@ -3,7 +3,6 @@ import {
   UIAbility, Want, Configuration,
   ApplicationStateChangeCallback,
   ConfigurationConstant,
-  common
 } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
@@ -16,37 +15,27 @@ import { relationalStore  } from '@kit.ArkData';
 let rdbStore: relationalStore.RdbStore | null = null;
 
 @ObservedV2
-export class WindowInfo {
-  @Trace Context: common.UIAbilityContext;
+export class AppWindowInfo {
   @Trace AvoidTopHeight: number = 0;
   @Trace AvoidBottomHeight: number = 0;
   @Trace WidthBreakpoint: WidthBreakpoint = 0;
   @Trace HeightBreakpoint: HeightBreakpoint = 0;
-  @Trace ColorMode: ConfigurationConstant.ColorMode = ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET;
-
-  public constructor(context: common.UIAbilityContext) {
-    this.Context = context;
-  }
 }
 
 export default class EntryAbility extends UIAbility {
   private uiContext?: UIContext;
   private onWindowSizeChange: (windowSize: window.Size) => void = (windowSize: window.Size) => {
-    let win: WindowInfo = AppStorageV2.connect(WindowInfo, () => new WindowInfo(this.context))!;
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
     let widthBp: WidthBreakpoint = this.uiContext!.getWindowWidthBreakpoint();
-    //AppStorage.setOrCreate('currentWidthBreakpoint', widthBp);
     let heightBp: HeightBreakpoint = this.uiContext!.getWindowHeightBreakpoint();
-    //AppStorage.setOrCreate('currentHeightBreakpoint', heightBp);
     win.WidthBreakpoint = widthBp;
     win.HeightBreakpoint = heightBp;
   };
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    let win: WindowInfo = AppStorageV2.connect(WindowInfo, () => new WindowInfo(this.context))!;
-
-    win.ColorMode = this.context.config.colorMode ?? ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET;
-    //AppStorage.setOrCreate("appContext", this.context);
-    //AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
+    AppStorage.setOrCreate("appContext", this.context);
+    AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
     WindowUtil.setMissionContinueActive(this.context, false);
 
@@ -78,6 +67,7 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     WindowUtil.requestFullScreen(windowStage, this.context);
     AppPreference.loadSettings().then(() => {
@@ -90,8 +80,6 @@ export default class EntryAbility extends UIAbility {
         let windowClass: window.Window = windowStage.getMainWindowSync();
         this.uiContext = windowClass.getUIContext();
 
-        let win: WindowInfo = AppStorageV2.connect(WindowInfo, () => new WindowInfo(this.context))!;
-
         windowClass.setWindowLayoutFullScreen(true)
 
         const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
@@ -100,8 +88,6 @@ export default class EntryAbility extends UIAbility {
         // save window avoid area info
         win.AvoidTopHeight = px2vp(avoidAreaBottom.topRect.height);
         win.AvoidBottomHeight = px2vp(avoidAreaTop.bottomRect.height);
-        //AppStorage.setOrCreate("appBottomAvoidHeight", px2vp(avoidAreaTop.bottomRect.height));
-        //AppStorage.setOrCreate("appTopAvoidHeight", px2vp(avoidAreaBottom.topRect.height));
 
         windowClass.on('avoidAreaChange', (data) => {
           if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
@@ -113,8 +99,6 @@ export default class EntryAbility extends UIAbility {
         const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
         const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
 
-        //AppStorage.setOrCreate('currentWidthBreakpoint', widthBp);
-        //AppStorage.setOrCreate('currentHeightBreakpoint', heightBp);
         win.WidthBreakpoint = widthBp;
         win.HeightBreakpoint = heightBp;
         windowClass.on('windowSizeChange', this.onWindowSizeChange);

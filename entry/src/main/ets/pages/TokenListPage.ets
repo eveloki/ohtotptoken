@@ -20,6 +20,7 @@ export struct TokenListPage {
   @Require @Param Tokens: TokenConfig[] = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
+  @Require @Param TabBarVisible: boolean = true;
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
@@ -40,6 +41,8 @@ export struct TokenListPage {
   @Local id_list: string[] = ['search_bar'];
 
   @Local btn_token_add_clicked: number = 0;
+
+  private plus_btn_height: number = 70;
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -86,9 +89,15 @@ export struct TokenListPage {
           ListItemGroup() {
             ListItem() {
               Column() {
-                Row()
-                  .height(50 + this.appTopAvoidHeight)
-                  .width('100%')
+                if (this.TabBarVisible) {
+                  Row()
+                    .height(50 + this.appTopAvoidHeight)
+                    .width('100%')
+                } else {
+                  Row()
+                    .height(this.appTopAvoidHeight)
+                    .width('100%')
+                }
                 Stack({ alignContent: Alignment.End }) {
                   TextInput({
                     placeholder: $r('app.string.token_search_placeholder'),
@@ -198,7 +207,7 @@ export struct TokenListPage {
             ListItem() {
               Row()
                 .width('100%')
-                .height(this.appBottomAvoidHeight + 40)
+                .height(this.appBottomAvoidHeight > this.plus_btn_height ? this.appBottomAvoidHeight : this.plus_btn_height)
             }
           }
         }
@@ -234,23 +243,26 @@ export struct TokenListPage {
 
         })
       }
-      Button({ type: ButtonType.Circle }) {
-        SymbolGlyph($r('sys.symbol.plus'))
-          .fontSize(40)
-          .fontWeight(FontWeight.Bold)
-          .fontColor([Color.White])
-          .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
-            this.btn_token_add_clicked)
+      if (this.TabBarVisible) {
+        Button({ type: ButtonType.Circle }) {
+          SymbolGlyph($r('sys.symbol.plus'))
+            .fontSize(40)
+            .fontWeight(FontWeight.Bold)
+            .fontColor([Color.White])
+            .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
+              this.btn_token_add_clicked)
+        }
+        .height(this.plus_btn_height)
+        .backgroundColor($r('app.color.token_number'))
+        .shadow({ radius: 10, color: $r('app.color.shadow') })
+        .margin({ bottom: 10, right: 10 })
+        .padding(10)
+        .bindMenu(this.TokenAddMenu())
+        .onClick(() => {
+          this.btn_token_add_clicked += 1
+        })
+        .accessibilityText($r('app.string.app_ua_add_token'))
       }
-      .backgroundColor($r('app.color.token_number'))
-      .shadow({ radius: 10, color: $r('app.color.shadow') })
-      .margin({ bottom: 10, right: 10 })
-      .padding(10)
-      .bindMenu(this.TokenAddMenu())
-      .onClick(() => {
-        this.btn_token_add_clicked += 1
-      })
-      .accessibilityText($r('app.string.app_ua_add_token'))
     }
   }
 
@@ -314,49 +326,53 @@ export struct TokenListPage {
           }
         })
       })
-      Button({ type: ButtonType.Circle }) {
-        Text() {
-          SymbolSpan($r('sys.symbol.square_and_pencil'))
-            .fontSize(30)
-            .fontWeight(FontWeight.Medium)
-            .fontColor([Color.White])
+
+      if (this.TabBarVisible) {
+        Button({ type: ButtonType.Circle }) {
+          Text() {
+            SymbolSpan($r('sys.symbol.square_and_pencil'))
+              .fontSize(30)
+              .fontWeight(FontWeight.Medium)
+              .fontColor([Color.White])
+          }
         }
+        .backgroundColor(Color.Gray)
+        .padding(10)
+        .onClick(() => {
+          if (conf.TokenType === otpType.TOTP || conf.TokenType === otpType.HOTP ||
+            conf.TokenType === undefined) { // default
+            this.dialog_totp_config = new CustomDialogController({
+              builder: TOTPConfigDialog({
+                conf_json: JSON.stringify(conf),
+                confirm: (new_conf) => {
+                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                }
+              })
+            })
+            this.dialog_totp_config.open()
+          } else if (conf.TokenType === otpType.Forti) { // forti
+            this.dialog_forti_config = new CustomDialogController({
+              builder: FortiConfigDialog({
+                conf_json: JSON.stringify(conf),
+                confirm: (new_conf) => {
+                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                }
+              })
+            })
+            this.dialog_forti_config.open()
+          } else if (conf.TokenType === otpType.Steam) { // steam
+            this.dialog_steam_config = new CustomDialogController({
+              builder: SteamConfigDialog({
+                conf_json: JSON.stringify(conf),
+                confirm: (new_conf) => {
+                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                }
+              })
+            })
+            this.dialog_steam_config.open()
+          }
+        })
       }
-      .backgroundColor(Color.Gray)
-      .padding(10)
-      .onClick(() => {
-        if (conf.TokenType === otpType.TOTP || conf.TokenType === otpType.HOTP || conf.TokenType === undefined) { // default
-          this.dialog_totp_config = new CustomDialogController({
-            builder: TOTPConfigDialog({
-              conf_json: JSON.stringify(conf),
-              confirm: (new_conf) => {
-                this.updateTokenConfig(JSON.parse(new_conf), true)
-              }
-            })
-          })
-          this.dialog_totp_config.open()
-        } else if (conf.TokenType === otpType.Forti) { // forti
-          this.dialog_forti_config = new CustomDialogController({
-            builder: FortiConfigDialog({
-              conf_json: JSON.stringify(conf),
-              confirm: (new_conf) => {
-                this.updateTokenConfig(JSON.parse(new_conf), true)
-              }
-            })
-          })
-          this.dialog_forti_config.open()
-        } else if (conf.TokenType === otpType.Steam) { // steam
-          this.dialog_steam_config = new CustomDialogController({
-            builder: SteamConfigDialog({
-              conf_json: JSON.stringify(conf),
-              confirm: (new_conf) => {
-                this.updateTokenConfig(JSON.parse(new_conf), true)
-              }
-            })
-          })
-          this.dialog_steam_config.open()
-        }
-      })
     }
     .margin({ left: 10 })
   }

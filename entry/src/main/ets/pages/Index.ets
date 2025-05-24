@@ -20,7 +20,7 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppLockPage, requireUserAuth } from './AppLockPage';
-import { WindowInfo } from '../entryability/EntryAbility';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2 } from '@kit.ArkUI';
 
 const TAG = 'PrivacySubscribe';
@@ -37,12 +37,12 @@ struct Index {
   @Local token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
   @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
   @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   private appIsShow = false;
-  @Local window: WindowInfo = AppStorageV2.connect(WindowInfo) as WindowInfo;
-  private icon_pack_dir = this.window.Context.filesDir + "/icon_packs";
-  private user_icon_dir = this.window.Context.filesDir + "/user_icons";
-
+  private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
+  private user_icon_dir = this.appCtx.filesDir + "/user_icons";
   private DropFilesDialogIsOpen:boolean=false;
 
   private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
@@ -374,7 +374,7 @@ struct Index {
     Column(){
       Blank()
         .width('100%')
-        .height((AppStorage.get("appTopAvoidHeight") as number))
+        .height(this.window.AvoidTopHeight)
       Text(text)
         .fontWeight(this.tab_bar_index === id ? 500 : 400)
         .fontColor(this.tab_bar_index === id ? $r('app.color.token_number') : $r('app.color.str_main'))
@@ -399,14 +399,15 @@ struct Index {
         .backgroundColor('#40000000')
         .justifyContent(FlexAlign.Center)
       } else if (
-        AppStorage.get('currentHeightBreakpoint') === HeightBreakpoint.HEIGHT_MD &&
-          AppStorage.get('currentWidthBreakpoint') === WidthBreakpoint.WIDTH_SM
+        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD &&
+          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
       ) {
         Column() {
           TokenListPage({
             Tokens: this.CurrentTokens,
-            appBottomAvoidHeight: AppStorage.get("appBottomAvoidHeight"),
-            appTopAvoidHeight: AppStorage.get("appTopAvoidHeight"),
+            TabBarVisible: false,
+            appBottomAvoidHeight: this.window.AvoidBottomHeight,
+            appTopAvoidHeight: this.window.AvoidTopHeight,
             updateTokenConfig: this.updateTokenConfig,
             updateTokenConfigs: this.updateTokenConfigs,
             token_hide_enable: this.token_hide_enable,
@@ -423,8 +424,9 @@ struct Index {
             TabContent() {
               TokenListPage({
                 Tokens: this.CurrentTokens,
-                appBottomAvoidHeight: AppStorage.get("appBottomAvoidHeight"),
-                appTopAvoidHeight: AppStorage.get("appTopAvoidHeight"),
+                TabBarVisible: true,
+                appBottomAvoidHeight: this.window.AvoidBottomHeight,
+                appTopAvoidHeight: this.window.AvoidTopHeight,
                 updateTokenConfig: this.updateTokenConfig,
                 updateTokenConfigs: this.updateTokenConfigs,
                 token_hide_enable: this.token_hide_enable,
@@ -439,8 +441,8 @@ struct Index {
             TabContent() {
               SettingPage({
                 Tokens: this.CurrentTokens,
-                appBottomAvoidHeight: AppStorage.get("appBottomAvoidHeight"),
-                appTopAvoidHeight: AppStorage.get("appTopAvoidHeight"),
+                appBottomAvoidHeight: this.window.AvoidBottomHeight,
+                appTopAvoidHeight: this.window.AvoidTopHeight,
                 backupReload: async (conf) => {
                   await this.updateTokenConfigs(conf);
                   tkStore.sortTokens();
@@ -469,8 +471,11 @@ struct Index {
           .barOverlap(true)
           .barBackgroundColor(Color.Transparent)
           .barBackgroundBlurStyle(BlurStyle.Thin)
-          .barHeight(50 + (AppStorage.get("appTopAvoidHeight") as number))
+          .barHeight(50 + this.window.AvoidTopHeight)
           .barMode(BarMode.Fixed)
+          .onChange((index) => {
+            this.tab_bar_index = index;
+          })
         }
       }
     }
