@@ -254,19 +254,20 @@ export class OTPDefaultIconPack {
       'proxmox', 'pushover', 'pypi', 'python_anywhere', 'rackspace', 'reddit', 'revolt', 'ripe_ncc', 'ripio', 'robinhood',
       'rocketbeanstv', 'rockstar', 'rss', 'sap', 'scaleway', 'school', 'sciebo', 'sentry', 'sevdesk', 'skrill', 'slack',
       'snapchat', 'sophos', 'sourceforge', 'squarespace', 'standardnotes', 'starcitizen', 'steam', 'stripe', 'sync',
-      'synology', 'teahub', 'teamviewer', 'terminal', 'todoalojamiento', 'transip', 'trello', 'tumblr', 'turbotax',
-      'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt', 'ubuntu_one', 'unity',
-      'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet', 'wargaming', 'wasabi',
-      'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
-      'zoho', 'zoom'];
+      'synology', 'teahub', 'teamviewer', 'terminal', 'tencent_cloud_services', 'todoalojamiento', 'transip', 'trello',
+      'tumblr', 'turbotax', 'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt',
+      'ubuntu_one', 'unity', 'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet',
+      'wargaming', 'wasabi', 'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money',
+      'zapier', 'zendesk', 'zoho', 'zoom'];
 
   private default_icon_pack_set: HashSet<string> = new HashSet();
 
   public default_icon_pack_path: HashSet<string> = new HashSet();
 
   public getIconPathByIssuer(issuer: string): string {
-    if (this.default_icon_pack_set.has(issuer.toLowerCase())) {
-      return 'rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg';
+    const normal_issuer = issuer.toLowerCase().replaceAll(' ', '_');
+    if (this.default_icon_pack_set.has(normal_issuer)) {
+      return 'rawfile://icons/token_image_' + normal_issuer + '.svg';
     }
     return '';
   }
