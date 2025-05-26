@@ -10,7 +10,6 @@ import { AppPreference } from '../utils/AppPreference';
 @Preview
 @ComponentV2
 export struct SubItemIconManager {
-  @Require @Param onUpdate: () => void = () => {};
   @Local collapsed: boolean = true;
   @Local installed_icon_pack: AegisIconPack[] = TokenIconPacks.aegis_icon_packs;
   @Local selected_icon_pack: number = TokenIconPacks.selected_icon_pack;
@@ -101,7 +100,7 @@ export struct SubItemIconManager {
                     if (checked) {
                       TokenIconPacks.selected_icon_pack = 0;
                       this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                      AppPreference.setAppearance('app_appearance_icon_pack_selected', 0);
+                      AppPreference.setPreference('app_appearance_icon_pack_selected', 0);
                       this.appCtx.eventHub.emit('onIconPackChanged');
                     }
                   })
@@ -133,7 +132,7 @@ export struct SubItemIconManager {
                       if (checked) {
                         TokenIconPacks.selected_icon_pack = index + 1;
                         this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                        AppPreference.setAppearance('app_appearance_icon_pack_selected', index + 1);
+                        AppPreference.setPreference('app_appearance_icon_pack_selected', index + 1);
                         this.appCtx.eventHub.emit('onIconPackChanged');
                       }
                     })
@@ -177,7 +176,7 @@ export struct SubItemIconManager {
                             if (this.selected_icon_pack > index) {
                               TokenIconPacks.selected_icon_pack = this.selected_icon_pack - 1;
                               this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                              AppPreference.setAppearance('app_appearance_icon_pack_selected', this.selected_icon_pack);
+                              AppPreference.setPreference('app_appearance_icon_pack_selected', this.selected_icon_pack);
                             }
                             this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
                           });

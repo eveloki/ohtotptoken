@@ -35,7 +35,6 @@ export default class EntryAbility extends UIAbility {
   };
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
     AppStorage.setOrCreate("appContext", this.context);
     AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
@@ -69,7 +68,7 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
-    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     WindowUtil.requestFullScreen(windowStage, this.context);
     AppPreference.loadSettings().then(() => {
@@ -137,7 +136,7 @@ export default class EntryAbility extends UIAbility {
 
   applySettings(windowClass: window.Window): void {
     // Color Mode
-    const color_mode = AppPreference.getAppearance('app_appearance_color_mode') as number;
+    const color_mode = AppPreference.getPreference('app_appearance_color_mode') as number;
     const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
       [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
       [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
@@ -146,7 +145,7 @@ export default class EntryAbility extends UIAbility {
     this.context.getApplicationContext().setColorMode(color_map.get(color_mode ?? 0));
 
     // 设置隐私模式
-    let privacy_mode = AppPreference.getAppearance('app_safety_privacy_enable') as boolean;
+    let privacy_mode = AppPreference.getPreference('app_safety_privacy_enable') as boolean;
     if (privacy_mode) {
       try {
         windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {

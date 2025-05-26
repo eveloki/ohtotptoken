@@ -463,6 +463,42 @@
     {
       "name": "debug_mode_des",
       "value": "僅限開發者使用。若您不慎開啟此開關，請立即關閉以避免運行過程中產生不可預知的風險。"
+    },
+    {
+      "name": "customize_appearance",
+      "value": "自定義"
+    },
+    {
+      "name": "custom_layout",
+      "value": "佈局"
+    },
+    {
+      "name": "custom_color",
+      "value": "顏色"
+    },
+    {
+      "name": "custom_color_logo_background",
+      "value": "圖示背景色"
+    },
+    {
+      "name": "custom_color_logo_background_des",
+      "value": "圖示背景色僅在啟用背景時生效。"
+    },
+    {
+      "name": "enable_icon_background",
+      "value": "圖示背景"
+    },
+    {
+      "name": "enable_icon_background_des",
+      "value": "圖示背景可以讓某些圖示在深色模式時獲得更好的可視度。"
+    },
+    {
+      "name": "enable_dark_icon_filter",
+      "value": "深色模式圖示濾鏡"
+    },
+    {
+      "name": "enable_dark_icon_filter_des",
+      "value": "濾鏡可以在深色模式時獲得更好的可視度，但也有可能丟失圖示細節。"
     }
   ]
 }

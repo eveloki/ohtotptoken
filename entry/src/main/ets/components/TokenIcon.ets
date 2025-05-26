@@ -1,6 +1,8 @@
 import { ConfigurationConstant } from "@kit.AbilityKit";
 import { TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
+import { TokenPreference } from "../utils/AppPreference";
+import { AppStorageV2 } from "@kit.ArkUI";
 
 @Preview
 @ComponentV2
@@ -10,6 +12,8 @@ export struct TokenIcon {
   @Param bypassColorFilter: boolean = false;
   @Local icon: ResourceStr | undefined = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(this.issuer));
   @Local applyColorFilter: boolean = this.bypassColorFilter ? false : TokenIconPacks.selected_icon_pack === 0;
+
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
 
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
@@ -82,30 +86,44 @@ export struct TokenIcon {
   }
 
   build() {
-    if (this.icon === undefined) {
-      Shape() {
-        Text(this.issuer.charAt(0).toUpperCase() )
-          .fontWeight(FontWeight.Bold)
-          .fontSize(26)
-          .fontColor(0xFFFFFF)
-          .height(40).width(40)
-          .textAlign(TextAlign.Center)
+    Stack() {
+      if (this.token_preference.app_appearance_logo_background) {
+        Shape() {}
+        .align(Alignment.Center)
+        .backgroundColor(this.token_preference.app_appearance_logo_background_color)
+        .height(this.token_preference.app_appearance_logo_background_size)
+        .width(this.token_preference.app_appearance_logo_background_size)
+        .borderRadius(this.token_preference.app_appearance_logo_background_radius)
       }
-      .backgroundColor(this.stringToColor(this.issuer))
-      .height(40).width(40)
-      .borderRadius(20)
-    } else {
-      if (this.applyColorFilter && AppStorage.get<number>('currentColorMode') === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
-        Image(this.icon)
-          .width(40)
-          .height(40)
-          .fillColor($r('app.color.item_fg'))
-          .objectFit(ImageFit.Contain)
+      if (this.icon === undefined) {
+        Shape() {
+          Text(this.issuer.charAt(0).toUpperCase() )
+            .fontWeight(FontWeight.Bold)
+            .fontSize(26)
+            .fontColor(0xFFFFFF)
+            .textAlign(TextAlign.Center)
+            .height(this.token_preference.app_appearance_logo_size)
+            .width(this.token_preference.app_appearance_logo_size)
+        }
+        .backgroundColor(this.stringToColor(this.issuer))
+        .height(this.token_preference.app_appearance_logo_size)
+        .width(this.token_preference.app_appearance_logo_size)
+        .borderRadius(20)
       } else {
-        Image(this.icon)
-          .width(40)
-          .height(40)
-          .objectFit(ImageFit.Contain)
+        if (
+          this.token_preference.app_appearance_logo_dark_filter &&
+          this.applyColorFilter && AppStorage.get<number>('currentColorMode') === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
+          Image(this.icon)
+            .height(this.token_preference.app_appearance_logo_size)
+            .width(this.token_preference.app_appearance_logo_size)
+            .fillColor(this.token_preference.app_appearance_logo_dark_filter_color)
+            .objectFit(ImageFit.Contain)
+        } else {
+          Image(this.icon)
+            .height(this.token_preference.app_appearance_logo_size)
+            .width(this.token_preference.app_appearance_logo_size)
+            .objectFit(ImageFit.Contain)
+        }
       }
     }
   }

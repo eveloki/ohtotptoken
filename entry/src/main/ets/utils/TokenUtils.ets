@@ -316,7 +316,7 @@ export class TokenIconPacks {
   public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
   public static aegis_icon_packs: AegisIconPack[] = [];
   public static user_added_icon_packs: UserAddedIconPack = new UserAddedIconPack();
-  public static selected_icon_pack: number = AppPreference.getAppearance('app_appearance_icon_pack_selected') as number ?? 0;
+  public static selected_icon_pack: number = AppPreference.getPreference('app_appearance_icon_pack_selected') as number ?? 0;
 
   public static async addUserIconPack(path: string): Promise<void> {
     TokenIconPacks.user_added_icon_packs.initIconPack(path);

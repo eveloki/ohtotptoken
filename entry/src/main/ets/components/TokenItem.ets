@@ -3,7 +3,8 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference } from '../utils/AppPreference';
+import { AppStorageV2 } from '@kit.ArkUI';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 
@@ -11,10 +12,9 @@ let current_token_hide_map: Map<string, boolean> = new Map();
 @ComponentV2
 export struct TokenItem {
   @Require @Param Config: TokenConfig = new TokenConfig();
-  @Require @Param TokenHideEnable: boolean = false;
-  @Require @Param ShowNextTokenEnable: boolean = false;
-  @Require @Param SwapHostUserEnable: boolean = false;
   @Event Update: (conf: TokenConfig) => void = () => {};
+
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
 
   @Local TokenNumber: string = '000000';
   @Local TokenNumberNext: string = '000000';
@@ -85,12 +85,12 @@ export struct TokenItem {
     Row({ space: 10 }) {
       TokenIcon({ issuer: this.Config.TokenIssuer, icon_path: this.Config.TokenIconPath })
       Column() {
-        Text(this.SwapHostUserEnable ? this.Config.TokenName : this.Config.TokenIssuer)
+        Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
           .fontSize(18)
           .fontColor($r('app.color.str_main'))
-        Text(this.SwapHostUserEnable ? this.Config.TokenIssuer : this.Config.TokenName)
+        Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
           .fontSize(10)
@@ -101,7 +101,7 @@ export struct TokenItem {
 
       Blank()
 
-      if (AppPreference.getAppearance('app_debug_mode_on')) {
+      if (AppPreference.getPreference('app_debug_mode_on')) {
         Text(this.Config.RankScore.toString())
           .textAlign(TextAlign.Center)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
@@ -109,7 +109,7 @@ export struct TokenItem {
           .fontSize(30)
       }
 
-      if (this.TokenHide && this.TokenHideEnable) {
+      if (this.TokenHide && this.token_preference.app_safety_hide_token_enable) {
         Stack() {
           Text() {
             Span("●●●●")
@@ -139,13 +139,13 @@ export struct TokenItem {
                 })
             )
           if (this.Config.TokenType == otpType.HOTP) {
-            Text(this.TokenCounter + (this.ShowNextTokenEnable ? ":" + this.TokenNumberNext : ""))
+            Text(this.TokenCounter + (this.token_preference.app_appearance_show_next_token_enable ? ":" + this.TokenNumberNext : ""))
               .textAlign(TextAlign.End)
               .textOverflow({ overflow: TextOverflow.MARQUEE })
               .maxLines(1)
               .fontColor($r('app.color.str_gray'))
               .fontSize(10)
-          } else if (this.ShowNextTokenEnable) {
+          } else if (this.token_preference.app_appearance_show_next_token_enable) {
             Text(this.TokenNumberNext)
               .textAlign(TextAlign.End)
               .textOverflow({ overflow: TextOverflow.MARQUEE })
@@ -155,7 +155,7 @@ export struct TokenItem {
           }
         }
         .onClick(() => {
-          if (this.TokenHideEnable) {
+          if (this.token_preference.app_safety_hide_token_enable) {
             this.TokenHide = !this.TokenHide;
             current_token_hide_map[this.Config.TokenUUID] = true;
           }

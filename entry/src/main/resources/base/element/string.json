@@ -463,6 +463,42 @@
     {
       "name": "debug_mode_des",
       "value": "Intended solely for developers. If you have accidentally enabled this switch, please immediately turn it off to avoid unforeseen risks during operation."
+    },
+    {
+      "name": "customize_appearance",
+      "value": "Customize"
+    },
+    {
+      "name": "custom_layout",
+      "value": "Layout"
+    },
+    {
+      "name": "custom_color",
+      "value": "Color"
+    },
+    {
+      "name": "custom_color_logo_background",
+      "value": "Change Icon Background Color"
+    },
+    {
+      "name": "custom_color_logo_background_des",
+      "value": "The background color of the logo only takes effect when the background is enabled."
+    },
+    {
+      "name": "enable_icon_background",
+      "value": "Icon Background"
+    },
+    {
+      "name": "enable_icon_background_des",
+      "value": "The icon background can improve the visibility of some icons in dark mode."
+    },
+    {
+      "name": "enable_dark_icon_filter",
+      "value": "Dark Mode Icon Filter"
+    },
+    {
+      "name": "enable_dark_icon_filter_des",
+      "value": "The filter can improve visibility in dark mode, but may also lose some icon details."
     }
   ]
 }

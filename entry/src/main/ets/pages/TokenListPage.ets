@@ -25,10 +25,6 @@ export struct TokenListPage {
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
-  @Require @Param token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
-  @Require @Param show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
-  @Require @Param swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
-
   @Local token_copy_guide_popup: boolean = false;
   @Local token_list_lanes: number = 1;
 
@@ -65,7 +61,7 @@ export struct TokenListPage {
 
   aboutToAppear(): void {
     // 如果已经点击了我知道了则永远不提示了
-    if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
+    if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
       this.token_copy_guide_popup = true;
     }
   }
@@ -136,9 +132,6 @@ export struct TokenListPage {
             ListItem() {
               TokenItem({
                 Config: token,
-                TokenHideEnable: this.token_hide_enable as boolean,
-                ShowNextTokenEnable: this.show_next_token_enable as boolean,
-                SwapHostUserEnable: this.swap_host_user_enable as boolean,
                 Update: async (conf_new) => {
                   this.updateTokenConfig(conf_new, false);
                 }
@@ -160,8 +153,8 @@ export struct TokenListPage {
                       .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
                       .toString(),
                     action: () => {
-                      if (AppPreference.getAppearance('app_show_guide_tips') as boolean) {
-                        AppPreference.setAppearance('app_show_guide_tips', false)
+                      if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
+                        AppPreference.setPreference('app_show_guide_tips', false)
                       }
                       this.token_copy_guide_popup = false;
                     }

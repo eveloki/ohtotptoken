@@ -33,10 +33,7 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
   @Local token_loading: Boolean = true;
-  @Local app_lock: boolean = AppPreference.getAppearance('app_safety_lock_enable') as boolean;
-  @Local token_hide_enable: SettingValue = AppPreference.getAppearance('app_safety_hide_token_enable');
-  @Local show_next_token_enable: SettingValue = AppPreference.getAppearance('app_appearance_show_next_token_enable');
-  @Local swap_host_user_enable: SettingValue = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
+  @Local app_lock: boolean = AppPreference.getPreference('app_safety_lock_enable') as boolean;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
@@ -102,7 +99,7 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
-        if (AppPreference.getAppearance('app_debug_mode_on')) {
+        if (AppPreference.getPreference('app_debug_mode_on')) {
           if (this.CurrentTokens.length == 0) { // 没有任何数据才去检测备份
             let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
             let res = fs.accessSync(backup_file);
@@ -149,7 +146,7 @@ struct Index {
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('KVStoreSyncComplete',() => {
-      AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
+      AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
@@ -161,8 +158,8 @@ struct Index {
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setAppearance('app_db_rds_sync_enable', false);
-        AppPreference.setAppearance('app_db_rds_cloud_sync_enable', false);
+        AppPreference.setPreference('app_db_rds_sync_enable', false);
+        AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
       }
     })
 
@@ -247,7 +244,7 @@ struct Index {
   onPageHide(): void {
     this.appIsShow = false;
     // DEBUG MODE
-    if (AppPreference.getAppearance('app_debug_mode_on')) {
+    if (AppPreference.getPreference('app_debug_mode_on')) {
       hilog.info(0, TAG, "onPageHide");
       //备份还原场景检测是否有备份数据
       if (this.CurrentTokens.length > 0) {
@@ -286,10 +283,10 @@ struct Index {
   }
 
   onPageShow(): void {
-    this.app_lock = (AppPreference.getAppearance('app_safety_lock_enable') as boolean) && (AppStorage.get('appSwitchedOut') ?? true);
+    this.app_lock = (AppPreference.getPreference('app_safety_lock_enable') as boolean) && (AppStorage.get('appSwitchedOut') ?? true);
     AppStorage.set('appSwitchedOut', false);
     if (this.app_lock) {
-      if (AppPreference.getAppearance('app_appearance_auto_unlock_enable')) {
+      if (AppPreference.getPreference('app_safety_auto_unlock_enable')) {
         requireUserAuth(this.appCtx);
       }
     }
@@ -411,9 +408,6 @@ struct Index {
             appWindowSize: this.window.Size,
             updateTokenConfig: this.updateTokenConfig,
             updateTokenConfigs: this.updateTokenConfigs,
-            token_hide_enable: this.token_hide_enable,
-            show_next_token_enable: this.show_next_token_enable,
-            swap_host_user_enable: this.swap_host_user_enable
           })
         }
         .backgroundColor($r('app.color.window_background'))
@@ -431,9 +425,6 @@ struct Index {
                 appWindowSize: this.window.Size,
                 updateTokenConfig: this.updateTokenConfig,
                 updateTokenConfigs: this.updateTokenConfigs,
-                token_hide_enable: this.token_hide_enable,
-                show_next_token_enable: this.show_next_token_enable,
-                swap_host_user_enable: this.swap_host_user_enable
               })
             }
             .backgroundColor($r('app.color.window_background'))
@@ -448,17 +439,6 @@ struct Index {
                 backupReload: async (conf) => {
                   await this.updateTokenConfigs(conf);
                   tkStore.sortTokens();
-                },
-                updateSettings: (key_name) => {
-                  if (key_name === 'app_safety_hide_token_enable') {
-                    this.token_hide_enable = AppPreference.getAppearance('app_safety_hide_token_enable');
-                  } else if (key_name == 'app_appearance_show_next_token_enable') {
-                    this.show_next_token_enable =
-                      AppPreference.getAppearance('app_appearance_show_next_token_enable');
-                  } else if (key_name == 'app_appearance_swap_host_user_enable') {
-                    this.swap_host_user_enable = AppPreference.getAppearance('app_appearance_swap_host_user_enable');
-                  }
-
                 }
               })
                 .height('100%')
