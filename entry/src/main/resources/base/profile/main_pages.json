@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/PrivacyPage",
     "pages/AgreementPage",
+    "pages/AppearancePage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage"
   ]

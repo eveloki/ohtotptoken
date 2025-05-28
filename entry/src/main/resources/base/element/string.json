@@ -463,6 +463,110 @@
     {
       "name": "debug_mode_des",
       "value": "Intended solely for developers. If you have accidentally enabled this switch, please immediately turn it off to avoid unforeseen risks during operation."
+    },
+    {
+      "name": "customize_appearance",
+      "value": "Customize"
+    },
+    {
+      "name": "custom_layout",
+      "value": "Layout"
+    },
+    {
+      "name": "custom_color",
+      "value": "Color"
+    },
+    {
+      "name": "custom_color_logo_background",
+      "value": "Change Icon Background Color"
+    },
+    {
+      "name": "custom_color_logo_background_des",
+      "value": "The background color of the logo only takes effect when the background is enabled."
+    },
+    {
+      "name": "enable_icon_background",
+      "value": "Icon Background"
+    },
+    {
+      "name": "enable_icon_background_des",
+      "value": "The icon background can improve the visibility of some icons in dark mode."
+    },
+    {
+      "name": "enable_dark_icon_filter",
+      "value": "Dark Mode Icon Filter"
+    },
+    {
+      "name": "enable_dark_icon_filter_des",
+      "value": "The filter can improve visibility in dark mode, but may also lose some icon details."
+    },
+    {
+      "name": "token_item_slider",
+      "value": "Size & Layout"
+    },
+    {
+      "name": "token_item_slider_desc",
+      "value": "Fine-tune the size and clearance distance of the token interface."
+    },
+    {
+      "name": "token_item_hight",
+      "value": "Height"
+    },
+    {
+      "name": "token_item_space",
+      "value": "Space"
+    },
+    {
+      "name": "appearance_reset_to_default",
+      "value": "Reset to Default"
+    },
+    {
+      "name": "token_logo_size",
+      "value": "Icon"
+    },
+    {
+      "name": "token_logo_bg_size",
+      "value": "Background"
+    },
+    {
+      "name": "token_logo_bg_r",
+      "value": "Background Radius"
+    },
+    {
+      "name": "token_font_slider",
+      "value": "Font"
+    },
+    {
+      "name": "token_item_font_desc",
+      "value": "Fine-tune the font size and weight of the token interface."
+    },
+    {
+      "name": "token_font_size",
+      "value": "Token Size"
+    },
+    {
+      "name": "token_font_weight",
+      "value": "Token Weight"
+    },
+    {
+      "name": "token_issuer_font_size",
+      "value": "Issuer Size"
+    },
+    {
+      "name": "token_issuer_font_weight",
+      "value": "Issuer Weight"
+    },
+    {
+      "name": "token_user_name_font_size",
+      "value": "User Size"
+    },
+    {
+      "name": "token_user_name_font_weight",
+      "value": "User Weight"
+    },
+    {
+      "name": "custom_appearance_cmd",
+      "value": "Command"
     }
   ]
 }

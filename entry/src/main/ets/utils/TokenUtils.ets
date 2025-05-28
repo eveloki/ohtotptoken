@@ -254,19 +254,20 @@ export class OTPDefaultIconPack {
       'proxmox', 'pushover', 'pypi', 'python_anywhere', 'rackspace', 'reddit', 'revolt', 'ripe_ncc', 'ripio', 'robinhood',
       'rocketbeanstv', 'rockstar', 'rss', 'sap', 'scaleway', 'school', 'sciebo', 'sentry', 'sevdesk', 'skrill', 'slack',
       'snapchat', 'sophos', 'sourceforge', 'squarespace', 'standardnotes', 'starcitizen', 'steam', 'stripe', 'sync',
-      'synology', 'teahub', 'teamviewer', 'terminal', 'todoalojamiento', 'transip', 'trello', 'tumblr', 'turbotax',
-      'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt', 'ubuntu_one', 'unity',
-      'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet', 'wargaming', 'wasabi',
-      'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money', 'zapier', 'zendesk',
-      'zoho', 'zoom'];
+      'synology', 'teahub', 'teamviewer', 'terminal', 'tencent_cloud_services', 'todoalojamiento', 'transip', 'trello',
+      'tumblr', 'turbotax', 'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt',
+      'ubuntu_one', 'unity', 'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet',
+      'wargaming', 'wasabi', 'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money',
+      'zapier', 'zendesk', 'zoho', 'zoom'];
 
   private default_icon_pack_set: HashSet<string> = new HashSet();
 
   public default_icon_pack_path: HashSet<string> = new HashSet();
 
   public getIconPathByIssuer(issuer: string): string {
-    if (this.default_icon_pack_set.has(issuer.toLowerCase())) {
-      return 'rawfile://icons/token_image_' + issuer.toLowerCase() + '.svg';
+    const normal_issuer = issuer.toLowerCase().replaceAll(' ', '_');
+    if (this.default_icon_pack_set.has(normal_issuer)) {
+      return 'rawfile://icons/token_image_' + normal_issuer + '.svg';
     }
     return '';
   }
@@ -315,7 +316,7 @@ export class TokenIconPacks {
   public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
   public static aegis_icon_packs: AegisIconPack[] = [];
   public static user_added_icon_packs: UserAddedIconPack = new UserAddedIconPack();
-  public static selected_icon_pack: number = AppPreference.getAppearance('app_appearance_icon_pack_selected') as number ?? 0;
+  public static selected_icon_pack: number = AppPreference.getPreference('app_appearance_icon_pack_selected') as number ?? 0;
 
   public static async addUserIconPack(path: string): Promise<void> {
     TokenIconPacks.user_added_icon_packs.initIconPack(path);

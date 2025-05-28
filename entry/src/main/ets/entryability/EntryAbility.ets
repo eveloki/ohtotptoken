@@ -2,10 +2,10 @@ import {
   AbilityConstant,
   UIAbility, Want, Configuration,
   ApplicationStateChangeCallback,
-  ConfigurationConstant
+  ConfigurationConstant,
 } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { WindowUtil } from '../utils/WindowUtil';
 import { AppPreference, SettingColorMode } from '../utils/AppPreference';
@@ -14,7 +14,25 @@ import { relationalStore  } from '@kit.ArkData';
 //单版本分布式键值数据库
 let rdbStore: relationalStore.RdbStore | null = null;
 
+@ObservedV2
+export class AppWindowInfo {
+  @Trace AvoidTopHeight: number = 0;
+  @Trace AvoidBottomHeight: number = 0;
+  @Trace WidthBreakpoint: WidthBreakpoint = 0;
+  @Trace HeightBreakpoint: HeightBreakpoint = 0;
+  @Trace Size: window.Size = { width: 0, height: 0};
+}
+
 export default class EntryAbility extends UIAbility {
+  private uiContext?: UIContext;
+  private onWindowSizeChange: (windowSize: window.Size) => void = (windowSize: window.Size) => {
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+    let widthBp: WidthBreakpoint = this.uiContext!.getWindowWidthBreakpoint();
+    let heightBp: HeightBreakpoint = this.uiContext!.getWindowHeightBreakpoint();
+    win.WidthBreakpoint = widthBp;
+    win.HeightBreakpoint = heightBp;
+    win.Size = windowSize;
+  };
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate("appContext", this.context);
@@ -50,6 +68,7 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
+    let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     WindowUtil.requestFullScreen(windowStage, this.context);
     AppPreference.loadSettings().then(() => {
@@ -60,22 +79,30 @@ export default class EntryAbility extends UIAbility {
         }
 
         let windowClass: window.Window = windowStage.getMainWindowSync();
-        // 获取应用主窗口后存入AppStorage
-        AppStorage.setOrCreate("windowClass", windowClass);
-        AppStorage.setOrCreate("windowStage", windowStage);
+        this.uiContext = windowClass.getUIContext();
 
-        let isLayoutFullScreen = true;
-        windowClass.setWindowLayoutFullScreen(isLayoutFullScreen)
-          .then(() => {
-            console.info('Succeeded in setting the window layout to full-screen mode.');
-          })
-          .catch((err: BusinessError) => {
-            console.error('Failed to set the window layout to full-screen mode. Cause:' + JSON.stringify(err));
-          });
+        windowClass.setWindowLayoutFullScreen(true)
+
+        const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+        const avoidAreaBottom = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+
         // save window avoid area info
-        AppStorage.setOrCreate("appBottomAvoidHeight", px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR).bottomRect.height));
-        AppStorage.setOrCreate("appTopAvoidHeight", px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height));
+        win.AvoidTopHeight = px2vp(avoidAreaBottom.topRect.height);
+        win.AvoidBottomHeight = px2vp(avoidAreaTop.bottomRect.height);
 
+        windowClass.on('avoidAreaChange', (data) => {
+          if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
+            win.AvoidBottomHeight = px2vp(data.area.bottomRect.height);
+          if (data.type === window.AvoidAreaType.TYPE_SYSTEM)
+            win.AvoidTopHeight = px2vp(data.area.topRect.height);
+        });
+
+        const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
+        const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
+
+        win.WidthBreakpoint = widthBp;
+        win.HeightBreakpoint = heightBp;
+        windowClass.on('windowSizeChange', this.onWindowSizeChange);
         // apply app settings
         this.applySettings(windowClass);
 
@@ -83,9 +110,11 @@ export default class EntryAbility extends UIAbility {
       });
     });
   }
+
   onWindowStageRestore(windowStage: window.WindowStage): void {
     WindowUtil.requestFullScreen(windowStage, this.context);
   }
+
   onConfigurationUpdate(newConfig: Configuration): void {
     AppStorage.setOrCreate('currentColorMode', newConfig.colorMode);
     hilog.info(0x0000, 'testTag', 'the newConfig.colorMode is %{public}s', JSON.stringify(AppStorage.get('currentColorMode')) ?? '');
@@ -107,7 +136,7 @@ export default class EntryAbility extends UIAbility {
 
   applySettings(windowClass: window.Window): void {
     // Color Mode
-    const color_mode = AppPreference.getAppearance('app_appearance_color_mode') as number;
+    const color_mode = AppPreference.getPreference('app_appearance_color_mode') as number;
     const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
       [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
       [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
@@ -116,7 +145,7 @@ export default class EntryAbility extends UIAbility {
     this.context.getApplicationContext().setColorMode(color_map.get(color_mode ?? 0));
 
     // 设置隐私模式
-    let privacy_mode = AppPreference.getAppearance('app_safety_privacy_enable') as boolean;
+    let privacy_mode = AppPreference.getPreference('app_safety_privacy_enable') as boolean;
     if (privacy_mode) {
       try {
         windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {

@@ -463,6 +463,110 @@
     {
       "name": "debug_mode_des",
       "value": "仅用于开发者，若您不小心打开了此开关请立刻关闭以免运行过程中不可预知的风险。"
+    },
+    {
+      "name": "customize_appearance",
+      "value": "自定义"
+    },
+    {
+      "name": "custom_layout",
+      "value": "布局"
+    },
+    {
+      "name": "custom_color",
+      "value": "颜色"
+    },
+    {
+      "name": "custom_color_logo_background",
+      "value": "图标背景色"
+    },
+    {
+      "name": "custom_color_logo_background_des",
+      "value": "图标背景色仅在启用背景时生效。"
+    },
+    {
+      "name": "enable_icon_background",
+      "value": "图标背景"
+    },
+    {
+      "name": "enable_icon_background_des",
+      "value": "图标背景可以让一些图标在深色模式时获得更好的可视度。"
+    },
+    {
+      "name": "enable_dark_icon_filter",
+      "value": "深色模式图标滤镜"
+    },
+    {
+      "name": "enable_dark_icon_filter_des",
+      "value": "滤镜可以在深色模式时获得更好的可视度，但也有可能丢失图标细节。"
+    },
+    {
+      "name": "token_item_slider",
+      "value": "Size & Layout"
+    },
+    {
+      "name": "token_item_slider_desc",
+      "value": "Fine-tune the size and clearance distance of the token interface."
+    },
+    {
+      "name": "token_item_hight",
+      "value": "Height"
+    },
+    {
+      "name": "token_item_space",
+      "value": "Space"
+    },
+    {
+      "name": "appearance_reset_to_default",
+      "value": "Reset to Default"
+    },
+    {
+      "name": "token_logo_size",
+      "value": "Icon"
+    },
+    {
+      "name": "token_logo_bg_size",
+      "value": "Background"
+    },
+    {
+      "name": "token_logo_bg_r",
+      "value": "Background Radius"
+    },
+    {
+      "name": "token_font_slider",
+      "value": "Font"
+    },
+    {
+      "name": "token_item_font_desc",
+      "value": "Fine-tune the font size and weight of the token interface."
+    },
+    {
+      "name": "token_font_size",
+      "value": "Token Size"
+    },
+    {
+      "name": "token_font_weight",
+      "value": "Token Weight"
+    },
+    {
+      "name": "token_issuer_font_size",
+      "value": "Issuer Size"
+    },
+    {
+      "name": "token_issuer_font_weight",
+      "value": "Issuer Weight"
+    },
+    {
+      "name": "token_user_name_font_size",
+      "value": "User Size"
+    },
+    {
+      "name": "token_user_name_font_weight",
+      "value": "User Weight"
+    },
+    {
+      "name": "custom_appearance_cmd",
+      "value": "Command"
     }
   ]
 }

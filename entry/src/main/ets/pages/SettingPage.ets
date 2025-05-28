@@ -4,8 +4,8 @@ import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 import { SubItemToggle } from '../components/SubItemToggle'
-import { curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue } from '../utils/AppPreference';
+import { AppStorageV2, curves, router } from '@kit.ArkUI';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { SettingItem } from '../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -21,18 +21,20 @@ import { SubItemIconManager } from '../components/SubItemIconManager';
 @Preview
 @ComponentV2
 export struct SettingPage {
-  @Require @Param arrConf: Array<TokenConfig> = [];
+  @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
-  @Event updateSettings: (key_name: string) => void = () => {};
 
   @Local versionName?: string;
   @Local appName?: string;
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
-  @Local debug_mode_is_on: boolean = AppPreference.getAppearance('app_debug_mode_on') as boolean;
+  @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
+
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
   private backup_select_uri: string = '';
@@ -48,14 +50,14 @@ export struct SettingPage {
     this.versionCode = bundleInfo?.versionCode;
     this.versionName = 'Version:' + bundleInfo?.versionName;
     this.appName = bundleInfo?.name;
-    this.RdbSyncEnable = AppPreference.getAppearance('app_db_rds_sync_enable');
-    this.RdbCloudSyncEnable = AppPreference.getAppearance('app_db_rds_cloud_sync_enable');
+    this.RdbSyncEnable = AppPreference.getPreference('app_db_rds_sync_enable');
+    this.RdbCloudSyncEnable = AppPreference.getPreference('app_db_rds_cloud_sync_enable');
     //订阅权限变更
     this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
     this.str_about_app =
       "Github: SolidFaker/ohtotptoken\n" +
       "E-mail: enbinli@outlook.com\n" +
-      "Contributors: @Solidfaker, @eveloki, @lsxuan12138, @TomStilson\n" +
+      "Contributors: @Solidfaker, @eveloki, @lsxuan12138, @TomStilson, @tomygin, @wulongshe\n" +
       "Bundle Name: " + bundleInfo?.name + "\n" +
       "Version: " + bundleInfo?.versionName;
     this.str_opensource_leg =
@@ -72,8 +74,8 @@ export struct SettingPage {
       //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setAppearance('app_db_rds_sync_enable', false);
-      AppPreference.setAppearance('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference('app_db_rds_sync_enable', false);
+      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
     }
   }
 
@@ -84,7 +86,7 @@ export struct SettingPage {
       confirm: (password: string) => {
         if (this.backup_is_input) { // 如果是导出 就要调用导出加密函数
           showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.bak`], ['BAK|.bak']).then((uris) => {
-            const backup: TokenBackup = new TokenBackup(this.versionCode ?? 0, this.arrConf);
+            const backup: TokenBackup = new TokenBackup(this.versionCode ?? 0, this.Tokens);
             if (uris[0] !== undefined && uris[0] !== '') {
               saveBackupToFile(uris[0], backup, true, password).then(() => {
                 promptAction.showToast({ message: $r('app.string.toast_backup_success') });
@@ -136,7 +138,7 @@ export struct SettingPage {
             action: () => {
               showSaveFilePicker([`totp_migration_${generateFileNameWithDate()}.txt`], ['TEXT|.txt']).then((uris) => {
                 let migration_content: string = '';
-                this.arrConf.forEach((token) => {
+                this.Tokens.forEach((token) => {
                   migration_content += convertToken2URI(token) + "\n";
                 })
                 if (uris[0] !== undefined && uris[0] !== '') {
@@ -186,7 +188,7 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_type_default'),
             action: () => {
               showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.json`], ['JSON|.json']).then((uris) => {
-                const backup: TokenBackup = new TokenBackup(this.versionCode, this.arrConf);
+                const backup: TokenBackup = new TokenBackup(this.versionCode, this.Tokens);
                 if (uris[0] !== undefined && uris[0] !== '') {
                   saveBackupToFile(uris[0], backup).then(() => {
                     promptAction.showToast({ message: $r('app.string.toast_backup_success') });
@@ -311,10 +313,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'),
-                isOn: AppPreference.getAppearance('app_safety_privacy_enable') as boolean,
+                isOn: AppPreference.getPreference('app_safety_privacy_enable') as boolean,
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearance('app_safety_privacy_enable', IsOn);
+                  AppPreference.setPreference('app_safety_privacy_enable', IsOn);
                   try {
                     this.windowClass.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
                       console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
@@ -330,7 +332,7 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.key_shield'),
                 title: $r('app.string.setting_safety_lock'),
-                isOn: AppPreference.getAppearance('app_safety_lock_enable') as boolean,
+                isOn: AppPreference.getPreference('app_safety_lock_enable') as boolean,
                 description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -342,7 +344,7 @@ export struct SettingPage {
                       return;
                     }
                   }
-                  AppPreference.setAppearance('app_safety_lock_enable', IsOn);
+                  AppPreference.setPreference('app_safety_lock_enable', IsOn);
                 }
               })
 
@@ -351,11 +353,11 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.eye_slash'),
                 title: $r('app.string.setting_hide_token'),
-                isOn: AppPreference.getAppearance('app_safety_hide_token_enable') as boolean,
+                isOn: AppPreference.getPreference('app_safety_hide_token_enable') as boolean,
                 description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearance('app_safety_hide_token_enable', IsOn);
-                  this.updateSettings('app_safety_hide_token_enable');
+                  AppPreference.setPreference('app_safety_hide_token_enable', IsOn);
+                  this.token_preference.app_safety_hide_token_enable = IsOn;
                 }
               })
             }
@@ -367,24 +369,11 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.chevron_up_2_circle'),
                 title: $r('app.string.show_next_token'),
-                isOn: AppPreference.getAppearance('app_appearance_show_next_token_enable') as boolean,
+                isOn: AppPreference.getPreference('app_appearance_show_next_token_enable') as boolean,
                 description: $r('app.string.show_next_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearance('app_appearance_show_next_token_enable', IsOn);
-                  this.updateSettings('app_appearance_show_next_token_enable');
-                }
-              })
-
-              SubItemDivider()
-
-              SubItemToggle({
-                icon: $r('sys.symbol.transfer_station'),
-                title: $r('app.string.swap_host_user'),
-                isOn: AppPreference.getAppearance('app_appearance_swap_host_user_enable') as boolean,
-                description: $r('app.string.swap_host_user_des'),
-                onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearance('app_appearance_swap_host_user_enable', IsOn);
-                  this.updateSettings('app_appearance_swap_host_user_enable');
+                  AppPreference.setPreference('app_appearance_show_next_token_enable', IsOn);
+                  this.token_preference.app_appearance_show_next_token_enable = IsOn;
                 }
               })
 
@@ -394,13 +383,13 @@ export struct SettingPage {
                 SubItemToggle({
                   icon: $r('sys.symbol.gearshape'),
                   title: $r('app.string.debug_mode'),
-                  isOn: AppPreference.getAppearance('app_debug_mode_on') as boolean,
+                  isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
                     animateTo({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
-                    AppPreference.setAppearance('app_debug_mode_on', IsOn);
+                    AppPreference.setPreference('app_debug_mode_on', IsOn);
                   }
                 })
 
@@ -410,10 +399,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
                 title: $r('app.string.auto_unlock'),
-                isOn: AppPreference.getAppearance('app_appearance_auto_unlock_enable') as boolean,
+                isOn: AppPreference.getPreference('app_safety_auto_unlock_enable') as boolean,
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setAppearance('app_appearance_auto_unlock_enable', IsOn);
+                  AppPreference.setPreference('app_safety_auto_unlock_enable', IsOn);
                 }
               })
 
@@ -425,10 +414,10 @@ export struct SettingPage {
                 values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'),
                   $r('app.string.setting_color_mode_light'),],
                 description: $r('app.string.setting_color_mode_desc'),
-                selected: AppPreference.getAppearance('app_appearance_color_mode') as number ??
+                selected: AppPreference.getPreference('app_appearance_color_mode') as number ??
                 SettingColorMode.System,
                 onChange: (index: number) => {
-                  AppPreference.setAppearance('app_appearance_color_mode', index);
+                  AppPreference.setPreference('app_appearance_color_mode', index);
                   const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
                     [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
                     [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
@@ -440,11 +429,17 @@ export struct SettingPage {
 
               SubItemDivider()
 
-              SubItemIconManager({
-                onUpdate: () => {
+              SubItemIconManager()
 
-                }
+              SubItemDivider()
+
+              SubItemButton({
+                symbol: $r("sys.symbol.paintpalette"),
+                text: $r('app.string.customize_appearance')
               })
+                .onClick(() => {
+                  router.pushUrl({ url: 'pages/AppearancePage' });
+                })
             }
           }
           .padding({ left: 10, right: 10 })
@@ -461,7 +456,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbSyncEnable = IsOn;
-                  AppPreference.setAppearance('app_db_rds_sync_enable', IsOn);
+                  AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
                 }
               })
 
@@ -478,7 +473,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setAppearance('app_db_rds_cloud_sync_enable', IsOn);
+                  AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
                 }
               })
                 .visibility(Visibility.None)
@@ -534,7 +529,7 @@ export struct SettingPage {
               if (this.debug_mode_counter > 7) {
                 animateTo({ curve: curves.springMotion() }, () => {
                   this.debug_mode_is_on = true;
-                  AppPreference.setAppearance('app_debug_mode_on', true);
+                  AppPreference.setPreference('app_debug_mode_on', true);
                   promptAction.showToast({ message: "DEBUG MODE ON" });
                 })
 

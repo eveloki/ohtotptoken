@@ -156,7 +156,7 @@ export class KvManager {
 
   //手动同步
   async DataSync(): Promise<void> {
-    if (AppPreference.getAppearance('app_db_rds_sync_enable')) {
+    if (AppPreference.getPreference('app_db_rds_sync_enable')) {
       try {
         let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
         let dmInstance = distributedDeviceManager.createDeviceManager(bundleInfo?.name);

@@ -28,8 +28,8 @@ export class TokenConfig {
   constructor(
     secret: string = '',
     type: otpType = 0,
-    issuer: string = 'Unknown',
-    name: string = 'Unknown',
+    issuer: string = 'Issuer',
+    name: string = 'Name',
     algorithm: HMACAlgorithm = 'SHA1',
     period: number = 30,
     digits: number = 6,

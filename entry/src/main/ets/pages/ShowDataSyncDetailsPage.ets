@@ -15,7 +15,7 @@ struct ShowDataSyncDetailsPage {
   @Local Is_loaded: boolean = false;
 
   aboutToAppear(): void {
-    this.AppDbKVSyncTime = AppPreference.getAppearance('app_db_kv_sync_time');
+    this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
     if (this.AppDbKVSyncTime == '' || this.AppDbKVSyncTime == null) {
       this.AppDbKVSyncTime = 'invalid';
     }
@@ -95,8 +95,8 @@ struct ShowDataSyncDetailsPage {
                       TokenStore.getInstance().DataSync().then(()=>{
                         setTimeout(() => {
                           this.Is_loaded=false;
-                          AppPreference.setAppearance('app_db_kv_sync_time', Date().toString());
-                          this.AppDbKVSyncTime = AppPreference.getAppearance('app_db_kv_sync_time');
+                          AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
+                          this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
                           }, 1500);
                       });
                     })

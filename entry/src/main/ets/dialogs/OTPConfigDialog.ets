@@ -119,7 +119,7 @@ export struct TOTPConfigDialog {
         Row() {
           Text($r("app.string.dialog_cfg_tk_secret"))
             .width('30%')
-          TextInput({ text: this.conf.TokenSecret, placeholder: this.conf.TokenSecret })
+          TextInput({ text: this.conf.TokenSecret, placeholder: $r("app.string.dialog_cfg_tk_secret")})
             .onChange((value) => {
               this.conf.TokenSecret = value
             })
@@ -131,7 +131,7 @@ export struct TOTPConfigDialog {
         Row() {
           Text($r("app.string.dialog_cfg_tk_issuer"))
             .width('30%')
-          TextInput({ text: this.conf.TokenIssuer, placeholder: this.conf.TokenIssuer })
+          TextInput({ text: this.conf.TokenIssuer, placeholder: $r("app.string.dialog_cfg_tk_issuer") })
             .onChange((value) => {
               this.conf.TokenIssuer=value;
             })
@@ -142,7 +142,7 @@ export struct TOTPConfigDialog {
         Row() {
           Text($r("app.string.dialog_cfg_tk_name"))
             .width('30%')
-          TextInput({ text: this.conf.TokenName, placeholder: this.conf.TokenName })
+          TextInput({ text: this.conf.TokenName, placeholder: $r("app.string.dialog_cfg_tk_name") })
             .onChange((value) => {
               this.conf.TokenName = value
             })
@@ -265,7 +265,8 @@ export struct TOTPConfigDialog {
             }
           })
           .width('100%')
-        Button($r('app.string.dialog_btn_confirm'))
+        Button($r('app.string.dialog_btn_confirm'), { })
+          .enabled(!!(this.conf.TokenSecret && this.conf.TokenIssuer && this.conf.TokenName))
           .fontColor(Color.Red)
           .backgroundColor(Color.Transparent)
           .onClick(() => {
@@ -275,7 +276,6 @@ export struct TOTPConfigDialog {
             }
           })
           .width('100%')
-
       }
     }
     .padding(10)
