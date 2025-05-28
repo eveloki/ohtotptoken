@@ -3,11 +3,11 @@ import { FortiConfigDialog } from "../dialogs/FortiConfigDialog";
 import { TOTPConfigDialog } from "../dialogs/OTPConfigDialog";
 import { QRCodeDialog } from "../dialogs/QRCodeDialog";
 import { SteamConfigDialog } from "../dialogs/SteamConfigDialog";
-import { AppPreference, SettingValue } from "../utils/AppPreference";
+import { AppPreference, SettingValue, TokenPreference } from "../utils/AppPreference";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
-import { curves, window } from "@kit.ArkUI";
+import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { url } from "@kit.ArkTS";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
@@ -24,6 +24,8 @@ export struct TokenListPage {
   @Require @Param TabBarVisible: boolean = true;
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
+
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
 
   @Local token_copy_guide_popup: boolean = false;
   @Local token_list_lanes: number = 1;
@@ -82,7 +84,7 @@ export struct TokenListPage {
 
       }
       Column() {
-        List({ space: 10, initialIndex: 0 }) {
+        List({ space: this.token_preference.app_appearance_item_space, initialIndex: 0 }) {
           ListItemGroup() {
             ListItem() {
               Column() {

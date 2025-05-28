@@ -499,6 +499,74 @@
     {
       "name": "enable_dark_icon_filter_des",
       "value": "The filter can improve visibility in dark mode, but may also lose some icon details."
+    },
+    {
+      "name": "token_item_slider",
+      "value": "Size & Layout"
+    },
+    {
+      "name": "token_item_slider_desc",
+      "value": "Fine-tune the size and clearance distance of the token interface."
+    },
+    {
+      "name": "token_item_hight",
+      "value": "Height"
+    },
+    {
+      "name": "token_item_space",
+      "value": "Space"
+    },
+    {
+      "name": "appearance_reset_to_default",
+      "value": "Reset to Default"
+    },
+    {
+      "name": "token_logo_size",
+      "value": "Icon"
+    },
+    {
+      "name": "token_logo_bg_size",
+      "value": "Background"
+    },
+    {
+      "name": "token_logo_bg_r",
+      "value": "Background Radius"
+    },
+    {
+      "name": "token_font_slider",
+      "value": "Font"
+    },
+    {
+      "name": "token_item_font_desc",
+      "value": "Fine-tune the font size and weight of the token interface."
+    },
+    {
+      "name": "token_font_size",
+      "value": "Token Size"
+    },
+    {
+      "name": "token_font_weight",
+      "value": "Token Weight"
+    },
+    {
+      "name": "token_issuer_font_size",
+      "value": "Issuer Size"
+    },
+    {
+      "name": "token_issuer_font_weight",
+      "value": "Issuer Weight"
+    },
+    {
+      "name": "token_user_name_font_size",
+      "value": "User Size"
+    },
+    {
+      "name": "token_user_name_font_weight",
+      "value": "User Weight"
+    },
+    {
+      "name": "custom_appearance_cmd",
+      "value": "Command"
     }
   ]
 }

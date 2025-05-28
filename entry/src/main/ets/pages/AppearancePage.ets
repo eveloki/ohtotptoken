@@ -8,6 +8,9 @@ import { AppPreference, TokenPreference } from '../utils/AppPreference';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
+import { SubItemSlider } from '../components/SubItemSlider';
+import { SubItemButton } from '../components/SubItemButton';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Preview
 @Entry
@@ -15,6 +18,7 @@ import { SubItemColor } from '../components/SubItemColor';
 struct AppearancePage {
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   aboutToAppear(): void {
     setInterval(() => {
@@ -33,91 +37,278 @@ struct AppearancePage {
           router.back();
         }
       })
-      RelativeContainer() {
-        Column() {
-          Column({ space: 10 }) {
-            TokenItem({
-              Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'SolidFaker'),
-              Update: () => {}
-            })
-            TokenItem({
-              Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Bill Gates'),
-              Update: () => {}
-            })
-          }
-          .margin({ left: 10, right: 10, top: 10 })
-          List({ space: 10 }) {
-            ListItem()
-            ListItem() {
-              SettingItem({ title: $r('app.string.custom_layout') }) {
-                SubItemToggle({
-                  icon: $r('sys.symbol.transfer_station'),
-                  title: $r('app.string.swap_host_user'),
-                  isOn: AppPreference.getPreference('app_appearance_swap_host_user_enable') as boolean,
-                  description: $r('app.string.swap_host_user_des'),
-                  onChange: (IsOn: boolean) => {
-                    AppPreference.setPreference('app_appearance_swap_host_user_enable', IsOn);
-                    this.token_preference.app_appearance_swap_host_user_enable = IsOn;
+      Stack({ alignContent: Alignment.Top }) {
+        List({ space: 10 }) {
+          ListItem()
+            .height(this.token_preference.app_appearance_item_height * 2 + this.token_preference.app_appearance_item_space + 10)
+          ListItem() {
+            SettingItem({ title: $r('app.string.custom_layout') }) {
+
+              SubItemToggle({
+                icon: $r('sys.symbol.transfer_station'),
+                title: $r('app.string.swap_host_user'),
+                isOn: AppPreference.getPreference('app_appearance_swap_host_user_enable') as boolean,
+                description: $r('app.string.swap_host_user_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference('app_appearance_swap_host_user_enable', IsOn);
+                  this.token_preference.app_appearance_swap_host_user_enable = IsOn;
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemToggle({
+                icon: $r('sys.symbol.star_square_stack_fill'),
+                title: $r('app.string.enable_icon_background'),
+                isOn: AppPreference.getPreference('app_appearance_logo_background') as boolean,
+                description: $r('app.string.enable_icon_background_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference('app_appearance_logo_background', IsOn);
+                  this.token_preference.app_appearance_logo_background = IsOn;
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemToggle({
+                icon: $r('sys.symbol.circle_lefthalf_inset_filled'),
+                title: $r('app.string.enable_dark_icon_filter'),
+                isOn: AppPreference.getPreference('app_appearance_logo_dark_filter') as boolean,
+                description: $r('app.string.enable_dark_icon_filter_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference('app_appearance_logo_dark_filter', IsOn);
+                  this.token_preference.app_appearance_logo_dark_filter = IsOn;
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemSlider({
+                icon: $r('sys.symbol.slider_horizontal_2'),
+                title: $r('app.string.token_item_slider'),
+                items: [
+                  {
+                    name: $r('app.string.token_item_hight'),
+                    default: this.token_preference.app_appearance_item_height,
+                    min: 50,
+                    max: 100,
+                    step: 5
+                  },
+                  {
+                    name: $r('app.string.token_item_space'),
+                    default: this.token_preference.app_appearance_item_space,
+                    min: 5,
+                    max: 30,
+                    step: 1
+                  },
+                  {
+                    name: $r('app.string.token_logo_size'),
+                    default: this.token_preference.app_appearance_logo_size,
+                    min: 20,
+                    max: 60,
+                    step: 5
+                  },
+                  {
+                    name: $r('app.string.token_logo_bg_size'),
+                    default: this.token_preference.app_appearance_logo_background_size,
+                    min: 25,
+                    max: 65,
+                    step: 5
+                  },
+                  {
+                    name: $r('app.string.token_logo_bg_r'),
+                    default: this.token_preference.app_appearance_logo_background_radius,
+                    min: 0,
+                    max: Math.round(this.token_preference.app_appearance_logo_background_size / 2),
+                    step: 1
+                  },
+                ],
+                description: $r('app.string.token_item_slider_desc'),
+                onChange: (index, value) => {
+                  switch (index) {
+                    case 0: {
+                      AppPreference.setPreference('app_appearance_item_height', value);
+                      this.token_preference.app_appearance_item_height = value;
+                      break;
+                    }
+                    case 1: {
+                      AppPreference.setPreference('app_appearance_item_space', value);
+                      this.token_preference.app_appearance_item_space = value;
+                      break;
+                    }
+                    case 2: {
+                      AppPreference.setPreference('app_appearance_logo_size', value);
+                      this.token_preference.app_appearance_logo_size = value;
+                      break;
+                    }
+                    case 3: {
+                      AppPreference.setPreference('app_appearance_logo_background_size', value);
+                      this.token_preference.app_appearance_logo_background_size = value;
+                      break;
+                    }
+                    case 4: {
+                      AppPreference.setPreference('app_appearance_logo_background_radius', value);
+                      this.token_preference.app_appearance_logo_background_radius = value;
+                      break;
+                    }
                   }
-                })
+                }
+              })
 
-                SubItemDivider()
+              SubItemDivider()
 
-                SubItemToggle({
-                  icon: $r('sys.symbol.star_square_stack_fill'),
-                  title: $r('app.string.enable_icon_background'),
-                  isOn: AppPreference.getPreference('app_appearance_logo_background') as boolean,
-                  description: $r('app.string.enable_icon_background_des'),
-                  onChange: (IsOn: boolean) => {
-                    AppPreference.setPreference('app_appearance_logo_background', IsOn);
-                    this.token_preference.app_appearance_logo_background = IsOn;
+              SubItemSlider({
+                icon: $r('sys.symbol.slider_horizontal_2'),
+                title: $r('app.string.token_font_slider'),
+                items: [
+                  {
+                    name: $r('app.string.token_font_size'),
+                    default: this.token_preference.app_appearance_token_font_size,
+                    min: 10,
+                    max: 50,
+                    step: 5
+                  },
+                  {
+                    name: $r("app.string.token_font_weight"),
+                    default: this.token_preference.app_appearance_token_font_weight,
+                    min: 100,
+                    max: 900,
+                    step: 100
+                  },
+                  {
+                    name: $r('app.string.token_issuer_font_size'),
+                    default: this.token_preference.app_appearance_issuer_font_size,
+                    min: 10,
+                    max: 30,
+                    step: 5
+                  },
+                  {
+                    name: $r('app.string.token_issuer_font_weight'),
+                    default: this.token_preference.app_appearance_issuer_font_weight,
+                    min: 100,
+                    max: 900,
+                    step: 100
+                  },
+                  {
+                    name: $r('app.string.token_user_name_font_size'),
+                    default: this.token_preference.app_appearance_user_name_font_size,
+                    min: 5,
+                    max: 30,
+                    step: 5
+                  },
+                  {
+                    name: $r('app.string.token_user_name_font_weight'),
+                    default: this.token_preference.app_appearance_user_name_font_weight,
+                    min: 100,
+                    max: 900,
+                    step: 100
+                  },
+                ],
+                description: $r('app.string.token_item_font_desc'),
+                onChange: (index, value) => {
+                  switch (index) {
+                    case 0: {
+                      AppPreference.setPreference('app_appearance_token_font_size', value);
+                      this.token_preference.app_appearance_token_font_size = value;
+                      break;
+                    }
+                    case 1: {
+                      AppPreference.setPreference('app_appearance_token_font_weight', value);
+                      this.token_preference.app_appearance_token_font_weight = value;
+                      break;
+                    }
+                    case 2: {
+                      AppPreference.setPreference('app_appearance_issuer_font_size', value);
+                      this.token_preference.app_appearance_issuer_font_size = value;
+                      break;
+                    }
+                    case 3: {
+                      AppPreference.setPreference('app_appearance_issuer_font_weight', value);
+                      this.token_preference.app_appearance_issuer_font_weight = value;
+                      break;
+                    }
+                    case 4: {
+                      AppPreference.setPreference('app_appearance_user_name_font_size', value);
+                      this.token_preference.app_appearance_user_name_font_size = value;
+                      break;
+                    }
+                    case 5: {
+                      AppPreference.setPreference('app_appearance_user_name_font_weight', value);
+                      this.token_preference.app_appearance_user_name_font_weight = value;
+                      break;
+                    }
                   }
-                })
+                }
+              })
 
-                SubItemDivider()
-
-                SubItemToggle({
-                  icon: $r('sys.symbol.circle_lefthalf_inset_filled'),
-                  title: $r('app.string.enable_dark_icon_filter'),
-                  isOn: AppPreference.getPreference('app_appearance_logo_dark_filter') as boolean,
-                  description: $r('app.string.enable_dark_icon_filter_des'),
-                  onChange: (IsOn: boolean) => {
-                    AppPreference.setPreference('app_appearance_logo_dark_filter', IsOn);
-                    this.token_preference.app_appearance_logo_dark_filter = IsOn;
-                  }
-                })
-              }
             }
-            .padding({ left: 10, right: 10 })
-
-            ListItem() {
-              SettingItem({ title: $r('app.string.custom_color') }) {
-                SubItemColor({
-                  icon: $r('sys.symbol.transfer_station'),
-                  title: $r('app.string.custom_color_logo_background'),
-                  color: AppPreference.getPreference('app_appearance_logo_background_color') as string,
-                  description: $r('app.string.custom_color_logo_background_des'),
-                  onChange: (color: string) => {
-                    AppPreference.setPreference('app_appearance_logo_background_color', color);
-                    this.token_preference.app_appearance_logo_background_color = color;
-                  }
-                })
-              }
-            }
-            .padding({ left: 10, right: 10 })
-
-            ListItem()
           }
-          .chainAnimation(true)
-          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-          .scrollBar(BarState.Off)
-          .layoutWeight(1)
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
+            SettingItem({ title: $r('app.string.custom_color') }) {
+              SubItemColor({
+                icon: $r('sys.symbol.transfer_station'),
+                title: $r('app.string.custom_color_logo_background'),
+                color: AppPreference.getPreference('app_appearance_logo_background_color') as string,
+                description: $r('app.string.custom_color_logo_background_des'),
+                onChange: (color: string) => {
+                  AppPreference.setPreference('app_appearance_logo_background_color', color);
+                  this.token_preference.app_appearance_logo_background_color = color;
+                }
+              })
+            }
+          }
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
+            SettingItem({ title: $r('app.string.custom_appearance_cmd') }) {
+              SubItemButton({
+                symbol: $r('sys.symbol.arrow_counterclockwise'),
+                text: $r('app.string.appearance_reset_to_default'),
+              })
+                .onClick(() => {
+                  AppPreference.resetAppearanceToDefault();
+                })
+
+              SubItemDivider()
+            }
+          }
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
+            Row()
+              .height(this.window.AvoidBottomHeight)
+          }
         }
+        .chainAnimation(true)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+        .scrollBar(BarState.Off)
+        .layoutWeight(1)
+
+        Column({ space: this.token_preference.app_appearance_item_space }) {
+          TokenItem({
+            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'SolidFaker'),
+            Update: () => {
+            }
+          })
+          TokenItem({
+            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Bill Gates'),
+            Update: () => {
+            }
+          })
+        }
+        .backdropBlur(10)
+        .padding({
+          top: 10,
+          left: 10,
+          right: 10,
+        })
       }
       .backgroundColor($r('app.color.window_background'))
       .width('100%')
       .height('100%')
     }
-    .padding({ top: AppStorage.get<number>('statusBarHeight'), bottom: 24 })
+    .padding({ top: AppStorage.get<number>('statusBarHeight'), bottom: this.window.AvoidBottomHeight })
   }
 }

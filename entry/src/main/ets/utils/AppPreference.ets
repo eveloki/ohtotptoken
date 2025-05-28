@@ -1,7 +1,7 @@
 import { PreferenceManager } from "./PreferenceManager";
 import { AppStorageV2 } from "@kit.ArkUI";
 
-export type SettingValue = boolean | string | number | FontWeight | SettingColorMode;
+export type SettingValue = boolean | string | number | SettingColorMode;
 export enum SettingColorMode {
   System,
   Dark,
@@ -13,6 +13,8 @@ export class TokenPreference {
   @Trace app_safety_hide_token_enable = false;
   @Trace app_appearance_show_next_token_enable = false;
   @Trace app_appearance_swap_host_user_enable = false;
+  @Trace app_appearance_item_height = 60;
+  @Trace app_appearance_item_space = 10;
   @Trace app_appearance_logo_size = 40;
   @Trace app_appearance_logo_background = false;
   @Trace app_appearance_logo_background_size = 45;
@@ -31,18 +33,18 @@ export class TokenPreference {
   @Trace app_appearance_token_counter_next_light_color_end = "#FFD71616";
   @Trace app_appearance_token_counter_next_dark_color_start = "#FFF18585";
   @Trace app_appearance_token_counter_next_dark_color_end = "#FFD71616";
-  @Trace app_appearance_token_font_wight = FontWeight.Medium;
+  @Trace app_appearance_token_font_weight = 400;
   @Trace app_appearance_token_font_size = 30;
   @Trace app_appearance_issuer_font_size = 18;
-  @Trace app_appearance_issuer_font_wight = FontWeight.Regular;
+  @Trace app_appearance_issuer_font_weight = 400;
   @Trace app_appearance_user_name_font_size = 10;
-  @Trace app_appearance_user_name_font_wight = FontWeight.Regular;
+  @Trace app_appearance_user_name_font_weight = 400;
 }
 
 export class AppPreference {
   private static prefMgr = PreferenceManager.getInstance();
 
-  private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
+  private static settings_default: Map<string, SettingValue> = new Map<string, SettingValue>([
     // 安全性-隐私模式设置
     ['app_safety_privacy_enable', false],
     // 安全性-应用锁定设置
@@ -67,10 +69,15 @@ export class AppPreference {
     ['app_show_guide_tips', true],
     // 是否处于debug模式
     ['app_debug_mode_on', false],
+  ]);
 
+  private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([
     // 外观-自定义
     ['app_appearance_swap_host_user_enable', false],
     ['app_appearance_logo_background', false],
+    ['app_appearance_item_height', 60],
+    ['app_appearance_item_space', 10],
+    ['app_appearance_logo_size', 40],
     ['app_appearance_logo_background_size', 45],
     ['app_appearance_logo_background_radius', 5],
     ['app_appearance_logo_background_color', '#ffececec'],
@@ -87,12 +94,17 @@ export class AppPreference {
     ['app_appearance_token_counter_next_light_color_end', "#FFD71616"],
     ['app_appearance_token_counter_next_dark_color_start', "#FFF18585"],
     ['app_appearance_token_counter_next_dark_color_end', "#FFD71616"],
-    ['app_appearance_token_font_wight', FontWeight.Medium],
+    ['app_appearance_token_font_weight', 400],
     ['app_appearance_token_font_size', 30],
     ['app_appearance_issuer_font_size', 18],
-    ['app_appearance_issuer_font_wight', FontWeight.Regular],
+    ['app_appearance_issuer_font_weight', 400],
     ['app_appearance_user_name_font_size', 10],
-    ['app_appearance_user_name_font_wight', FontWeight.Regular],
+    ['app_appearance_user_name_font_weight', 400],
+  ]);
+
+  private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
+    ...Array.from(AppPreference.settings_default.entries()),
+    ...Array.from(AppPreference.appearance_default.entries())
   ]);
 
   public static getPreference(key: string): SettingValue {
@@ -122,6 +134,9 @@ export class AppPreference {
     token_appearance.app_appearance_show_next_token_enable = AppPreference.getPreference('app_appearance_show_next_token_enable') as boolean;
     token_appearance.app_appearance_swap_host_user_enable = AppPreference.getPreference('app_appearance_swap_host_user_enable') as boolean;
     token_appearance.app_appearance_logo_background = AppPreference.getPreference('app_appearance_logo_background') as boolean;
+    token_appearance.app_appearance_item_height = AppPreference.getPreference('app_appearance_item_height') as number;
+    token_appearance.app_appearance_item_space = AppPreference.getPreference('app_appearance_item_space') as number;
+    token_appearance.app_appearance_logo_size = AppPreference.getPreference('app_appearance_logo_size') as number;
     token_appearance.app_appearance_logo_background_size = AppPreference.getPreference('app_appearance_logo_background_size') as number;
     token_appearance.app_appearance_logo_background_radius = AppPreference.getPreference('app_appearance_logo_background_radius') as number;
     token_appearance.app_appearance_logo_background_color = AppPreference.getPreference('app_appearance_logo_background_color') as string;
@@ -138,12 +153,19 @@ export class AppPreference {
     token_appearance.app_appearance_token_counter_next_light_color_end = AppPreference.getPreference('app_appearance_token_counter_next_light_color_end') as string;
     token_appearance.app_appearance_token_counter_next_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_start') as string;
     token_appearance.app_appearance_token_counter_next_dark_color_end = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_end') as string;
-    token_appearance.app_appearance_token_font_wight = AppPreference.getPreference('app_appearance_token_font_wight') as FontWeight;
+    token_appearance.app_appearance_token_font_weight = AppPreference.getPreference('app_appearance_token_font_weight') as FontWeight;
     token_appearance.app_appearance_token_font_size = AppPreference.getPreference('app_appearance_token_font_size') as number;
     token_appearance.app_appearance_issuer_font_size = AppPreference.getPreference('app_appearance_issuer_font_size') as number;
-    token_appearance.app_appearance_issuer_font_wight = AppPreference.getPreference('app_appearance_issuer_font_wight') as FontWeight;
+    token_appearance.app_appearance_issuer_font_weight = AppPreference.getPreference('app_appearance_issuer_font_weight') as FontWeight;
     token_appearance.app_appearance_user_name_font_size = AppPreference.getPreference('app_appearance_user_name_font_size') as number;
-    token_appearance.app_appearance_user_name_font_wight = AppPreference.getPreference('app_appearance_user_name_font_wight') as FontWeight;
+    token_appearance.app_appearance_user_name_font_weight = AppPreference.getPreference('app_appearance_user_name_font_weight') as FontWeight;
+  }
+
+  public static resetAppearanceToDefault(): void {
+    for (const entry of AppPreference.appearance_default) {
+      AppPreference.setPreference(entry[0], entry[1]);
+    }
+    AppPreference.loadTokenAppearance();
   }
 
   public static saveSettings(): void {

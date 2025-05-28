@@ -88,12 +88,14 @@ export struct TokenItem {
         Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
-          .fontSize(18)
+          .fontSize(this.token_preference.app_appearance_issuer_font_size)
+          .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
           .fontColor($r('app.color.str_main'))
         Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
-          .fontSize(10)
+          .fontSize(this.token_preference.app_appearance_user_name_font_size)
+          .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
           .fontColor($r('app.color.str_gray'))
       }
       .layoutWeight(1)
@@ -115,7 +117,7 @@ export struct TokenItem {
             Span("●●●●")
           }
           .fontColor(Color.Gray)
-          .fontSize(30)
+          .fontSize(this.token_preference.app_appearance_token_font_size)
         }
         .onClick(() => {
           this.TokenHide = !this.TokenHide;
@@ -131,7 +133,8 @@ export struct TokenItem {
             .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP ?
               $r('app.color.token_progress_next_color_end') :
               $r('app.color.token_number'))
-            .fontSize(30)
+            .fontSize(this.token_preference.app_appearance_token_font_size)
+            .fontWeight(this.token_preference.app_appearance_token_font_weight)
             .gesture(
               LongPressGesture()
                 .onAction(() => {
@@ -193,7 +196,7 @@ export struct TokenItem {
     .padding(10)
     .justifyContent(FlexAlign.SpaceBetween)
     .width('100%')
-    .height(60)
+    .height(this.token_preference.app_appearance_item_height)
     .backgroundColor($r("app.color.item_bg"))
   }
 }
