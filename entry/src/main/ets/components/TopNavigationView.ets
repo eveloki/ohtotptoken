@@ -49,6 +49,7 @@ export struct TopNavigationView {
         }
       }
     }
+    .backdropBlur(10)
     .alignItems(VerticalAlign.Center)
     .justifyContent(FlexAlign.SpaceBetween)
     .width(CommonConstants.FULL_PERCENT)

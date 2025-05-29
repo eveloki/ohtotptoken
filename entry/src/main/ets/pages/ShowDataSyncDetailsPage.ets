@@ -1,4 +1,4 @@
-import { router } from '@kit.ArkUI';
+import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
 import { deviceInfo } from '@kit.BasicServicesKit';
@@ -6,6 +6,7 @@ import { AppPreference, SettingValue } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { TokenStore } from '../utils/TokenStore';
 import { SubItemDivider } from '../components/SubItemDivider';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Preview
 @Entry
@@ -13,6 +14,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 struct ShowDataSyncDetailsPage {
   @Local AppDbKVSyncTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   aboutToAppear(): void {
     this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
@@ -117,6 +119,6 @@ struct ShowDataSyncDetailsPage {
     }
     .width('100%')
     .height('100%')
-    .padding({ top: AppStorage.get<number>('statusBarHeight'), bottom: 24 })
+    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
   }
 }
