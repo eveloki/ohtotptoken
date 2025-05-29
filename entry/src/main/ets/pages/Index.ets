@@ -37,6 +37,7 @@ struct Index {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
+  private appIsInit = false;
   private appIsShow = false;
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
@@ -100,19 +101,31 @@ struct Index {
         this.token_loading = false;
         // DEBUG MODE
         if (AppPreference.getPreference('app_debug_mode_on')) {
-          if (this.CurrentTokens.length == 0) { // 没有任何数据才去检测备份
+          if (this.CurrentTokens.length >= 0) { // 没有任何数据才去检测备份
             let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
             let res = fs.accessSync(backup_file);
             if (res) {
               restoreFromBackup(backup_file, true, "AutoBackUp").then((backup) => {
                 this.updateTokenConfigs(backup.configs).then(() => {
                   tkStore.sortTokens();
+                  this.appIsInit=true;
                 });
               })
             }
+            else
+            {
+              this.appIsInit=true;
+            }
+          }
+          else
+          {
+            this.appIsInit=true;
           }
         }
-
+        else
+        {
+          this.appIsInit=true;
+        }
       });
     });
 
@@ -247,7 +260,7 @@ struct Index {
     if (AppPreference.getPreference('app_debug_mode_on')) {
       hilog.info(0, TAG, "onPageHide");
       //备份还原场景检测是否有备份数据
-      if (this.CurrentTokens.length > 0) {
+      if (this.CurrentTokens.length > 0 && this.appIsInit) {
         //todo需要申请锁屏后读取权限 需要实现后台任务备份
         try {
           //申请锁屏后访问加密文件的权限
