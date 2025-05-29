@@ -53,20 +53,26 @@ export struct SteamConfigDialog {
     }
     const pathParts = otp_url.pathname.slice(1).split('/');
     const labelParts = decodeURIComponent(pathParts[0]).split(':');
-    this.conf.TokenIssuer=labelParts[0];
-    this.conf.TokenName = labelParts[1];
+
+    if (labelParts.length > 1) {
+      this.conf.TokenIssuer = labelParts[0];
+      this.conf.TokenName = labelParts[1];
+    }
 
     const parameters: Record<string, string> = {};
-    const query = otp_url.href.split('?')[1].toLowerCase();
-    if (query) {
-      query.split('&').forEach(part => {
-        const kv: string[] = part.split('=');
-        parameters[kv[0]] = kv[1];
-      });
+    const tail_part = otp_url.href.split('?');
+    if (tail_part.length > 1) {
+      const query = tail_part[1].toLowerCase();
+      if (query) {
+        query.split('&').forEach(part => {
+          const kv: string[] = part.split('=');
+          parameters[kv[0]] = kv[1];
+        });
+      }
+      this.conf.TokenSecret = parameters['secret'];
+      this.conf.TokenPeriod = parseInt(parameters['period'] ?? '30');
+      this.conf.TokenDigits = parseInt(parameters['digits'] ?? '10');
     }
-    this.conf.TokenSecret = parameters['secret'];
-    this.conf.TokenPeriod = parseInt(parameters['period'] ?? '30');
-    this.conf.TokenDigits = parseInt(parameters['digits'] ?? '10');
   }
 
   build() {

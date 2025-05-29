@@ -22,6 +22,7 @@ import { TokenListPage } from './TokenListPage';
 import { AppLockPage, requireUserAuth } from './AppLockPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2 } from '@kit.ArkUI';
+import { writeFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
 
@@ -101,15 +102,20 @@ struct Index {
         // DEBUG MODE
         if (AppPreference.getPreference('app_debug_mode_on')) {
           if (this.CurrentTokens.length == 0) { // 没有任何数据才去检测备份
-            let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
-            let res = fs.accessSync(backup_file);
-            if (res) {
-              restoreFromBackup(backup_file, true, "AutoBackUp").then((backup) => {
-                this.updateTokenConfigs(backup.configs).then(() => {
-                  tkStore.sortTokens();
-                });
-              })
+            let backup_lock =  this.appCtx.filesDir + "/backup.locked";
+            if (!fs.accessSync(backup_lock)) { // 是否是第一次尝试从备份恢复
+              writeFileContent(backup_lock, 'locked');
+              let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
+              let res = fs.accessSync(backup_file);
+              if (res) {
+                restoreFromBackup(backup_file, true, "AutoBackUp").then((backup) => {
+                  this.updateTokenConfigs(backup.configs).then(() => {
+                    tkStore.sortTokens();
+                  });
+                })
+              }
             }
+
           }
         }
 
