@@ -5,9 +5,8 @@ import {
   ConfigurationConstant,
 } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { AppStorageV2, window } from '@kit.ArkUI';
+import { AppStorageV2, router, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { WindowUtil } from '../utils/WindowUtil';
 import { AppPreference, SettingColorMode } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 
@@ -38,7 +37,6 @@ export default class EntryAbility extends UIAbility {
     AppStorage.setOrCreate("appContext", this.context);
     AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
-    WindowUtil.setMissionContinueActive(this.context, false);
 
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {
@@ -47,7 +45,9 @@ export default class EntryAbility extends UIAbility {
       },
       onApplicationBackground() {
         console.info('applicationStateChangeCallback onApplicationBackground');
-        AppStorage.setOrCreate("appSwitchedOut", true);
+        if (AppPreference.getPreference('app_safety_lock_enable')) {
+          router.pushUrl({ url: 'pages/AppLockPage' })
+        }
       }
     }
 
@@ -70,9 +70,8 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
-    WindowUtil.requestFullScreen(windowStage, this.context);
     AppPreference.loadSettings().then(() => {
-      windowStage.loadContent('pages/Index', (err) => {
+      windowStage.loadContent('pages/AppLockPage', (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;
@@ -112,7 +111,6 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageRestore(windowStage: window.WindowStage): void {
-    WindowUtil.requestFullScreen(windowStage, this.context);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {

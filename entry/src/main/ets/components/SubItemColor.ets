@@ -1,13 +1,33 @@
+export class ColorItem {
+  name: ResourceStr = '';
+  color: string = '';
+}
 
 @Preview
 @ComponentV2
 export struct SubItemColor {
-  @Require @Param onChange: (color: string) => void = () => {};
+  @Require @Param onChange: (index: number, color: string) => void = () => {};
   @Require @Param title: string | Resource = '';
-  @Require @Param color: string = '#FF000000';
+  @Require @Param colors: ColorItem[] = [{name: "a", color: '#ff00ff00'}];
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = '';
+
+  @Local color_values: string[] = this.colors.map((c) => c.color);
+
+  private color_scheme: string[] = [
+    '#ffececec',
+    "#FFD6D6D6",
+    "#FF012EE0",
+    "#FF86c1ff",
+    "#FF254ff7",
+    "#FF86c1ff",
+    "#FF254ff7",
+    "#FFF18585",
+    "#FFD71616",
+    "#FFF18585",
+    "#FFD71616",
+  ];
 
   build() {
     Column() {
@@ -24,21 +44,6 @@ export struct SubItemColor {
           .fontWeight(FontWeight.Regular)
           .textAlign(TextAlign.Start)
           .layoutWeight(2)
-
-        Blank()
-
-        Shape() {
-
-        }
-        .backgroundColor(this.color)
-        .width(20)
-        .height(20)
-        .borderRadius(5)
-        .enabled(!this.disable)
-        .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.95 })
-        .onClick(() => {
-
-        })
       }
       .width('100%')
       if (this.description != '') {
@@ -50,6 +55,22 @@ export struct SubItemColor {
           .lineHeight(19)
           .width('100%')
       }
+      Blank()
+      ForEach(this.colors, (color: ColorItem, index: number) => {
+        Row() {
+          Text(color.name)
+            .width('30%')
+            .textOverflow({ overflow: TextOverflow.MARQUEE })
+          Shape()
+            .backgroundColor(color.color)
+            .width(40)
+            .height(40)
+            .onClick(() => {
+            })
+        }
+        .justifyContent(FlexAlign.SpaceAround)
+
+      })
     }
     .padding(10)
   }

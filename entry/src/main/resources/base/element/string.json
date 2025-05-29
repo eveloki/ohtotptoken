@@ -567,6 +567,14 @@
     {
       "name": "custom_appearance_cmd",
       "value": "Command"
+    },
+    {
+      "name": "custom_color_palette",
+      "value": "Color Palette"
+    },
+    {
+      "name": "custom_color_palette_des",
+      "value": "Control the color scheme of the token display."
     }
   ]
 }

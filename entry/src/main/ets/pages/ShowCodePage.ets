@@ -1,7 +1,7 @@
-import { router } from '@kit.ArkUI';
-import { CommonConstants } from '../utils/CommonConstants';
+import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../utils/TokenConfig';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Entry
 @ComponentV2
@@ -11,7 +11,7 @@ struct ShowCodePage {
   @Local TokenLeftPeriod: number = 0;
   @Local btn_hotp_clicked: number = 0;
   @Local Config: TokenConfig = new TokenConfig();
-
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   build() {
     Column() {
@@ -36,6 +36,6 @@ struct ShowCodePage {
     .width('100%')
     .height('100%')
     .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: AppStorage.get<number>('statusBarHeight'), bottom: 24 })
+    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
   }
 }

@@ -502,47 +502,47 @@
     },
     {
       "name": "token_item_slider",
-      "value": "Size & Layout"
+      "value": "尺寸與佈局"
     },
     {
       "name": "token_item_slider_desc",
-      "value": "Fine-tune the size and clearance distance of the token interface."
+      "value": "微調令牌介面的大小和間距。"
     },
     {
       "name": "token_item_hight",
-      "value": "Height"
+      "value": "高度"
     },
     {
       "name": "token_item_space",
-      "value": "Space"
+      "value": "間距"
     },
     {
       "name": "appearance_reset_to_default",
-      "value": "Reset to Default"
+      "value": "恢復預設"
     },
     {
       "name": "token_logo_size",
-      "value": "Icon"
+      "value": "圖示"
     },
     {
       "name": "token_logo_bg_size",
-      "value": "Background"
+      "value": "背景"
     },
     {
       "name": "token_logo_bg_r",
-      "value": "Background Radius"
+      "value": "背景半徑"
     },
     {
       "name": "token_font_slider",
-      "value": "Font"
+      "value": "字體"
     },
     {
       "name": "token_item_font_desc",
-      "value": "Fine-tune the font size and weight of the token interface."
+      "value": "微調令牌介面的字體大小與字重。"
     },
     {
       "name": "token_font_size",
-      "value": "Token Size"
+      "value": "令牌大小"
     },
     {
       "name": "token_font_weight",
@@ -550,23 +550,31 @@
     },
     {
       "name": "token_issuer_font_size",
-      "value": "Issuer Size"
+      "value": "發行者大小"
     },
     {
       "name": "token_issuer_font_weight",
-      "value": "Issuer Weight"
+      "value": "發行者字重"
     },
     {
       "name": "token_user_name_font_size",
-      "value": "User Size"
+      "value": "用戶大小"
     },
     {
       "name": "token_user_name_font_weight",
-      "value": "User Weight"
+      "value": "用戶字重"
     },
     {
       "name": "custom_appearance_cmd",
-      "value": "Command"
+      "value": "指令"
+    },
+    {
+      "name": "custom_color_palette",
+      "value": "Color Palette"
+    },
+    {
+      "name": "custom_color_palette_des",
+      "value": "Control the color scheme of the token display."
     }
   ]
 }

@@ -1,10 +1,28 @@
 import { cryptoFramework } from "@kit.CryptoArchitectureKit";
 import { userAuth } from "@kit.UserAuthenticationKit";
 import { BusinessError } from "@kit.BasicServicesKit";
+import { router } from "@kit.ArkUI";
+import { AppPreference } from "../utils/AppPreference";
+import { common } from "@kit.AbilityKit";
 
+@Entry
 @Preview
 @ComponentV2
 export struct AppLockPage {
+  @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+
+  onPageShow(): void {
+    if (!AppPreference.getPreference('app_safety_lock_enable')) {
+      router.replaceUrl({ url: 'pages/Index' });
+    } else if (AppPreference.getPreference('app_safety_auto_unlock_enable')) {
+      requireUserAuth(this.appCtx);
+    }
+  }
+
+  aboutToAppear(): void {
+    router.clear();
+  }
+
   build() {
     Row() {
       RelativeContainer() {
@@ -70,11 +88,10 @@ export function requireUserAuth(ctx: Context): void {
       onResult(result) {
         console.info(`userAuthInstance callback result: ${JSON.stringify(result)}`);
         // 可在认证结束或其他业务需要场景，取消订阅认证结果
-        //let rr:userAuth.UserAuthResult =result;
         if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
           // 判断验证结果是否正确 只有正确验证了才能跳跃到首页
           if (ctx.eventHub != undefined) {
-            ctx.eventHub.emit('onAppUnlock');
+            router.pushUrl({ url: 'pages/Index' });
           }
         }
         userAuthInstance.off('result');

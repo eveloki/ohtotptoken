@@ -37,6 +37,7 @@ struct AppearancePage {
           router.back();
         }
       })
+        .zIndex(1)
       Stack({ alignContent: Alignment.Top }) {
         List({ space: 10 }) {
           ListItem()
@@ -244,22 +245,27 @@ struct AppearancePage {
             }
           }
           .padding({ left: 10, right: 10 })
+          if (AppPreference.getPreference('app_debug_mode_on')) {
+            ListItem() {
+              SettingItem({ title: $r('app.string.custom_color') }) {
+                SubItemColor({
+                  icon: $r('sys.symbol.paintpalette'),
+                  title: $r('app.string.custom_color_palette'),
+                  description: $r('app.string.custom_color_palette_des'),
+                  colors: [
+                    {
+                      name: $r('app.string.custom_color_logo_background'),
+                      color: this.token_preference.app_appearance_logo_background_color,
+                    }
+                  ],
+                  onChange: () => {
 
-          ListItem() {
-            SettingItem({ title: $r('app.string.custom_color') }) {
-              SubItemColor({
-                icon: $r('sys.symbol.transfer_station'),
-                title: $r('app.string.custom_color_logo_background'),
-                color: AppPreference.getPreference('app_appearance_logo_background_color') as string,
-                description: $r('app.string.custom_color_logo_background_des'),
-                onChange: (color: string) => {
-                  AppPreference.setPreference('app_appearance_logo_background_color', color);
-                  this.token_preference.app_appearance_logo_background_color = color;
-                }
-              })
+                  }
+                })
+              }
             }
+            .padding({ left: 10, right: 10 })
           }
-          .padding({ left: 10, right: 10 })
 
           ListItem() {
             SettingItem({ title: $r('app.string.custom_appearance_cmd') }) {
@@ -276,29 +282,26 @@ struct AppearancePage {
           }
           .padding({ left: 10, right: 10 })
 
-          ListItem() {
-            Row()
-              .height(this.window.AvoidBottomHeight)
-          }
+          ListItem()
+            .height(this.window.AvoidBottomHeight + 56) // 56: navigation_height
         }
         .chainAnimation(true)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
-        .layoutWeight(1)
 
         Column({ space: this.token_preference.app_appearance_item_space }) {
           TokenItem({
-            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'SolidFaker'),
+            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'Foo Bar'),
             Update: () => {
             }
           })
           TokenItem({
-            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Bill Gates'),
+            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Some Body'),
             Update: () => {
             }
           })
         }
-        .backdropBlur(10)
+        .backdropBlur(100)
         .padding({
           top: 10,
           left: 10,
@@ -309,6 +312,7 @@ struct AppearancePage {
       .width('100%')
       .height('100%')
     }
-    .padding({ top: AppStorage.get<number>('statusBarHeight'), bottom: this.window.AvoidBottomHeight })
+    .padding({ top: this.window.AvoidTopHeight })
+    .backdropBlur(10)
   }
 }
