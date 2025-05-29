@@ -4,6 +4,7 @@
     "pages/PrivacyPage",
     "pages/AgreementPage",
     "pages/AppearancePage",
+    "pages/AppLockPage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage"
   ]

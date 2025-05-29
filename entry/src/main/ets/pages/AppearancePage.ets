@@ -291,12 +291,12 @@ struct AppearancePage {
 
         Column({ space: this.token_preference.app_appearance_item_space }) {
           TokenItem({
-            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'SolidFaker'),
+            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'Foo Bar'),
             Update: () => {
             }
           })
           TokenItem({
-            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Bill Gates'),
+            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Some Body'),
             Update: () => {
             }
           })

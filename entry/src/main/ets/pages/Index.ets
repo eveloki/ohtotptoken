@@ -5,7 +5,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import promptAction from '@ohos.promptAction'
-import { AppPreference, SettingValue } from '../utils/AppPreference';
+import { AppPreference } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -19,9 +19,8 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
-import { AppLockPage, requireUserAuth } from './AppLockPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2 } from '@kit.ArkUI';
+import { AppStorageV2, router } from '@kit.ArkUI';
 import { writeFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
@@ -34,14 +33,13 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
   @Local token_loading: Boolean = true;
-  @Local app_lock: boolean = AppPreference.getPreference('app_safety_lock_enable') as boolean;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   private appIsShow = false;
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
-  private DropFilesDialogIsOpen:boolean=false;
+  private DropFilesDialogIsOpen:boolean = false;
 
   private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   // 订阅者信息, 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
@@ -186,11 +184,6 @@ struct Index {
         }, 250)
     });
 
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onAppUnlock', () => {
-      this.app_lock = false;
-      AppStorage.setOrCreate("appSwitchedOut", false);
-    });
-
     // periodically update timestamp for tokens
     setInterval(() => {
       if (this.appCtx != undefined && this.appIsShow)
@@ -289,13 +282,7 @@ struct Index {
   }
 
   onPageShow(): void {
-    this.app_lock = (AppPreference.getPreference('app_safety_lock_enable') as boolean) && (AppStorage.get('appSwitchedOut') ?? true);
-    AppStorage.set('appSwitchedOut', false);
-    if (this.app_lock) {
-      if (AppPreference.getPreference('app_safety_auto_unlock_enable')) {
-        requireUserAuth(this.appCtx);
-      }
-    }
+    router.clear();
     this.appIsShow = true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
@@ -386,9 +373,7 @@ struct Index {
 
   build() {
     Stack() {
-      if (this.app_lock) {
-        AppLockPage()
-      } else if (this.token_loading) {
+      if (this.token_loading) {
         Column() {
           LoadingProgress()
             .color(Color.White)
