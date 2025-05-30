@@ -360,6 +360,19 @@ export struct SettingPage {
                   this.token_preference.app_safety_hide_token_enable = IsOn;
                 }
               })
+
+              SubItemDivider()
+
+              SubItemToggle({
+                icon: $r('sys.symbol.blur_bar'),
+                title: $r('app.string.setting_background_blur'),
+                isOn: AppPreference.getPreference('app_safety_background_blur_enable') as boolean,
+                description: $r('app.string.setting_background_blur_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference('app_safety_background_blur_enable', IsOn);
+                  this.token_preference.app_safety_hide_token_enable = IsOn;
+                }
+              })
             }
           }
           .padding({ left: 10, right: 10 })

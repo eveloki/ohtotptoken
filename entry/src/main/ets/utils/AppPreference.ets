@@ -53,6 +53,8 @@ export class AppPreference {
     ['app_safety_hide_token_enable', false],
     // 安全性-自动解锁
     ['app_safety_auto_unlock_enable', false],
+    // 安全性-后台模糊
+    ['app_safety_background_blur_enable', false],
     // 外观-显示下一个令牌
     ['app_appearance_show_next_token_enable', false],
     // 外观-颜色模式

@@ -299,7 +299,10 @@ struct Index {
     let context = getContext(this) as common.UIAbilityContext;
     let windowStage = context.windowStage;
     windowStage.on("windowStageEvent", (data) => {
-      this.backgroundBlurFlag = (data === window.WindowStageEventType.PAUSED);
+      this.backgroundBlurFlag = (
+        AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
+        data === window.WindowStageEventType.PAUSED
+      );
     })
   }
 
