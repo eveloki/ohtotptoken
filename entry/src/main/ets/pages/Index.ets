@@ -20,7 +20,7 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2, router, window } from '@kit.ArkUI';
 import { writeFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
@@ -33,6 +33,7 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
   @Local token_loading: Boolean = true;
+  @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
@@ -294,6 +295,15 @@ struct Index {
         this.token_loading = false;
       });
     });
+
+    let context = getContext(this) as common.UIAbilityContext;
+    let windowStage = context.windowStage;
+    windowStage.on("windowStageEvent", (data) => {
+      this.background_blur_flag = (
+        AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
+        data === window.WindowStageEventType.PAUSED
+      );
+    })
   }
 
   async onTokenChanged(): Promise<void> {
@@ -468,6 +478,10 @@ struct Index {
     .onDragLeave(() => {
       this.DropFilesDialogIsOpen = false;
       this.DropFilesDialogController?.close();
+    })
+    .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
+      colorMode: ThemeColorMode.LIGHT,
+      adaptiveColor: AdaptiveColor.DEFAULT
     })
   }
 

@@ -575,6 +575,14 @@
     {
       "name": "custom_color_palette_des",
       "value": "Control the color scheme of the token display."
+    },
+    {
+      "name": "setting_background_blur",
+      "value": "后台模糊"
+    },
+    {
+      "name": "setting_background_blur_des",
+      "value": "切出APP时模糊界面保护隐私。"
     }
   ]
 }
