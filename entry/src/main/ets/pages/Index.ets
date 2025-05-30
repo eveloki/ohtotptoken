@@ -480,7 +480,7 @@ struct Index {
       this.DropFilesDialogController?.close();
     })
     .foregroundBlurStyle(this.backgroundBlurFlag ? BlurStyle.Thin : BlurStyle.NONE, {
-      colorMode: ThemeColorMode.SYSTEM,
+      colorMode: ThemeColorMode.LIGHT,
       adaptiveColor: AdaptiveColor.DEFAULT
     })
   }
