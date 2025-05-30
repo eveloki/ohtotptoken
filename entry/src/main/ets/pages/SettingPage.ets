@@ -370,7 +370,6 @@ export struct SettingPage {
                 description: $r('app.string.setting_background_blur_des'),
                 onChange: (IsOn: boolean) => {
                   AppPreference.setPreference('app_safety_background_blur_enable', IsOn);
-                  this.token_preference.app_safety_hide_token_enable = IsOn;
                 }
               })
             }
