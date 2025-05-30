@@ -33,9 +33,9 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local tab_bar_index: number = 0;
   @Local token_loading: Boolean = true;
+  @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
-  @Local backgroundBlurFlag: Boolean = false;
 
   private appIsShow = false;
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
@@ -299,7 +299,7 @@ struct Index {
     let context = getContext(this) as common.UIAbilityContext;
     let windowStage = context.windowStage;
     windowStage.on("windowStageEvent", (data) => {
-      this.backgroundBlurFlag = (
+      this.background_blur_flag = (
         AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
         data === window.WindowStageEventType.PAUSED
       );
@@ -479,7 +479,7 @@ struct Index {
       this.DropFilesDialogIsOpen = false;
       this.DropFilesDialogController?.close();
     })
-    .foregroundBlurStyle(this.backgroundBlurFlag ? BlurStyle.Thin : BlurStyle.NONE, {
+    .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
       colorMode: ThemeColorMode.LIGHT,
       adaptiveColor: AdaptiveColor.DEFAULT
     })
