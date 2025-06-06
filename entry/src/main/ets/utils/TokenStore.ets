@@ -104,8 +104,27 @@ export class TokenStore {
     this.emitTokenChanged();
   }
 
-  //手动同步
+  /**
+   * 手动触发同步.
+   *
+   */
   async DataSync(): Promise<void> {
     await this.kvMgr.DataSync();
+  }
+  /**
+   * 备份整个kv数据库到目标文件.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  public BuckupToFile(backupFile:string): void {
+    this.kvMgr.BuckupToFile(backupFile);
+  }
+  /**
+   * 从备份文件中还原整个数据库.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  public RestoreByFile(backupFile:string): void {
+    this.kvMgr.RestoreByFile(backupFile);
   }
 }

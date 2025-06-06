@@ -90,7 +90,7 @@ struct Index {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
     });
-
+    //配置预定义好的来自华为官方的个人隐私条款链接
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
 
@@ -100,32 +100,7 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
-        if (AppPreference.getPreference('app_debug_mode_on')) {
-          if (this.CurrentTokens.length == 0) { // 没有任何数据才去检测备份
-            let backup_lock =  this.appCtx.filesDir + "/backup.locked";
-            if (!fs.accessSync(backup_lock)) { // 是否是第一次尝试从备份恢复
-              writeFileContent(backup_lock, 'locked');
-              let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
-              let res = fs.accessSync(backup_file);
-              if (res) {
-                restoreFromBackup(backup_file, true, "AutoBackUp").then((backup) => {
-                  this.updateTokenConfigs(backup.configs).then(() => {
-                    tkStore.sortTokens();
-                  });
-                })
-              }
-            }
-
-          }
-          else
-          {
-            this.appIsInit=true;
-          }
-        }
-        else
-        {
-          this.appIsInit=true;
-        }
+        this.appIsInit=true;
       });
     });
 
@@ -263,24 +238,12 @@ struct Index {
           if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
             hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
             let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-            let backup_file = thisContext.filesDir + "/backup/allData.bak";
+            let backup_file = thisContext.filesDir + "/backup/kv.bak";
             let backup_path = thisContext.filesDir + "/backup/";
             if (fs.accessSync(backup_path) === false) {
               fs.mkdirSync(backup_path, true);
             }
-            let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
-            let versionCode = bundleInfo?.versionCode;
-            const backup: TokenBackup = new TokenBackup(versionCode ?? 0,this.CurrentTokens);
-            hilog.info(0, TAG, "AutoBackUp");
-            saveBackupToFile(backup_file, backup, true, "AutoBackUp").then(() => {
-              hilog.info(0, TAG, "AutoBackUpEnd");
-            }).catch((reason: BusinessError) => {
-              hilog.error(0, TAG, "AutoBackUpError");
-            })
-            let releaseStatus = screenLockFileManager.releaseAccess();
-            if (releaseStatus === screenLockFileManager.ReleaseStatus.RELEASE_GRANTED) {
-              hilog.info(0x0000, 'testTag', 'releaseAccess successfully.');
-            }
+            tkStore.BuckupToFile(backup_file)
           }
         } catch (err) {
           let message = (err as BusinessError).message;

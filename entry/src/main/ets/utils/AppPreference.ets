@@ -71,6 +71,10 @@ export class AppPreference {
     ['app_show_guide_tips', true],
     // 是否处于debug模式
     ['app_debug_mode_on', false],
+    // 是否使用密钥派生
+    ['app_use_kdf', false],
+    // 如果不使用密钥派生 自动生成的初始密码
+    ['app_def_password', ''],
   ]);
 
   private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([
