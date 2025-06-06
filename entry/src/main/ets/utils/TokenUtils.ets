@@ -258,7 +258,7 @@ export class OTPDefaultIconPack {
       'tumblr', 'turbotax', 'tutanota', 'tuwien_ac_at', 'twilio', 'twitch', 'twitter', 'uber', 'ubisoft', 'ubnt',
       'ubuntu_one', 'unity', 'uphold', 'usaa', 'vagrant_cloud', 'vexxhost', 'vk', 'vultr', 'wallabag', 'wallet',
       'wargaming', 'wasabi', 'weclapp', 'wikimedia', 'wordpress', 'workplace', 'xero', 'xerox', 'xing', 'yandex_money',
-      'zapier', 'zendesk', 'zoho', 'zoom'];
+      'zapier', 'zendesk', 'zoho', 'zoom', 'feishu'];
 
   private default_icon_pack_set: HashSet<string> = new HashSet();
 
