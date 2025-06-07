@@ -595,6 +595,10 @@
     {
       "name": "token_right_menu_delete",
       "value": "删除"
+    },
+    {
+      "name": "token_right_menu_copy",
+      "value": "复制"
     }
   ]
 }

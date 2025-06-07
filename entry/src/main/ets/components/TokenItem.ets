@@ -34,6 +34,7 @@ export struct TokenItem {
   @Local menu_icon_trash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.trash')).fontSize('22vp').fontColor([Color.Red]);
   @Local menu_icon_qrcode: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.qrcode')).fontSize('22vp');
   @Local menu_icon_edit: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')).fontSize('22vp');
+  @Local menu_icon_copy: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.doc_text_on_doc_text')).fontSize('22vp');
 
   private dialog_totp_config?: CustomDialogController;
   private dialog_forti_config?: CustomDialogController;
@@ -221,6 +222,11 @@ export struct TokenItem {
   @Builder
   TokenRightCtxMenu() {
     Menu() {
+      MenuItem({ symbolStartIcon: this.menu_icon_copy, content: $r('app.string.token_right_menu_copy') })
+        .onClick(() => {
+          copyText(this.TokenNumber, `${this.TokenNumber} copied`);
+        })
+        .accessibilityText($r('app.string.token_right_menu_copy'))
       MenuItem({ symbolStartIcon: this.menu_icon_qrcode, content: $r('app.string.token_right_menu_show_qrcode') })
         .onClick(() => {
           this.dialog_qrcode = new CustomDialogController({
