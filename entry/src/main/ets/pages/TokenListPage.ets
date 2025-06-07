@@ -213,7 +213,8 @@ export struct TokenListPage {
             }
           }
         }
-        .lanes({minLength: 400, maxLength: 800})
+        .alignListItem(ListItemAlign.Center)
+        .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
         .layoutWeight(1)
         .width('100%')
         .height('100%')

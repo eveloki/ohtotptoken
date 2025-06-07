@@ -599,6 +599,10 @@
     {
       "name": "token_right_menu_copy",
       "value": "複製"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "最大寬度"
     }
   ]
 }

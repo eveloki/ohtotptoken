@@ -599,6 +599,10 @@
     {
       "name": "token_right_menu_copy",
       "value": "Copy"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "Max Width"
     }
   ]
 }

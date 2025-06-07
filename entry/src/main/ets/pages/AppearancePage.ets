@@ -38,10 +38,45 @@ struct AppearancePage {
         }
       })
         .zIndex(1)
-      Stack({ alignContent: Alignment.Top }) {
+      Column() {
+        List({ space: this.token_preference.app_appearance_item_space }) {
+          ListItemGroup({ space: this.token_preference.app_appearance_item_space }) {
+            ListItem() {
+              TokenItem({
+                Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'Foo Bar'),
+                Update: () => {
+                }
+              })
+            }
+            .padding({ left: 10, right: 10 })
+
+            ListItem() {
+              TokenItem({
+                Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Some Body'),
+                Update: () => {
+                }
+              })
+            }
+            .padding({ left: 10, right: 10 })
+          }
+
+          ListItemGroup() {
+            ListItem()
+          }
+
+        }
+        .alignListItem(ListItemAlign.Center)
+        .width('100%')
+        .lanes({ minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width })
+        .backdropBlur(100)
+        .padding({
+          top: 10,
+          left: 10,
+          right: 10,
+
+        })
         List({ space: 10 }) {
           ListItem()
-            .height(this.token_preference.app_appearance_item_height * 2 + this.token_preference.app_appearance_item_space + 10)
           ListItem() {
             SettingItem({ title: $r('app.string.custom_layout') }) {
 
@@ -89,6 +124,13 @@ struct AppearancePage {
                 title: $r('app.string.token_item_slider'),
                 items: [
                   {
+                    name: $r('app.string.token_item_max_width'),
+                    default: this.token_preference.app_appearance_item_max_width,
+                    min: 500,
+                    max: 1000,
+                    step: 50
+                  },
+                  {
                     name: $r('app.string.token_item_hight'),
                     default: this.token_preference.app_appearance_item_height,
                     min: 50,
@@ -128,26 +170,31 @@ struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
+                      AppPreference.setPreference('app_appearance_item_max_width', value);
+                      this.token_preference.app_appearance_item_max_width = value;
+                      break;
+                    }
+                    case 1: {
                       AppPreference.setPreference('app_appearance_item_height', value);
                       this.token_preference.app_appearance_item_height = value;
                       break;
                     }
-                    case 1: {
+                    case 2: {
                       AppPreference.setPreference('app_appearance_item_space', value);
                       this.token_preference.app_appearance_item_space = value;
                       break;
                     }
-                    case 2: {
+                    case 3: {
                       AppPreference.setPreference('app_appearance_logo_size', value);
                       this.token_preference.app_appearance_logo_size = value;
                       break;
                     }
-                    case 3: {
+                    case 4: {
                       AppPreference.setPreference('app_appearance_logo_background_size', value);
                       this.token_preference.app_appearance_logo_background_size = value;
                       break;
                     }
-                    case 4: {
+                    case 5: {
                       AppPreference.setPreference('app_appearance_logo_background_radius', value);
                       this.token_preference.app_appearance_logo_background_radius = value;
                       break;
@@ -285,28 +332,11 @@ struct AppearancePage {
           ListItem()
             .height(this.window.AvoidBottomHeight + 56) // 56: navigation_height
         }
+        .layoutWeight(1)
         .chainAnimation(true)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
 
-        Column({ space: this.token_preference.app_appearance_item_space }) {
-          TokenItem({
-            Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'Foo Bar'),
-            Update: () => {
-            }
-          })
-          TokenItem({
-            Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Some Body'),
-            Update: () => {
-            }
-          })
-        }
-        .backdropBlur(100)
-        .padding({
-          top: 10,
-          left: 10,
-          right: 10,
-        })
       }
       .backgroundColor($r('app.color.window_background'))
       .width('100%')
