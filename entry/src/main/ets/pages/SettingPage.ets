@@ -268,10 +268,12 @@ export struct SettingPage {
         .justifyContent(FlexAlign.Center)
       } else {
         List({ space: 10 }) {
-          ListItem() {
+          ListItemGroup() {
+            ListItem() {
 
+            }
+            .height(50 + this.appTopAvoidHeight)
           }
-          .height(50 + this.appTopAvoidHeight)
 
           ListItem() {
             SettingItem({ title: $r('app.string.setting_backup') }) {
@@ -560,24 +562,28 @@ export struct SettingPage {
           }
           .padding({ left: 10, right: 10 })
 
-          ListItem() {
-            Row() {
-              Hyperlink('https://github.com/SolidFaker/ohtotptoken/issues', $r('app.string.app_issue_feedback'))
-                .height(10)
-                .padding({ left: 10 })
-              Hyperlink('https://beian.miit.gov.cn/', '粤ICP备2020075515号-2A')
-                .height(10)
-                .padding({ left: 10 })
-            }
-            .justifyContent(FlexAlign.Center)
-            .width('100%')
-          }
-          .padding({ left: 10, right: 10 })
-
-          ListItem() {
-            Row()
+          ListItemGroup() {
+            ListItem() {
+              Row() {
+                Hyperlink('https://github.com/SolidFaker/ohtotptoken/issues', $r('app.string.app_issue_feedback'))
+                  .height(10)
+                  .padding({ left: 10 })
+                Hyperlink('https://beian.miit.gov.cn/', '粤ICP备2020075515号-2A')
+                  .height(10)
+                  .padding({ left: 10 })
+              }
+              .justifyContent(FlexAlign.Center)
               .width('100%')
-              .height(this.appBottomAvoidHeight)
+            }
+            .padding({ left: 10, right: 10 })
+          }
+
+          ListItemGroup() {
+            ListItem() {
+              Row()
+                .width('100%')
+                .height(this.appBottomAvoidHeight)
+            }
           }
         }
         .chainAnimation(true)

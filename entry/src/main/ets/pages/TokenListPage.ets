@@ -28,7 +28,6 @@ export struct TokenListPage {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
 
   @Local token_copy_guide_popup: boolean = false;
-  @Local token_list_lanes: number = 1;
 
   @Local token_list_search_result: TokenConfig[] = [];
   @Local token_list_search_start: boolean = false;
@@ -214,16 +213,13 @@ export struct TokenListPage {
             }
           }
         }
-        .lanes(this.token_list_lanes)
+        .lanes({minLength: 400, maxLength: 800})
         .layoutWeight(1)
         .width('100%')
         .height('100%')
         .chainAnimation(true)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .onSizeChange((_, newValue: SizeOptions) => {
-          this.token_list_lanes = (newValue.width as number ?? 400) / 400;
-        })
         .onTouch((event?: TouchEvent) => {
           animateTo({ curve: curves.springMotion() }, () => {
             if (event?.type === TouchType.Down) {

@@ -583,6 +583,18 @@
     {
       "name": "setting_background_blur_des",
       "value": "Blurs app screen when switching to background."
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "QR Code"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "Delete"
     }
   ]
 }

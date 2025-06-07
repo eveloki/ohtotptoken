@@ -583,6 +583,18 @@
     {
       "name": "setting_background_blur_des",
       "value": "切出APP时模糊界面保护隐私。"
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "二维码"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "编辑"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "删除"
     }
   ]
 }

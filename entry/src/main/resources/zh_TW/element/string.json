@@ -583,6 +583,18 @@
     {
       "name": "setting_background_blur_des",
       "value": "切出APP時模糊界麵保護隱私。"
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "二維碼"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "編輯"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "刪除"
     }
   ]
 }
