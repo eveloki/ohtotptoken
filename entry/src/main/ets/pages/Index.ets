@@ -397,7 +397,8 @@ struct Index {
         .backgroundColor('#40000000')
         .justifyContent(FlexAlign.Center)
       } else if (
-        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD &&
+        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
+          this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
           this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
       ) {
         Column() {
