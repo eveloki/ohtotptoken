@@ -37,12 +37,10 @@ export struct QRCodeDialog {
 
   build() {
     Column({ space: 10 }) {
-      if (this.pixelMap) {
-        Image(this.pixelMap)
-          .objectFit(ImageFit.Contain)
-          .constraintSize({ maxHeight: this.qrSize })
-          .layoutWeight(1)
-      }
+      Image(this.pixelMap)
+        .objectFit(ImageFit.Contain)
+        .constraintSize({ maxHeight: this.qrSize })
+        .layoutWeight(1)
       Text() {
         Span(this.content)
       }
