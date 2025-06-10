@@ -80,6 +80,8 @@ export default class EntryAbility extends UIAbility {
         let windowClass: window.Window = windowStage.getMainWindowSync();
         this.uiContext = windowClass.getUIContext();
 
+        AppStorage.setOrCreate('windowClass', windowClass);
+
         windowClass.setWindowLayoutFullScreen(true)
 
         const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);

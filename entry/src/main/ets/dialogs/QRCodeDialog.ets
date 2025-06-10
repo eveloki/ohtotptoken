@@ -15,6 +15,10 @@ export struct QRCodeDialog {
   @State qrSize: number = px2vp(Math.min(this.winSize.width, this.winSize.height)) * 0.8;
 
   aboutToAppear(): void {
+    this.createQRCode();
+  }
+
+  createQRCode() {
     this.pixelMap = undefined;
     let options: generateBarcode.CreateOptions = {
       scanType: scanCore.ScanType.QR_CODE,
@@ -37,10 +41,29 @@ export struct QRCodeDialog {
 
   build() {
     Column({ space: 10 }) {
-      Image(this.pixelMap)
-        .objectFit(ImageFit.Contain)
-        .constraintSize({ maxHeight: this.qrSize })
-        .layoutWeight(1)
+      if (this.pixelMap !== undefined) {
+        Image(this.pixelMap)
+          .objectFit(ImageFit.Contain)
+          .constraintSize({ maxHeight: this.qrSize })
+          .layoutWeight(1)
+      } else {
+        Row() {
+          Column() {
+            SymbolGlyph($r('sys.symbol.arrow_clockwise'))
+              .fontSize(40)
+              .fontWeight(FontWeight.Bold)
+              .fontColor([Color.Gray])
+              .onClick(() => {
+                this.createQRCode();
+              })
+          }
+          .width('100%')
+          .align(Alignment.Center)
+        }
+        .align(Alignment.Center)
+        .width(this.qrSize)
+        .height(this.qrSize)
+      }
       Text() {
         Span(this.content)
       }
