@@ -18,6 +18,10 @@ export struct QRCodeDialog {
     this.createQRCode();
   }
 
+  aboutToDisappear(): void {
+    this.pixelMap?.release();
+  }
+
   createQRCode() {
     this.pixelMap = undefined;
     let options: generateBarcode.CreateOptions = {

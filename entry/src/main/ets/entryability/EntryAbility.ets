@@ -100,7 +100,7 @@ export default class EntryAbility extends UIAbility {
 
         const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
         const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
-
+        win.Size = windowClass.getWindowProperties().windowRect;
         win.WidthBreakpoint = widthBp;
         win.HeightBreakpoint = heightBp;
         windowClass.on('windowSizeChange', this.onWindowSizeChange);
