@@ -57,3 +57,40 @@ export async function encryptFile(file_str: string, user_key: string): Promise<U
     return encryptData.data;
   });
 }
+export async function encryptStringData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<Uint8Array> {
+  let aes_encoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
+  let aes_iv: cryptoFramework.IvParamsSpec = {
+    algName: "IvParamsSpec",
+    iv: { data: stringToIntArray('ohtotptokenaesiv') }
+  };
+
+  //let symKeyBlob: cryptoFramework.DataBlob = { data: new Uint8Array(buffer.from(key).buffer) };
+  let aesGenerator = cryptoFramework.createSymKeyGenerator('AES128');
+  let aes_key = aesGenerator.convertKeySync(symKeyBlob);
+  aes_encoder.initSync(cryptoFramework.CryptoMode.ENCRYPT_MODE, aes_key, aes_iv);
+  return aes_encoder.doFinal({ data: data }).then((encryptData) => {
+    return encryptData.data;
+  });
+}
+export async function decryptStringData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<string> {
+  let aes_decoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
+  let aes_iv: cryptoFramework.IvParamsSpec = {
+    algName: "IvParamsSpec",
+    iv: { data: stringToIntArray('ohtotptokenaesiv') }
+  };
+  let aesGenerator = cryptoFramework.createSymKeyGenerator('AES128');
+  let aes_key = aesGenerator.convertKeySync(symKeyBlob);
+  await aes_decoder.init(cryptoFramework.CryptoMode.DECRYPT_MODE, aes_key, aes_iv)
+    .catch((reason: string) => {
+      promptAction.showToast({ message: reason });
+    });
+
+  return new Promise<string>((resolve) => {
+    aes_decoder.doFinal({ data: data }).then((decryptData) => {
+      let decoder = new util.TextDecoder()
+      resolve(decoder.decodeToString(decryptData.data));
+    }).catch((reason: BusinessError) => {
+      resolve("");
+    });
+  });
+}

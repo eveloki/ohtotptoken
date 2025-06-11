@@ -237,6 +237,10 @@
       "value": "更新时间"
     },
     {
+      "name": "data_kv_archive_time",
+      "value": "存档时间"
+    },
+    {
       "name": "data_sync_manual",
       "value": "手动同步"
     },

@@ -237,6 +237,10 @@
       "value": "Last Updated"
     },
     {
+      "name": "data_kv_archive_time",
+      "value": "Last Data Archive Time"
+    },
+    {
       "name": "data_sync_manual",
       "value": "Manual Sync"
     },

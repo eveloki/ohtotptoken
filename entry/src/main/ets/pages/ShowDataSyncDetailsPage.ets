@@ -13,13 +13,18 @@ import { AppWindowInfo } from '../entryability/EntryAbility';
 @ComponentV2
 struct ShowDataSyncDetailsPage {
   @Local AppDbKVSyncTime: SettingValue = '';
+  @Local AppDbKVArchiveTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   aboutToAppear(): void {
     this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
+    this.AppDbKVArchiveTime = AppPreference.getPreference('app_db_kv_archive_time');
     if (this.AppDbKVSyncTime == '' || this.AppDbKVSyncTime == null) {
       this.AppDbKVSyncTime = 'invalid';
+    }
+    if (this.AppDbKVArchiveTime == '' || this.AppDbKVArchiveTime == null) {
+      this.AppDbKVArchiveTime = 'invalid';
     }
   }
 
@@ -74,7 +79,19 @@ struct ShowDataSyncDetailsPage {
 
               }
               .padding({ left: 10, right: 10 })
-
+              ListItem() {
+                SettingItem({ title: $r('app.string.data_kv_archive_time') }) {
+                  Row() {
+                    Text(this.AppDbKVArchiveTime as string)
+                      .fontSize($r('sys.float.ohos_id_text_size_body2'))
+                      .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                      .fontWeight(FontWeight.Medium)
+                      .textAlign(TextAlign.Start)
+                  }
+                  .padding(10)
+                }
+              }
+              .padding({ left: 10, right: 10 })
               ListItem() {
                 SettingItem({ title: $r('app.string.data_kv_sync_time') }) {
                   Row() {
@@ -99,6 +116,7 @@ struct ShowDataSyncDetailsPage {
                           this.Is_loaded=false;
                           AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
                           this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
+                          this.AppDbKVArchiveTime = AppPreference.getPreference('app_db_kv_archive_time');
                           }, 1500);
                       });
                     })

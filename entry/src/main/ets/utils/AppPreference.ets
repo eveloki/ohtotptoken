@@ -67,14 +67,16 @@ export class AppPreference {
     ['app_db_rds_sync_enable', false],
     // kv数据库同步时间
     ['app_db_kv_sync_time', ''],
+    // kv数据库存档时间
+    ['app_db_kv_archive_time', ''],
+    // kv数据库存档正在进行
+    ['app_db_kv_archive_is_running',false],
     // 是否显示引导提示
     ['app_show_guide_tips', true],
     // 是否处于debug模式
     ['app_debug_mode_on', false],
     // 是否使用密钥派生
-    ['app_use_kdf', false],
-    // 如果不使用密钥派生 自动生成的初始密码
-    ['app_def_password', ''],
+    ['app_use_kdf', false]
   ]);
 
   private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([

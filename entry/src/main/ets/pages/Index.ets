@@ -100,6 +100,7 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
+
         this.appIsInit=true;
       });
     });
@@ -226,30 +227,37 @@ struct Index {
 
   onPageHide(): void {
     this.appIsShow = false;
-    // DEBUG MODE
-    if (AppPreference.getPreference('app_debug_mode_on')) {
-      hilog.info(0, TAG, "onPageHide");
-      //备份还原场景检测是否有备份数据
-      if (this.CurrentTokens.length > 0 && this.appIsInit) {
-        //todo需要申请锁屏后读取权限 需要实现后台任务备份
-        try {
-          //申请锁屏后访问加密文件的权限
-          let acquireStatus = screenLockFileManager.acquireAccess();
-          if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
-            hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
-            let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-            let backup_file = thisContext.filesDir + "/backup/kv.bak";
-            let backup_path = thisContext.filesDir + "/backup/";
-            if (fs.accessSync(backup_path) === false) {
-              fs.mkdirSync(backup_path, true);
-            }
-            tkStore.BuckupToFile(backup_file)
-          }
-        } catch (err) {
-          let message = (err as BusinessError).message;
-          hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
+    hilog.info(0, TAG, "onPageHide");
+    //备份还原场景检测是否有备份数据
+    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference("app_db_kv_archive_is_running")) {
+      //todo需要申请锁屏后读取权限 需要实现后台任务备份
+      try {
+        AppPreference.setPreference("app_db_kv_archive_is_running",true)
+        //申请锁屏后访问加密文件的权限
+        let acquireStatus = screenLockFileManager.acquireAccess();
+        if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
+          hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
+          //let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+          tkStore.BuckupToKVAsync().then(()=>{
+            //tkStore.RestoreByKVAsync();
+            //更新存档时间
+            AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+          }).catch((err:BusinessError)=>{
+            hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
+          }).finally(()=>{
+            AppPreference.setPreference("app_db_kv_archive_is_running",false);
+          });
         }
+        else
+        {
+          AppPreference.setPreference("app_db_kv_archive_is_running",false);
+        }
+      } catch (err) {
+        let message = (err as BusinessError).message;
+        hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
+        AppPreference.setPreference("app_db_kv_archive_is_running",false);
       }
+
     }
   }
 
