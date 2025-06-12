@@ -100,7 +100,13 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
-
+        tkStore.RestoreByKVCheckAsync().then((n:number)=>{
+          if (AppPreference.getPreference('app_debug_mode_on')&& n>1) {
+            router.pushUrl({ url: 'pages/RestoreDataPage' });
+          }
+        }).catch((err:BusinessError)=>{
+          hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
+        })
         this.appIsInit=true;
       });
     });

@@ -75,7 +75,7 @@ export class AppPreference {
     ['app_show_guide_tips', true],
     // 是否处于debug模式
     ['app_debug_mode_on', false],
-    // 是否使用密钥派生
+    // 是否使用主密码增强安全
     ['app_use_kdf', false]
   ]);
 

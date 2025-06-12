@@ -273,7 +273,7 @@ export class KvManager {
    * 非加密数据库将数据同步到加密数据库（还原场景专用）.
    *
    */
-  async DataSyncToEncryptDatabase(): Promise<void> {
+  async DataSyncToEncryptDatabase(): Promise<number> {
     if (this._kvStore && this._kvStoreNoE) {
 
       let secret_key=await this.queryEncryptTokenDataKey();
@@ -305,6 +305,7 @@ export class KvManager {
                 return;
               }
             });
+            return entries.length;
           }
 
         }
@@ -316,9 +317,19 @@ export class KvManager {
       finally {
         secret_key="";
       }
-
+      return 0;
     }
-
+    return 0;
+  }
+  /**
+   * 检查是否有还原数据可用 返回可用条数（还原场景专用）.
+   *
+   */
+  async DataSyncToEncryptDatabaseCheckNumber(): Promise<number>{
+    const query = new distributedKVStore.Query();
+    query.prefixKey("^");
+    let EncryptData_entries_count =await this._kvStoreNoE?.getResultSize(query);
+    return EncryptData_entries_count??0;
   }
   /**
    * 获取加密用的密钥.
