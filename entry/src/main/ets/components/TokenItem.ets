@@ -1,12 +1,19 @@
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
-import { copyText, generateOTP } from '../utils/TokenUtils';
+import { convertToken2URI, copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
 import { AppPreference, TokenPreference } from '../utils/AppPreference';
-import { AppStorageV2 } from '@kit.ArkUI';
+import { AppStorageV2, SymbolGlyphModifier } from '@kit.ArkUI';
+import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
+import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
+import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
+import { QRCodeDialog } from '../dialogs/QRCodeDialog';
+import { AppWindowInfo } from '../entryability/EntryAbility';
+import { TokenStore } from '../utils/TokenStore';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
+let tkStore = TokenStore.getInstance();
 
 @Preview
 @ComponentV2
@@ -15,6 +22,7 @@ export struct TokenItem {
   @Event Update: (conf: TokenConfig) => void = () => {};
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   @Local TokenNumber: string = '000000';
   @Local TokenNumberNext: string = '000000';
@@ -22,6 +30,16 @@ export struct TokenItem {
   @Local TokenLeftPeriod: number = 0;
   @Local btn_hotp_clicked: number = 0;
   @Local TokenHide: boolean = current_token_hide_map[this.Config.TokenUUID] ?? true;
+
+  @Local menu_icon_trash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.trash')).fontSize('22vp').fontColor([Color.Red]);
+  @Local menu_icon_qrcode: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.qrcode')).fontSize('22vp');
+  @Local menu_icon_edit: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')).fontSize('22vp');
+  @Local menu_icon_copy: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.doc_text_on_doc_text')).fontSize('22vp');
+
+  private dialog_totp_config?: CustomDialogController;
+  private dialog_forti_config?: CustomDialogController;
+  private dialog_steam_config?: CustomDialogController;
+  private dialog_qrcode?: CustomDialogController;
 
   private token_steps: number = 0;
   private token_color_change_threshold = 5;
@@ -198,5 +216,89 @@ export struct TokenItem {
     .width('100%')
     .height(this.token_preference.app_appearance_item_height)
     .backgroundColor($r("app.color.item_bg"))
+    .bindContextMenu(this.TokenRightCtxMenu, ResponseType.RightClick, { enableArrow: true })
+  }
+
+  @Builder
+  TokenRightCtxMenu() {
+    Menu() {
+      MenuItem({ symbolStartIcon: this.menu_icon_copy, content: $r('app.string.token_right_menu_copy') })
+        .onClick(() => {
+          copyText(this.TokenNumber, `${this.TokenNumber} copied`);
+        })
+        .accessibilityText($r('app.string.token_right_menu_copy'))
+      MenuItem({ symbolStartIcon: this.menu_icon_qrcode, content: $r('app.string.token_right_menu_show_qrcode') })
+        .onClick(() => {
+          this.dialog_qrcode = new CustomDialogController({
+            builder: QRCodeDialog({
+              content: convertToken2URI(this.Config),
+              winSize: this.window.Size
+            })
+          });
+          this.dialog_qrcode.open();
+        })
+        .accessibilityText($r('app.string.token_right_menu_show_qrcode'))
+      MenuItem({ symbolStartIcon: this.menu_icon_edit, content: $r('app.string.token_right_menu_edit') })
+        .onClick(() => {
+          if (this.Config.TokenType === otpType.TOTP || this.Config.TokenType === otpType.HOTP ||
+            this.Config.TokenType === undefined) { // default
+            this.dialog_totp_config = new CustomDialogController({
+              builder: TOTPConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_totp_config.open()
+          } else if (this.Config.TokenType === otpType.Forti) { // forti
+            this.dialog_forti_config = new CustomDialogController({
+              builder: FortiConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_forti_config.open()
+          } else if (this.Config.TokenType === otpType.Steam) { // steam
+            this.dialog_steam_config = new CustomDialogController({
+              builder: SteamConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_steam_config.open()
+          }
+        })
+        .accessibilityText($r('app.string.token_right_menu_edit'))
+      MenuItem({ symbolStartIcon: this.menu_icon_trash, content: $r('app.string.token_right_menu_delete') })
+        .onClick(() => {
+          AlertDialog.show({
+            message: $r('app.string.alert_remove_confirm_msg', this.Config.TokenName),
+            autoCancel: true,
+            alignment: DialogAlignment.Center,
+            primaryButton: {
+              defaultFocus: false,
+              value: $r('app.string.dialog_btn_cancel'),
+              action: () => {
+                return
+              }
+            },
+            secondaryButton: {
+              value: $r('app.string.dialog_btn_confirm'),
+              fontColor: Color.Red,
+              action: async () => {
+                tkStore.deleteToken(this.Config.TokenUUID);
+              }
+            }
+          })
+
+        })
+        .contentFontColor(Color.Red)
+        .accessibilityText($r('app.string.token_right_menu_delete'))
+    }
   }
 }

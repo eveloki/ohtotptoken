@@ -39,6 +39,7 @@ export class TokenPreference {
   @Trace app_appearance_issuer_font_weight = 400;
   @Trace app_appearance_user_name_font_size = 10;
   @Trace app_appearance_user_name_font_weight = 400;
+  @Trace app_appearance_item_max_width = 800;
 }
 
 export class AppPreference {
@@ -108,6 +109,7 @@ export class AppPreference {
     ['app_appearance_issuer_font_weight', 400],
     ['app_appearance_user_name_font_size', 10],
     ['app_appearance_user_name_font_weight', 400],
+    ['app_appearance_item_max_width', 800]
   ]);
 
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
@@ -167,6 +169,7 @@ export class AppPreference {
     token_appearance.app_appearance_issuer_font_weight = AppPreference.getPreference('app_appearance_issuer_font_weight') as FontWeight;
     token_appearance.app_appearance_user_name_font_size = AppPreference.getPreference('app_appearance_user_name_font_size') as number;
     token_appearance.app_appearance_user_name_font_weight = AppPreference.getPreference('app_appearance_user_name_font_weight') as FontWeight;
+    token_appearance.app_appearance_item_max_width = AppPreference.getPreference('app_appearance_item_max_width') as number;
   }
 
   public static resetAppearanceToDefault(): void {

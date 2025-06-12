@@ -113,7 +113,7 @@ struct ShowDataSyncDetailsPage {
                       this.Is_loaded=true;
                       TokenStore.getInstance().DataSync().then(()=>{
                         setTimeout(() => {
-                          this.Is_loaded=false;
+                          this.Is_loaded = false;
                           AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
                           this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
                           this.AppDbKVArchiveTime = AppPreference.getPreference('app_db_kv_archive_time');

@@ -615,6 +615,26 @@
     {
       "name": "restore_data_restoring",
       "value": "恢復中"
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "二維碼"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "編輯"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "刪除"
+    },
+    {
+      "name": "token_right_menu_copy",
+      "value": "複製"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "最大寬度"
     }
   ]
 }

@@ -80,6 +80,8 @@ export default class EntryAbility extends UIAbility {
         let windowClass: window.Window = windowStage.getMainWindowSync();
         this.uiContext = windowClass.getUIContext();
 
+        AppStorage.setOrCreate('windowClass', windowClass);
+
         windowClass.setWindowLayoutFullScreen(true)
 
         const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
@@ -98,7 +100,7 @@ export default class EntryAbility extends UIAbility {
 
         const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
         const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
-
+        win.Size = windowClass.getWindowProperties().windowRect;
         win.WidthBreakpoint = widthBp;
         win.HeightBreakpoint = heightBp;
         windowClass.on('windowSizeChange', this.onWindowSizeChange);

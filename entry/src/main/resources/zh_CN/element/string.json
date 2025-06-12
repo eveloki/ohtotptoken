@@ -615,6 +615,26 @@
     {
       "name": "restore_data_restoring",
       "value": "恢复中"
+    },    
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "二维码"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "编辑"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "删除"
+    },
+    {
+      "name": "token_right_menu_copy",
+      "value": "复制"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "最大宽度"
     }
   ]
 }

@@ -586,8 +586,9 @@
     },
     {
       "name": "setting_background_blur_des",
-      "value": "Blurs app screen when switching to background."
-    },{
+      "value": "Blurs app screen when switching to backgroun
+    },
+    {
       "name": "restore_data",
       "value": "Restore Data"
     },
@@ -614,6 +615,26 @@
     {
       "name": "restore_data_restoring",
       "value": "Restoring"
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "QR Code"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "token_right_menu_copy",
+      "value": "Copy"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "Max Width"
     }
   ]
 }
