@@ -237,6 +237,10 @@
       "value": "Update Time"
     },
     {
+      "name": "data_kv_archive_time",
+      "value": "Last Data Archive Time"
+    },
+    {
       "name": "data_sync_manual",
       "value": "Manual Sync"
     },
@@ -583,6 +587,34 @@
     {
       "name": "setting_background_blur_des",
       "value": "Blurs app screen when switching to background."
+    },
+    {
+      "name": "restore_data",
+      "value": "Restore Data"
+    },
+    {
+      "name": "restore_data_msg",
+      "value": "We detected a backup restoration or data migration in progress. Would you like to restore your data now?"
+    },
+    {
+      "name": "restore_data_kdf_msg",
+      "value": "We detected a backup restoration or data migration with master key encryption enabled. Please enter your master password to restore data."
+    },
+    {
+      "name": "restore_data_kdf_err_msg",
+      "value": "The master password is incorrect. Data restoration failed."
+    },
+    {
+      "name": "restore_data_ok_msg",
+      "value": "Your data has been successfully restored! Please Reopen App."
+    },
+    {
+      "name": "restore_data_cancel",
+      "value": "Please be patient and wait"
+    },
+    {
+      "name": "restore_data_restoring",
+      "value": "Restoring"
     },
     {
       "name": "token_right_menu_show_qrcode",

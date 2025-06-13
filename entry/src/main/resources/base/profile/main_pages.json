@@ -6,6 +6,7 @@
     "pages/AppearancePage",
     "pages/AppLockPage",
     "pages/ShowCodePage",
-    "pages/ShowDataSyncDetailsPage"
+    "pages/ShowDataSyncDetailsPage",
+    "pages/RestoreDataPage"
   ]
 }

@@ -2,6 +2,7 @@ import { KvManager } from "./KvManager";
 import { TokenConfig } from "./TokenConfig";
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
+import { asset } from '@kit.AssetStoreKit';
 
 export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
@@ -104,8 +105,50 @@ export class TokenStore {
     this.emitTokenChanged();
   }
 
-  //手动同步
+  /**
+   * 手动触发同步.
+   *
+   */
   async DataSync(): Promise<void> {
     await this.kvMgr.DataSync();
+  }
+  /**
+   * 备份整个kv数据库到目标文件.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  public BuckupToFile(backupFile:string): void {
+    this.kvMgr.BuckupToFile(backupFile);
+  }
+  /**
+   * 从备份文件中还原整个数据库.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  public RestoreByFile(backupFile:string): void {
+    this.kvMgr.RestoreByFile(backupFile);
+  }
+
+
+  /**
+   * 备份整个kv加密数据库到非加密数据库
+   *
+   */
+  public async BuckupToKVAsync(): Promise<void>  {
+    await this.kvMgr.DataSyncToNoEncryptDatabase();
+  }
+  /**
+   * 从非加密数据库KV还原到kv
+   *
+   */
+  public async RestoreByKVAsync(): Promise<number> {
+    return await this.kvMgr.DataSyncToEncryptDatabase();
+  }
+  /**
+   * 检查是否有还原数据可用 返回可用条数（还原场景专用）.
+   *
+   */
+  public async RestoreByKVCheckAsync(): Promise<number> {
+    return await this.kvMgr.DataSyncToEncryptDatabaseCheckNumber();
   }
 }

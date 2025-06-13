@@ -4,11 +4,19 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
 import { TokenConfig } from './TokenConfig';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { fileIo as fs } from "@kit.CoreFileKit";
+import { asset } from '@kit.AssetStoreKit';
+import { buffer, util } from '@kit.ArkTS';
+import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { decryptFile, encryptFile,encryptStringData,decryptStringData } from "./CryptoUtils";
+import { base32Decode, base32Encode } from './TokenUtils';
 
 export class KvManager {
   //单版本分布式键值数据库
   private _kvMgr: distributedKVStore.KVManager | undefined = undefined;
   private _kvStore: distributedKVStore.SingleKVStore | undefined = undefined;
+  private _kvStoreNoE: distributedKVStore.SingleKVStore | undefined = undefined;
 
   private static instance: KvManager;
 
@@ -23,23 +31,36 @@ export class KvManager {
     return KvManager.instance;
   }
 
-  private async initKvStore(ctx: common.UIAbilityContext): Promise<distributedKVStore.SingleKVStore> {
+  private async initKvStore(ctx: common.UIAbilityContext): Promise<distributedKVStore.SingleKVStore[]> {
     //初始化键值数据库
-    let bundleName = bundleManager.getBundleInfoForSelfSync(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).name;
-    const kvManagerConfig: distributedKVStore.KVManagerConfig = {
-      context: ctx,
-      bundleName: bundleName,
+    if (!this._kvMgr) {
+      let bundleName = bundleManager.getBundleInfoForSelfSync(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).name;
+      const kvManagerConfig: distributedKVStore.KVManagerConfig = {
+        context: ctx,
+        bundleName: bundleName,
+      }
+      this._kvMgr = distributedKVStore.createKVManager(kvManagerConfig);
     }
-    this._kvMgr = distributedKVStore.createKVManager(kvManagerConfig);
+    let dbs =[];
     const options: distributedKVStore.Options = {
       createIfMissing: true,
-      encrypt: true, //加密
+      encrypt: true, //no加密
       backup: true, //设置数据库文件是否备份
       autoSync: true, //自动同步
       kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
-      securityLevel: distributedKVStore.SecurityLevel.S3, //对于token密钥采菊表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
+      securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
     };
-    return this._kvMgr.getKVStore('main_store', options);
+    const noEncryptoptions: distributedKVStore.Options = {
+      createIfMissing: true,
+      encrypt: false, //no加密
+      backup: true, //设置数据库文件是否备份
+      autoSync: true, //自动同步
+      kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
+      securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
+    };
+    dbs[0]=await this._kvMgr.getKVStore('main_store', options);
+    dbs[1]=await this._kvMgr.getKVStore('main_store_noE', noEncryptoptions);
+    return dbs;
   }
 
   async initKvManager(): Promise<void> {
@@ -48,7 +69,8 @@ export class KvManager {
       return;
     }
     await this.initKvStore(ctx).then((store) => {
-      this._kvStore = store;
+      this._kvStore = store[0];
+      this._kvStoreNoE = store[1];
       //订阅同步完成事件
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
         console.info(`syncComplete ${data}`);
@@ -63,12 +85,69 @@ export class KvManager {
       console.error(reason.message);
     });
   }
+  /**
+   * 备份整个kv数据库到目标文件.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  BuckupToFile(backupFile:string)
+  {
+    try {
+      if (fs.accessSync(backupFile)) {//如果文件存在需要删除然后重新备份
+        let files = [backupFile];
+        try {
+          this._kvStore?.deleteBackup(files).then((data) => {
+            hilog.info(0,"BuckUP",`Succeed in deleting Backup. Data:filename is ${data[0]},result is ${data[1]}.`);
+          }).catch((err: BusinessError) => {
+            hilog.error(err.code,"BuckUP",`Fail to delete Backup. Code:${err.code},message:${err.message}`);
+          })
+        } catch (e) {
+          let error = e as BusinessError;
+          hilog.error(error.code,"BuckUP",`An unexpected error occurred. Code:${error.code},message:${error.message}`);
+        }
+      }
+      this._kvStore?.backup(backupFile, (err) => {
+        if (err) {
+          hilog.error(err.code,"BuckUP",`Fail to backup data.code:${err.code},message:${err.message}`);
+        } else {
+          hilog.info(0,"BuckUP",'Succeeded in backupping data.');
+        }
+      });
+    } catch (e) {
+      let error = e as BusinessError;
+      hilog.error(error.code,"BuckUP",`An unexpected error occurred. Code:${error.code},message:${error.message}`);
+    }
+  }
+  /**
+   * 从备份文件中还原整个数据库.
+   *
+   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+   */
+  RestoreByFile(backupFile:string)
+  {
+    try {
+      if (fs.accessSync(backupFile)) { 
+        this._kvStore?.restore(backupFile, (err) => {
+          if (err) {
+            hilog.error(err.code,"Restore",`Fail to restore data. Code:${err.code},message:${err.message}`);
+          } else {
+            hilog.info(0,"Restore",'Succeeded in restoring data.');
+          }
+        });
+      }
+
+    } catch (e) {
+      let error = e as BusinessError;
+      hilog.error(error.code,"Restore",`An unexpected error occurred. Code:${error.code},message:${error.message}`);
+    }
+  }
 
   async setValue<T>(key: string, value: T): Promise<void> {
     if (this._kvStore) {
       await this._kvStore.put(key, JSON.stringify(value));
     }
   }
+
 
   async getValue<T>(key: string): Promise<T | null> {
     if (this._kvStore) {
@@ -153,7 +232,181 @@ export class KvManager {
       await this._kvStore.delete(key);
     }
   }
+  /**
+   * 将数据同步到非加密数据库.
+   *
+   */
+  async DataSyncToNoEncryptDatabase(): Promise<void> {
+    if (this._kvStore && this._kvStoreNoE) {
+      let secret_key=await this.queryEncryptTokenDataKey();
+      if (secret_key!="") {
+        let secret_keyBlob=base32Decode(secret_key);
+        let symKeyBlob: cryptoFramework.DataBlob = { data: secret_keyBlob};
+        let EncryptData_entries = await this._kvStore.getEntries('^');
+        if (EncryptData_entries && EncryptData_entries.length>0) {
+          let entries: distributedKVStore.Entry[] = [];
+          for (let i = 0; i < EncryptData_entries.length; i++) {
+            let data=EncryptData_entries[i].value.value as string;
+            let dataitem=await encryptStringData(this.stringToArray(data),symKeyBlob);
+            let entry: distributedKVStore.Entry = {
+              key: EncryptData_entries[i].key,
+              value: {
+                type: distributedKVStore.ValueType.STRING,
+                value: dataitem
+              }
+            }
+            entries.push(entry);
+          }
+          this._kvStoreNoE.putBatch(entries, async (err: BusinessError) => {
+            if (err != undefined) {
+              hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
+              return;
+            }
+          });
+        }
+      }
 
+    }
+
+  }
+  /**
+   * 非加密数据库将数据同步到加密数据库（还原场景专用）.
+   *
+   */
+  async DataSyncToEncryptDatabase(): Promise<number> {
+    if (this._kvStore && this._kvStoreNoE) {
+
+      let secret_key=await this.queryEncryptTokenDataKey();
+      try {
+        if (secret_key!="") {
+          let secret_keyBlob=base32Decode(secret_key);
+          let symKeyBlob: cryptoFramework.DataBlob = { data: secret_keyBlob};
+          let EncryptData_entries = await this._kvStoreNoE.getEntries('^');
+          if (EncryptData_entries && EncryptData_entries.length>0) {
+            let entries: distributedKVStore.Entry[] = [];
+            for (let i = 0; i < EncryptData_entries.length; i++) {
+              let data=EncryptData_entries[i].value.value as Uint8Array;
+              let dataitem=await decryptStringData(data,symKeyBlob);
+              if (dataitem=="") {
+                continue;//有一个解密失败就放弃当前解密
+              }
+              let entry: distributedKVStore.Entry = {
+                key: EncryptData_entries[i].key,
+                value: {
+                  type: distributedKVStore.ValueType.STRING,
+                  value: dataitem
+                }
+              }
+              entries.push(entry);
+            }
+            this._kvStore.putBatch(entries, async (err: BusinessError) => {
+              if (err != undefined) {
+                hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
+                return;
+              }
+            });
+            return entries.length;
+          }
+
+        }
+      }
+      catch (err)
+      {
+        hilog.error(err.code,"DataSyncToEncryptDatabase",`Failed to DataSync Batch.code is ${err.code},message is ${err.message}`);
+      }
+      finally {
+        secret_key="";
+      }
+      return 0;
+    }
+    return 0;
+  }
+  /**
+   * 检查是否有还原数据可用 返回可用条数（还原场景专用）.
+   *
+   */
+  async DataSyncToEncryptDatabaseCheckNumber(): Promise<number>{
+    const query = new distributedKVStore.Query();
+    query.prefixKey("^");
+    let EncryptData_entries_count =await this._kvStoreNoE?.getResultSize(query);
+    return EncryptData_entries_count??0;
+  }
+  /**
+   * 获取加密用的密钥.
+   *
+   */
+  async queryEncryptTokenDataKey(): Promise<string> {
+    let query: asset.AssetMap = new Map();
+    query.set(asset.Tag.ALIAS, this.stringToArray('tokenData_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
+    try {
+      let  res =await asset.query(query);
+      if (res.length>0)//查得到就说明已经有了 如果用户选择了密钥派生 也会直接赋值到这里
+      {
+        // parse the secret.
+        let secret: Uint8Array = res[0].get(asset.Tag.SECRET) as Uint8Array;
+        // parse uint8array to string
+        let secretStr: string = base32Encode(secret);
+        return secretStr;
+      }
+    } catch (error) {
+      let err = error as BusinessError;
+      hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
+    }
+    if (AppPreference.getPreference("app_use_kdf"))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASS
+    {
+      return "";
+    }
+    else //否则就动态生成一个AESKEy
+    {
+      let tokenData_alias=await this.getString("tokenData_alias");
+      if (tokenData_alias!=null) { //如果从未加密数据库里面找到了之前存的密钥
+        let attr: asset.AssetMap = new Map();
+        attr.set(asset.Tag.SECRET, base32Decode(tokenData_alias));
+        attr.set(asset.Tag.ALIAS,this.stringToArray('tokenData_alias'));
+        attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+        await asset.add(attr);
+        return tokenData_alias??"";
+      }
+      else//否则生成一个aes128的key
+      {
+        // 创建SymKeyGenerator实例。
+        let symKeyGenerator = cryptoFramework.createSymKeyGenerator('AES128');
+        // 使用密钥生成器随机生成对称密钥。
+        let promiseSymKey = symKeyGenerator.generateSymKey();
+        let key = await  promiseSymKey;
+        // 获取对称密钥的二进制数据，输出128位密钥。长度为16字节。
+        let encodedKey = key.getEncoded();
+        let attr: asset.AssetMap = new Map();
+        attr.set(asset.Tag.SECRET, encodedKey.data);
+        attr.set(asset.Tag.ALIAS,this.stringToArray('tokenData_alias'));
+        attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+        await asset.add(attr);
+        let secretStr: string = base32Encode(encodedKey.data);
+        this.setString("tokenData_alias",secretStr)
+        return secretStr;
+      }
+
+    }
+    return "";
+  }
+  /**
+   * 字符串转字符数组
+   *
+   */
+  stringToArray(input: string): Uint8Array {
+    //let textEncoder = new util.TextEncoder();
+    //return textEncoder.encodeInto(str);
+    return new Uint8Array(buffer.from(input, 'utf-8').buffer);
+    //return base32Decode(input);
+  }
+  /**
+   * 字符数组转字符串.
+   *
+   */
+  arrayToString(array: Uint8Array): string {
+    return base32Encode(array);
+  }
   //手动同步
   async DataSync(): Promise<void> {
     if (AppPreference.getPreference('app_db_rds_sync_enable')) {
@@ -183,6 +436,7 @@ export class KvManager {
             const query = new distributedKVStore.Query();
             query.prefixKey("_token_uuid_");
             this._kvStore?.sync(deviceNetWorkIDList, query, distributedKVStore.SyncMode.PUSH_PULL, 1000*10);
+            this._kvStoreNoE?.sync(deviceNetWorkIDList, query, distributedKVStore.SyncMode.PUSH_PULL, 1000*10);
           }
         }
       } catch (err) {

@@ -37,6 +37,7 @@ struct Index {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
+  private appIsInit = false;
   private appIsShow = false;
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
@@ -89,7 +90,7 @@ struct Index {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
     });
-
+    //配置预定义好的来自华为官方的个人隐私条款链接
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
 
@@ -99,25 +100,14 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
-        if (AppPreference.getPreference('app_debug_mode_on')) {
-          if (this.CurrentTokens.length == 0) { // 没有任何数据才去检测备份
-            let backup_lock =  this.appCtx.filesDir + "/backup.locked";
-            if (!fs.accessSync(backup_lock)) { // 是否是第一次尝试从备份恢复
-              writeFileContent(backup_lock, 'locked');
-              let backup_file = this.appCtx.filesDir + "/backup/allData.bak";
-              let res = fs.accessSync(backup_file);
-              if (res) {
-                restoreFromBackup(backup_file, true, "AutoBackUp").then((backup) => {
-                  this.updateTokenConfigs(backup.configs).then(() => {
-                    tkStore.sortTokens();
-                  });
-                })
-              }
-            }
-
+        tkStore.RestoreByKVCheckAsync().then((n:number)=>{
+          if (AppPreference.getPreference('app_debug_mode_on')&& n>1) {
+            router.pushUrl({ url: 'pages/RestoreDataPage' });
           }
-        }
-
+        }).catch((err:BusinessError)=>{
+          hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
+        })
+        this.appIsInit=true;
       });
     });
 
@@ -243,42 +233,37 @@ struct Index {
 
   onPageHide(): void {
     this.appIsShow = false;
-    // DEBUG MODE
-    if (AppPreference.getPreference('app_debug_mode_on')) {
-      hilog.info(0, TAG, "onPageHide");
-      //备份还原场景检测是否有备份数据
-      if (this.CurrentTokens.length > 0) {
-        //todo需要申请锁屏后读取权限 需要实现后台任务备份
-        try {
-          //申请锁屏后访问加密文件的权限
-          let acquireStatus = screenLockFileManager.acquireAccess();
-          if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
-            hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
-            let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-            let backup_file = thisContext.filesDir + "/backup/allData.bak";
-            let backup_path = thisContext.filesDir + "/backup/";
-            if (fs.accessSync(backup_path) === false) {
-              fs.mkdirSync(backup_path, true);
-            }
-            let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
-            let versionCode = bundleInfo?.versionCode;
-            const backup: TokenBackup = new TokenBackup(versionCode ?? 0,this.CurrentTokens);
-            hilog.info(0, TAG, "AutoBackUp");
-            saveBackupToFile(backup_file, backup, true, "AutoBackUp").then(() => {
-              hilog.info(0, TAG, "AutoBackUpEnd");
-            }).catch((reason: BusinessError) => {
-              hilog.error(0, TAG, "AutoBackUpError");
-            })
-            let releaseStatus = screenLockFileManager.releaseAccess();
-            if (releaseStatus === screenLockFileManager.ReleaseStatus.RELEASE_GRANTED) {
-              hilog.info(0x0000, 'testTag', 'releaseAccess successfully.');
-            }
-          }
-        } catch (err) {
-          let message = (err as BusinessError).message;
-          hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
+    hilog.info(0, TAG, "onPageHide");
+    //备份还原场景检测是否有备份数据
+    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference("app_db_kv_archive_is_running")) {
+      //todo需要申请锁屏后读取权限 需要实现后台任务备份
+      try {
+        AppPreference.setPreference("app_db_kv_archive_is_running",true)
+        //申请锁屏后访问加密文件的权限
+        let acquireStatus = screenLockFileManager.acquireAccess();
+        if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
+          hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
+          //let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+          tkStore.BuckupToKVAsync().then(()=>{
+            //tkStore.RestoreByKVAsync();
+            //更新存档时间
+            AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+          }).catch((err:BusinessError)=>{
+            hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
+          }).finally(()=>{
+            AppPreference.setPreference("app_db_kv_archive_is_running",false);
+          });
         }
+        else
+        {
+          AppPreference.setPreference("app_db_kv_archive_is_running",false);
+        }
+      } catch (err) {
+        let message = (err as BusinessError).message;
+        hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
+        AppPreference.setPreference("app_db_kv_archive_is_running",false);
       }
+
     }
   }
 

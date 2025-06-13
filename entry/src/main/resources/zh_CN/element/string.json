@@ -237,6 +237,10 @@
       "value": "更新时间"
     },
     {
+      "name": "data_kv_archive_time",
+      "value": "存档时间"
+    },
+    {
       "name": "data_sync_manual",
       "value": "手动同步"
     },
@@ -584,6 +588,34 @@
       "name": "setting_background_blur_des",
       "value": "切出APP时模糊界面保护隐私。"
     },
+    {
+      "name": "restore_data",
+      "value": "恢复数据"
+    },
+    {
+      "name": "restore_data_msg",
+      "value": "检测到您正在进行备份恢复或数据迁移，是否需要恢复数据？"
+    },
+    {
+      "name": "restore_data_kdf_msg",
+      "value": "检测到您正在进行备份恢复或数据迁移，且启用了主密钥加密功能。请输入主密码以恢复数据。"
+    },
+    {
+      "name": "restore_data_kdf_err_msg",
+      "value": "主密码输入错误，无法恢复数据。"
+    },
+    {
+      "name": "restore_data_ok_msg",
+      "value": "数据恢复成功！请重新打开APP"
+    },
+    {
+      "name": "restore_data_cancel",
+      "value": "请耐心等待"
+    },
+    {
+      "name": "restore_data_restoring",
+      "value": "恢复中"
+    },    
     {
       "name": "token_right_menu_show_qrcode",
       "value": "二维码"
