@@ -1,7 +1,7 @@
 import { BusinessError } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer, util } from '@kit.ArkTS';
-import { stringToIntArray } from '../utils/TokenUtils'
+import { base32Decode,stringToIntArray,stringToArray } from '../utils/TokenUtils'
 import promptAction from '@ohos.promptAction'
 
 export async function decryptFile(file_buf: Uint8Array, user_key: string): Promise<string> {
@@ -57,7 +57,11 @@ export async function encryptFile(file_str: string, user_key: string): Promise<U
     return encryptData.data;
   });
 }
-export async function encryptStringData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<Uint8Array> {
+/**
+ * AES128 CBC 加密字节数组 返回加密后的字节数组
+ *
+ */
+export async function encryptUint8ArrayData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<Uint8Array> {
   let aes_encoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
   let aes_iv: cryptoFramework.IvParamsSpec = {
     algName: "IvParamsSpec",
@@ -72,7 +76,11 @@ export async function encryptStringData(data: Uint8Array, symKeyBlob: cryptoFram
     return encryptData.data;
   });
 }
-export async function decryptStringData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<string> {
+/**
+ * AES128 CBC 解密字节数组 返回解密后的明文字节数组
+ *
+ */
+export async function decryptUint8ArrayData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<Uint8Array|null> {
   let aes_decoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
   let aes_iv: cryptoFramework.IvParamsSpec = {
     algName: "IvParamsSpec",
@@ -84,13 +92,34 @@ export async function decryptStringData(data: Uint8Array, symKeyBlob: cryptoFram
     .catch((reason: string) => {
       promptAction.showToast({ message: reason });
     });
-
-  return new Promise<string>((resolve) => {
+  return new Promise<Uint8Array|null>((resolve) => {
     aes_decoder.doFinal({ data: data }).then((decryptData) => {
-      let decoder = new util.TextDecoder()
-      resolve(decoder.decodeToString(decryptData.data));
+      resolve(decryptData.data);
     }).catch((reason: BusinessError) => {
-      resolve("");
+      resolve(null);
     });
   });
+}
+
+/**
+ * AES128 CBC 加密字符串 返回加密后的字节数组
+ *
+ */
+export async function encryptStringData(data: string, symKeyBlob: cryptoFramework.DataBlob): Promise<Uint8Array> {
+  let dataBlob=stringToArray(data)
+  return await encryptUint8ArrayData(dataBlob,symKeyBlob);
+}
+export async function decryptStringData(data: Uint8Array, symKeyBlob: cryptoFramework.DataBlob): Promise<string|null> {
+  try {
+    let decryptData=await decryptUint8ArrayData(data,symKeyBlob);
+    let decoder = new util.TextDecoder();
+    let content= decoder.decodeToString(decryptData);
+    return content;
+  }
+  catch (err)
+  {
+    return null;
+  }
+
+
 }

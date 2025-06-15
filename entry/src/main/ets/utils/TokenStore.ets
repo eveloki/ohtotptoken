@@ -134,8 +134,8 @@ export class TokenStore {
    * 备份整个kv加密数据库到非加密数据库
    *
    */
-  public async BuckupToKVAsync(): Promise<void>  {
-    await this.kvMgr.DataSyncToNoEncryptDatabase();
+  public async BuckupToKVAsync(): Promise<number>  {
+    return await this.kvMgr.DataSyncToNoEncryptDatabase();
   }
   /**
    * 从非加密数据库KV还原到kv
@@ -149,6 +149,6 @@ export class TokenStore {
    *
    */
   public async RestoreByKVCheckAsync(): Promise<number> {
-    return await this.kvMgr.DataSyncToEncryptDatabaseCheckNumber();
+    return await this.kvMgr.DataSyncToEncryptDatabaseCheckNumber(this.token_prefix);
   }
 }

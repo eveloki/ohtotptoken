@@ -101,13 +101,14 @@ struct Index {
         this.token_loading = false;
         // DEBUG MODE
         tkStore.RestoreByKVCheckAsync().then((n:number)=>{
-          if (AppPreference.getPreference('app_debug_mode_on')&& n>1) {
+          if (this.CurrentTokens.length==0&&n>0) {
             router.pushUrl({ url: 'pages/RestoreDataPage' });
           }
         }).catch((err:BusinessError)=>{
           hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
         })
         this.appIsInit=true;
+        AppPreference.setPreference("app_db_kv_archive_is_running",false)
       });
     });
 
@@ -244,10 +245,12 @@ struct Index {
         if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
           hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
           //let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-          tkStore.BuckupToKVAsync().then(()=>{
+          tkStore.BuckupToKVAsync().then((n)=>{
             //tkStore.RestoreByKVAsync();
             //更新存档时间
-            AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+            if (n>0) {
+              AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+            }
           }).catch((err:BusinessError)=>{
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
           }).finally(()=>{
