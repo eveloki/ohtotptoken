@@ -31,18 +31,18 @@ struct RestoreDataPage {
       if (this.progress < 99) {
         this.progress++;
       } else {
-
         this.isBegin = false;
         this.progress = 0;
         this.isRestoreSuccess=true;
         clearInterval(interval);
-
       }
     }, 250);
 
     this.tkStore.RestoreByKVAsync().then((n)=>{
       //更新存档时间
-      AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+      if (n>0) {
+        AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+      }
     }).catch((err:BusinessError)=>{
       hilog.error(err.code,"RestoreByKVAsync",`${err.message}`)
     }).finally(()=>{
