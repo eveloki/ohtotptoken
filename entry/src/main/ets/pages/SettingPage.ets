@@ -13,6 +13,7 @@ import { PermissionManager } from '../utils/PermissionManager';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../utils/FileUtils';
+import { throttle } from '../utils/UiUtils';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
@@ -451,9 +452,9 @@ export struct SettingPage {
                 symbol: $r("sys.symbol.paintpalette"),
                 text: $r('app.string.customize_appearance')
               })
-                .onClick(() => {
+                .onClick(throttle((event) => {
                   router.pushUrl({ url: 'pages/AppearancePage' });
-                })
+                }, 1000))
             }
           }
           .padding({ left: 10, right: 10 })
@@ -499,9 +500,9 @@ export struct SettingPage {
                 symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                 text: $r('app.string.data_rdb_sync_details')
               })
-                .onClick(() => {
+                .onClick(throttle((event) => {
                   router.pushUrl({ url: 'pages/ShowDataSyncDetailsPage' });
-                })
+                }, 1000))
             }
           }
           .padding({ left: 10, right: 10 })
@@ -509,9 +510,9 @@ export struct SettingPage {
           ListItem() {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
-                .onClick(() => {
-                  router.pushUrl({ url: 'pages/PrivacyPage' });
-                })
+                .onClick(throttle((event) => {
+                    router.pushUrl({ url: 'pages/PrivacyPage' });
+                }, 1000))
 
               SubItemDivider()
 
@@ -519,9 +520,9 @@ export struct SettingPage {
                 symbol: $r("sys.symbol.doc_plaintext_and_pencil"),
                 text: $r('app.string.user_agreement')
               })
-                .onClick(() => {
+                .onClick(throttle((event) => {
                   router.pushUrl({ url: 'pages/AgreementPage' });
-                })
+                }, 1000))
             }
           }
           .padding({ left: 10, right: 10 })
