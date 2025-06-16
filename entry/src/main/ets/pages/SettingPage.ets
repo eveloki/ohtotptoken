@@ -32,7 +32,11 @@ export struct SettingPage {
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
+  @Local is_master_key_enable: boolean = AppPreference.getPreference('app_use_master_key') as boolean;
+  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
+
   @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
+
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
 
@@ -60,15 +64,18 @@ export struct SettingPage {
       "E-mail: enbinli@outlook.com\n" +
       "Contributors: @Solidfaker, @eveloki, @lsxuan12138, @TomStilson, @tomygin, @wulongshe\n" +
       "Bundle Name: " + bundleInfo?.name + "\n" +
-      "Version: " + bundleInfo?.versionName;
+      "Version: " + bundleInfo?.versionName + "\n" +
+      "Version Code: " + bundleInfo?.versionCode;
     this.str_opensource_leg =
       "Github: paolostivanin/libcotp\n" +
       "Github: Netthaw/TOTP-MCU\n" +
       "Github: ss23/fortitoken-mobile-registration\n" +
       "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
+    this.appCtx.eventHub.on('onMasterKeyPageBack',()=>{
+      this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
+    })
   }
-
   //更新数据同步权限
   updateDATASYNCPermissions(isAccess: boolean) {
     if (!isAccess) {
@@ -313,6 +320,30 @@ export struct SettingPage {
 
           ListItem() {
             SettingItem({ title: $r('app.string.setting_safety') }) {
+              SubItemToggle({
+                icon: $r('sys.symbol.staroflife_rectangle'),
+                title: $r('app.string.restore_master_key'),
+                isOn: AppPreference.getPreference('app_use_master_key') as boolean,
+                description: $r('app.string.restore_master_key_msg'),
+                onChange: (IsOn: boolean) => {
+                  this.is_master_key_enable=IsOn;
+                  AppPreference.setPreference('app_use_master_key', IsOn);
+                }
+              })
+              SubItemButton({
+                symbol: $r('sys.symbol.key_shield'),
+                text: $r('app.string.restore_master_key_set'),
+                description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
+                descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
+              })//条件渲染有第一次不生效的bug（虚假机下） 很奇怪
+                .visibility(this.is_master_key_enable ? Visibility.Visible : Visibility.None)// 使用显隐控制，启动时即使组件处于隐藏状态，也会创建
+                .onClick(throttle((event) => {
+                  //this.is_master_key_set=!this.is_master_key_set;
+                  router.pushUrl({ url: 'pages/MasterKeyPage' });
+                }, 1000))
+
+              SubItemDivider()
+
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'),

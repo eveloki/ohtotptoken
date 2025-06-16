@@ -6,6 +6,7 @@ import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { throttle } from '../utils/UiUtils';
 
 
 @Entry
@@ -22,7 +23,7 @@ struct RestoreDataPage {
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   aboutToAppear(): void {
     this.isBegin = false;
-    this.isEnabledKDF=AppPreference.getPreference("app_use_kdf") as boolean;
+    this.isEnabledKDF=AppPreference.getPreference("app_use_master_key") as boolean;
   }
   restoreData() {
     this.isBegin = true;
@@ -110,6 +111,7 @@ struct RestoreDataPage {
               .fontSize(16)
               .fontWeight(500)
           }
+          Blank(10)
           Button() {
             if (this.isBegin) {
               Row() {
@@ -142,11 +144,11 @@ struct RestoreDataPage {
           .margin({ bottom: this.isBegin ? 16 : 24 })
           .enabled(!this.isRestoreSuccess)
           .backgroundColor($r('app.color.button_blue'))
-          .onClick(() => {
+          .onClick(throttle((event)  => {
             if (!this.isBegin) {
               this.restoreData();
             }
-          })
+          }))
 
           if (this.isBegin) {
             Button() {

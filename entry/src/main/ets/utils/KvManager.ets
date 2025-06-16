@@ -21,6 +21,8 @@ export class KvManager {
 
   //token加密密钥存储的name
   private readonly _tokenEncryptionSecretKeyName="tokenData_alias";
+  //token加密密钥存储的name(主密钥场景下的)
+  private readonly _tokenMasterKeyEncryptionSecretKeyName="tokenData_alias_master_key";
   //token恢复密钥存储的name（主密钥增强场景）
   private readonly _tokenEncryptionMasterRecoverySecretKeyName="tokenData_alias_recovery";
   private static instance: KvManager;
@@ -234,6 +236,32 @@ export class KvManager {
     return null;
   }
 
+  async setStringNoE(key: string, value: string): Promise<void> {
+    if (this._kvStoreNoE) {
+      this._kvStoreNoE.put(key, value, (err) => {
+        if (err != undefined) {
+          console.error(`Failed to put.code is ${err.code},message is ${err.message}`);
+          return;
+        }
+        console.info("Succeeded in putting");
+      });
+    }
+  }
+
+  async getStringNoE(key: string): Promise<string|null> {
+    if (this._kvStoreNoE) {
+      return this._kvStoreNoE.get(key).then((data: boolean | string | number | Uint8Array) => {
+        let value: string | null = null;
+        if (data) {
+          value = data as string;
+        }
+        return value;
+      }).catch(() => {
+        return null;
+      });
+    }
+    return null;
+  }
   async deleteValue(key: string): Promise<void> {
     if (this._kvStore) {
       await this._kvStore.delete(key);
@@ -256,7 +284,9 @@ export class KvManager {
         if (EncryptData_entries && EncryptData_entries.length>0) {
           let entries: distributedKVStore.Entry[] = [];
           for (let i = 0; i < EncryptData_entries.length; i++) {
-            if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+            if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName
+              || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyName
+              ||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
               continue;
             }
             let data=EncryptData_entries[i].value.value as string;
@@ -309,7 +339,9 @@ export class KvManager {
           if (EncryptData_entries && EncryptData_entries.length>0) {
             let entries: distributedKVStore.Entry[] = [];
             for (let i = 0; i < EncryptData_entries.length; i++) {
-              if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+              if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName
+                || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyName
+                ||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
                 continue;
               }
               let data=EncryptData_entries[i].value.value as Uint8Array;
@@ -372,7 +404,14 @@ export class KvManager {
    */
   async queryEncryptTokenDataKey(): Promise<string> {
     let query: asset.AssetMap = new Map();
-    query.set(asset.Tag.ALIAS, stringToArray(this._tokenEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    if (AppPreference.getPreference('app_use_master_key') as boolean) {//区分启用主密钥和不适用主密钥场景下的name 防止用户反复切换功能开关造成的数据丢失
+      query.set(asset.Tag.ALIAS, stringToArray(this._tokenMasterKeyEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    }
+    else
+    {
+      query.set(asset.Tag.ALIAS, stringToArray(this._tokenEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    }
+
     query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
     try {
       let  res =await asset.query(query);
@@ -388,13 +427,13 @@ export class KvManager {
       let err = error as BusinessError;
       hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
     }
-    if (AppPreference.getPreference("app_use_kdf"))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASS
+    if (AppPreference.getPreference("app_use_master_key"))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASk
     {
       return "";
     }
     else //否则就动态生成一个AESKEy
     {
-      let tokenData_alias=await this.getString(this._tokenEncryptionSecretKeyName);
+      let tokenData_alias=await this.getStringNoE(this._tokenEncryptionSecretKeyName);//恢复场景从未加密数据读取之前生成的密钥
       if (tokenData_alias!=null) { //如果从未加密数据库里面找到了之前存的密钥
         let attr: asset.AssetMap = new Map();
         attr.set(asset.Tag.SECRET, base32Decode(tokenData_alias));
@@ -414,7 +453,7 @@ export class KvManager {
         let encodedKey = key.getEncoded();
         await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,encodedKey.data);
         let secretStr: string = base32Encode(encodedKey.data);
-        this.setString(this._tokenEncryptionSecretKeyName,secretStr)
+        this.setStringNoE(this._tokenEncryptionSecretKeyName,secretStr)
         return secretStr;
       }
 
@@ -441,7 +480,7 @@ export class KvManager {
     let symKeyBlob = kdf.generateSecretSync(spec);
 
     let symKeyBlobStr: string= base32Encode(symKeyBlob.data);  //用户主密码派生的密钥
-    await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,symKeyBlob.data);//向ASK存储主密钥
+    await this.UpdateOrAddAssetStoreKit(this._tokenMasterKeyEncryptionSecretKeyName,symKeyBlob.data);//向ASK存储主密钥
 
     // 创建SymKeyGenerator实例。
     let symKeyGenerator = cryptoFramework.createSymKeyGenerator('AES128');
@@ -454,7 +493,7 @@ export class KvManager {
     let encodedKey: cryptoFramework.DataBlob = { data: recoveryKey.data};
     let symKeyBlobEncryption =await encryptUint8ArrayData(symKeyBlob.data,encodedKey)//将主密钥加密
     let symKeyBlobEncryptionStr= base32Encode(symKeyBlobEncryption);
-    this.setString(this._tokenEncryptionMasterRecoverySecretKeyName,symKeyBlobEncryptionStr);//存储恢复密钥数据
+    await this.setStringNoE(this._tokenEncryptionMasterRecoverySecretKeyName,symKeyBlobEncryptionStr);//存储恢复密钥数据
 
     return recoveryKeyStr;//反馈恢复密钥
 
@@ -469,12 +508,12 @@ export class KvManager {
     try {
       let recoveryKeyBlob : Uint8Array= base32Decode(recoveryKeyStr);  //尝试解密用户输入的密钥
       let encodedKeyStrBlob: cryptoFramework.DataBlob = { data: recoveryKeyBlob};//用户恢复密钥生成的AESKEy
-      let RecoverySecretKeyStr= this.getString(this._tokenEncryptionMasterRecoverySecretKeyName);//获取存储的恢复密钥数据
+      let RecoverySecretKeyStr= await this.getStringNoE(this._tokenEncryptionMasterRecoverySecretKeyName);//获取存储的恢复密钥数据
       if (RecoverySecretKeyStr!=null) {
-        let RecoverySecretKeyBlob=base32Decode(recoveryKeyStr);  //获取存储的恢复密钥blob
+        let RecoverySecretKeyBlob=base32Decode(RecoverySecretKeyStr);  //获取存储的恢复密钥blob
         let symKeyBlobEncryption =await decryptUint8ArrayData(RecoverySecretKeyBlob,encodedKeyStrBlob)//将主密钥加密
         if (symKeyBlobEncryption!=null) {//解密成功
-          await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,symKeyBlobEncryption);//向ASK存储主密钥
+          await this.UpdateOrAddAssetStoreKit(this._tokenMasterKeyEncryptionSecretKeyName,symKeyBlobEncryption);//向ASK存储主密钥
           return true;
         }
         else
@@ -519,12 +558,18 @@ export class KvManager {
       let err = error as BusinessError;
       hilog.error(err.code,"UpdateOrAddAssetStoreKit",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
     }
-    //这个时候要走新增密钥
-    let attr: asset.AssetMap = new Map();
-    attr.set(asset.Tag.SECRET, Key);
-    attr.set(asset.Tag.ALIAS,stringToArray(this._tokenEncryptionSecretKeyName));
-    attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-    await asset.add(attr);
+    try {
+      //这个时候要走新增密钥
+      let attr: asset.AssetMap = new Map();
+      attr.set(asset.Tag.SECRET, Key);
+      attr.set(asset.Tag.ALIAS,stringToArray(Alias));
+      attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+      await asset.add(attr);
+    }
+    catch (error) {
+      let err = error as BusinessError;
+      hilog.error(err.code,"UpdateOrAddAssetStoreKit",`Failed to Add Asset. Code is ${err.code}, message is ${err.message}`);
+    }
   }
   //#endregion
   //手动同步

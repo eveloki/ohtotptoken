@@ -6,175 +6,272 @@ import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { showSaveFilePicker, showSelectFilePicker, writeFileContent,
+  writeFileContentCheckHashEqual } from '../utils/FileUtils';
+import lottie, { AnimationItem } from '@ohos/lottie';
+import { throttle } from '../utils/UiUtils';
 
 
 @Entry
 @ComponentV2
 struct MasterKeyPage {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-  @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入朱密码的UI场景
-  @Local isBegin: boolean = false;//是否开始恢复
-  @Local isRestoreSuccess: boolean = false;//是否恢复成功
-  @Local progress: number = 0;
+  @Local isBegin: boolean = false;//是否开始设置主密码
+  @Local recoverySecretKey: string = "";//恢复密钥
+  @Local recoverySecretKeyShow: string = "";//恢复密钥
+  @Local masterKey: string = "";//用户设置的主密码
+  @Local masterKeyErr: boolean= true;//用户设置的主密码错误
+  @Local is_loaded: boolean = false;
   TOAST_BOTTOM: number = 135;
   tkStore = TokenStore.getInstance();
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+  // 构建上下文
+  private renderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
+  private canvasRenderingContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.renderingSettings)
+  private animateItem: AnimationItem | null = null;
+  private animateName: string = "no-limit"; // 动画名称
+
+  // 页面销毁时释放动画资源
+  aboutToDisappear(): void {
+    console.info('aboutToDisappear');
+    lottie.destroy();
+  }
+
   aboutToAppear(): void {
     this.isBegin = false;
-    this.isEnabledKDF=AppPreference.getPreference("app_use_kdf") as boolean;
   }
-  restoreData() {
-    this.isBegin = true;
-    this.progress = 0;
-    let interval = setInterval(() => {
-      if (this.progress < 99) {
-        this.progress++;
-      } else {
-        this.isBegin = false;
-        this.progress = 0;
-        this.isRestoreSuccess=true;
-        clearInterval(interval);
+  setMasterKey() {
+    if (this.masterKey!=null&&this.masterKey!="") {
+      this.masterKey=this.masterKey.trim();
+      if (this.masterKey.length>=8) {
+        this.is_loaded=true;
+        this.tkStore.SetMasterKeyAsync(this.masterKey.trim()).then((rk)=>{
+          this.isBegin = true;
+          this.recoverySecretKey=rk.replace(/=/g,"");
+          this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
+          AppPreference.setPreference('app_use_master_key_set',true)
+          this.is_loaded=false;
+        })
       }
-    }, 250);
+      else
+      {
+        this.getUIContext().getPromptAction().showToast({ message: $r('app.string.restore_master_key_password_too_short_msg'), bottom: this.TOAST_BOTTOM })
+      }
+    }
+  }
+  confirmRecoveryKey(){
+    //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
+    //  this.getUIContext().getPromptAction().showToast({ message: b?"恢复密钥OK":"恢复密钥Err", bottom: this.TOAST_BOTTOM })
+    //})
+    this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+    router.back();
+  }
+  exportRecoveryKey(){
+    showSaveFilePicker([`totp_recovery_key.text`], ['Text|.text']).then((uris) => {
+      if (uris[0] !== undefined && uris[0] !== '') {
+        writeFileContentCheckHashEqual(uris[0], this.recoverySecretKey).then(()=>{
+          this.getUIContext().getPromptAction().showToast({ message: "OK", bottom: this.TOAST_BOTTOM })
+        });
+      }
+    });
+  }
+  formatBase32(base32Str:string) {
+    // 1. 清理输入：转为大写，移除非Base32字符（A-Z2-7）和填充符
+    const cleaned = base32Str
+      .toUpperCase();
+      //.replace(/[^A-Z2-7]/g, '');
 
-    this.tkStore.RestoreByKVAsync().then((n)=>{
-      //更新存档时间
-      if (n>0) {
-        AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+    // 2. 按每4个字符分组
+    const groups: string[] = [];
+    for (let i = 0; i < cleaned.length; i += 4) {
+      groups.push(cleaned.slice(i, i + 4));
+    }
+
+    // 3. 每3组一行进行格式化
+    const lines: string[] = [];
+    for (let i = 0; i < groups.length; i += 3) {
+      const lineGroups = groups.slice(i, i + 3);
+      lines.push(lineGroups.join('   ')); // 组间用空格分隔
+    }
+
+    // 4. 行间用换行符连接
+    return lines.join('\n');
+}
+
+  build() {
+    Scroll() {
+      if (this.is_loaded) {
+        Column() {
+          LoadingProgress()
+            .color(Color.White)
+            .width(80).height(80)
+          Text('Loading..')
+            .fontSize(16)
+            .fontColor(Color.White)
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#40000000')
+        .justifyContent(FlexAlign.Center)
       }
-    }).catch((err:BusinessError)=>{
-      hilog.error(err.code,"RestoreByKVAsync",`${err.message}`)
-    }).finally(()=>{
-      this.progress=100;
-      clearInterval(interval);
-      setTimeout(() => {
-        this.isBegin = false;
-        this.progress = 0;
-        this.isRestoreSuccess=true;
-        //this.getUIContext().getPromptAction().showToast({ message: $r('app.string.restore_data_ok_msg'), bottom: this.TOAST_BOTTOM })
-        this.getUIContext().showAlertDialog(
-          {
-            title: $r('app.string.restore_data'),
-            message:$r('app.string.restore_data_ok_msg'),
-            autoCancel: true,
-            alignment: DialogAlignment.Center,
-            offset: { dx: 0, dy: -20 },
-            gridCount: 3,
-            buttons: [{
-              value: 'cancel',
-              action: () => {
-              }
-            },
+      else
+      {
+        Column() {
+          TopNavigationView({
+            title: $r('app.string.restore_master_key_set'),
+            onBackClick: () => {
+              router.back();
+            }
+          })
+          Column() {
+            Column() {
+              // 关联画布
+              Canvas(this.canvasRenderingContext)
+                .width(200)
+                .height(200)
+                .backgroundColor(Color.Transparent)
+                .onReady(() => {
+                  // 加载动画
+                  if (this.animateItem != null) {
+                    // 可在此生命回调周期中加载动画，可以保证动画尺寸正确
+                    this.animateItem?.resize();
+                  } else {
+                    // 抗锯齿的设置
+                    this.canvasRenderingContext.imageSmoothingEnabled = true;
+                    this.canvasRenderingContext.imageSmoothingQuality = 'medium'
+                    this.loadAnimation();
+                  }
+                })
+            }
+            Blank(10)
+            Column(){
+              TextInput({ placeholder: 'Password' })
+                .opacity(0.6)
+                .type(InputType.NEW_PASSWORD)
+                .placeholderColor(0x182431)
+                .width('100%')
+                .placeholderFont({ size: 16, weight: FontWeight.Regular })
+                .margin({ top: 32, bottom: 8 })
+                .showError(this.masterKeyErr ? $r('app.string.restore_master_key_password_too_short_msg'): undefined)
+                .onChange((value: string) => {
+                  this.masterKey = value.trim();
+                  if (this.masterKey.length<8) {
+                    this.masterKeyErr=true;
+                  }
+                  else
+                  {
+                    this.masterKeyErr=false;
+                  }
+                })
+                .visibility(this.isBegin ? Visibility.None : Visibility.Visible)// 使用显隐控制，启动时即使组件处于隐藏状态，也会创建
+            }
+            .padding({ left: 24, right: 24 })
+            Blank(10)
+            Column() {
+              if (this.isBegin)
               {
-                enabled: true,
-                defaultFocus: true,
-                style: DialogButtonStyle.HIGHLIGHT,
-                value: 'ok',
-                action: () => {
-                  this.appCtx.terminateSelf();
-                }
-              }],
-          }
-        );
-      }, 200)
+                Text($r('app.string.restore_recovery_key'))
+                  .fontSize(28)
+                  .fontWeight(600)
+                Text(this.recoverySecretKeyShow)
+                  .fontSize(24)
+                  .fontWeight(600)
+                Blank(10)
+                //Text(this.recoverySecretKey)
+                //  .fontSize(20)
+                //  .fontWeight(600)
+                Blank(10)
+                Text($r('app.string.restore_master_key_recovery_key_msg'))
+                  .fontSize(16)
+                  .fontWeight(600)
+              }
+              else
+              {
+                Text($r('app.string.restore_master_key_set_msg'))
+                  .fontSize(16)
+                  .fontWeight(600)
+              }
 
+              Blank(10)
+              Button() {
+                if (this.isBegin) {
+                  Text($r('app.string.restore_recovery_key_confirm'))
+                    .fontSize(16)
+                    .fontWeight(500)
+                    .fontColor($r('app.color.white'))
+                } else {
+                  Text($r('app.string.restore_master_key_set'))
+                    .fontSize(16)
+                    .fontWeight(500)
+                    .fontColor($r('app.color.white'))
+                }
+              }
+              .id('publish')
+              .width('100%')
+              .height(40)
+              .margin({ bottom: this.isBegin ? 16 : 24 })
+              .backgroundColor($r('app.color.button_blue'))
+              .onClick(throttle((event) => {
+                if (!this.isBegin) {
+                  this.setMasterKey();
+                }
+                else
+                {
+                  this.confirmRecoveryKey();
+                }
+              }))
+
+              Blank(10)
+              Button() {
+                Text($r('app.string.restore_recovery_key_export'))
+                  .fontSize(16)
+                  .fontWeight(500)
+                  .fontColor($r('app.color.white'))
+              }
+              .id('publish')
+              .width('100%')
+              .height(40)
+              .margin({ bottom: this.isBegin ? 16 : 24 })
+              .backgroundColor($r('app.color.button_blue'))
+              .onClick(throttle((event) => {
+                this.exportRecoveryKey();
+              }))
+              .visibility(this.isBegin ? Visibility.Visible : Visibility.None)// 使用显隐控制，启动时即使组件处于隐藏状态，也会创建
+            }
+            .padding({ left: 24, right: 24 })
+            .align(Alignment.End)
+          }
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+      }
+
+    }
+    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+  }
+
+  loadAnimation() {
+    this.animateItem = lottie.loadAnimation({
+      container: this.canvasRenderingContext,
+      renderer: 'canvas', // canvas 渲染模式
+      loop: false,
+      autoplay: false,
+      name: this.animateName,
+      contentMode: 'Contain',
+      path: "pages/common/no-limit.json",
+    })
+    // 因为动画是异步加载，所以对animateItem的操作需要放在动画加载完成回调里操作
+    this.animateItem.addEventListener('DOMLoaded', (args: Object): void => {
+      //this.animateItem?.changeColor([225, 25, 100, 1]);
+      this.animateItem?.play()
     });
   }
 
-  build() {
-    Column() {
-      TopNavigationView({
-        title: $r('app.string.restore_data'),
-        onBackClick: () => {
-          router.back();
-        }
-      })
-      Column() {
-        Column() {
-          LoadingProgress()
-            .width(100)
-            .layoutWeight(1)
-        }
-        .height('60%')
-        Column() {
-          if (this.isEnabledKDF)
-          {
-            Text($r('app.string.restore_data_kdf_msg'))
-              .fontSize(16)
-              .fontWeight(500)
-          }
-          else
-          {
-            Text($r('app.string.restore_data_msg'))
-              .fontSize(16)
-              .fontWeight(500)
-          }
-          Button() {
-            if (this.isBegin) {
-              Row() {
-                Progress({ value: this.progress, type: ProgressType.Ring })
-                  .width(20)
-                  .height(20)
-                  .backgroundColor('#FFFFFF')
-                  .color('#558DFF')
-                  .style({ strokeWidth: 2, scaleCount: 100, scaleWidth: 2 })
-                Text()
-                {
-                  Span($r('app.string.restore_data_restoring'))
-                  Span(` ${this.progress}%`)
-                }
-                .fontSize(16)
-                .fontColor('#FFFFFF')
-                .fontWeight(500)
-                .margin({ left: 12 })
-              }.alignItems(VerticalAlign.Center)
-            } else {
-              Text($r('app.string.restore_data'))
-                .fontSize(16)
-                .fontWeight(500)
-                .fontColor($r('app.color.white'))
-            }
-          }
-          .id('publish')
-          .width('100%')
-          .height(40)
-          .margin({ bottom: this.isBegin ? 16 : 24 })
-          .enabled(!this.isRestoreSuccess)
-          .backgroundColor($r('app.color.button_blue'))
-          .onClick(() => {
-            if (!this.isBegin) {
-              this.restoreData();
-            }
-          })
-
-          if (this.isBegin) {
-            Button() {
-              Text($r('app.string.restore_data_cancel'))
-                .fontSize(16)
-                .fontWeight(500)
-                .fontColor($r('app.color.btn_text_blue'))
-            }
-            .id('cancel')
-            .width('100%')
-            .height(40)
-            .margin({ bottom: 24 })
-            .backgroundColor($r('app.color.button_light_gray'))
-            .enabled(true)
-            .onClick(() => {
-              // cancel task
-              //this.progress = 0;
-              //this.isBegin = false;
-            })
-          }
-        }
-        .padding({ left: 24, right: 24 })
-        .align(Alignment.End)
-      }
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+  destroy() {
+    this.animateItem?.removeEventListener("DOMLoaded");
+    lottie.destroy(this.animateName);
+    this.animateItem = null;
   }
 }
