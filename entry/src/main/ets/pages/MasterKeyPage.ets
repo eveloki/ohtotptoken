@@ -146,12 +146,16 @@ struct MasterKeyPage {
             }
             Blank(10)
             Column(){
-              TextInput({ placeholder: 'UserName',text:"admin" })
-                .type(InputType.USER_NAME)// 账号框使用USER_NAME属性
-                .opacity(0)
-                .visibility(Visibility.Visible)// 隐藏
-                .onChange((value: string) => {
-                })
+              Stack({ })//有个强加进来的Input 为了屏蔽他（用户能点击正常触发输入法输入） 所以用一个遮罩层遮住
+              {
+                TextInput({ placeholder: 'UserName',text:"admin" })//要触发华为的密码保险箱 需要用户名密码同时存在 而且还不能隐藏 所以必须要这个input
+                  .type(InputType.USER_NAME)// 账号框使用USER_NAME属性
+                  .opacity(0)
+                  .visibility(Visibility.Visible)// 隐藏
+                  .onChange((value: string) => {
+                  })
+                Column(){}.height(20).width('100%').backgroundColor('#00000000')
+              }.height(20)
 
               TextInput({ placeholder: $r('app.string.restore_input_master_key') })
                 .opacity(0.6)
