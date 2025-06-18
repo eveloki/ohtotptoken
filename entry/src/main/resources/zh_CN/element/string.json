@@ -683,6 +683,30 @@
     {
       "name": "restore_recovery_key_export",
       "value": "导出恢复密钥"
+    },
+    {
+      "name": "restore_master_key_err_msg",
+      "value": "主密码错误，数据恢复失败"
+    },
+    {
+      "name": "restore_use_recovery_key",
+      "value": "忘记主密码？使用恢复密钥"
+    },
+    {
+      "name": "restore_use_master_key",
+      "value": "使用主密码恢复"
+    },
+    {
+      "name": "restore_input_recovery_key",
+      "value": "输入恢复密钥"
+    },
+    {
+      "name": "restore_input_master_key",
+      "value": "输入主密码"
+    },
+    {
+      "name": "restore_import_recovery_key",
+      "value": "导入恢复密钥文件"
     }
   ]
 }

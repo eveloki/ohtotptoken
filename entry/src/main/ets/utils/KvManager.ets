@@ -25,6 +25,8 @@ export class KvManager {
   private readonly _tokenMasterKeyEncryptionSecretKeyName="tokenData_alias_master_key";
   //token恢复密钥存储的name（主密钥增强场景）
   private readonly _tokenEncryptionMasterRecoverySecretKeyName="tokenData_alias_recovery";
+  //用来校验还原场景下主密钥是否正确的密文(主密钥场景下的) 如果用户设置主密钥能正常解密这个内容说明设置的密钥是对的
+  private readonly _tokenMasterKeyEncryptionSecretKeyNameTest="tokenData_alias_master_key_test";
   private static instance: KvManager;
 
   private constructor() {
@@ -286,7 +288,8 @@ export class KvManager {
           for (let i = 0; i < EncryptData_entries.length; i++) {
             if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName
               || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyName
-              ||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+              || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyNameTest
+              || EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
               continue;
             }
             let data=EncryptData_entries[i].value.value as string;
@@ -305,12 +308,26 @@ export class KvManager {
           }
           if (entries.length>0)
           {
+            //最后添加一段验证数据 此数据用在还原场景下 验证用户输入的主密码是否正确 
+            let testData=await encryptStringData(Date().toString(),symKeyBlob);
+            if (testData!=null) {
+              let entry: distributedKVStore.Entry = {
+                key: this._tokenMasterKeyEncryptionSecretKeyNameTest,
+                value: {
+                  type: distributedKVStore.ValueType.BYTE_ARRAY,
+                  value: testData
+                }
+              }
+              entries.push(entry);
+            }
+
             this._kvStoreNoE.putBatch(entries, async (err: BusinessError) => {
               if (err != undefined) {
                 hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
                 return;
               }
             });
+            return entries.length;
           }
           else
           {
@@ -341,7 +358,8 @@ export class KvManager {
             for (let i = 0; i < EncryptData_entries.length; i++) {
               if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName
                 || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyName
-                ||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+                || EncryptData_entries[i].key==this._tokenMasterKeyEncryptionSecretKeyNameTest
+                || EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
                 continue;
               }
               let data=EncryptData_entries[i].value.value as Uint8Array;
@@ -467,7 +485,7 @@ export class KvManager {
    * 根据用户生成的密钥生成AESKEy存储到ASK中 并且生成一个恢复密钥.
    *
    */
-  async EncryptionSecretKeyAndCreateRecoverySecretKey(user_key:string): Promise<string>
+  async EncryptionMasterKeyAndCreateRecoverySecretKey(user_key:string): Promise<string>
   {
     let spec: cryptoFramework.PBKDF2Spec = {
       algName: 'PBKDF2',
@@ -498,7 +516,36 @@ export class KvManager {
     return recoveryKeyStr;//反馈恢复密钥
 
   }
+  /**
+   * 校验主密码.
+   *
+   */
+  async CheckMasterKey(user_key:string): Promise<boolean>
+  {
+    let spec: cryptoFramework.PBKDF2Spec = {
+      algName: 'PBKDF2',
+      password: user_key,
+      salt: new Uint8Array(16),
+      iterations: 10000,
+      keySize: 16
+    };
+    let kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
+    let symKeyBlob = kdf.generateSecretSync(spec);
 
+    let symKeyBlobStr: string= base32Encode(symKeyBlob.data);  //用户主密码派生的密钥
+
+    //获取测试数据
+    let testData= await this._kvStoreNoE?.getEntries(this._tokenMasterKeyEncryptionSecretKeyNameTest)
+    if (testData && testData.length>0) {
+      let testDataBold=testData[0].value.value as Uint8Array;
+      let dataitem=await decryptStringData(testDataBold,symKeyBlob);
+      if (dataitem!=null) {
+        await this.UpdateOrAddAssetStoreKit(this._tokenMasterKeyEncryptionSecretKeyName,symKeyBlob.data);//向ASK存储主密钥
+        return true;
+      }
+    }
+    return false;
+  }
   /**
    * 校验恢复密钥并恢复
    *
@@ -511,7 +558,7 @@ export class KvManager {
       let RecoverySecretKeyStr= await this.getStringNoE(this._tokenEncryptionMasterRecoverySecretKeyName);//获取存储的恢复密钥数据
       if (RecoverySecretKeyStr!=null) {
         let RecoverySecretKeyBlob=base32Decode(RecoverySecretKeyStr);  //获取存储的恢复密钥blob
-        let symKeyBlobEncryption =await decryptUint8ArrayData(RecoverySecretKeyBlob,encodedKeyStrBlob)//将主密钥加密
+        let symKeyBlobEncryption =await decryptUint8ArrayData(RecoverySecretKeyBlob,encodedKeyStrBlob)//将主密钥解密
         if (symKeyBlobEncryption!=null) {//解密成功
           await this.UpdateOrAddAssetStoreKit(this._tokenMasterKeyEncryptionSecretKeyName,symKeyBlobEncryption);//向ASK存储主密钥
           return true;

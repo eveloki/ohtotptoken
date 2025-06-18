@@ -20,7 +20,7 @@ struct MasterKeyPage {
   @Local recoverySecretKey: string = "";//恢复密钥
   @Local recoverySecretKeyShow: string = "";//恢复密钥
   @Local masterKey: string = "";//用户设置的主密码
-  @Local masterKeyErr: boolean= true;//用户设置的主密码错误
+  @Local masterKeyErr: boolean= false;//用户设置的主密码错误
   @Local is_loaded: boolean = false;
   TOAST_BOTTOM: number = 135;
   tkStore = TokenStore.getInstance();
@@ -146,7 +146,14 @@ struct MasterKeyPage {
             }
             Blank(10)
             Column(){
-              TextInput({ placeholder: 'Password' })
+              TextInput({ placeholder: 'UserName',text:"admin" })
+                .type(InputType.USER_NAME)// 账号框使用USER_NAME属性
+                .opacity(0)
+                .visibility(Visibility.Visible)// 隐藏
+                .onChange((value: string) => {
+                })
+
+              TextInput({ placeholder: $r('app.string.restore_input_master_key') })
                 .opacity(0.6)
                 .type(InputType.NEW_PASSWORD)
                 .placeholderColor(0x182431)

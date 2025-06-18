@@ -683,6 +683,30 @@
     {
       "name": "restore_recovery_key_export",
       "value": "Confirm Export your recovery key"
+    },
+    {
+      "name": "restore_master_key_err_msg",
+      "value": "Invalid Master key, data restoration failed"
+    },
+    {
+      "name": "restore_use_recovery_key",
+      "value": "Forgot master password? Use recovery key"
+    },
+    {
+      "name": "restore_use_master_key",
+      "value": "Restore with master password"
+    },
+    {
+      "name": "restore_input_recovery_key",
+      "value": "Enter recovery key"
+    },
+    {
+      "name": "restore_input_master_key",
+      "value": "Enter master password"
+    },
+    {
+      "name": "restore_import_recovery_key",
+      "value": "Import recovery key file"
     }
   ]
 }
