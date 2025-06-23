@@ -36,6 +36,7 @@ struct Index {
   @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  CurrentTokensCount:number = 0;
 
   private appIsInit = false;
   private appIsShow = false;
@@ -98,11 +99,10 @@ struct Index {
       if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
+        this.CurrentTokensCount=tokens.length;
         this.token_loading = false;
         // DEBUG MODE
-        setTimeout(() => {
-          this.restoreByKVCheck();//不使用setTimeout会导致首页加载数据不渲染 目测是华为的bug
-        }, 1000)
+        this.restoreByKVCheck();
         this.appIsInit=true;
         AppPreference.setPreference("app_db_kv_archive_is_running",false)
       });
@@ -229,13 +229,17 @@ struct Index {
   }
 
   restoreByKVCheck():void{
-    tkStore.RestoreByKVCheckAsync().then((n:number)=>{
-      if (this.CurrentTokens.length=0 && n>0) {
-        router.pushUrl({ url: 'pages/RestoreDataPage' });
-      }
-    }).catch((err:BusinessError)=>{
-      hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
-    })
+    //冷启动优化
+    setTimeout(() => {
+      tkStore.RestoreByKVCheckAsync().then((n:number)=>{
+        if (this.CurrentTokens.length == 0 && n>0) {
+          router.pushUrl({ url: 'pages/RestoreDataPage' });
+        }
+      }).catch((err:BusinessError)=>{
+        hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
+      })
+    }, 1000)
+
   }
 
   onPageHide(): void {
