@@ -100,13 +100,9 @@ struct Index {
         this.CurrentTokens = tokens;
         this.token_loading = false;
         // DEBUG MODE
-        tkStore.RestoreByKVCheckAsync().then((n:number)=>{
-          if (this.CurrentTokens.length=0 && n>0) {
-            router.pushUrl({ url: 'pages/RestoreDataPage' });
-          }
-        }).catch((err:BusinessError)=>{
-          hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
-        })
+        setTimeout(() => {
+          this.restoreByKVCheck();
+        }, 1000)
         this.appIsInit=true;
         AppPreference.setPreference("app_db_kv_archive_is_running",false)
       });
@@ -230,6 +226,16 @@ struct Index {
     if (getContext(this).eventHub != undefined) {
       getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
     }
+  }
+
+  restoreByKVCheck():void{
+    tkStore.RestoreByKVCheckAsync().then((n:number)=>{
+      if (this.CurrentTokens.length=0 && n>0) {
+        router.pushUrl({ url: 'pages/RestoreDataPage' });
+      }
+    }).catch((err:BusinessError)=>{
+      hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
+    })
   }
 
   onPageHide(): void {
