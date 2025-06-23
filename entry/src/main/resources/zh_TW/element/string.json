@@ -707,6 +707,10 @@
     {
       "name": "restore_import_recovery_key",
       "value": "匯入恢復金鑰檔案"
+    },
+    {
+      "name": "restore_record_recovery_key",
+      "value": "立即備份恢復金鑰"
     }
   ]
 }

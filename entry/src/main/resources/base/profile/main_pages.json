@@ -8,6 +8,7 @@
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage",
     "pages/RestoreDataPage",
-    "pages/MasterKeyPage"
+    "pages/MasterKeyPage",
+    "pages/RecoveryKeyRecordPage"
   ]
 }

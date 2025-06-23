@@ -22,6 +22,7 @@ struct MasterKeyPage {
   @Local masterKey: string = "";//用户设置的主密码
   @Local masterKeyErr: boolean= false;//用户设置的主密码错误
   @Local is_loaded: boolean = false;
+  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
   TOAST_BOTTOM: number = 135;
   tkStore = TokenStore.getInstance();
 
@@ -52,6 +53,11 @@ struct MasterKeyPage {
           this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
           AppPreference.setPreference('app_use_master_key_set',true)
           this.is_loaded=false;
+          this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+          router.pushUrl({ url: 'pages/RecoveryKeyRecordPage',params: {
+            recoverySecretKey: this.recoverySecretKey,
+            recoverySecretKeyShow:this.recoverySecretKeyShow
+          } });//为了触发密码保险箱保存 必须要触发路由跳转
         })
       }
       else
@@ -64,7 +70,7 @@ struct MasterKeyPage {
     //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
     //  this.getUIContext().getPromptAction().showToast({ message: b?"恢复密钥OK":"恢复密钥Err", bottom: this.TOAST_BOTTOM })
     //})
-    this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+    //this.appCtx?.eventHub.emit('onMasterKeyPageBack');
     router.back();
   }
   exportRecoveryKey(){
@@ -156,7 +162,6 @@ struct MasterKeyPage {
                   })
                 Column(){}.height(20).width('100%').backgroundColor('#00000000')
               }.height(20)
-
               TextInput({ placeholder: $r('app.string.restore_input_master_key') })
                 .opacity(0.6)
                 .type(InputType.NEW_PASSWORD)

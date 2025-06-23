@@ -707,7 +707,10 @@
     {
       "name": "restore_import_recovery_key",
       "value": "Import recovery key file"
+    },
+    {
+      "name": "restore_record_recovery_key",
+      "value": "Backup Recovery Key Now"
     }
-
   ]
 }

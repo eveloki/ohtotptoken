@@ -176,7 +176,7 @@ struct RestoreDataPage {
             Blank(10)
             TextInput({ placeholder: $r('app.string.restore_input_master_key') })
               .opacity(0.6)
-              .type(InputType.NEW_PASSWORD)
+              .type(InputType.Password)
               .placeholderColor(0x182431)
               .width('100%')
               .placeholderFont({ size: 16, weight: FontWeight.Regular })
