@@ -101,7 +101,7 @@ struct Index {
         this.token_loading = false;
         // DEBUG MODE
         setTimeout(() => {
-          this.restoreByKVCheck();
+          this.restoreByKVCheck();//不使用setTimeout会导致首页加载数据不渲染 目测是华为的bug
         }, 1000)
         this.appIsInit=true;
         AppPreference.setPreference("app_db_kv_archive_is_running",false)
