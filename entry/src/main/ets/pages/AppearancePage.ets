@@ -71,9 +71,6 @@ struct AppearancePage {
         .backdropBlur(100)
         .padding({
           top: 10,
-          left: 10,
-          right: 10,
-
         })
         List({ space: 10 }) {
           ListItem()
