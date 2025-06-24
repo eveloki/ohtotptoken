@@ -9,8 +9,9 @@ import { fileIo as fs } from "@kit.CoreFileKit";
 import { asset } from '@kit.AssetStoreKit';
 import { buffer, util } from '@kit.ArkTS';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
-import { decryptFile, encryptFile,encryptStringData,decryptStringData } from "./CryptoUtils";
-import { base32Decode, base32Encode } from './TokenUtils';
+import { decryptFile, encryptFile,encryptStringData,decryptStringData,encryptUint8ArrayData,decryptUint8ArrayData } from "./CryptoUtils";
+import { base32Decode, base32Encode,stringToArray } from './TokenUtils';
+import { faceDetector } from '@kit.CoreVisionKit';
 
 export class KvManager {
   //单版本分布式键值数据库
@@ -18,11 +19,17 @@ export class KvManager {
   private _kvStore: distributedKVStore.SingleKVStore | undefined = undefined;
   private _kvStoreNoE: distributedKVStore.SingleKVStore | undefined = undefined;
 
+  //token加密密钥存储的name
+  private readonly _tokenEncryptionSecretKeyName="tokenData_alias";
+  //token恢复密钥存储的name（主密钥增强场景）
+  private readonly _tokenEncryptionMasterRecoverySecretKeyName="tokenData_alias_recovery";
   private static instance: KvManager;
 
   private constructor() {
 
   }
+
+  //#region 基础部分
 
   public static getInstance(): KvManager {
     if (!KvManager.instance) {
@@ -232,11 +239,14 @@ export class KvManager {
       await this._kvStore.delete(key);
     }
   }
+
+  //#endregion
+
   /**
    * 将数据同步到非加密数据库.
    *
    */
-  async DataSyncToNoEncryptDatabase(): Promise<void> {
+  async DataSyncToNoEncryptDatabase(): Promise<number> {
     if (this._kvStore && this._kvStoreNoE) {
       let secret_key=await this.queryEncryptTokenDataKey();
       if (secret_key!="") {
@@ -246,28 +256,42 @@ export class KvManager {
         if (EncryptData_entries && EncryptData_entries.length>0) {
           let entries: distributedKVStore.Entry[] = [];
           for (let i = 0; i < EncryptData_entries.length; i++) {
+            if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+              continue;
+            }
             let data=EncryptData_entries[i].value.value as string;
-            let dataitem=await encryptStringData(this.stringToArray(data),symKeyBlob);
+            let dataitem=await encryptStringData(data,symKeyBlob);
+            if (dataitem==null) {
+              continue;
+            }
             let entry: distributedKVStore.Entry = {
               key: EncryptData_entries[i].key,
               value: {
-                type: distributedKVStore.ValueType.STRING,
+                type: distributedKVStore.ValueType.BYTE_ARRAY,
                 value: dataitem
               }
             }
             entries.push(entry);
           }
-          this._kvStoreNoE.putBatch(entries, async (err: BusinessError) => {
-            if (err != undefined) {
-              hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
-              return;
-            }
-          });
+          if (entries.length>0)
+          {
+            this._kvStoreNoE.putBatch(entries, async (err: BusinessError) => {
+              if (err != undefined) {
+                hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
+                return;
+              }
+            });
+          }
+          else
+          {
+            return entries.length;
+          }
+
         }
       }
 
     }
-
+    return 0;
   }
   /**
    * 非加密数据库将数据同步到加密数据库（还原场景专用）.
@@ -285,9 +309,12 @@ export class KvManager {
           if (EncryptData_entries && EncryptData_entries.length>0) {
             let entries: distributedKVStore.Entry[] = [];
             for (let i = 0; i < EncryptData_entries.length; i++) {
+              if (EncryptData_entries[i].key==this._tokenEncryptionSecretKeyName||EncryptData_entries[i].key==this._tokenEncryptionMasterRecoverySecretKeyName) {
+                continue;
+              }
               let data=EncryptData_entries[i].value.value as Uint8Array;
               let dataitem=await decryptStringData(data,symKeyBlob);
-              if (dataitem=="") {
+              if (dataitem==null) {
                 continue;//有一个解密失败就放弃当前解密
               }
               let entry: distributedKVStore.Entry = {
@@ -299,13 +326,21 @@ export class KvManager {
               }
               entries.push(entry);
             }
-            this._kvStore.putBatch(entries, async (err: BusinessError) => {
-              if (err != undefined) {
-                hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
-                return;
-              }
-            });
-            return entries.length;
+            if (entries.length>0)
+            {
+              this._kvStore.putBatch(entries, async (err: BusinessError) => {
+                if (err != undefined) {
+                  hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to put Batch.code is ${err.code},message is ${err.message}`);
+                  return ;
+                }
+              });
+              return entries.length;
+            }
+            else
+            {
+              return 0;
+            }
+
           }
 
         }
@@ -325,9 +360,9 @@ export class KvManager {
    * 检查是否有还原数据可用 返回可用条数（还原场景专用）.
    *
    */
-  async DataSyncToEncryptDatabaseCheckNumber(): Promise<number>{
+  async DataSyncToEncryptDatabaseCheckNumber(token_prefix:string): Promise<number>{
     const query = new distributedKVStore.Query();
-    query.prefixKey("^");
+    query.prefixKey(token_prefix);
     let EncryptData_entries_count =await this._kvStoreNoE?.getResultSize(query);
     return EncryptData_entries_count??0;
   }
@@ -337,7 +372,7 @@ export class KvManager {
    */
   async queryEncryptTokenDataKey(): Promise<string> {
     let query: asset.AssetMap = new Map();
-    query.set(asset.Tag.ALIAS, this.stringToArray('tokenData_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    query.set(asset.Tag.ALIAS, stringToArray(this._tokenEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
     query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
     try {
       let  res =await asset.query(query);
@@ -359,11 +394,11 @@ export class KvManager {
     }
     else //否则就动态生成一个AESKEy
     {
-      let tokenData_alias=await this.getString("tokenData_alias");
+      let tokenData_alias=await this.getString(this._tokenEncryptionSecretKeyName);
       if (tokenData_alias!=null) { //如果从未加密数据库里面找到了之前存的密钥
         let attr: asset.AssetMap = new Map();
         attr.set(asset.Tag.SECRET, base32Decode(tokenData_alias));
-        attr.set(asset.Tag.ALIAS,this.stringToArray('tokenData_alias'));
+        attr.set(asset.Tag.ALIAS,stringToArray(this._tokenEncryptionSecretKeyName));
         attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
         await asset.add(attr);
         return tokenData_alias??"";
@@ -377,36 +412,121 @@ export class KvManager {
         let key = await  promiseSymKey;
         // 获取对称密钥的二进制数据，输出128位密钥。长度为16字节。
         let encodedKey = key.getEncoded();
-        let attr: asset.AssetMap = new Map();
-        attr.set(asset.Tag.SECRET, encodedKey.data);
-        attr.set(asset.Tag.ALIAS,this.stringToArray('tokenData_alias'));
-        attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-        await asset.add(attr);
+        await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,encodedKey.data);
         let secretStr: string = base32Encode(encodedKey.data);
-        this.setString("tokenData_alias",secretStr)
+        this.setString(this._tokenEncryptionSecretKeyName,secretStr)
         return secretStr;
       }
 
     }
     return "";
   }
+
+  //#region 主密码相关
+
   /**
-   * 字符串转字符数组
+   * 根据用户生成的密钥生成AESKEy存储到ASK中 并且生成一个恢复密钥.
    *
    */
-  stringToArray(input: string): Uint8Array {
-    //let textEncoder = new util.TextEncoder();
-    //return textEncoder.encodeInto(str);
-    return new Uint8Array(buffer.from(input, 'utf-8').buffer);
-    //return base32Decode(input);
+  async EncryptionSecretKeyAndCreateRecoverySecretKey(user_key:string): Promise<string>
+  {
+    let spec: cryptoFramework.PBKDF2Spec = {
+      algName: 'PBKDF2',
+      password: user_key,
+      salt: new Uint8Array(16),
+      iterations: 10000,
+      keySize: 16
+    };
+    let kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
+    let symKeyBlob = kdf.generateSecretSync(spec);
+
+    let symKeyBlobStr: string= base32Encode(symKeyBlob.data);  //用户主密码派生的密钥
+    await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,symKeyBlob.data);//向ASK存储主密钥
+
+    // 创建SymKeyGenerator实例。
+    let symKeyGenerator = cryptoFramework.createSymKeyGenerator('AES128');
+    // 使用密钥生成器随机生成对称密钥。
+    let promiseSymKey = symKeyGenerator.generateSymKey();
+    let key = await  promiseSymKey;
+    // 获取对称密钥的二进制数据，输出128位密钥。长度为16字节。
+    let recoveryKey = key.getEncoded();
+    let recoveryKeyStr: string= base32Encode(recoveryKey.data);  //用来加密主密钥的随机密钥 恢复密钥 给用户显示出来
+    let encodedKey: cryptoFramework.DataBlob = { data: recoveryKey.data};
+    let symKeyBlobEncryption =await encryptUint8ArrayData(symKeyBlob.data,encodedKey)//将主密钥加密
+    let symKeyBlobEncryptionStr= base32Encode(symKeyBlobEncryption);
+    this.setString(this._tokenEncryptionMasterRecoverySecretKeyName,symKeyBlobEncryptionStr);//存储恢复密钥数据
+
+    return recoveryKeyStr;//反馈恢复密钥
+
   }
+
   /**
-   * 字符数组转字符串.
+   * 校验恢复密钥并恢复
    *
    */
-  arrayToString(array: Uint8Array): string {
-    return base32Encode(array);
+  async CheckRecoverySecretKey(recoveryKeyStr:string): Promise<boolean>
+  {
+    try {
+      let recoveryKeyBlob : Uint8Array= base32Decode(recoveryKeyStr);  //尝试解密用户输入的密钥
+      let encodedKeyStrBlob: cryptoFramework.DataBlob = { data: recoveryKeyBlob};//用户恢复密钥生成的AESKEy
+      let RecoverySecretKeyStr= this.getString(this._tokenEncryptionMasterRecoverySecretKeyName);//获取存储的恢复密钥数据
+      if (RecoverySecretKeyStr!=null) {
+        let RecoverySecretKeyBlob=base32Decode(recoveryKeyStr);  //获取存储的恢复密钥blob
+        let symKeyBlobEncryption =await decryptUint8ArrayData(RecoverySecretKeyBlob,encodedKeyStrBlob)//将主密钥加密
+        if (symKeyBlobEncryption!=null) {//解密成功
+          await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,symKeyBlobEncryption);//向ASK存储主密钥
+          return true;
+        }
+        else
+        {
+          return false;
+        }
+      }
+
+    }
+    catch (error)
+    {
+      let err = error as BusinessError;
+      hilog.error(err.code,"CheckRecoverySecretKey",`Failed to CheckRecoverySecretKey. Code is ${err.code}, message is ${err.message}`);
+    }
+    return false;
+
+
+
   }
+
+
+  /**
+   * 新增或更新ASK.
+   *
+   */
+  async UpdateOrAddAssetStoreKit(Alias:string,Key:Uint8Array): Promise<void>
+  {
+    let query: asset.AssetMap = new Map();
+    query.set(asset.Tag.ALIAS, stringToArray(Alias)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+    query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
+    try {
+      let  res =await asset.query(query);
+      if (res.length>0)//查得到就说明已经有了 这个时候要走更新密钥
+      {
+        let updateQuery: asset.AssetMap = new Map();
+        updateQuery.set(asset.Tag.ALIAS, stringToArray(Alias));
+        let attrsToUpdate: asset.AssetMap = new Map();
+        attrsToUpdate.set(asset.Tag.SECRET,Key);
+        await asset.update(updateQuery, attrsToUpdate);
+      }
+    } catch (error) {
+      let err = error as BusinessError;
+      hilog.error(err.code,"UpdateOrAddAssetStoreKit",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
+    }
+    //这个时候要走新增密钥
+    let attr: asset.AssetMap = new Map();
+    attr.set(asset.Tag.SECRET, Key);
+    attr.set(asset.Tag.ALIAS,stringToArray(this._tokenEncryptionSecretKeyName));
+    attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+    await asset.add(attr);
+  }
+  //#endregion
   //手动同步
   async DataSync(): Promise<void> {
     if (AppPreference.getPreference('app_db_rds_sync_enable')) {

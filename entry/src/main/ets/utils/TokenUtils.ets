@@ -117,6 +117,13 @@ export function stringToIntArray(input: string): Uint8Array {
   // return Uint8Array.from(input, c => c.charCodeAt(0))
   return new Uint8Array(buffer.from(input).buffer)
 }
+/**
+ * 字符串转字符数组
+ *
+ */
+export function stringToArray(input: string): Uint8Array {
+  return new Uint8Array(buffer.from(input, 'utf-8').buffer);
+}
 
 export function base32Encode(
   input: Uint8Array,
