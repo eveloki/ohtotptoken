@@ -7,6 +7,8 @@
     "pages/AppLockPage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage",
-    "pages/RestoreDataPage"
+    "pages/RestoreDataPage",
+    "pages/MasterKeyPage",
+    "pages/RecoveryKeyRecordPage"
   ]
 }
