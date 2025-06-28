@@ -8,8 +8,7 @@ export struct SubItemButton {
   @Param descriptionColor: ResourceColor = $r('sys.color.ohos_id_color_text_secondary');
 
   build() {
-    Column()
-    {
+    Column() {
       Button({ type: ButtonType.Normal }) {
         Row() {
           SymbolGlyph(this.symbol)

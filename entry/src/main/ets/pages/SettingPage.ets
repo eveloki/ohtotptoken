@@ -432,7 +432,7 @@ export struct SettingPage {
                   isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
-                    animateTo({ curve: curves.springMotion() }, () => {
+                    animateToImmediately({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
                     AppPreference.setPreference('app_debug_mode_on', IsOn);
@@ -573,7 +573,7 @@ export struct SettingPage {
                 this.debug_mode_counter = 0;
               }, 2000);
               if (this.debug_mode_counter > 7) {
-                animateTo({ curve: curves.springMotion() }, () => {
+                animateToImmediately({ curve: curves.springMotion() }, () => {
                   this.debug_mode_is_on = true;
                   AppPreference.setPreference('app_debug_mode_on', true);
                   promptAction.showToast({ message: "DEBUG MODE ON" });

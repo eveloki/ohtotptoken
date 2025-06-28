@@ -19,20 +19,21 @@ export class TokenPreference {
   @Trace app_appearance_logo_background = false;
   @Trace app_appearance_logo_background_size = 45;
   @Trace app_appearance_logo_background_radius = 5;
-  @Trace app_appearance_logo_background_color = '#ffececec';
+  @Trace app_appearance_logo_background_color = 0xffececec;
   @Trace app_appearance_logo_dark_filter = false;
-  @Trace app_appearance_logo_dark_filter_color = "#FFD6D6D6";
-  @Trace app_appearance_token_color = "#FF012EE0";
-  @Trace app_appearance_token_counter_light_color_start = "#FF86c1ff";
-  @Trace app_appearance_token_counter_light_color_end = "#FF254ff7";
-  @Trace app_appearance_token_counter_dark_color_start = "#FF86c1ff";
-  @Trace app_appearance_token_counter_dark_color_end = "#FF254ff7";
+  @Trace app_appearance_logo_dark_filter_color = 0xFFD6D6D6;
+  @Trace app_appearance_token_color = 0xFF638FF6;
+  @Trace app_appearance_token_next_color = 0xFFD71616;
+  @Trace app_appearance_token_counter_light_color_start = 0xFF86c1ff;
+  @Trace app_appearance_token_counter_light_color_end = 0xFF254ff7;
+  @Trace app_appearance_token_counter_dark_color_start = 0xFF86c1ff;
+  @Trace app_appearance_token_counter_dark_color_end = 0xFF254ff7;
   @Trace app_appearance_token_counter_next_color_enable = false;
   @Trace app_appearance_token_counter_next_margin = 5;
-  @Trace app_appearance_token_counter_next_light_color_start = "#FFF18585";
-  @Trace app_appearance_token_counter_next_light_color_end = "#FFD71616";
-  @Trace app_appearance_token_counter_next_dark_color_start = "#FFF18585";
-  @Trace app_appearance_token_counter_next_dark_color_end = "#FFD71616";
+  @Trace app_appearance_token_counter_next_light_color_start = 0xFFF18585;
+  @Trace app_appearance_token_counter_next_light_color_end = 0xFFD71616;
+  @Trace app_appearance_token_counter_next_dark_color_start = 0xFFF18585;
+  @Trace app_appearance_token_counter_next_dark_color_end = 0xFFD71616;
   @Trace app_appearance_token_font_weight = 400;
   @Trace app_appearance_token_font_size = 30;
   @Trace app_appearance_issuer_font_size = 18;
@@ -91,20 +92,21 @@ export class AppPreference {
     ['app_appearance_logo_size', 40],
     ['app_appearance_logo_background_size', 45],
     ['app_appearance_logo_background_radius', 5],
-    ['app_appearance_logo_background_color', '#ffececec'],
+    ['app_appearance_logo_background_color', 0xffececec],
     ['app_appearance_logo_dark_filter', false],
-    ['app_appearance_logo_dark_filter_color', "#FFD6D6D6"],
-    ['app_appearance_token_color', "#FF012EE0"],
-    ['app_appearance_token_counter_light_color_start', "#FF86c1ff"],
-    ['app_appearance_token_counter_light_color_end', "#FF254ff7"],
-    ['app_appearance_token_counter_dark_color_start', "#FF86c1ff"],
-    ['app_appearance_token_counter_dark_color_end', "#FF254ff7"],
+    ['app_appearance_logo_dark_filter_color', 0xFFD6D6D6],
+    ['app_appearance_token_color', 0xFF638FF6],
+    ['app_appearance_token_next_color', 0xFFD71616],
+    ['app_appearance_token_counter_light_color_start', 0xFF86c1ff],
+    ['app_appearance_token_counter_light_color_end', 0xFF254ff7],
+    ['app_appearance_token_counter_dark_color_start', 0xFF86c1ff],
+    ['app_appearance_token_counter_dark_color_end', 0xFF254ff7],
     ['app_appearance_token_counter_next_color_enable', false],
     ['app_appearance_token_counter_next_margin', 5],
-    ['app_appearance_token_counter_next_light_color_start', "#FFF18585"],
-    ['app_appearance_token_counter_next_light_color_end', "#FFD71616"],
-    ['app_appearance_token_counter_next_dark_color_start', "#FFF18585"],
-    ['app_appearance_token_counter_next_dark_color_end', "#FFD71616"],
+    ['app_appearance_token_counter_next_light_color_start', 0xFFF18585],
+    ['app_appearance_token_counter_next_light_color_end', 0xFFD71616],
+    ['app_appearance_token_counter_next_dark_color_start', 0xFFF18585],
+    ['app_appearance_token_counter_next_dark_color_end', 0xFFD71616],
     ['app_appearance_token_font_weight', 400],
     ['app_appearance_token_font_size', 30],
     ['app_appearance_issuer_font_size', 18],
@@ -151,20 +153,21 @@ export class AppPreference {
     token_appearance.app_appearance_logo_size = AppPreference.getPreference('app_appearance_logo_size') as number;
     token_appearance.app_appearance_logo_background_size = AppPreference.getPreference('app_appearance_logo_background_size') as number;
     token_appearance.app_appearance_logo_background_radius = AppPreference.getPreference('app_appearance_logo_background_radius') as number;
-    token_appearance.app_appearance_logo_background_color = AppPreference.getPreference('app_appearance_logo_background_color') as string;
+    token_appearance.app_appearance_logo_background_color = AppPreference.getPreference('app_appearance_logo_background_color') as number;
     token_appearance.app_appearance_logo_dark_filter = AppPreference.getPreference('app_appearance_logo_dark_filter') as boolean;
-    token_appearance.app_appearance_logo_dark_filter_color = AppPreference.getPreference('app_appearance_logo_dark_filter_color') as string;
-    token_appearance.app_appearance_token_color = AppPreference.getPreference('app_appearance_token_color') as string;
-    token_appearance.app_appearance_token_counter_light_color_start = AppPreference.getPreference('app_appearance_token_counter_light_color_start') as string;
-    token_appearance.app_appearance_token_counter_light_color_end = AppPreference.getPreference('app_appearance_token_counter_light_color_end') as string;
-    token_appearance.app_appearance_token_counter_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_dark_color_start') as string;
-    token_appearance.app_appearance_token_counter_dark_color_end = AppPreference.getPreference('app_appearance_token_counter_dark_color_end') as string;
+    token_appearance.app_appearance_logo_dark_filter_color = AppPreference.getPreference('app_appearance_logo_dark_filter_color') as number;
+    token_appearance.app_appearance_token_color = AppPreference.getPreference('app_appearance_token_color') as number;
+    token_appearance.app_appearance_token_next_color = AppPreference.getPreference('app_appearance_token_next_color') as number;
+    token_appearance.app_appearance_token_counter_light_color_start = AppPreference.getPreference('app_appearance_token_counter_light_color_start') as number;
+    token_appearance.app_appearance_token_counter_light_color_end = AppPreference.getPreference('app_appearance_token_counter_light_color_end') as number;
+    token_appearance.app_appearance_token_counter_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_dark_color_start') as number;
+    token_appearance.app_appearance_token_counter_dark_color_end = AppPreference.getPreference('app_appearance_token_counter_dark_color_end') as number;
     token_appearance.app_appearance_token_counter_next_color_enable = AppPreference.getPreference('app_appearance_token_counter_next_color_enable') as boolean;
     token_appearance.app_appearance_token_counter_next_margin = AppPreference.getPreference('app_appearance_token_counter_next_margin') as number;
-    token_appearance.app_appearance_token_counter_next_light_color_start = AppPreference.getPreference('app_appearance_token_counter_next_light_color_start') as string;
-    token_appearance.app_appearance_token_counter_next_light_color_end = AppPreference.getPreference('app_appearance_token_counter_next_light_color_end') as string;
-    token_appearance.app_appearance_token_counter_next_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_start') as string;
-    token_appearance.app_appearance_token_counter_next_dark_color_end = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_end') as string;
+    token_appearance.app_appearance_token_counter_next_light_color_start = AppPreference.getPreference('app_appearance_token_counter_next_light_color_start') as number;
+    token_appearance.app_appearance_token_counter_next_light_color_end = AppPreference.getPreference('app_appearance_token_counter_next_light_color_end') as number;
+    token_appearance.app_appearance_token_counter_next_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_start') as number;
+    token_appearance.app_appearance_token_counter_next_dark_color_end = AppPreference.getPreference('app_appearance_token_counter_next_dark_color_end') as number;
     token_appearance.app_appearance_token_font_weight = AppPreference.getPreference('app_appearance_token_font_weight') as FontWeight;
     token_appearance.app_appearance_token_font_size = AppPreference.getPreference('app_appearance_token_font_size') as number;
     token_appearance.app_appearance_issuer_font_size = AppPreference.getPreference('app_appearance_issuer_font_size') as number;

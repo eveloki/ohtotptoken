@@ -711,6 +711,18 @@
     {
       "name": "restore_record_recovery_key",
       "value": "Backup Recovery Key Now"
+    },
+    {
+      "name": "custom_color_logo_dark_filter_color",
+      "value": "Filter Color"
+    },
+    {
+      "name": "custom_color_token_color",
+      "value": "Token Color"
+    },
+    {
+      "name": "custom_color_token_next_color",
+      "value": "Expiring Token Color"
     }
   ]
 }

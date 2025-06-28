@@ -574,11 +574,11 @@
     },
     {
       "name": "custom_color_palette",
-      "value": "Color Palette"
+      "value": "顏色調色盤"
     },
     {
       "name": "custom_color_palette_des",
-      "value": "Control the color scheme of the token display."
+      "value": "控制令牌顯示的顏色方案。"
     },
     {
       "name": "setting_background_blur",
@@ -711,6 +711,18 @@
     {
       "name": "restore_record_recovery_key",
       "value": "立即備份恢復金鑰"
+    },
+    {
+      "name": "custom_color_logo_dark_filter_color",
+      "value": "濾鏡顏色"
+    },
+    {
+      "name": "custom_color_token_color",
+      "value": "令牌顏色"
+    },
+    {
+      "name": "custom_color_token_next_color",
+      "value": "即將失效的令牌顏色"
     }
   ]
 }

@@ -574,11 +574,11 @@
     },
     {
       "name": "custom_color_palette",
-      "value": "Color Palette"
+      "value": "颜色调色板"
     },
     {
       "name": "custom_color_palette_des",
-      "value": "Control the color scheme of the token display."
+      "value": "控制令牌界面的配色方案。"
     },
     {
       "name": "setting_background_blur",
@@ -711,6 +711,18 @@
     {
       "name": "restore_record_recovery_key",
       "value": "立即备份恢复密钥"
+    },
+    {
+      "name": "custom_color_logo_dark_filter_color",
+      "value": "图标滤镜颜色"
+    },
+    {
+      "name": "custom_color_token_color",
+      "value": "令牌颜色"
+    },
+    {
+      "name": "custom_color_token_next_color",
+      "value": "即将失效的令牌颜色"
     }
   ]
 }

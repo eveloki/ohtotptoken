@@ -57,7 +57,7 @@ export struct SubItemIconManager {
         }
         .layoutWeight(1)
         .onClick(() => {
-          animateTo({ duration: 200, curve: Curve.Sharp }, () => {
+          animateToImmediately({ duration: 200, curve: Curve.Sharp }, () => {
             this.collapsed = !this.collapsed;
           })
         })

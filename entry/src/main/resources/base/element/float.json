@@ -1,6 +1,10 @@
 {
   "float": [
     {
+      "name": "common_component_height",
+      "value": "48vp"
+    },
+    {
       "name": "xxl_padding_margin",
       "value": "24vp"
     },
@@ -287,6 +291,18 @@
     {
       "name": "bottom_row_padding",
       "value": "12vp"
+    },
+    {
+      "name": "slider_track_thick_large",
+      "value": "24vp"
+    },
+    {
+      "name": "slider_block_border_size",
+      "value": "2vp"
+    },
+    {
+      "name": "slider_block_size_large",
+      "value": "20vp"
     },
     {
       "name": "border_width",

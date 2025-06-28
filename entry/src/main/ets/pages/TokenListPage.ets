@@ -222,7 +222,7 @@ export struct TokenListPage {
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .onTouch((event?: TouchEvent) => {
-          animateTo({ curve: curves.springMotion() }, () => {
+          animateToImmediately({ curve: curves.springMotion() }, () => {
             if (event?.type === TouchType.Down) {
               this.token_list_touch_down_pos = event.touches[0].y;
             }

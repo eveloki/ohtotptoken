@@ -69,7 +69,7 @@ export struct SubItemSlider {
         }
         .layoutWeight(1)
         .onClick(() => {
-          animateTo({ duration: 200, curve: Curve.Sharp }, () => {
+          animateToImmediately({ duration: 200, curve: Curve.Sharp }, () => {
             this.collapsed = !this.collapsed;
           })
         })
@@ -90,6 +90,7 @@ export struct SubItemSlider {
               step: item.step
             })
               .width('60%')
+              //.enableHapticFeedback(true)
               .showTips(true, this.tips_value[index].toFixed())
               .sliderInteractionMode(SliderInteraction.SLIDE_AND_CLICK_UP)
               .onChange((value, mode) => {

@@ -71,9 +71,6 @@ struct AppearancePage {
         .backdropBlur(100)
         .padding({
           top: 10,
-          left: 10,
-          right: 10,
-
         })
         List({ space: 10 }) {
           ListItem()
@@ -292,27 +289,59 @@ struct AppearancePage {
             }
           }
           .padding({ left: 10, right: 10 })
-          if (AppPreference.getPreference('app_debug_mode_on')) {
-            ListItem() {
-              SettingItem({ title: $r('app.string.custom_color') }) {
-                SubItemColor({
-                  icon: $r('sys.symbol.paintpalette'),
-                  title: $r('app.string.custom_color_palette'),
-                  description: $r('app.string.custom_color_palette_des'),
-                  colors: [
-                    {
-                      name: $r('app.string.custom_color_logo_background'),
-                      color: this.token_preference.app_appearance_logo_background_color,
-                    }
-                  ],
-                  onChange: () => {
 
+          ListItem() {
+            SettingItem({ title: $r('app.string.custom_color') }) {
+              SubItemColor({
+                icon: $r('sys.symbol.paintpalette'),
+                title: $r('app.string.custom_color_palette'),
+                description: $r('app.string.custom_color_palette_des'),
+                colors: [
+                  {
+                    name: $r('app.string.custom_color_logo_background'),
+                    color: this.token_preference.app_appearance_logo_background_color,
+                  },
+                  {
+                    name: $r('app.string.custom_color_logo_dark_filter_color'),
+                    color: this.token_preference.app_appearance_logo_dark_filter_color,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_color'),
+                    color: this.token_preference.app_appearance_token_color,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_next_color'),
+                    color: this.token_preference.app_appearance_token_next_color,
+                  },
+                ],
+                onChange: (index, value) => {
+                  switch (index) {
+                    case 0: {
+                      AppPreference.setPreference('app_appearance_logo_background_color', value);
+                      this.token_preference.app_appearance_logo_background_color = value;
+                      break;
+                    }
+                    case 1: {
+                      AppPreference.setPreference('app_appearance_logo_dark_filter_color', value);
+                      this.token_preference.app_appearance_logo_dark_filter_color = value;
+                      break;
+                    }
+                    case 2: {
+                      AppPreference.setPreference('app_appearance_token_color', value);
+                      this.token_preference.app_appearance_token_color = value;
+                      break;
+                    }
+                    case 3: {
+                      AppPreference.setPreference('app_appearance_token_next_color', value);
+                      this.token_preference.app_appearance_token_next_color = value;
+                      break;
+                    }
                   }
-                })
-              }
+                }
+              })
             }
-            .padding({ left: 10, right: 10 })
           }
+          .padding({ left: 10, right: 10 })
 
           ListItem() {
             SettingItem({ title: $r('app.string.custom_appearance_cmd') }) {
