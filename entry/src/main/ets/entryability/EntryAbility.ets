@@ -1,4 +1,5 @@
 import {
+  common,
   AbilityConstant,
   UIAbility, Want, Configuration,
   ApplicationStateChangeCallback,
@@ -20,8 +21,10 @@ export class AppWindowInfo {
   @Trace WidthBreakpoint: WidthBreakpoint = 0;
   @Trace HeightBreakpoint: HeightBreakpoint = 0;
   @Trace Size: window.Size = { width: 0, height: 0};
-  @Trace WindowClass: window.Window | undefined = undefined;
   @Trace ColorMode: ConfigurationConstant.ColorMode = -1;
+  @Trace Context?: common.UIAbilityContext;
+  @Trace uiContext?: UIContext;
+  @Trace WindowClass?: window.Window;
 }
 
 export default class EntryAbility extends UIAbility {
@@ -70,7 +73,10 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
     let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
+
     win.ColorMode = this.context.config.colorMode ?? -1;
+    win.Context = this.context;
+
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
       windowStage.loadContent('pages/AppLockPage', (err) => {
@@ -82,6 +88,7 @@ export default class EntryAbility extends UIAbility {
         let windowClass: window.Window = windowStage.getMainWindowSync();
         this.uiContext = windowClass.getUIContext();
 
+        win.uiContext = this.uiContext;
         win.WindowClass = windowClass;
 
         windowClass.setWindowLayoutFullScreen(true)

@@ -1,3 +1,5 @@
+import { AppWindowInfo } from "../entryability/EntryAbility";
+import { AppStorageV2 } from "@kit.ArkUI";
 
 export class SliderItem {
   name: ResourceStr = '';
@@ -19,7 +21,7 @@ export struct SubItemSlider {
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = 'aaa';
-
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local collapsed: boolean = true;
 
   @Local slider_values: number[] = this.items.map((item) => item.default);
@@ -69,7 +71,7 @@ export struct SubItemSlider {
         }
         .layoutWeight(1)
         .onClick(() => {
-          animateToImmediately({ duration: 200, curve: Curve.Sharp }, () => {
+          this.window.uiContext?.animateTo({ duration: 200, curve: Curve.Sharp }, () => {
             this.collapsed = !this.collapsed;
           })
         })

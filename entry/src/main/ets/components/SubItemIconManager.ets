@@ -3,9 +3,10 @@ import { fileIo as fs } from '@kit.CoreFileKit';
 import { showSelectFilePicker } from '../utils/FileUtils';
 import { AegisIconPack, TokenIconPacks } from '../utils/TokenUtils';
 import { BusinessError, zlib } from '@kit.BasicServicesKit';
-import { promptAction } from '@kit.ArkUI';
+import { AppStorageV2, promptAction } from '@kit.ArkUI';
 import { SubItemDivider } from './SubItemDivider';
 import { AppPreference } from '../utils/AppPreference';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Preview
 @ComponentV2
@@ -13,9 +14,9 @@ export struct SubItemIconManager {
   @Local collapsed: boolean = true;
   @Local installed_icon_pack: AegisIconPack[] = TokenIconPacks.aegis_icon_packs;
   @Local selected_icon_pack: number = TokenIconPacks.selected_icon_pack;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
-  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
+  private icon_pack_dir = this.window.Context?.filesDir + "/icon_packs";
 
   build() {
     Column() {
@@ -57,7 +58,7 @@ export struct SubItemIconManager {
         }
         .layoutWeight(1)
         .onClick(() => {
-          animateToImmediately({ duration: 200, curve: Curve.Sharp }, () => {
+          this.window.uiContext?.animateTo({ duration: 200, curve: Curve.Sharp }, () => {
             this.collapsed = !this.collapsed;
           })
         })
@@ -101,7 +102,7 @@ export struct SubItemIconManager {
                       TokenIconPacks.selected_icon_pack = 0;
                       this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
                       AppPreference.setPreference('app_appearance_icon_pack_selected', 0);
-                      this.appCtx.eventHub.emit('onIconPackChanged');
+                      this.window.Context?.eventHub.emit('onIconPackChanged');
                     }
                   })
                 Column() {
@@ -133,7 +134,7 @@ export struct SubItemIconManager {
                         TokenIconPacks.selected_icon_pack = index + 1;
                         this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
                         AppPreference.setPreference('app_appearance_icon_pack_selected', index + 1);
-                        this.appCtx.eventHub.emit('onIconPackChanged');
+                        this.window.Context?.eventHub.emit('onIconPackChanged');
                       }
                     })
                   Column() {
@@ -212,7 +213,7 @@ export struct SubItemIconManager {
                       zlib.decompressFile(fd.path, out_path).then(() => {
                         TokenIconPacks.addAegisIconPack(out_path).then(() => {
                           this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
-                          this.appCtx.eventHub.emit('onIconPackChanged');
+                          this.window.Context?.eventHub.emit('onIconPackChanged');
                           fs.close(fd.fd);
                         });
                       }).catch((reason: BusinessError) => {

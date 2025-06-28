@@ -11,6 +11,7 @@ import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { url } from "@kit.ArkTS";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
+import { AppWindowInfo } from "../entryability/EntryAbility";
 
 let tkStore = TokenStore.getInstance();
 
@@ -26,6 +27,7 @@ export struct TokenListPage {
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   @Local token_copy_guide_popup: boolean = false;
 
@@ -222,7 +224,7 @@ export struct TokenListPage {
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .onTouch((event?: TouchEvent) => {
-          animateToImmediately({ curve: curves.springMotion() }, () => {
+          this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
             if (event?.type === TouchType.Down) {
               this.token_list_touch_down_pos = event.touches[0].y;
             }

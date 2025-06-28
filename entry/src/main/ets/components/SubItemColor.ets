@@ -1,5 +1,7 @@
 import { ColorSelectDialog } from "../dialogs/ColorSelectDialog";
+import { AppWindowInfo } from "../entryability/EntryAbility";
 import { colorHex } from "../utils/ColorUtils";
+import { AppStorageV2 } from "@kit.ArkUI";
 
 export class ColorItem {
   name: ResourceStr = '';
@@ -15,7 +17,7 @@ export struct SubItemColor {
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = '';
-
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local collapsed: boolean = true;
 
   private dialog_color_picker?: CustomDialogController;
@@ -62,7 +64,7 @@ export struct SubItemColor {
         }
         .layoutWeight(1)
         .onClick(() => {
-          animateToImmediately({ duration: 200, curve: Curve.Sharp }, () => {
+          this.window.uiContext?.animateTo({ duration: 200, curve: Curve.Sharp }, () => {
             this.collapsed = !this.collapsed;
           })
         })

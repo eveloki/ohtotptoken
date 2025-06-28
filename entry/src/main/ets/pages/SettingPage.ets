@@ -18,6 +18,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../components/SubItemIconManager';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Preview
 @ComponentV2
@@ -36,9 +37,8 @@ export struct SettingPage {
   @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
 
   @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
-
-
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
@@ -326,7 +326,7 @@ export struct SettingPage {
                 isOn: AppPreference.getPreference('app_use_master_key') as boolean,
                 description: $r('app.string.restore_master_key_msg'),
                 onChange: (IsOn: boolean) => {
-                  animateToImmediately({ curve: curves.springMotion() }, () => {
+                  this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                     this.is_master_key_enable = IsOn;
                   })
                   AppPreference.setPreference('app_use_master_key', IsOn);
@@ -435,7 +435,7 @@ export struct SettingPage {
                   isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
-                    animateToImmediately({ curve: curves.springMotion() }, () => {
+                    this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
                     AppPreference.setPreference('app_debug_mode_on', IsOn);
@@ -576,7 +576,7 @@ export struct SettingPage {
                 this.debug_mode_counter = 0;
               }, 2000);
               if (this.debug_mode_counter > 7) {
-                animateToImmediately({ curve: curves.springMotion() }, () => {
+                this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                   this.debug_mode_is_on = true;
                   AppPreference.setPreference('app_debug_mode_on', true);
                   promptAction.showToast({ message: "DEBUG MODE ON" });
