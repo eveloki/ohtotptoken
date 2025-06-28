@@ -85,6 +85,7 @@ struct RecoveryKeyRecordPage {
                 }
               })
           }
+
           Column() {
             Text($r('app.string.restore_recovery_key'))
               .fontSize(28)
@@ -109,7 +110,7 @@ struct RecoveryKeyRecordPage {
             .id('publish')
             .width('100%')
             .height(40)
-            .margin({ bottom:  24 })
+            .margin({ bottom: 24 })
             .backgroundColor($r('app.color.button_blue'))
             .onClick(throttle((event) => {
               this.confirmRecoveryKey();
@@ -133,13 +134,13 @@ struct RecoveryKeyRecordPage {
           }
           .padding({ left: 24, right: 24 })
           .align(Alignment.End)
+        }
+        .width('100%')
+        .height('100%')
+        .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
       }
-      .width('100%')
-      .height('100%')
-      .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
     }
-    }
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
   }
 
   loadAnimation() {

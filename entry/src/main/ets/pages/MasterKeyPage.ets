@@ -261,11 +261,10 @@ struct MasterKeyPage {
         }
         .width('100%')
         .height('100%')
+        .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
         .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
       }
-
     }
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
   }
 
   loadAnimation() {
