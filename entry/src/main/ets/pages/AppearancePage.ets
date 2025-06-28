@@ -352,8 +352,6 @@ struct AppearancePage {
                 .onClick(() => {
                   AppPreference.resetAppearanceToDefault();
                 })
-
-              SubItemDivider()
             }
           }
           .padding({ left: 10, right: 10 })

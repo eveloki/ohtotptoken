@@ -20,6 +20,8 @@ export class AppWindowInfo {
   @Trace WidthBreakpoint: WidthBreakpoint = 0;
   @Trace HeightBreakpoint: HeightBreakpoint = 0;
   @Trace Size: window.Size = { width: 0, height: 0};
+  @Trace WindowClass: window.Window | undefined = undefined;
+  @Trace ColorMode: ConfigurationConstant.ColorMode = -1;
 }
 
 export default class EntryAbility extends UIAbility {
@@ -35,7 +37,6 @@ export default class EntryAbility extends UIAbility {
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate("appContext", this.context);
-    AppStorage.setOrCreate('currentColorMode', this.context.config.colorMode);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
 
     //监听前后台变化
@@ -69,6 +70,7 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
     let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
+    win.ColorMode = this.context.config.colorMode ?? -1;
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
       windowStage.loadContent('pages/AppLockPage', (err) => {
@@ -80,7 +82,7 @@ export default class EntryAbility extends UIAbility {
         let windowClass: window.Window = windowStage.getMainWindowSync();
         this.uiContext = windowClass.getUIContext();
 
-        AppStorage.setOrCreate('windowClass', windowClass);
+        win.WindowClass = windowClass;
 
         windowClass.setWindowLayoutFullScreen(true)
 
@@ -116,8 +118,8 @@ export default class EntryAbility extends UIAbility {
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {
-    AppStorage.setOrCreate('currentColorMode', newConfig.colorMode);
-    hilog.info(0x0000, 'testTag', 'the newConfig.colorMode is %{public}s', JSON.stringify(AppStorage.get('currentColorMode')) ?? '');
+    let window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+    window.ColorMode = newConfig.colorMode ?? -1;
   }
   onWindowStageDestroy(): void {
     // Main window is destroyed, release UI related resources

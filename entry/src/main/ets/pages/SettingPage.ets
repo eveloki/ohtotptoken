@@ -326,21 +326,24 @@ export struct SettingPage {
                 isOn: AppPreference.getPreference('app_use_master_key') as boolean,
                 description: $r('app.string.restore_master_key_msg'),
                 onChange: (IsOn: boolean) => {
-                  this.is_master_key_enable=IsOn;
+                  animateToImmediately({ curve: curves.springMotion() }, () => {
+                    this.is_master_key_enable = IsOn;
+                  })
                   AppPreference.setPreference('app_use_master_key', IsOn);
                 }
               })
-              SubItemButton({
-                symbol: $r('sys.symbol.key_shield'),
-                text: $r('app.string.restore_master_key_set'),
-                description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
-                descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
-              })//条件渲染有第一次不生效的bug（虚假机下） 很奇怪
-                .visibility(this.is_master_key_enable ? Visibility.Visible : Visibility.None)// 使用显隐控制，启动时即使组件处于隐藏状态，也会创建
-                .onClick(throttle((event) => {
-                  //this.is_master_key_set=!this.is_master_key_set;
-                  router.pushUrl({ url: 'pages/MasterKeyPage' });
-                }, 1000))
+              if (this.is_master_key_enable) {
+                SubItemDivider()
+                SubItemButton({
+                  symbol: $r('sys.symbol.key_shield'),
+                  text: $r('app.string.restore_master_key_set'),
+                  description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
+                  descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
+                })
+                  .onClick(throttle((event) => {
+                    router.pushUrl({ url: 'pages/MasterKeyPage' });
+                  }, 1000))
+              }
 
               SubItemDivider()
 

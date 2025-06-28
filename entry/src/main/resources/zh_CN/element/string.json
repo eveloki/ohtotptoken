@@ -714,15 +714,15 @@
     },
     {
       "name": "custom_color_logo_dark_filter_color",
-      "value": "图标滤镜颜色"
+      "value": "图标滤镜"
     },
     {
       "name": "custom_color_token_color",
-      "value": "令牌颜色"
+      "value": "默认令牌"
     },
     {
       "name": "custom_color_token_next_color",
-      "value": "即将失效的令牌颜色"
+      "value": "即将失效的令牌"
     }
   ]
 }

@@ -11,6 +11,7 @@ import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { QRCodeDialog } from '../dialogs/QRCodeDialog';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { TokenStore } from '../utils/TokenStore';
+import { ConfigurationConstant } from '@kit.AbilityKit';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 let tkStore = TokenStore.getInstance();
@@ -43,16 +44,61 @@ export struct TokenItem {
 
   private token_steps: number = 0;
   private token_color_change_threshold = 5;
-  private token_progress_color_normal: LinearGradient = new LinearGradient(
-    [
-      {color: $r('app.color.token_progress_normal_color_start'), offset: 0},
-      {color: $r('app.color.token_progress_normal_color_end'), offset: 1},
-    ])
-  private token_progress_color_near_next: LinearGradient = new LinearGradient(
-    [
-      {color: $r('app.color.token_progress_next_color_start'), offset: 0},
-      {color: $r('app.color.token_progress_next_color_end'), offset: 1},
-    ])
+
+  @Computed
+  get is_dark_mode() {
+    return this.window.ColorMode == ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+  }
+
+  @Computed
+  get token_color_normal() {
+    return this.is_dark_mode ?
+    this.token_preference.app_appearance_token_color_dark : this.token_preference.app_appearance_token_color;
+  }
+
+  @Computed
+  get token_color_expiring() {
+    return this.is_dark_mode ?
+    this.token_preference.app_appearance_token_next_color_dark : this.token_preference.app_appearance_token_next_color;
+  }
+
+  @Computed
+  get token_progress_color_normal(): LinearGradient {
+    return new LinearGradient(
+      [
+        {
+          color: this.is_dark_mode ?
+          this.token_preference.app_appearance_token_counter_dark_color_start :
+          this.token_preference.app_appearance_token_counter_light_color_start,
+          offset: 0
+        },
+        {
+          color: this.is_dark_mode ?
+          this.token_preference.app_appearance_token_counter_dark_color_end :
+          this.token_preference.app_appearance_token_counter_light_color_end,
+          offset: 1
+        },
+      ]);
+  }
+
+  @Computed
+  get token_progress_color_near_next(): LinearGradient {
+    return new LinearGradient(
+      [
+        {
+          color: this.is_dark_mode ?
+          this.token_preference.app_appearance_token_counter_next_dark_color_start :
+          this.token_preference.app_appearance_token_counter_next_light_color_start,
+          offset: 0
+        },
+        {
+          color: this.is_dark_mode ?
+          this.token_preference.app_appearance_token_counter_next_dark_color_end :
+          this.token_preference.app_appearance_token_counter_next_light_color_end,
+          offset: 1
+        },
+      ]);
+  }
 
   aboutToAppear(): void {
     getContext(this).eventHub.on('onTimestampChanged', (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
@@ -149,8 +195,7 @@ export struct TokenItem {
             .textOverflow({ overflow: TextOverflow.MARQUEE })
             .maxLines(1)
             .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP ?
-              this.token_preference.app_appearance_token_next_color :
-              this.token_preference.app_appearance_token_color)
+              this.token_color_expiring : this.token_color_normal)
             .fontSize(this.token_preference.app_appearance_token_font_size)
             .fontWeight(this.token_preference.app_appearance_token_font_weight)
             .gesture(

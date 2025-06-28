@@ -718,11 +718,11 @@
     },
     {
       "name": "custom_color_token_color",
-      "value": "令牌顏色"
+      "value": "默認令牌"
     },
     {
       "name": "custom_color_token_next_color",
-      "value": "即將失效的令牌顏色"
+      "value": "即將失效的令牌"
     }
   ]
 }

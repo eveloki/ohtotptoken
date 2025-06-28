@@ -714,7 +714,7 @@
     },
     {
       "name": "custom_color_logo_dark_filter_color",
-      "value": "Filter Color"
+      "value": "Logo Filter"
     },
     {
       "name": "custom_color_token_color",
@@ -722,7 +722,7 @@
     },
     {
       "name": "custom_color_token_next_color",
-      "value": "Expiring Token Color"
+      "value": "Expiring Token"
     }
   ]
 }
