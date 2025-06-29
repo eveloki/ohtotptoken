@@ -642,7 +642,7 @@
     },
     {
       "name": "restore_master_key_msg",
-      "value": "使用主密码加密数据，提供更高级别的安全保护"
+      "value": "使用主密码加密数据，提供更高级别的安全保护。"
     },
     {
       "name": "restore_master_key_set",
@@ -658,15 +658,15 @@
     },
     {
       "name": "restore_master_key_recovery_key_err_msg",
-      "value": "恢复密钥错误，数据恢复失败"
+      "value": "恢复密钥错误，数据恢复失败。"
     },
     {
       "name": "restore_master_key_no_set_desc",
-      "value": "您没有配置主密钥，点击配置"
+      "value": "您没有配置主密钥，点击配置。"
     },
     {
       "name": "restore_master_key_reset_desc",
-      "value": "您已经配置了主密钥，点击重新配置"
+      "value": "您已经配置了主密钥，点击重新配置。"
     },
     {
       "name": "restore_master_key_password_too_short_msg",
@@ -686,11 +686,11 @@
     },
     {
       "name": "restore_master_key_err_msg",
-      "value": "主密码错误，数据恢复失败"
+      "value": "主密码错误，数据恢复失败。"
     },
     {
       "name": "restore_use_recovery_key",
-      "value": "忘记主密码？使用恢复密钥"
+      "value": "忘记主密码？使用恢复密钥。"
     },
     {
       "name": "restore_use_master_key",
@@ -714,15 +714,75 @@
     },
     {
       "name": "custom_color_logo_dark_filter_color",
-      "value": "图标滤镜颜色"
+      "value": "图标滤镜"
     },
     {
       "name": "custom_color_token_color",
-      "value": "令牌颜色"
+      "value": "默认令牌"
     },
     {
       "name": "custom_color_token_next_color",
-      "value": "即将失效的令牌颜色"
+      "value": "即将失效的令牌"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "默认令牌 (暗色)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "即将失效的令牌 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "计数器颜色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "计数器颜色 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "计数器颜色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "计数器颜色 1 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "即将失效计数器颜色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "即将失效计数器颜色 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "即将失效计数器颜色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "即将失效计数器颜色 1 (暗色)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "装饰与颜色"
+    },
+    {
+      "name": "custom_function",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "计数器过期阈值"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "微调令牌功能相关设定。"
     }
   ]
 }

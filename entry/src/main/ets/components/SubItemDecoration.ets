@@ -1,31 +1,16 @@
 import { AppWindowInfo } from "../entryability/EntryAbility";
 import { AppStorageV2 } from "@kit.ArkUI";
 
-export class SliderItem {
-  name: ResourceStr = '';
-  default: number = 0;
-  min: number = 0;
-  max: number = 0;
-  step?: number = 1;
-
-  constructor() {
-  }
-}
-
 @Preview
 @ComponentV2
-export struct SubItemSlider {
-  @Require @Param onChange: (index: number, value: number) => void = () => {};
-  @Require @Param title: string | Resource = 'aaaa';
-  @Require @Param items: SliderItem[] = [{name: "a", default: 2, min: 0, max: 10}];
+export struct SubItemDecoration {
+  @Require @Param onChange: (index: number, color: number) => void = () => {};
+  @Require @Param title: string | Resource = '';
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
-  @Param description: string  | Resource = 'aaa';
+  @Param description: string  | Resource = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local collapsed: boolean = true;
-
-  @Local slider_values: number[] = this.items.map((item) => item.default);
-  @Local tips_value: number[] = this.slider_values;
 
   build() {
     Column() {
@@ -44,8 +29,6 @@ export struct SubItemSlider {
               .fontWeight(FontWeight.Regular)
               .textAlign(TextAlign.Start)
               .layoutWeight(2)
-
-
           }
           .width('100%')
           if (this.description != '') {
@@ -75,41 +58,13 @@ export struct SubItemSlider {
             this.collapsed = !this.collapsed;
           })
         })
+
       }
       .justifyContent(FlexAlign.SpaceAround)
-
       if (!this.collapsed) {
         Blank()
-        ForEach(this.items, (item: SliderItem, index: number) => {
-          Row() {
-            Text(item.name)
-              .width('30%')
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-            Slider({
-              value: item.default,
-              min: item.min,
-              max: item.max,
-              step: item.step
-            })
-              .width('60%')
-              //.enableHapticFeedback(true)
-              .showTips(true, this.tips_value[index].toFixed())
-              .sliderInteractionMode(SliderInteraction.SLIDE_AND_CLICK_UP)
-              .onChange((value, mode) => {
-                this.tips_value[index] = value;
-                if (mode === SliderChangeMode.End) {
-                  this.slider_values[index] = value;
-                  this.onChange(index, value);
-                }
-              })
-            Text(this.slider_values[index].toString())
-              .width('10%')
-              .textAlign(TextAlign.End)
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-          }
-          .justifyContent(FlexAlign.SpaceAround)
+          .height(10)
 
-        })
       }
     }
     .padding(10)

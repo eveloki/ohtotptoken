@@ -22,8 +22,10 @@ export class TokenPreference {
   @Trace app_appearance_logo_background_color = 0xffececec;
   @Trace app_appearance_logo_dark_filter = false;
   @Trace app_appearance_logo_dark_filter_color = 0xFFD6D6D6;
-  @Trace app_appearance_token_color = 0xFF638FF6;
+  @Trace app_appearance_token_color = 0xFF012EE0;
+  @Trace app_appearance_token_color_dark = 0xFF638FF6;
   @Trace app_appearance_token_next_color = 0xFFD71616;
+  @Trace app_appearance_token_next_color_dark = 0xFFD71616;
   @Trace app_appearance_token_counter_light_color_start = 0xFF86c1ff;
   @Trace app_appearance_token_counter_light_color_end = 0xFF254ff7;
   @Trace app_appearance_token_counter_dark_color_start = 0xFF86c1ff;
@@ -95,8 +97,10 @@ export class AppPreference {
     ['app_appearance_logo_background_color', 0xffececec],
     ['app_appearance_logo_dark_filter', false],
     ['app_appearance_logo_dark_filter_color', 0xFFD6D6D6],
-    ['app_appearance_token_color', 0xFF638FF6],
+    ['app_appearance_token_color', 0xFF254ff7],
     ['app_appearance_token_next_color', 0xFFD71616],
+    ['app_appearance_token_color_dark', 0xFF638FF6],
+    ['app_appearance_token_next_color_dark', 0xFFD71616],
     ['app_appearance_token_counter_light_color_start', 0xFF86c1ff],
     ['app_appearance_token_counter_light_color_end', 0xFF254ff7],
     ['app_appearance_token_counter_dark_color_start', 0xFF86c1ff],
@@ -158,6 +162,8 @@ export class AppPreference {
     token_appearance.app_appearance_logo_dark_filter_color = AppPreference.getPreference('app_appearance_logo_dark_filter_color') as number;
     token_appearance.app_appearance_token_color = AppPreference.getPreference('app_appearance_token_color') as number;
     token_appearance.app_appearance_token_next_color = AppPreference.getPreference('app_appearance_token_next_color') as number;
+    token_appearance.app_appearance_token_color_dark = AppPreference.getPreference('app_appearance_token_color_dark') as number;
+    token_appearance.app_appearance_token_next_color_dark = AppPreference.getPreference('app_appearance_token_next_color_dark') as number;
     token_appearance.app_appearance_token_counter_light_color_start = AppPreference.getPreference('app_appearance_token_counter_light_color_start') as number;
     token_appearance.app_appearance_token_counter_light_color_end = AppPreference.getPreference('app_appearance_token_counter_light_color_end') as number;
     token_appearance.app_appearance_token_counter_dark_color_start = AppPreference.getPreference('app_appearance_token_counter_dark_color_start') as number;

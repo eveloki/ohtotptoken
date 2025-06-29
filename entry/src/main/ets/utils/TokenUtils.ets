@@ -333,7 +333,7 @@ export class TokenIconPacks {
     const icon_path_json = path + "/pack.json";
     if (!fileIo.accessSync(icon_path_json)) {
       promptAction.showToast({ message: $r('app.string.toast_icon_pack_invalid') });
-      return;
+      return Promise.reject(new Error("invalid aegis icon pack"));
     }
     if (TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path === path).length > 0) {
       promptAction.showToast({ message: $r('app.string.toast_icon_pack_already_installed') });

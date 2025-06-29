@@ -642,7 +642,7 @@
     },
     {
       "name": "restore_master_key_msg",
-      "value": "Encrypt your data with a master password for advanced protection"
+      "value": "Encrypt your data with a master password for advanced protection."
     },
     {
       "name": "restore_master_key_set",
@@ -658,15 +658,15 @@
     },
     {
       "name": "restore_master_key_recovery_key_err_msg",
-      "value": "Invalid recovery key, data restoration failed"
+      "value": "Invalid recovery key, data restoration failed."
     },
     {
       "name": "restore_master_key_no_set_desc",
-      "value": "You have not set the master key yet. Please click it and configure it"
+      "value": "You have not set the master key yet. Please click it and configure it."
     },
     {
       "name": "restore_master_key_reset_desc",
-      "value": "You have already configured the master key, click it on reconfigure"
+      "value": "You have already configured the master key, click it on reconfigure."
     },
     {
       "name": "restore_master_key_password_too_short_msg",
@@ -686,11 +686,11 @@
     },
     {
       "name": "restore_master_key_err_msg",
-      "value": "Invalid Master key, data restoration failed"
+      "value": "Invalid Master key, data restoration failed."
     },
     {
       "name": "restore_use_recovery_key",
-      "value": "Forgot master password? Use recovery key"
+      "value": "Forgot master password? Use recovery key."
     },
     {
       "name": "restore_use_master_key",
@@ -714,7 +714,7 @@
     },
     {
       "name": "custom_color_logo_dark_filter_color",
-      "value": "Filter Color"
+      "value": "Logo Filter"
     },
     {
       "name": "custom_color_token_color",
@@ -722,7 +722,67 @@
     },
     {
       "name": "custom_color_token_next_color",
-      "value": "Expiring Token Color"
+      "value": "Expiring Token"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "Token Color (Dark)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "Expiring Token (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "Counter Color 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "Counter Color 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "Counter Color 0 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "Counter Color 1 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "Expiring Counter Color 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "Expiring Counter Color 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "Expiring Counter Color 0 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "Expiring Counter Color 1 (Dark)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "Decorator & Color"
+    },
+    {
+      "name": "custom_function",
+      "value": "Function"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "Function"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "Counter Expiration Threshold"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "Fine-tune token function settings."
     }
   ]
 }

@@ -18,6 +18,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemSelect } from '../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../components/SubItemIconManager';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Preview
 @ComponentV2
@@ -36,9 +37,8 @@ export struct SettingPage {
   @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
 
   @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
-
-
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
@@ -326,21 +326,24 @@ export struct SettingPage {
                 isOn: AppPreference.getPreference('app_use_master_key') as boolean,
                 description: $r('app.string.restore_master_key_msg'),
                 onChange: (IsOn: boolean) => {
-                  this.is_master_key_enable=IsOn;
+                  this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
+                    this.is_master_key_enable = IsOn;
+                  })
                   AppPreference.setPreference('app_use_master_key', IsOn);
                 }
               })
-              SubItemButton({
-                symbol: $r('sys.symbol.key_shield'),
-                text: $r('app.string.restore_master_key_set'),
-                description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
-                descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
-              })//条件渲染有第一次不生效的bug（虚假机下） 很奇怪
-                .visibility(this.is_master_key_enable ? Visibility.Visible : Visibility.None)// 使用显隐控制，启动时即使组件处于隐藏状态，也会创建
-                .onClick(throttle((event) => {
-                  //this.is_master_key_set=!this.is_master_key_set;
-                  router.pushUrl({ url: 'pages/MasterKeyPage' });
-                }, 1000))
+              if (this.is_master_key_enable) {
+                SubItemDivider()
+                SubItemButton({
+                  symbol: $r('sys.symbol.key_shield'),
+                  text: $r('app.string.restore_master_key_set'),
+                  description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
+                  descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
+                })
+                  .onClick(throttle((event) => {
+                    router.pushUrl({ url: 'pages/MasterKeyPage' });
+                  }, 1000))
+              }
 
               SubItemDivider()
 
@@ -432,7 +435,7 @@ export struct SettingPage {
                   isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
-                    animateToImmediately({ curve: curves.springMotion() }, () => {
+                    this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
                     AppPreference.setPreference('app_debug_mode_on', IsOn);
@@ -582,7 +585,7 @@ export struct SettingPage {
                 this.debug_mode_counter = 0;
               }, 2000);
               if (this.debug_mode_counter > 7) {
-                animateToImmediately({ curve: curves.springMotion() }, () => {
+                this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                   this.debug_mode_is_on = true;
                   AppPreference.setPreference('app_debug_mode_on', true);
                   promptAction.showToast({ message: "DEBUG MODE ON" });

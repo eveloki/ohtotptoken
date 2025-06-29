@@ -77,7 +77,7 @@ export struct SelectIconDialog {
           .width(40)
           .borderRadius(20)
         } else {
-          TokenIcon({ issuer: '', icon_path: path, bypassColorFilter: true })
+          TokenIcon({ issuer: '', icon_path: path, bypassColorFilter: true, bypassLogoBackground: true })
         }
 
         Button({ type: ButtonType.Circle }) {

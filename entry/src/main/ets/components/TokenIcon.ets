@@ -3,6 +3,7 @@ import { TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
 import { TokenPreference } from "../utils/AppPreference";
 import { AppStorageV2 } from "@kit.ArkUI";
+import { AppWindowInfo } from "../entryability/EntryAbility";
 
 @Preview
 @ComponentV2
@@ -10,10 +11,17 @@ export struct TokenIcon {
   @Require @Param issuer: string = '';
   @Param icon_path: string = '';
   @Param bypassColorFilter: boolean = false;
+  @Param bypassLogoBackground: boolean = false;
   @Local icon: ResourceStr | undefined = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(this.issuer));
   @Local applyColorFilter: boolean = this.bypassColorFilter ? false : TokenIconPacks.selected_icon_pack === 0;
+  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+
+  @Computed
+  get is_dark_mode() {
+    return this.window.ColorMode == ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+  }
 
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
@@ -87,7 +95,7 @@ export struct TokenIcon {
 
   build() {
     Stack() {
-      if (this.token_preference.app_appearance_logo_background) {
+      if (this.token_preference.app_appearance_logo_background && !this.bypassLogoBackground) {
         Shape() {}
         .align(Alignment.Center)
         .backgroundColor(this.token_preference.app_appearance_logo_background_color)
@@ -112,7 +120,8 @@ export struct TokenIcon {
       } else {
         if (
           this.token_preference.app_appearance_logo_dark_filter &&
-          this.applyColorFilter && AppStorage.get<number>('currentColorMode') === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
+          this.applyColorFilter && this.is_dark_mode
+        ) {
           Image(this.icon)
             .height(this.token_preference.app_appearance_logo_size)
             .width(this.token_preference.app_appearance_logo_size)
