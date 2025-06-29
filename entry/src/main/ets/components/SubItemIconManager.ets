@@ -209,15 +209,17 @@ export struct SubItemIconManager {
                     const path_arr = fd.path.split('/');
                     const file_name = path_arr[path_arr.length-1];
                     const out_path = this.icon_pack_dir + "/" + file_name;
-                    fs.mkdir(out_path).finally(() => {
+                    fs.mkdir(out_path).then(() => {
                       zlib.decompressFile(fd.path, out_path).then(() => {
                         TokenIconPacks.addAegisIconPack(out_path).then(() => {
                           this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
                           this.window.Context?.eventHub.emit('onIconPackChanged');
                           fs.close(fd.fd);
+                        }).catch(() => {
+                          fs.rmdir(out_path);
                         });
                       }).catch((reason: BusinessError) => {
-                        promptAction.showToast(reason)
+                        promptAction.showToast(reason);
                         fs.close(fd.fd);
                       });
                     });

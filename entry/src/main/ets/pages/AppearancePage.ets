@@ -11,6 +11,7 @@ import { SubItemColor } from '../components/SubItemColor';
 import { SubItemSlider } from '../components/SubItemSlider';
 import { SubItemButton } from '../components/SubItemButton';
 import { AppWindowInfo } from '../entryability/EntryAbility';
+import { common } from '@kit.AbilityKit';
 
 @Preview
 @Entry
@@ -20,11 +21,13 @@ struct AppearancePage {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
+  private context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+
   aboutToAppear(): void {
     setInterval(() => {
       const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-      if (getContext(this).eventHub != undefined) {
-        getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+      if (this.context.eventHub != undefined) {
+        this.context.eventHub.emit('onTimestampChanged', timestamp, false);
       }
     }, 1000);
   }
@@ -75,7 +78,7 @@ struct AppearancePage {
         List({ space: 10 }) {
           ListItem()
           ListItem() {
-            SettingItem({ title: $r('app.string.custom_layout') }) {
+            SettingItem({ title: $r('app.string.custom_function') }) {
 
               SubItemToggle({
                 icon: $r('sys.symbol.transfer_station'),
@@ -116,6 +119,35 @@ struct AppearancePage {
 
               SubItemDivider()
 
+              SubItemSlider({
+                icon: $r('sys.symbol.slider_horizontal_2'),
+                title: $r('app.string.token_item_function_slider'),
+                items: [
+                  {
+                    name: $r('app.string.token_item_color_change_threshold'),
+                    default: this.token_preference.app_appearance_token_counter_next_margin,
+                    min: 0,
+                    max: 30,
+                    step: 1
+                  },
+                ],
+                description: $r('app.string.token_item_function_slider_desc'),
+                onChange: (index, value) => {
+                  switch (index) {
+                    case 0: {
+                      AppPreference.setPreference('app_appearance_token_counter_next_margin', value);
+                      this.token_preference.app_appearance_token_counter_next_margin = value;
+                      break;
+                    }
+                  }
+                }
+              })
+            }
+          }
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
+            SettingItem({ title: $r('app.string.custom_layout') }) {
               SubItemSlider({
                 icon: $r('sys.symbol.slider_horizontal_2'),
                 title: $r('app.string.token_item_slider'),
@@ -291,7 +323,7 @@ struct AppearancePage {
           .padding({ left: 10, right: 10 })
 
           ListItem() {
-            SettingItem({ title: $r('app.string.custom_color') }) {
+            SettingItem({ title: $r('app.string.custom_decoration_color') }) {
               SubItemColor({
                 icon: $r('sys.symbol.paintpalette'),
                 title: $r('app.string.custom_color_palette'),
@@ -312,6 +344,46 @@ struct AppearancePage {
                   {
                     name: $r('app.string.custom_color_token_next_color'),
                     color: this.token_preference.app_appearance_token_next_color,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_color_dark'),
+                    color: this.token_preference.app_appearance_token_color_dark,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_next_color_dark'),
+                    color: this.token_preference.app_appearance_token_next_color_dark,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_light_color_start'),
+                    color: this.token_preference.app_appearance_token_counter_light_color_start,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_next_counter_light_color_end'),
+                    color: this.token_preference.app_appearance_token_counter_light_color_end,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_dark_color_start'),
+                    color: this.token_preference.app_appearance_token_counter_dark_color_start,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_dark_color_end'),
+                    color: this.token_preference.app_appearance_token_counter_dark_color_end,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_next_light_color_start'),
+                    color: this.token_preference.app_appearance_token_counter_next_light_color_start,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_next_counter_next_light_color_end'),
+                    color: this.token_preference.app_appearance_token_counter_next_light_color_end,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_next_dark_color_start'),
+                    color: this.token_preference.app_appearance_token_counter_next_dark_color_start,
+                  },
+                  {
+                    name: $r('app.string.custom_color_token_counter_next_dark_color_end'),
+                    color: this.token_preference.app_appearance_token_counter_next_dark_color_end,
                   },
                 ],
                 onChange: (index, value) => {
@@ -334,6 +406,56 @@ struct AppearancePage {
                     case 3: {
                       AppPreference.setPreference('app_appearance_token_next_color', value);
                       this.token_preference.app_appearance_token_next_color = value;
+                      break;
+                    }
+                    case 4: {
+                      AppPreference.setPreference('app_appearance_token_color_dark', value);
+                      this.token_preference.app_appearance_token_color_dark = value;
+                      break;
+                    }
+                    case 5: {
+                      AppPreference.setPreference('app_appearance_token_next_color_dark', value);
+                      this.token_preference.app_appearance_token_next_color_dark = value;
+                      break;
+                    }
+                    case 6: {
+                      AppPreference.setPreference('app_appearance_token_counter_light_color_start', value);
+                      this.token_preference.app_appearance_token_counter_light_color_start = value;
+                      break;
+                    }
+                    case 7: {
+                      AppPreference.setPreference('app_appearance_token_counter_light_color_end', value);
+                      this.token_preference.app_appearance_token_counter_light_color_end = value;
+                      break;
+                    }
+                    case 8: {
+                      AppPreference.setPreference('app_appearance_token_counter_dark_color_start', value);
+                      this.token_preference.app_appearance_token_counter_dark_color_start = value;
+                      break;
+                    }
+                    case 9: {
+                      AppPreference.setPreference('app_appearance_token_counter_dark_color_end', value);
+                      this.token_preference.app_appearance_token_counter_dark_color_end = value;
+                      break;
+                    }
+                    case 10: {
+                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_start', value);
+                      this.token_preference.app_appearance_token_counter_next_light_color_start = value;
+                      break;
+                    }
+                    case 11: {
+                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_end', value);
+                      this.token_preference.app_appearance_token_counter_next_light_color_end = value;
+                      break;
+                    }
+                    case 12: {
+                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_start', value);
+                      this.token_preference.app_appearance_token_counter_next_dark_color_start = value;
+                      break;
+                    }
+                    case 13: {
+                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_end', value);
+                      this.token_preference.app_appearance_token_counter_next_dark_color_end = value;
                       break;
                     }
                   }

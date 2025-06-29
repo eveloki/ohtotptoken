@@ -723,6 +723,66 @@
     {
       "name": "custom_color_token_next_color",
       "value": "Expiring Token"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "Token Color (Dark)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "Expiring Token (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "Counter Color 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "Counter Color 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "Counter Color 0 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "Counter Color 1 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "Expiring Counter Color 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "Expiring Counter Color 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "Expiring Counter Color 0 (Dark)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "Expiring Counter Color 1 (Dark)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "Decoration & Color"
+    },
+    {
+      "name": "custom_function",
+      "value": "Function"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "Function"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "Counter Expiration Threshold"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "Fine-tune token function settings."
     }
   ]
 }

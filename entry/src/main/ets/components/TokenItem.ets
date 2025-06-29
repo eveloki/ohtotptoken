@@ -43,7 +43,6 @@ export struct TokenItem {
   private dialog_qrcode?: CustomDialogController;
 
   private token_steps: number = 0;
-  private token_color_change_threshold = 5;
 
   @Computed
   get is_dark_mode() {
@@ -60,6 +59,18 @@ export struct TokenItem {
   get token_color_expiring() {
     return this.is_dark_mode ?
     this.token_preference.app_appearance_token_next_color_dark : this.token_preference.app_appearance_token_next_color;
+  }
+
+  @Computed
+  get hotp_next_btn_color() {
+    return this.is_dark_mode ?
+      this.token_preference.app_appearance_token_counter_dark_color_end :
+      this.token_preference.app_appearance_token_counter_light_color_end;
+  }
+
+  @Computed
+  get token_color_change_threshold() {
+    return this.token_preference.app_appearance_token_counter_next_margin;
   }
 
   @Computed
@@ -229,7 +240,7 @@ export struct TokenItem {
 
         if (this.Config.TokenType == otpType.HOTP) {
           SymbolGlyph($r('sys.symbol.lock_filled_arrow_counterclockwise'))
-            .fontColor([$r('app.color.token_number')])
+            .fontColor([this.hotp_next_btn_color])
             .fontSize(40)
             .fontWeight(FontWeight.Medium)
             .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),

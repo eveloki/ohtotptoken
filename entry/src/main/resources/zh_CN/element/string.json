@@ -723,6 +723,66 @@
     {
       "name": "custom_color_token_next_color",
       "value": "即将失效的令牌"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "默认令牌 (暗色)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "即将失效的令牌 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "计数器颜色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "计数器颜色 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "计数器颜色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "计数器颜色 1 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "即将失效计数器颜色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "即将失效计数器颜色 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "即将失效计数器颜色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "即将失效计数器颜色 1 (暗色)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "装饰与颜色"
+    },
+    {
+      "name": "custom_function",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "计数器过期阈值"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "微调令牌功能相关设定。"
     }
   ]
 }

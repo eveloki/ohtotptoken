@@ -723,6 +723,66 @@
     {
       "name": "custom_color_token_next_color",
       "value": "即將失效的令牌"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "默認令牌 (深色)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "即將失效的令牌 (深色)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "計數器顏色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "計數器顏色 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "計數器顏色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "計數器顏色 1 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "即將失效計數器顏色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "即將失效計數器顏色 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "即將失效計數器顏色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "即將失效計數器顏色 1 (暗色)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "裝飾與顏色"
+    },
+    {
+      "name": "custom_function",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "計數器過期閾值"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "微調令牌功能相關設定。"
     }
   ]
 }

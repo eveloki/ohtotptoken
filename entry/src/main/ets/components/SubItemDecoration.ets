@@ -1,26 +1,16 @@
-import { ColorSelectDialog } from "../dialogs/ColorSelectDialog";
 import { AppWindowInfo } from "../entryability/EntryAbility";
-import { colorHex } from "../utils/ColorUtils";
 import { AppStorageV2 } from "@kit.ArkUI";
-
-export class ColorItem {
-  name: ResourceStr = '';
-  color: number = 0;
-}
 
 @Preview
 @ComponentV2
-export struct SubItemColor {
+export struct SubItemDecoration {
   @Require @Param onChange: (index: number, color: number) => void = () => {};
   @Require @Param title: string | Resource = '';
-  @Require @Param colors: ColorItem[] = [{name: "a", color: 0}];
   @Param disable: boolean = false;
   @Param icon: Resource | undefined = undefined;
   @Param description: string  | Resource = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local collapsed: boolean = true;
-
-  private dialog_color_picker?: CustomDialogController;
 
   build() {
     Column() {
@@ -74,36 +64,6 @@ export struct SubItemColor {
       if (!this.collapsed) {
         Blank()
           .height(10)
-        Column({ space: 10 }) {
-          ForEach(this.colors, (color: ColorItem, index: number) => {
-            Row({ space: 10 }) {
-              Text(color.name)
-                .width('50%')
-                .textOverflow({ overflow: TextOverflow.MARQUEE })
-              Text(colorHex(color.color))
-                .fontWeight(FontWeight.Medium)
-                .backgroundColor(color.color)
-                .textAlign(TextAlign.Center)
-                .textShadow({ color: Color.White, radius: 10 })
-                .borderRadius(5)
-                .height(30)
-                .fontSize($r('sys.float.Subtitle_M'))
-                .fontColor(Color.Black)
-                .layoutWeight(1)
-                .onClick(() => {
-                  this.dialog_color_picker = new CustomDialogController({
-                    builder: ColorSelectDialog({
-                      old_color: color.color,
-                      confirm: (new_color) => {
-                        this.onChange(index, new_color);
-                      }
-                    })
-                  })
-                  this.dialog_color_picker.open()
-                })
-            }
-          })
-        }
 
       }
     }

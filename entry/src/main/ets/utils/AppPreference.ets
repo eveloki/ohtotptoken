@@ -25,7 +25,7 @@ export class TokenPreference {
   @Trace app_appearance_token_color = 0xFF012EE0;
   @Trace app_appearance_token_color_dark = 0xFF638FF6;
   @Trace app_appearance_token_next_color = 0xFFD71616;
-  @Trace app_appearance_token_next_color_dark = 0xFF638FF6;
+  @Trace app_appearance_token_next_color_dark = 0xFFD71616;
   @Trace app_appearance_token_counter_light_color_start = 0xFF86c1ff;
   @Trace app_appearance_token_counter_light_color_end = 0xFF254ff7;
   @Trace app_appearance_token_counter_dark_color_start = 0xFF86c1ff;
