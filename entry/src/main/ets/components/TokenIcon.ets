@@ -11,6 +11,7 @@ export struct TokenIcon {
   @Require @Param issuer: string = '';
   @Param icon_path: string = '';
   @Param bypassColorFilter: boolean = false;
+  @Param bypassLogoBackground: boolean = false;
   @Local icon: ResourceStr | undefined = this.getIconResourceStr(TokenIconPacks.getIconByIssuer(this.issuer));
   @Local applyColorFilter: boolean = this.bypassColorFilter ? false : TokenIconPacks.selected_icon_pack === 0;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -94,7 +95,7 @@ export struct TokenIcon {
 
   build() {
     Stack() {
-      if (this.token_preference.app_appearance_logo_background) {
+      if (this.token_preference.app_appearance_logo_background && !this.bypassLogoBackground) {
         Shape() {}
         .align(Alignment.Center)
         .backgroundColor(this.token_preference.app_appearance_logo_background_color)

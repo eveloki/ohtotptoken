@@ -642,7 +642,7 @@
     },
     {
       "name": "restore_master_key_msg",
-      "value": "Encrypt your data with a master password for advanced protection"
+      "value": "Encrypt your data with a master password for advanced protection."
     },
     {
       "name": "restore_master_key_set",
@@ -658,15 +658,15 @@
     },
     {
       "name": "restore_master_key_recovery_key_err_msg",
-      "value": "Invalid recovery key, data restoration failed"
+      "value": "Invalid recovery key, data restoration failed."
     },
     {
       "name": "restore_master_key_no_set_desc",
-      "value": "You have not set the master key yet. Please click it and configure it"
+      "value": "You have not set the master key yet. Please click it and configure it."
     },
     {
       "name": "restore_master_key_reset_desc",
-      "value": "You have already configured the master key, click it on reconfigure"
+      "value": "You have already configured the master key, click it on reconfigure."
     },
     {
       "name": "restore_master_key_password_too_short_msg",
@@ -686,11 +686,11 @@
     },
     {
       "name": "restore_master_key_err_msg",
-      "value": "Invalid Master key, data restoration failed"
+      "value": "Invalid Master key, data restoration failed."
     },
     {
       "name": "restore_use_recovery_key",
-      "value": "Forgot master password? Use recovery key"
+      "value": "Forgot master password? Use recovery key."
     },
     {
       "name": "restore_use_master_key",

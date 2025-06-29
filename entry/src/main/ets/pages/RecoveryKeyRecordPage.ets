@@ -57,14 +57,14 @@ struct RecoveryKeyRecordPage {
   }
 
   build() {
-    Scroll() {
-      Column() {
-        TopNavigationView({
-          title: $r('app.string.restore_record_recovery_key'),
-          onBackClick: () => {
-            router.back();
-          }
-        })
+    Column() {
+      TopNavigationView({
+        title: $r('app.string.restore_record_recovery_key'),
+        onBackClick: () => {
+          router.back();
+        }
+      })
+      Scroll() {
         Column() {
           Column() {
             // 关联画布
@@ -135,12 +135,12 @@ struct RecoveryKeyRecordPage {
           .padding({ left: 24, right: 24 })
           .align(Alignment.End)
         }
-        .width('100%')
-        .height('100%')
-        .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
-        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
       }
     }
+    .width('100%')
+    .height('100%')
+    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
   }
 
   loadAnimation() {

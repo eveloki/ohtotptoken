@@ -642,7 +642,7 @@
     },
     {
       "name": "restore_master_key_msg",
-      "value": "使用主密码加密数据，提供更高级别的安全保护"
+      "value": "使用主密码加密数据，提供更高级别的安全保护。"
     },
     {
       "name": "restore_master_key_set",
@@ -658,15 +658,15 @@
     },
     {
       "name": "restore_master_key_recovery_key_err_msg",
-      "value": "恢复密钥错误，数据恢复失败"
+      "value": "恢复密钥错误，数据恢复失败。"
     },
     {
       "name": "restore_master_key_no_set_desc",
-      "value": "您没有配置主密钥，点击配置"
+      "value": "您没有配置主密钥，点击配置。"
     },
     {
       "name": "restore_master_key_reset_desc",
-      "value": "您已经配置了主密钥，点击重新配置"
+      "value": "您已经配置了主密钥，点击重新配置。"
     },
     {
       "name": "restore_master_key_password_too_short_msg",
@@ -686,11 +686,11 @@
     },
     {
       "name": "restore_master_key_err_msg",
-      "value": "主密码错误，数据恢复失败"
+      "value": "主密码错误，数据恢复失败。"
     },
     {
       "name": "restore_use_recovery_key",
-      "value": "忘记主密码？使用恢复密钥"
+      "value": "忘记主密码？使用恢复密钥。"
     },
     {
       "name": "restore_use_master_key",

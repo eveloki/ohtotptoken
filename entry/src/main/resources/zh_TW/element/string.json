@@ -642,7 +642,7 @@
     },
     {
       "name": "restore_master_key_msg",
-      "value": "使用主密碼加密資料，提供更高層級的安全防護"
+      "value": "使用主密碼加密資料，提供更高層級的安全防護。"
     },
     {
       "name": "restore_master_key_set",
@@ -658,15 +658,15 @@
     },
     {
       "name": "restore_master_key_recovery_key_err_msg",
-      "value": "恢復金鑰錯誤，資料恢復失敗"
+      "value": "恢復金鑰錯誤，資料恢復失敗。"
     },
     {
       "name": "restore_master_key_no_set_desc",
-      "value": "您沒有配置主密碼，點擊配置"
+      "value": "您沒有配置主密碼，點擊配置。"
     },
     {
       "name": "restore_master_key_reset_desc",
-      "value": "您已經配置了主密碼，點擊重新配置"
+      "value": "您已經配置了主密碼，點擊重新配置。"
     },
     {
       "name": "restore_master_key_password_too_short_msg",
@@ -686,11 +686,11 @@
     },
     {
       "name": "restore_master_key_err_msg",
-      "value": "主密碼錯誤，資料恢復失敗"
+      "value": "主密碼錯誤，資料恢復失敗。"
     },
     {
       "name": "restore_use_recovery_key",
-      "value": "忘記主密碼？使用恢復金鑰"
+      "value": "忘記主密碼？使用恢復金鑰。"
     },
     {
       "name": "restore_use_master_key",
