@@ -44,7 +44,6 @@ export struct SettingPage {
   private backup_is_input: boolean = true;
   private backup_select_uri: string = '';
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  private windowClass = AppStorage.get("windowClass") as window.Window;
   private versionCode?: number;
   private str_about_app: string = '';
   private str_opensource_leg: string = '';
@@ -356,7 +355,7 @@ export struct SettingPage {
                 onChange: (IsOn: boolean) => {
                   AppPreference.setPreference('app_safety_privacy_enable', IsOn);
                   try {
-                    this.windowClass.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
+                    this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
                       console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
                     });
                   } catch (exception) {
