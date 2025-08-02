@@ -76,6 +76,7 @@ export struct SettingPage {
       this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
     })
   }
+
   //更新数据同步权限
   updateDATASYNCPermissions(isAccess: boolean) {
     if (!isAccess) {

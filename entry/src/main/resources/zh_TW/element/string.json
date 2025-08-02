@@ -783,6 +783,10 @@
     {
       "name": "token_item_function_slider_desc",
       "value": "微調令牌功能相關設定。"
+    },
+    {
+      "name": "setting_invalid_icon_pack_title",
+      "value": "無效的圖示包"
     }
   ]
 }

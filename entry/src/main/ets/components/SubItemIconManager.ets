@@ -150,6 +150,7 @@ export struct SubItemIconManager {
                 Row() {
                   Radio({ value: '', group: 'icon_pack' })
                     .checked(this.selected_icon_pack === index + 1)
+                    .enabled(!icon_pack.invalid)
                     .onChange((checked) => {
                       if (checked) {
                         TokenIconPacks.selected_icon_pack = index + 1;
@@ -159,16 +160,24 @@ export struct SubItemIconManager {
                       }
                     })
                   Column() {
-                    Text($r('app.string.setting_icon_pack_title', icon_pack.name, icon_pack.version.toString()))
-                      .fontSize($r('sys.float.ohos_id_text_size_body1'))
-                      .fontColor($r('sys.color.ohos_id_color_text_primary'))
-                      .fontWeight(FontWeight.Regular)
-                      .textAlign(TextAlign.Start)
-                    Text($r('app.string.setting_icon_pack_count', icon_pack.icons.length))
-                      .fontSize($r('sys.float.ohos_id_text_size_body3'))
-                      .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-                      .fontWeight(FontWeight.Regular)
-                      .textAlign(TextAlign.Start)
+                    if (icon_pack.invalid) {
+                      Text($r('app.string.setting_invalid_icon_pack_title'))
+                        .fontSize($r('sys.float.ohos_id_text_size_body1'))
+                        .fontColor($r('sys.color.ohos_id_color_warning'))
+                        .fontWeight(FontWeight.Regular)
+                        .textAlign(TextAlign.Start)
+                    } else {
+                      Text($r('app.string.setting_icon_pack_title', icon_pack.name, icon_pack.version.toString()))
+                        .fontSize($r('sys.float.ohos_id_text_size_body1'))
+                        .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                        .fontWeight(FontWeight.Regular)
+                        .textAlign(TextAlign.Start)
+                      Text($r('app.string.setting_icon_pack_count', icon_pack.icons.length))
+                        .fontSize($r('sys.float.ohos_id_text_size_body3'))
+                        .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                        .fontWeight(FontWeight.Regular)
+                        .textAlign(TextAlign.Start)
+                    }
                   }
                   .alignItems(HorizontalAlign.Start)
                   Blank()
@@ -188,8 +197,9 @@ export struct SubItemIconManager {
                         defaultFocus: false,
                         value: $r('app.string.dialog_btn_cancel'),
                         action: () => {
-                          return
-                        } },
+                          return;
+                        }
+                      },
                       secondaryButton: {
                         value: $r('app.string.dialog_btn_confirm'),
                         fontColor: Color.Red,

@@ -21,7 +21,6 @@ import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, router, window } from '@kit.ArkUI';
-import { writeFileContent } from '../utils/FileUtils';
 
 const TAG = 'PrivacySubscribe';
 
@@ -36,7 +35,7 @@ struct Index {
   @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
-  CurrentTokensCount:number = 0;
+  CurrentTokensCount: number = 0;
 
   private appIsInit = false;
   private appIsShow = false;

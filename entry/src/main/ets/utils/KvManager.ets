@@ -21,13 +21,13 @@ export class KvManager {
   private _kvStoreNoE: distributedKVStore.SingleKVStore | undefined = undefined;
 
   //token加密密钥存储的name
-  private readonly _tokenEncryptionSecretKeyName="tokenData_alias";
+  private readonly _tokenEncryptionSecretKeyName = "tokenData_alias";
   //token加密密钥存储的name(主密钥场景下的)
-  private readonly _tokenMasterKeyEncryptionSecretKeyName="tokenData_alias_master_key";
+  private readonly _tokenMasterKeyEncryptionSecretKeyName = "tokenData_alias_master_key";
   //token恢复密钥存储的name（主密钥增强场景）
-  private readonly _tokenEncryptionMasterRecoverySecretKeyName="tokenData_alias_recovery";
+  private readonly _tokenEncryptionMasterRecoverySecretKeyName = "tokenData_alias_recovery";
   //用来校验还原场景下主密钥是否正确的密文(主密钥场景下的) 如果用户设置主密钥能正常解密这个内容说明设置的密钥是对的
-  private readonly _tokenMasterKeyEncryptionSecretKeyNameTest="tokenData_alias_master_key_test";
+  private readonly _tokenMasterKeyEncryptionSecretKeyNameTest = "tokenData_alias_master_key_test";
   private static instance: KvManager;
 
   private constructor() {
@@ -57,7 +57,7 @@ export class KvManager {
     const options: distributedKVStore.Options = {
       createIfMissing: true,
       encrypt: true, //no加密
-      backup: true, //设置数据库文件是否备份
+      backup: false, //设置数据库文件是否备份
       autoSync: true, //自动同步
       kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
       securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
@@ -65,7 +65,7 @@ export class KvManager {
     const noEncryptoptions: distributedKVStore.Options = {
       createIfMissing: true,
       encrypt: false, //no加密
-      backup: true, //设置数据库文件是否备份
+      backup: false, //设置数据库文件是否备份
       autoSync: true, //自动同步
       kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
       securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。

@@ -106,6 +106,7 @@ export struct TokenListPage {
                     .id(this.id_list[0])
                     .onChange((value) => {
                       this.token_list_search_str = value;
+                      this.filterCurrentTokens(this.token_list_search_str);
                     })
                     .onSubmit(() => {
                       this.filterCurrentTokens(this.token_list_search_str);
@@ -300,7 +301,7 @@ export struct TokenListPage {
     Row({ space: 10 }) {
       Button({ type: ButtonType.Circle }) {
         Text() {
-          SymbolSpan($r('sys.symbol.trash'))
+          SymbolSpan($r('sys.symbol.trash_fill'))
             .fontSize(30)
             .fontWeight(FontWeight.Medium)
             .fontColor([Color.White])
@@ -333,7 +334,7 @@ export struct TokenListPage {
       if (this.TabBarVisible) {
         Button({ type: ButtonType.Circle }) {
           Text() {
-            SymbolSpan($r('sys.symbol.square_and_pencil'))
+            SymbolSpan($r('sys.symbol.square_and_pencil_fill'))
               .fontSize(30)
               .fontWeight(FontWeight.Medium)
               .fontColor([Color.White])

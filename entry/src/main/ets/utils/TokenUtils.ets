@@ -332,8 +332,14 @@ export class TokenIconPacks {
   public static async addAegisIconPack(path: string): Promise<void> {
     const icon_path_json = path + "/pack.json";
     if (!fileIo.accessSync(icon_path_json)) {
-      promptAction.showToast({ message: $r('app.string.toast_icon_pack_invalid') });
-      return Promise.reject(new Error("invalid aegis icon pack"));
+      // Display invalid icon pack directories
+      // promptAction.showToast({ message: $r('app.string.toast_icon_pack_invalid') });
+      // return Promise.reject(new Error("invalid aegis icon pack"));
+      let pack: AegisIconPack = new AegisIconPack();
+      pack.invalid = true;
+      pack.on_device_path = path;
+      TokenIconPacks.aegis_icon_packs.push(pack);
+      return;
     }
     if (TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path === path).length > 0) {
       promptAction.showToast({ message: $r('app.string.toast_icon_pack_already_installed') });
@@ -349,7 +355,6 @@ export class TokenIconPacks {
       pack.on_device_path = path;
       pack.buildUpHashMap();
       TokenIconPacks.aegis_icon_packs.push(pack);
-
     })
   }
 
@@ -381,6 +386,7 @@ export class AegisIcon {
 }
 
 export class AegisIconPack {
+  public invalid = false;
   public on_device_path: string = '';
   public uuid: string = '';
   public name: string = '';
