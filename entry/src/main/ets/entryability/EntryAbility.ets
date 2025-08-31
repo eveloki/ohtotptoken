@@ -42,6 +42,11 @@ export default class EntryAbility extends UIAbility {
     AppStorage.setOrCreate("appContext", this.context);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
 
+    if ((want.parameters!['action'] as string) == 'quick_scan') {
+      AppPreference.setPreference('app_want_quick_scan', true);
+      AppPreference.setPreference('app_want_uri', want.uri!);
+    }
+
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {
       onApplicationForeground() {
@@ -122,6 +127,13 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageRestore(windowStage: window.WindowStage): void {
+  }
+
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    if ((want.parameters!['action'] as string) == 'quick_scan') {
+      AppPreference.setPreference('app_want_quick_scan', true);
+      AppPreference.setPreference('app_want_uri', want.uri!);
+    }
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {

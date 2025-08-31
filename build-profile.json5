@@ -19,12 +19,12 @@
         "type": "HarmonyOS",
         "material": {
           "certpath": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.cer",
-          "storePassword": "0000001AEB6DA31C68C66CCFA69B290B60629EF047FF3E15E112DE0A0C0F0EA4E45820C27DD9165A0B89",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001AF3724E0D3B3B944C699B6967DAB5823CED1294DE59239AE26ADAFF70C4F3B5F77C9D87E458C8",
+          "keyPassword": "0000001B1569CD5CC20925B8DCB5B0DCDA1696977BF2C6893379316BBA959D738ABCC1CD47578D858FF411",
           "profile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p12"
+          "storeFile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p12",
+          "storePassword": "0000001BF89543496D8A667A940A6D60C087D25EDC76C62EE97F0FFD0E92E9E25EE82A175DBEBFFE5611AA"
         }
       },
       {
@@ -52,7 +52,8 @@
             "caseSensitiveCheck": true,
             "useNormalizedOHMUrl": true
           }
-        }
+        },
+        "targetSdkVersion": "5.1.1(19)"
       }
     ],
     "buildModeSet": [

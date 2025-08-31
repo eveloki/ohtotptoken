@@ -257,12 +257,12 @@ struct Index {
           tkStore.BuckupToKVAsync().then((n)=>{
             //tkStore.RestoreByKVAsync();
             //更新存档时间
-            if (n>0) {
+            if (n > 0) {
               AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
             }
-          }).catch((err:BusinessError)=>{
+          }).catch((err:BusinessError) => {
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
-          }).finally(()=>{
+          }).finally(() => {
             AppPreference.setPreference("app_db_kv_archive_is_running",false);
           });
         }
@@ -301,6 +301,11 @@ struct Index {
         data === window.WindowStageEventType.PAUSED
       );
     })
+
+    if (AppPreference.getPreference('app_want_quick_scan')) {
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('startQuickScan');
+      AppPreference.setPreference('app_want_quick_scan', false);
+    }
   }
 
   async onTokenChanged(): Promise<void> {
@@ -324,7 +329,7 @@ struct Index {
     promptAction.showToast({ message: $r('app.string.toast_multi_token_update', tokens.length) })
   }
 
-  //准备接入标准化隐私托管
+  // 准备接入标准化隐私托管
   async GetPrivacyManageInfo(): Promise<void> {
     try {
       let appPrivacyManageInfo: privacyManager.AppPrivacyMgmtInfo = privacyManager.getAppPrivacyMgmtInfo();

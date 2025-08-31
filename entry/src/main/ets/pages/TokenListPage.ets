@@ -67,6 +67,7 @@ export struct TokenListPage {
     if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
       this.token_copy_guide_popup = true;
     }
+    getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
   }
 
   build() {
@@ -386,23 +387,7 @@ export struct TokenListPage {
     Menu() {
       MenuItem({ content: $r('app.string.app_scan_code') })
         .onClick(async () => {
-          ScanBarCode().then((code) => {
-            // google authenticator migration
-            if (code.startsWith('otpauth-migration://offline?data=')) {
-              const data = new url.URLParams(url.URL.parseURL(code).search).get("data");
-              decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
-                this.updateTokenConfigs(confs);
-              });
-            } else if (code.startsWith('otpauth://')) {
-              this.dialog_totp_config = new CustomDialogController({
-                builder: TOTPConfigDialog({
-                  scan_code_original_Value: code, // 弹窗立刻扫码赋值
-                  confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
-                })
-              })
-              this.dialog_totp_config.open()
-            }
-          });
+          this.start_quick_scan();
         })
         .accessibilityText($r('app.string.app_scan_code'))
       MenuItem({ content: $r('app.string.tab_token_add_key') })
@@ -450,4 +435,23 @@ export struct TokenListPage {
     }
   }
 
+  start_quick_scan() {
+    ScanBarCode().then((code) => {
+      // google authenticator migration
+      if (code.startsWith('otpauth-migration://offline?data=')) {
+        const data = new url.URLParams(url.URL.parseURL(code).search).get("data");
+        decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
+          this.updateTokenConfigs(confs);
+        });
+      } else if (code.startsWith('otpauth://')) {
+        this.dialog_totp_config = new CustomDialogController({
+          builder: TOTPConfigDialog({
+            scan_code_original_Value: code, // 弹窗立刻扫码赋值
+            confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
+          })
+        })
+        this.dialog_totp_config.open()
+      }
+    });
+  }
 }

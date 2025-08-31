@@ -1,0 +1,19 @@
+{
+  "shortcuts": [
+    {
+      "shortcutId": "quick_scan",
+      "label": "$string:shortcut_quick_scan",
+      "icon": "$media:qrcode",
+      "wants": [
+        {
+          "bundleName": "smartcityshenzhen.yylx.totptoken",
+          "moduleName": "entry",
+          "abilityName": "EntryAbility",
+          "parameters": {
+            "action": "quick_scan"
+          }
+        }
+      ]
+    }
+  ]
+}

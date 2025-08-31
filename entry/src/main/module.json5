@@ -16,7 +16,7 @@
       {
         "name": "appgallery_privacy_link_user_agreement",
         "value": 'https://www.duan.red/yylx/opt/user-agreement-zh-cn.htm' // 必须是https网址
-      }
+      },
     ],
     "deviceTypes": [
       "phone",
@@ -81,6 +81,12 @@
             "actions": [
               "action.system.home"
             ]
+          }
+        ],
+        "metadata": [
+          {
+            "name": "ohos.ability.shortcuts",
+            "resource": "$profile:shortcuts_config"
           }
         ]
       }

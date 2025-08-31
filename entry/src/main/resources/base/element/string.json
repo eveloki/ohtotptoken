@@ -787,6 +787,10 @@
     {
       "name": "setting_invalid_icon_pack_title",
       "value": "Invalid icon pack"
+    },
+    {
+      "name": "shortcut_quick_scan",
+      "value": "Quick Scan"
     }
   ]
 }

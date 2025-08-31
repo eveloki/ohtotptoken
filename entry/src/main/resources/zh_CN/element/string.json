@@ -787,6 +787,10 @@
     {
       "name": "setting_invalid_icon_pack_title",
       "value": "无效的图标包"
+    },
+    {
+      "name": "shortcut_quick_scan",
+      "value": "快捷扫码"
     }
   ]
 }
