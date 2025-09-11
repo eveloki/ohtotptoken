@@ -20,10 +20,10 @@
 
 ---
 <p float="left">
-  <img height="400px" alt="0" src="./screenshot/0.png" />
-  <img height="400px" alt="1" src="./screenshot/1.png" />
-  <img height="400px" alt="1" src="./screenshot/2.png" />
-  <img height="400px" alt="1" src="./screenshot/3.png" />
+  <img height="400px" alt="0" src="../screenshot/0.png" />
+  <img height="400px" alt="1" src="../screenshot/1.png" />
+  <img height="400px" alt="1" src="../screenshot/2.png" />
+  <img height="400px" alt="1" src="../screenshot/3.png" />
 </p>
 
 ---
@@ -32,6 +32,6 @@
 - [paolostivanin/libcotp](https://github.com/paolostivanin/libcotp)
 - [Netthaw/TOTP-MCU](https://github.com/Netthaw/TOTP-MCU)
 - [ss23/fortitoken-mobile-registration](https://github.com/ss23/fortitoken-mobile-registration)
-- [andOTP/andOTP](https://github.com/andOTP/andOTP): icons
+- [andOTP/andOTP](https://github.com/andOTP/andOTP): 图标包
 - [iamhyc/Aigis](https://github.com/iamhyc/Aigis)
-- [nanopb/nanopb](https://github.com/nanopb/nanopb): protobuf for google authenticator migration
+- [nanopb/nanopb](https://github.com/nanopb/nanopb): 用于 Google 身份验证器迁移的`protobuf`库
