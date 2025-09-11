@@ -5,9 +5,11 @@
 
 ![GitHub License](https://img.shields.io/github/license/SolidFaker/ohtotptoken) ![GitHub Release](https://img.shields.io/github/v/release/SolidFaker/ohtotptoken)
 
+[简体中文](docs/README_CN.md)
+
 </div>
 
-Open source OTP Authenticator for HarmonyOS Next.
+Open source OTP Authenticator for HarmonyOS NEXT.
 
 ## Feature
 
