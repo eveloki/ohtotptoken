@@ -1,18 +1,11 @@
 name: build
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
+  push:
+    branches:
+      - main
     paths-ignore:
       - "docs/**"
-      - ".gitignore"
-      - "**.md"
-  push:
-    paths-ignore:
       - ".gitignore"
       - "**.md"
 
@@ -53,15 +46,12 @@ jobs:
         run: hvigorw clean assembleHap -p buildMode=release --config properties.ignoreSignHap=true
         shell: bash
 
-      # Rename and upload artifact on PR merge to main branch
       - name: Rename hap
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: cp /home/runner/work/ohtotptoken/ohtotptoken/entry/build/default/outputs/default/entry-default-unsigned.hap ohtotptoken_ohos_canary.hap
 
       - name: Upload hap
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: ohos_outputs
           path: ohtotptoken_ohos_canary.hap
-          retention-days: 1
+          retention-days: 3
