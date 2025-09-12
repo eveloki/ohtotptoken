@@ -56,7 +56,7 @@ const GA_DIGIT_MAP: Map<GA_DigitCount, number> = new Map([
 ]);
 
 export async function decodeProtobuf(payload: string): Promise<Array<TokenConfig>> {
-  const google_auth_json = decode_google_auth_pb(payload);
+  const google_auth_json: string = decode_google_auth_pb(payload);
   const GAs = JSON.parse(google_auth_json) as Array<GoogleAuth>;
 
   let result: Array<TokenConfig> = [];
