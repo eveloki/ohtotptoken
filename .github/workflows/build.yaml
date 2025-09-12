@@ -32,17 +32,13 @@ jobs:
           version: latest
           cache: true
 
-      - name: Verify tools versions
-        run: |
-          ohpm --version
-          hvigorw --version
-
       - name: Install project dependencies
         run: |
           ohpm install --all
 
       - name: Build hap
-        run: hvigorw clean assembleHap -p buildMode=release --config properties.online=true
+        run: hvigorw clean assembleHap -p buildMode=release --config properties.ignoreSignHap=true
+        shell: bash
 
-      - name: Check build outputs
-        run: ls -lat /home/runner/work/ohtotptoken/ohtotptoken/entry/build/default/outputs/default
+      - name: Rename hap
+        run: cp /home/runner/work/ohtotptoken/ohtotptoken/entry/build/default/outputs/default/entry-default-unsigned.hap ohtotptoken_ohos_canary.hap
