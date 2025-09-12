@@ -31,12 +31,18 @@ jobs:
         with:
           version: latest
           cache: true
-      - run: hvigorw -v
+          run: |
+            hvigorw -v
+            ohpm --version
 
       - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build clang
+
+      - name: Install project dependencies
+        run: |
+          ohpm install --all
 
       - name: Build hap
         run: hvigorw assembleHap -p buildMode=release
