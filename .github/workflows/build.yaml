@@ -45,4 +45,4 @@ jobs:
         run: hvigorw clean assembleHap -p buildMode=release --config properties.online=true
 
       - name: Check build outputs
-        run: ls -lat ./ohos/entry/build/default/outputs/default
+        run: ls -lat /home/runner/work/ohtotptoken/ohtotptoken/entry/build/default/outputs/default
