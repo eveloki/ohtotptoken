@@ -42,7 +42,7 @@ jobs:
           ohpm install --all
 
       - name: Build hap
-        run: hvigorw clean assembleHap -p buildMode=release --config properties.online=false
+        run: hvigorw clean assembleHap -p buildMode=release --config properties.online=true
 
       - name: Check build outputs
         run: ls -lat ./ohos/entry/build/default/outputs/default

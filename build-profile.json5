@@ -51,6 +51,11 @@
           "strictMode": {
             "caseSensitiveCheck": true,
             "useNormalizedOHMUrl": true
+          },
+          "arkOptions": {
+            "buildProfileFields": {
+              "online": false
+            }
           }
         },
         "targetSdkVersion": "5.1.1(19)"
@@ -58,7 +63,7 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
