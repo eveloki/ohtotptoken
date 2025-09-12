@@ -29,3 +29,7 @@ jobs:
           version: latest
           cache: true
       - run: hvigorw -v
+      - name: Build hap
+        run: hvigorw assembleHap -p buildMode=release
+      - name: Check build outputs
+        run: ls -lat ./ohos/entry/build/default/outputs/default
