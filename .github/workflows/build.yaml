@@ -23,13 +23,21 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
+
       - name: Setup HarmonyOS CLI tools
         uses: ErBWs/setup-ohos@v1
         with:
           version: latest
           cache: true
       - run: hvigorw -v
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang
+
       - name: Build hap
         run: hvigorw assembleHap -p buildMode=release
+
       - name: Check build outputs
         run: ls -lat ./ohos/entry/build/default/outputs/default
