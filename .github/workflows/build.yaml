@@ -61,3 +61,4 @@ jobs:
         with:
           name: ohos_outputs
           path: ohtotptoken_ohos_canary.hap
+          retention-days: 1
