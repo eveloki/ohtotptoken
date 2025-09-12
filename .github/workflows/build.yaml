@@ -8,6 +8,7 @@ on:
       - reopened
       - ready_for_review
     paths-ignore:
+      - "docs/**"
       - ".gitignore"
       - "**.md"
   push:
@@ -15,9 +16,21 @@ on:
       - ".gitignore"
       - "**.md"
 
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+
 jobs:
   build_ohos:
-    name: Release for ohos
+    name: Build for ohos
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -42,3 +55,9 @@ jobs:
 
       - name: Rename hap
         run: cp /home/runner/work/ohtotptoken/ohtotptoken/entry/build/default/outputs/default/entry-default-unsigned.hap ohtotptoken_ohos_canary.hap
+
+      - name: Upload hap
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohos_outputs
+          path: ohtotptoken_ohos_canary.hap
