@@ -54,7 +54,7 @@
           },
           "arkOptions": {
             "buildProfileFields": {
-              "online": false
+              "ignoreSignHap": false
             }
           }
         },

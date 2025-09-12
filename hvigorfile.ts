@@ -8,20 +8,20 @@ const rootNode = getNode(__filename);
 rootNode.afterNodeEvaluate(node => {
 
     //获取命令行参数
-    let online = false
-    let propertyOnline = hvigor.getParameter().getProperty('online');
-    if (propertyOnline != undefined) {
-        online = propertyOnline
+    let ignoreSignHap = false
+    let propertyIgnoreSignHap = hvigor.getParameter().getProperty('ignoreSignHap');
+    if (propertyIgnoreSignHap != undefined) {
+        ignoreSignHap = propertyIgnoreSignHap
     }
-    console.log("online-> " + propertyOnline);
+    console.log("ignoreSignHap-> " + propertyIgnoreSignHap);
 
     // 获取app插件的上下文对象
     const appContext = node.getContext(OhosPluginId.OHOS_APP_PLUGIN) as OhosAppContext;
     // 通过上下文对象获取从根目录build-profile.json5文件中读出来的obj对象
     const buildProfileOpt = appContext.getBuildProfileOpt();
-    //将 BuildProfile 文件中的online值改为传入的值
-    buildProfileOpt['app']['products'][0]['buildOption']['arkOptions']['buildProfileFields']['online'] = online
-    if (online) {
+    //将 BuildProfile 文件中的ignoreSignHap值改为传入的值
+    buildProfileOpt['app']['products'][0]['buildOption']['arkOptions']['buildProfileFields']['ignoreSignHap'] = ignoreSignHap
+    if (ignoreSignHap) {
       //清除签名文件信息
         buildProfileOpt['app']['signingConfigs'] = []
     }
