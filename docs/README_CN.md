@@ -3,7 +3,8 @@
 <img src="images/app_icon.png" width="40"> OTP令牌
 </h1>
 
-![GitHub License](https://img.shields.io/github/license/SolidFaker/ohtotptoken) ![GitHub Release](https://img.shields.io/github/v/release/SolidFaker/ohtotptoken)
+![GitHub License](https://img.shields.io/github/license/SolidFaker/ohtotptoken) ![GitHub Release](https://img.shields.io/github/v/release/SolidFaker/ohtotptoken) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/SolidFaker/ohtotptoken/build.yaml)
+
 
 </div>
 
