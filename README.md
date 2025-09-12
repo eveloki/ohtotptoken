@@ -1,5 +1,15 @@
-# OTP Token
-Opensource OTP Authenticator for HarmonyOS Next
+<div align="center">
+<h1 align="center">
+<img src="docs/images/app_icon.png" width="40"> OTP Token
+</h1>
+
+![GitHub License](https://img.shields.io/github/license/SolidFaker/ohtotptoken) ![GitHub Release](https://img.shields.io/github/v/release/SolidFaker/ohtotptoken)
+
+[简体中文](docs/README_CN.md)
+
+</div>
+
+Open source OTP Authenticator for HarmonyOS NEXT.
 
 ## Feature
 
