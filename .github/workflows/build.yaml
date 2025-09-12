@@ -31,21 +31,18 @@ jobs:
         with:
           version: latest
           cache: true
-          run: |
-            hvigorw -v
-            ohpm --version
 
-      - name: Install build dependencies
+      - name: Verify tools versions
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang
+          ohpm --version
+          hvigorw --version
 
       - name: Install project dependencies
         run: |
           ohpm install --all
 
       - name: Build hap
-        run: hvigorw assembleHap -p buildMode=release
+        run: hvigorw clean assembleHap -p buildMode=release --config properties.online=false
 
       - name: Check build outputs
         run: ls -lat ./ohos/entry/build/default/outputs/default
