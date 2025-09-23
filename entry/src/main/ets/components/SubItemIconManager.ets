@@ -127,7 +127,7 @@ export struct SubItemIconManager {
                     }
                   })
                 Column() {
-                  Text($r('app.string.setting_icon_pack_title', TokenIconPacks.default_icon_pack.name, "20250119"))
+                  Text($r('app.string.setting_icon_pack_title', TokenIconPacks.default_icon_pack.name, "20250923"))
                     .fontSize($r('sys.float.ohos_id_text_size_body1'))
                     .fontColor($r('sys.color.ohos_id_color_text_primary'))
                     .fontWeight(FontWeight.Regular)
