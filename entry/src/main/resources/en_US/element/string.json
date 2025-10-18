@@ -791,6 +791,10 @@
     {
       "name": "shortcut_quick_scan",
       "value": "Quick Scan"
+    },
+    {
+      "name": "app_wearable_guide_msg",
+      "value": "Sync tokens from other devices"
     }
   ]
 }

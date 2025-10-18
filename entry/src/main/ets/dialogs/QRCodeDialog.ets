@@ -24,12 +24,12 @@ export struct QRCodeDialog {
 
   createQRCode() {
     this.pixelMap = undefined;
-    let options: generateBarcode.CreateOptions = {
-      scanType: scanCore.ScanType.QR_CODE,
-      height: this.qrSize,
-      width: this.qrSize
-    }
     try {
+      let options: generateBarcode.CreateOptions = {
+        scanType: scanCore.ScanType.QR_CODE,
+        height: this.qrSize,
+        width: this.qrSize
+      }
       // 码图生成接口，成功返回PixelMap格式图片
       generateBarcode.createBarcode(this.content, options).then((pixelMap: image.PixelMap) => {
         this.pixelMap = pixelMap;

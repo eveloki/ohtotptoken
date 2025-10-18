@@ -1,5 +1,5 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { TokenConfig } from '../utils/TokenConfig';
+import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { SettingPage } from '../pages/SettingPage'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
@@ -20,7 +20,8 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, router, window } from '@kit.ArkUI';
+import { AppStorageV2, ArcButton, ArcList, ArcListItem, router, window } from '@kit.ArkUI';
+import { ArcTokenListPage } from './ArcTokenListPage';
 
 const TAG = 'PrivacySubscribe';
 
@@ -98,11 +99,11 @@ struct Index {
       if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
-        this.CurrentTokensCount=tokens.length;
+        this.CurrentTokensCount = tokens.length;
         this.token_loading = false;
         // DEBUG MODE
         this.restoreByKVCheck();
-        this.appIsInit=true;
+        this.appIsInit = true;
         AppPreference.setPreference("app_db_kv_archive_is_running",false)
       });
     });
@@ -398,6 +399,19 @@ struct Index {
         .height('100%')
         .backgroundColor('#40000000')
         .justifyContent(FlexAlign.Center)
+      } else if (
+        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
+          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
+      ) {
+        ArcTokenListPage({
+          Tokens: this.CurrentTokens,
+          TabBarVisible: false,
+          appBottomAvoidHeight: this.window.AvoidBottomHeight,
+          appTopAvoidHeight: this.window.AvoidTopHeight,
+          appWindowSize: this.window.Size,
+          updateTokenConfig: this.updateTokenConfig,
+          updateTokenConfigs: this.updateTokenConfigs,
+        })
       } else if (
         (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
           this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&

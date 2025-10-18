@@ -791,6 +791,10 @@
     {
       "name": "shortcut_quick_scan",
       "value": "快捷扫码"
+    },
+    {
+      "name": "app_wearable_guide_msg",
+      "value": "从其他设备同步令牌"
     }
   ]
 }
