@@ -6,7 +6,9 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "libotpcutils.so": "file:./src/main/cpp/types/libotpcutils"
-  }
+    "libotpcutils.so": "file:./src/main/cpp/types/libotpcutils",
+    "long": "^5.2.1"
+  },
+  "devDependencies": {},
+  "dynamicDependencies": {}
 }
-

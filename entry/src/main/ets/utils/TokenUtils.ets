@@ -126,9 +126,12 @@ export function stringToArray(input: string): Uint8Array {
 }
 
 export function base32Encode(
-  input: Uint8Array,
+  input: Uint8Array|null|undefined,
   variant: Base32Variant = 'RFC4648',
 ): string {
+  if (input===null||input===undefined) {
+    return "";
+  }
   let alphabet: string;
   let defaultPadding: boolean;
 

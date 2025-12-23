@@ -2,7 +2,8 @@
   "modelVersion": "5.0.0",
   "description": "Please describe the basic information.",
   "dependencies": {
-    "@ohos/lottie": "^2.0.20"
+    "@ohos/lottie": "^2.0.20",
+    "@ohos/protobufjs": "^3.0.0"
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.19",

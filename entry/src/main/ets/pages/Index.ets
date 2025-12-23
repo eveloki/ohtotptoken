@@ -22,6 +22,7 @@ import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, ArcButton, ArcList, ArcListItem, router, window } from '@kit.ArkUI';
 import { ArcTokenListPage } from './ArcTokenListPage';
+import { testProtobufToJson } from '../utils/GoogleAuthUtils';
 
 const TAG = 'PrivacySubscribe';
 
