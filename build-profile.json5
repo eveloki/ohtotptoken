@@ -5,39 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:/Users/Enbin/.ohos/config/default_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.cer",
-          "storePassword": "0000001AAF9850555BF1B96CBE9CB5FE47B19298A2ECAA947B8A9506C4A51F10EBBBBC18AA721DADB798",
+          "certpath": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001AC4D61A57507AC6CDE879492D4143D6795EE67707A209D593EEFC9C0D4794F0464D2430B3CADF",
-          "profile": "C:/Users/Enbin/.ohos/config/default_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p7b",
+          "keyPassword": "0000001BE9F9A07C1CDA59BEC492B1A3DDED5A281532FF41404316B074D930AE5E3BFD7E16F8103271DBC5",
+          "profile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:/Users/Enbin/.ohos/config/default_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p12"
-        }
-      },
-      {
-        "name": "debug",
-        "type": "HarmonyOS",
-        "material": {
-          "certpath": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B1569CD5CC20925B8DCB5B0DCDA1696977BF2C6893379316BBA959D738ABCC1CD47578D858FF411",
-          "profile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p7b",
-          "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\Enbin\\.ohos\\config\\debug_ohtotptoken_zEfyPz1RN8ob1pMCTZfbW1apFSh333TcemZR0Z8gQfk=.p12",
-          "storePassword": "0000001BF89543496D8A667A940A6D60C087D25EDC76C62EE97F0FFD0E92E9E25EE82A175DBEBFFE5611AA"
-        }
-      },
-      {
-        "name": "release",
-        "type": "HarmonyOS",
-        "material": {
-          "storeFile": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/.p12",
-          "storePassword": "0000001A6E0DDD4EA5BCA114879C6AC5B2CC2C1BD2A402D32D97620B232E11F213A8CF9520863A787E3B",
-          "keyAlias": "totp_token",
-          "keyPassword": "0000001A798F73D348E3BA18CAA480B9C0FAA0EC252EC01FE2BCC32C3AE1EBD1DF8695ECF920CE2805FF",
-          "signAlg": "SHA256withECDSA",
-          "profile": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/SolidFakerRelease.p7b",
-          "certpath": "D:/Dev/OpenHarmony/Key_and_CSR/ohtotptoken/github_SolidFaker.cer"
+          "storeFile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p12",
+          "storePassword": "0000001B94FC3B4A9A843F9850F1F352432E9CF411610B4CADC2A7650E9C1889FD86AA02B895DE374B01BA"
         }
       }
     ],
@@ -45,7 +19,7 @@
       {
         "name": "default",
         "signingConfig": "debug",
-        "compatibleSdkVersion": "5.1.1(19)",
+        "compatibleSdkVersion": "6.0.0(20)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {
@@ -58,7 +32,7 @@
             }
           }
         },
-        "targetSdkVersion": "5.1.1(19)"
+        "targetSdkVersion": "6.0.0(20)"
       }
     ],
     "buildModeSet": [
