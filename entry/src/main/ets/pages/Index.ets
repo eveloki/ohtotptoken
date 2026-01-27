@@ -21,7 +21,7 @@ import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
-import { HdsTabs } from '@kit.UIDesignKit';
+import { HdsNavigation, HdsNavigationTitleMode, HdsTabs, ScrollEffectType } from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 
 const TAG = 'PrivacySubscribe';
@@ -374,11 +374,12 @@ struct Index {
   }
 
   build() {
-    Stack() {
-      if (this.token_loading) {
-        Column() {
-          LoadingProgress()
-            .color(Color.White)
+    HdsNavigation() {
+      Stack() {
+        if (this.token_loading) {
+          Column() {
+            LoadingProgress()
+              .color(Color.White)
             .width(80).height(80)
           Text('Loading..')
             .fontSize(16)
@@ -478,28 +479,65 @@ struct Index {
             this.tab_bar_index = index;
           })
         }
+        }
       }
+      .width('100%')
+      .height('100%')
+      .allowDrop([uniformTypeDescriptor.UniformDataType.FILE])
+      .onDrop(() => {
+        this.DropFilesDialogIsOpen = false;
+        this.DropFilesDialogController?.close();
+      })
+      .onDragEnter(() => {
+        if (!this.DropFilesDialogIsOpen) {
+          this.DropFilesDialogIsOpen = true;
+          this.DropFilesDialogController?.open();
+        }
+      })
+      .onDragLeave(() => {
+        this.DropFilesDialogIsOpen = false;
+        this.DropFilesDialogController?.close();
+      })
+      .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
+        colorMode: ThemeColorMode.SYSTEM,
+        adaptiveColor: AdaptiveColor.DEFAULT
+      })
     }
-    .width('100%')
-    .height('100%')
-    .allowDrop([uniformTypeDescriptor.UniformDataType.FILE])
-    .onDrop(() => {
-      this.DropFilesDialogIsOpen = false;
-      this.DropFilesDialogController?.close();
-    })
-    .onDragEnter(() => {
-      if (!this.DropFilesDialogIsOpen) {
-        this.DropFilesDialogIsOpen = true;
-        this.DropFilesDialogController?.open();
+    .titleMode(HdsNavigationTitleMode.MODAL)
+    .titleBar({
+      style: {
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+        }
+      },
+      avoidLayoutSafeArea: true,
+      content: {
+        title: {
+          mainTitle: $r('app.string.EntryAbility_label')
+        },
+        menu: {
+          value: [{
+            content: {
+              label: 'add',
+              icon: $r('sys.symbol.plus'),
+              isEnabled: true,
+              action: () => {
+                //TODO: 蓝的添加按钮功能
+              }
+            }
+          }, {
+            content: {
+              label: 'search',
+              icon: $r('sys.symbol.magnifyingglass'),
+              isEnabled: true,
+              action: () => {
+                //TODO: 下拉搜索触发改成这里触发
+              }
+            }
+          }]
+        }
       }
-    })
-    .onDragLeave(() => {
-      this.DropFilesDialogIsOpen = false;
-      this.DropFilesDialogController?.close();
-    })
-    .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
-      colorMode: ThemeColorMode.SYSTEM,
-      adaptiveColor: AdaptiveColor.DEFAULT
     })
   }
 
