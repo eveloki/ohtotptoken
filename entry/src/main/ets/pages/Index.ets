@@ -20,7 +20,8 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, ArcButton, ArcList, ArcListItem, router, window } from '@kit.ArkUI';
+import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { HdsTabs } from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 
 const TAG = 'PrivacySubscribe';
@@ -372,18 +373,6 @@ struct Index {
     });
   }
 
-  @Builder
-  tabBar(text: ResourceStr | string, id: number) {
-    Column(){
-      Blank()
-        .width('100%')
-        .height(this.window.AvoidTopHeight)
-      Text(text)
-        .fontWeight(this.tab_bar_index === id ? 500 : 400)
-        .fontColor(this.tab_bar_index === id ? $r('app.color.token_number') : $r('app.color.str_main'))
-    }
-  }
-
   build() {
     Stack() {
       if (this.token_loading) {
@@ -433,7 +422,7 @@ struct Index {
       } else {
 
         Column() {
-          Tabs({ index: this.tab_bar_index }) {
+          HdsTabs({ index: this.tab_bar_index }) {
             TabContent() {
               TokenListPage({
                 Tokens: this.CurrentTokens,
@@ -446,7 +435,12 @@ struct Index {
               })
             }
             .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_token'), 0))
+            .tabBar(BottomTabBarStyle.of(
+              {
+                normal: new SymbolGlyphModifier($r('sys.symbol.key')),
+                selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
+              },
+              $r('app.string.tab_token')))
             .tabIndex(0)
 
             TabContent() {
@@ -462,7 +456,12 @@ struct Index {
                 .height('100%')
             }
             .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_setting'), 1))
+            .tabBar(BottomTabBarStyle.of(
+              {
+                normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
+                selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill'))
+              },
+              $r('app.string.tab_token')))
             .tabIndex(1)
           }
           .barBackgroundColor($r('app.color.tab_bar_bg'))
@@ -471,7 +470,9 @@ struct Index {
           .barOverlap(true)
           .barBackgroundColor(Color.Transparent)
           .barBackgroundBlurStyle(BlurStyle.Thin)
-          .barHeight(50 + this.window.AvoidTopHeight)
+          .barPosition(BarPosition.End)
+          .vertical(false)
+          .barHeight(50 + this.window.AvoidBottomHeight)
           .barMode(BarMode.Fixed)
           .onChange((index) => {
             this.tab_bar_index = index;
