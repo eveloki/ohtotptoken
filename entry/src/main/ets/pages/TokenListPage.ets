@@ -93,7 +93,7 @@ export struct TokenListPage {
               Column() {
                 if (this.TabBarVisible) {
                   Row()
-                    .height(50 + this.appTopAvoidHeight)
+                    .height(60 + this.appTopAvoidHeight)
                     .width('100%')
                 } else {
                   Row()
@@ -203,6 +203,13 @@ export struct TokenListPage {
                 setTimeout(() => tkStore.updateTokenRank(from, to), 500);
               }
             })
+
+          ListItem() {
+            Row()
+              .height(this.TabBarVisible ? (50 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .width('100%')
+          }
+          .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
         .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
@@ -266,11 +273,12 @@ export struct TokenListPage {
             }),
             isExpand: this.isExpand
           })
-            .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
+            // .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
         }
         .width('100%')
         .justifyContent(FlexAlign.Center)
         .margin({ bottom: this.appBottomAvoidHeight + 35 })
+        .hitTestBehavior(HitTestMode.None)
       }
     }
   }

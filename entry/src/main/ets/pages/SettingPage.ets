@@ -280,7 +280,7 @@ export struct SettingPage {
             ListItem() {
 
             }
-            .height(50 + this.appTopAvoidHeight)
+            .height(60 + this.appTopAvoidHeight)
           }
 
           ListItem() {
@@ -626,7 +626,7 @@ export struct SettingPage {
             ListItem() {
               Row()
                 .width('100%')
-                .height(this.appBottomAvoidHeight)
+                .height(this.appBottomAvoidHeight + 60)
             }
           }
         }
