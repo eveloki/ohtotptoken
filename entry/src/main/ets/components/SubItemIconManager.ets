@@ -3,11 +3,12 @@ import { fileIo as fs } from '@kit.CoreFileKit';
 import { showSelectFilePicker } from '../utils/FileUtils';
 import { AegisIconPack, TokenIconPacks } from '../utils/TokenUtils';
 import { BusinessError, zlib } from '@kit.BasicServicesKit';
-import { AppStorageV2, promptAction } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { SubItemDivider } from './SubItemDivider';
 import { AppPreference } from '../utils/AppPreference';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { throttle,startBrowsableAbility } from '../utils/UiUtils';
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
 @Preview
 @ComponentV2
@@ -250,7 +251,7 @@ export struct SubItemIconManager {
                           fs.rmdir(out_path);
                         });
                       }).catch((reason: BusinessError) => {
-                        promptAction.showToast(reason);
+                        showSnackBar(reason.message ?? `${reason}`, SnackBarNotifyType.ERROR);
                         fs.close(fd.fd);
                       });
                     });

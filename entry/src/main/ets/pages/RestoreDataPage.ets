@@ -9,6 +9,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { throttle } from '../utils/UiUtils';
 import { showSelectFilePicker, readFileContentAndCheckSize } from '../utils/FileUtils';
 import { fileIo as fs } from "@kit.CoreFileKit";
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
 
 @Entry
@@ -102,7 +103,7 @@ struct RestoreDataPage {
       this.isBegin = false;
       this.progress = 0;
       this.isRestoreSuccess=false;
-      //this.getUIContext().getPromptAction().showToast({ message: $r('app.string.restore_data_ok_msg'), bottom: this.TOAST_BOTTOM })
+      //showSnackBar($r('app.string.restore_data_ok_msg'), SnackBarNotifyType.SUCCESS)
       this.getUIContext().showAlertDialog(
         {
           title: $r(title),
@@ -138,7 +139,7 @@ struct RestoreDataPage {
         this.recoveryKey=text;
         this.recoveryKeyShow=text;
         if (text=="") {
-          this.getUIContext().getPromptAction().showToast({ message: "invalid Recovery Key file", bottom: this.TOAST_BOTTOM })
+          showSnackBar('invalid Recovery Key file', SnackBarNotifyType.ERROR);
         }
       });
     });

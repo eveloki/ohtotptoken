@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer, util } from '@kit.ArkTS';
 import { base32Decode,stringToIntArray,stringToArray } from '../utils/TokenUtils'
-import promptAction from '@ohos.promptAction'
+import { showSnackBar, SnackBarNotifyType } from './HdsSnackBarUtils';
 
 export async function decryptFile(file_buf: Uint8Array, user_key: string): Promise<string> {
   let aes_decoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
@@ -23,14 +23,14 @@ export async function decryptFile(file_buf: Uint8Array, user_key: string): Promi
   let aes_key = aesGenerator.convertKeySync(symKeyBlob);
   await aes_decoder.init(cryptoFramework.CryptoMode.DECRYPT_MODE, aes_key, aes_iv)
     .catch((reason: string) => {
-      promptAction.showToast({ message: reason });
+      showSnackBar(reason, SnackBarNotifyType.ERROR);
     });
   return new Promise<string>((resolve) => {
     aes_decoder.doFinal({ data: file_buf }).then((decryptData) => {
       let decoder = new util.TextDecoder()
       resolve(decoder.decodeToString(decryptData.data));
     }).catch((reason: BusinessError) => {
-      promptAction.showToast({ message: reason.message });
+      showSnackBar(reason.message, SnackBarNotifyType.ERROR);
     });
   });
 }
@@ -90,7 +90,7 @@ export async function decryptUint8ArrayData(data: Uint8Array, symKeyBlob: crypto
   let aes_key = aesGenerator.convertKeySync(symKeyBlob);
   await aes_decoder.init(cryptoFramework.CryptoMode.DECRYPT_MODE, aes_key, aes_iv)
     .catch((reason: string) => {
-      promptAction.showToast({ message: reason });
+      showSnackBar(reason, SnackBarNotifyType.ERROR);
     });
   return new Promise<Uint8Array|null>((resolve) => {
     aes_decoder.doFinal({ data: data }).then((decryptData) => {

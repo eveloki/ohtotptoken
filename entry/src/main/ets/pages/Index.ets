@@ -4,7 +4,7 @@ import { SettingPage } from '../pages/SettingPage'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
-import promptAction from '@ohos.promptAction'
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { AppPreference } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -317,7 +317,7 @@ struct Index {
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
     if (toast) {
-      promptAction.showToast({ message: $r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName) })
+      showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
     }
   }
 
@@ -328,7 +328,7 @@ struct Index {
       }
       await this.updateTokenConfig(tokens[i], false);
     }
-    promptAction.showToast({ message: $r('app.string.toast_multi_token_update', tokens.length) })
+    showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
   }
 
   // 准备接入标准化隐私托管
