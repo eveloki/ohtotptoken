@@ -1,4 +1,4 @@
-import { AppStorageV2 } from '@kit.ArkUI';
+import { AppStorageV2, SymbolGlyphModifier } from '@kit.ArkUI';
 import {
   HdsSnackBar,
   SnackBarIconOptions,
@@ -9,6 +9,7 @@ import {
   SnackBarStyleOptions
 } from '@kit.UIDesignKit';
 import { AppWindowInfo } from '../entryability/EntryAbility';
+import { common, ConfigurationConstant } from '@kit.AbilityKit';
 
 export enum SnackBarNotifyType {
   INFO = 'INFO',
@@ -24,11 +25,30 @@ const SnackBarIconMap: Record<SnackBarNotifyType, ResourceStr | undefined> = {
   [SnackBarNotifyType.SUCCESS]: $r('sys.symbol.checkmark_circle')
 };
 
+const SnackBarIconColorMapLight: Record<SnackBarNotifyType, SymbolGlyphModifier> = {
+  [SnackBarNotifyType.INFO]: new SymbolGlyphModifier().fontColor([Color.Blue]),
+  [SnackBarNotifyType.WARNING]: new SymbolGlyphModifier().fontColor([Color.Orange]),
+  [SnackBarNotifyType.ERROR]: new SymbolGlyphModifier().fontColor([Color.Red]),
+  [SnackBarNotifyType.SUCCESS]: new SymbolGlyphModifier().fontColor([Color.Green])
+};
+
+const SnackBarIconColorMapDark: Record<SnackBarNotifyType, SymbolGlyphModifier> = {
+  [SnackBarNotifyType.INFO]: new SymbolGlyphModifier().fontColor([0xFF8FD3FF]),
+  [SnackBarNotifyType.WARNING]: new SymbolGlyphModifier().fontColor([0xFFFFC266]),
+  [SnackBarNotifyType.ERROR]: new SymbolGlyphModifier().fontColor([0xFFFF8A8A]),
+  [SnackBarNotifyType.SUCCESS]: new SymbolGlyphModifier().fontColor([0xFF7EE7A3])
+};
+
 let snackBar: HdsSnackBar | undefined;
 
 function getUiContext(): UIContext | undefined {
   const windowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-  return windowInfo?.uiContext;
+  return windowInfo.uiContext;
+}
+
+function getUiAbilityContext(): common.UIAbilityContext | undefined {
+  const windowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  return windowInfo.Context;
 }
 
 export interface SnackBarNotifyOptions {
@@ -42,6 +62,7 @@ export function showSnackBar(
   options: SnackBarNotifyOptions = {}
 ): void {
   const uiContext = getUiContext();
+  const abilityContext = getUiAbilityContext();
   if (!uiContext) {
     return;
   }
@@ -50,9 +71,11 @@ export function showSnackBar(
     snackBar = new HdsSnackBar(uiContext);
   }
 
+  const useDarkColors = abilityContext?.config?.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
   const iconOptions: SnackBarIconOptions = {
     icon: SnackBarIconMap[type],
-    iconType: SnackBarIconType.SMALL
+    iconType: SnackBarIconType.SMALL,
+    iconSymbolModifier: useDarkColors ? SnackBarIconColorMapDark[type] : SnackBarIconColorMapLight[type],
   };
 
   const messageOptions: SnackBarMessageOptions = {
