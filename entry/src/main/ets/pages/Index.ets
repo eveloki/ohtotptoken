@@ -462,7 +462,7 @@ struct Index {
                 normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
                 selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill'))
               },
-              $r('app.string.tab_token')))
+              $r('app.string.tab_setting')))
             .tabIndex(1)
           }
           .barBackgroundColor($r('app.color.tab_bar_bg'))
@@ -505,40 +505,32 @@ struct Index {
     }
     .titleMode(HdsNavigationTitleMode.MODAL)
     .titleBar({
+      avoidLayoutSafeArea: true, // 状态栏安全区沉浸
       style: {
         scrollEffectOpts: {
           enableScrollEffect: true,
-          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+          scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
         }
       },
-      avoidLayoutSafeArea: true,
       content: {
         title: {
           mainTitle: $r('app.string.EntryAbility_label')
         },
         menu: {
-          value: [{
-            content: {
-              label: 'add',
-              icon: $r('sys.symbol.plus'),
-              isEnabled: true,
-              action: () => {
-                //TODO: 蓝的添加按钮功能
+          value: [
+            {
+              content: {
+                label: $r('app.string.app_ua_search_token'),
+                icon: $r('sys.symbol.magnifyingglass'),
+                isEnabled: true,
+                action: () => {
+                  //TODO: 下拉搜索触发改成这里触发
+                }
               }
             }
-          }, {
-            content: {
-              label: 'search',
-              icon: $r('sys.symbol.magnifyingglass'),
-              isEnabled: true,
-              action: () => {
-                //TODO: 下拉搜索触发改成这里触发
-              }
-            }
-          }]
+          ]
         }
       }
     })
   }
-
 }
