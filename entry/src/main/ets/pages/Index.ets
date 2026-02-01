@@ -538,7 +538,10 @@ struct Index {
               normal: new SymbolGlyphModifier($r('sys.symbol.key')),
               selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
             },
-            $r('app.string.tab_token')))
+            $r('app.string.tab_token'))
+            .verticalAlign(VerticalAlign.Top)
+            .padding({top: 10})
+          )
           .tabIndex(0)
 
           TabContent() {
@@ -578,9 +581,12 @@ struct Index {
           .tabBar(BottomTabBarStyle.of(
             {
               normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
-              selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill'))
+              selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill')),
             },
-            $r('app.string.tab_setting')))
+            $r('app.string.tab_setting'))
+            .verticalAlign(VerticalAlign.Top)
+            .padding({top: 10})
+          )
           .tabIndex(1)
         }
         .barBackgroundColor($r('app.color.tab_bar_bg'))
