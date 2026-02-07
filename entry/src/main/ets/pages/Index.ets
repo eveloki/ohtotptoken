@@ -594,7 +594,7 @@ struct Index {
         .layoutWeight(1)
         .barOverlap(true)
         .barBackgroundColor(Color.Transparent)
-        .barBackgroundBlurStyle(BlurStyle.Thick)
+        .barBackgroundBlurStyle(BlurStyle.Regular)
         .barPosition(BarPosition.End)
         .vertical(false)
         .barHeight(50 + this.window.AvoidBottomHeight)
