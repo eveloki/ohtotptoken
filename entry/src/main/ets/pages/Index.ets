@@ -4,7 +4,7 @@ import { SettingPage } from '../pages/SettingPage'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
-import promptAction from '@ohos.promptAction'
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { AppPreference } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -20,7 +20,9 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, ArcButton, ArcList, ArcListItem, router, window } from '@kit.ArkUI';
+import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { HdsNavigation, HdsTabsAttribute, HdsNavigationTitleMode, HdsTabs,
+  ScrollEffectType } from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 import { testProtobufToJson } from '../utils/GoogleAuthUtils';
 
@@ -317,7 +319,7 @@ struct Index {
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
     if (toast) {
-      promptAction.showToast({ message: $r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName) })
+      showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
     }
   }
 
@@ -328,7 +330,7 @@ struct Index {
       }
       await this.updateTokenConfig(tokens[i], false);
     }
-    promptAction.showToast({ message: $r('app.string.toast_multi_token_update', tokens.length) })
+    showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
   }
 
   // 准备接入标准化隐私托管
@@ -373,37 +375,26 @@ struct Index {
     });
   }
 
-  @Builder
-  tabBar(text: ResourceStr | string, id: number) {
-    Column(){
-      Blank()
-        .width('100%')
-        .height(this.window.AvoidTopHeight)
-      Text(text)
-        .fontWeight(this.tab_bar_index === id ? 500 : 400)
-        .fontColor(this.tab_bar_index === id ? $r('app.color.token_number') : $r('app.color.str_main'))
-    }
-  }
-
   build() {
     Stack() {
       if (this.token_loading) {
         Column() {
           LoadingProgress()
             .color(Color.White)
-            .width(80).height(80)
-          Text('Loading..')
-            .fontSize(16)
-            .fontColor(Color.White)
-        }
-        .width('100%')
-        .height('100%')
-        .backgroundColor('#40000000')
-        .justifyContent(FlexAlign.Center)
-      } else if (
-        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
-          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
-      ) {
+          .width(80).height(80)
+        Text('Loading..')
+          .fontSize(16)
+          .fontColor(Color.White)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor('#40000000')
+      .justifyContent(FlexAlign.Center)
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
+    ) {
+      HdsNavigation() {
         ArcTokenListPage({
           Tokens: this.CurrentTokens,
           TabBarVisible: false,
@@ -413,11 +404,43 @@ struct Index {
           updateTokenConfig: this.updateTokenConfig,
           updateTokenConfigs: this.updateTokenConfigs,
         })
-      } else if (
-        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
-          this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
-          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
-      ) {
+      }
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+        style: {
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+            // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.EntryAbility_label')
+          },
+          menu: {
+            value: [
+              {
+                content: {
+                  label: $r('app.string.app_ua_search_token'),
+                  icon: $r('sys.symbol.magnifyingglass'),
+                  isEnabled: true,
+                  action: () => {
+                    //TODO: 下拉搜索触发改成这里触发
+                  }
+                }
+              }
+            ]
+          }
+        }
+      })
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
+        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
+    ) {
+      HdsNavigation() {
         Column() {
           TokenListPage({
             Tokens: this.CurrentTokens,
@@ -431,11 +454,44 @@ struct Index {
         }
         .backgroundColor($r('app.color.window_background'))
 
-      } else {
+      }
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+        style: {
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+            // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.EntryAbility_label')
+          },
+          menu: {
+            value: [
+              {
+                content: {
+                  label: $r('app.string.app_ua_search_token'),
+                  icon: $r('sys.symbol.magnifyingglass'),
+                  isEnabled: true,
+                  action: () => {
+                    //TODO: 下拉搜索触发改成这里触发
+                  }
+                }
+              }
+            ]
+          }
+        }
+      })
 
-        Column() {
-          Tabs({ index: this.tab_bar_index }) {
-            TabContent() {
+    } else {
+
+      Column() {
+        HdsTabs({ index: this.tab_bar_index }) {
+          TabContent() {
+            HdsNavigation() {
               TokenListPage({
                 Tokens: this.CurrentTokens,
                 TabBarVisible: true,
@@ -446,11 +502,51 @@ struct Index {
                 updateTokenConfigs: this.updateTokenConfigs,
               })
             }
-            .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_token'), 0))
-            .tabIndex(0)
+            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleBar({
+              avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+              style: {
+                scrollEffectOpts: {
+                  enableScrollEffect: true,
+                  scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                }
+              },
+              content: {
+                title: {
+                  mainTitle: $r('app.string.EntryAbility_label'),
+                },
+                menu: {
+                  value: [
+                    {
+                      content: {
+                        label: $r('app.string.app_ua_search_token'),
+                        icon: $r('sys.symbol.magnifyingglass'),
+                        isEnabled: true,
+                        action: () => {
+                          //TODO: 下拉搜索触发改成这里触发
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            })
+          }
+          .backgroundColor($r('app.color.window_background'))
+          .tabBar(BottomTabBarStyle.of(
+            {
+              normal: new SymbolGlyphModifier($r('sys.symbol.key')),
+              selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
+            },
+            $r('app.string.tab_token'))
+            .verticalAlign(VerticalAlign.Top)
+            .padding({top: 10})
+          )
+          .tabIndex(0)
 
-            TabContent() {
+          TabContent() {
+            HdsNavigation() {
               SettingPage({
                 Tokens: this.CurrentTokens,
                 appBottomAvoidHeight: this.window.AvoidBottomHeight,
@@ -462,22 +558,52 @@ struct Index {
               })
                 .height('100%')
             }
-            .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_setting'), 1))
-            .tabIndex(1)
+            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleBar({
+              avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+              style: {
+                scrollEffectOpts: {
+                  enableScrollEffect: true,
+                  scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                }
+              },
+              content: {
+                title: {
+                  mainTitle: $r('app.string.tab_setting')
+                },
+                menu: {
+                  value: []
+                }
+              }
+            })
           }
-          .barBackgroundColor($r('app.color.tab_bar_bg'))
           .backgroundColor($r('app.color.window_background'))
-          .layoutWeight(1)
-          .barOverlap(true)
-          .barBackgroundColor(Color.Transparent)
-          .barBackgroundBlurStyle(BlurStyle.Thin)
-          .barHeight(50 + this.window.AvoidTopHeight)
-          .barMode(BarMode.Fixed)
-          .onChange((index) => {
-            this.tab_bar_index = index;
-          })
+          .tabBar(BottomTabBarStyle.of(
+            {
+              normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
+              selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill')),
+            },
+            $r('app.string.tab_setting'))
+            .verticalAlign(VerticalAlign.Top)
+            .padding({top: 10})
+          )
+          .tabIndex(1)
         }
+        .barBackgroundColor($r('app.color.tab_bar_bg'))
+        .backgroundColor($r('app.color.window_background'))
+        .layoutWeight(1)
+        .barOverlap(true)
+        .barBackgroundColor(Color.Transparent)
+        .barBackgroundBlurStyle(BlurStyle.Regular)
+        .barPosition(BarPosition.End)
+        .vertical(false)
+        .barHeight(50 + this.window.AvoidBottomHeight)
+        .barMode(BarMode.Fixed)
+        .onChange((index) => {
+          this.tab_bar_index = index;
+        })
+      }
       }
     }
     .width('100%')
@@ -502,5 +628,4 @@ struct Index {
       adaptiveColor: AdaptiveColor.DEFAULT
     })
   }
-
 }

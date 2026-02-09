@@ -2,7 +2,7 @@ import { TokenConfig } from '../utils/TokenConfig';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
-import promptAction from '@ohos.promptAction'
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
 import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../utils/AppPreference';
@@ -96,11 +96,11 @@ export struct SettingPage {
           showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.bak`], ['BAK|.bak']).then((uris) => {
             const backup: TokenBackup = new TokenBackup(this.versionCode ?? 0, this.Tokens);
             if (uris[0] !== undefined && uris[0] !== '') {
-              saveBackupToFile(uris[0], backup, true, password).then(() => {
-                promptAction.showToast({ message: $r('app.string.toast_backup_success') });
-              }).catch((reason: BusinessError) => {
-                promptAction.showToast({ message: reason.message });
-              });
+                  saveBackupToFile(uris[0], backup, true, password).then(() => {
+                    showSnackBar($r('app.string.toast_backup_success'), SnackBarNotifyType.SUCCESS);
+                  }).catch((reason: BusinessError) => {
+                    showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+                  });
             }
           });
         } else { // 加密导入
@@ -199,9 +199,9 @@ export struct SettingPage {
                 const backup: TokenBackup = new TokenBackup(this.versionCode, this.Tokens);
                 if (uris[0] !== undefined && uris[0] !== '') {
                   saveBackupToFile(uris[0], backup).then(() => {
-                    promptAction.showToast({ message: $r('app.string.toast_backup_success') });
+                    showSnackBar($r('app.string.toast_backup_success'), SnackBarNotifyType.SUCCESS);
                   }).catch((reason: BusinessError) => {
-                    promptAction.showToast({ message: reason.message });
+                    showSnackBar(reason.message, SnackBarNotifyType.ERROR);
                   });
                 }
               });
@@ -280,7 +280,7 @@ export struct SettingPage {
             ListItem() {
 
             }
-            .height(50 + this.appTopAvoidHeight)
+            .height(60 + this.appTopAvoidHeight)
           }
 
           ListItem() {
@@ -377,7 +377,7 @@ export struct SettingPage {
                       userAuth.getAvailableStatus(userAuth.UserAuthType.PIN, userAuth.AuthTrustLevel.ATL1);
                     } catch (err) {
                       const error = err as BusinessError;
-                      promptAction.showToast({ message: error.message });
+                      showSnackBar(error.message, SnackBarNotifyType.ERROR);
                       return;
                     }
                   }
@@ -585,11 +585,11 @@ export struct SettingPage {
                 this.debug_mode_counter = 0;
               }, 2000);
               if (this.debug_mode_counter > 7) {
-                this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-                  this.debug_mode_is_on = true;
-                  AppPreference.setPreference('app_debug_mode_on', true);
-                  promptAction.showToast({ message: "DEBUG MODE ON" });
-                })
+                  this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
+                    this.debug_mode_is_on = true;
+                    AppPreference.setPreference('app_debug_mode_on', true);
+                    showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
+                  })
 
               }
               this.debug_mode_counter++;
@@ -626,7 +626,7 @@ export struct SettingPage {
             ListItem() {
               Row()
                 .width('100%')
-                .height(this.appBottomAvoidHeight)
+                .height(this.appBottomAvoidHeight + 60)
             }
           }
         }

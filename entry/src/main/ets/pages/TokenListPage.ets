@@ -7,7 +7,8 @@ import { AppPreference, SettingValue, TokenPreference } from "../utils/AppPrefer
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
-import { AppStorageV2, curves, window } from "@kit.ArkUI";
+import { AppStorageV2, ComponentContent, curves, window } from "@kit.ArkUI";
+import { ActionBarButton, ActionBarStyle, HdsActionBar } from "@kit.UIDesignKit";
 import { url } from "@kit.ArkTS";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
@@ -40,9 +41,9 @@ export struct TokenListPage {
   @Local token_list_search_str: string = '';
   @Local id_list: string[] = ['search_bar'];
 
-  @Local btn_token_add_clicked: number = 0;
-
-  private plus_btn_height: number = 70;
+  @Local isExpand: boolean = false;
+  @Local isPrimaryIconChanged: boolean = false;
+  @Local primaryHoverTips: string = '收起';
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -71,7 +72,7 @@ export struct TokenListPage {
   }
 
   build() {
-    Stack({ alignContent: Alignment.BottomEnd }) {
+    Stack({ alignContent: Alignment.Bottom }) {
       if (this.Tokens.length === 0) {
         Row() {
           Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') :
@@ -92,7 +93,7 @@ export struct TokenListPage {
               Column() {
                 if (this.TabBarVisible) {
                   Row()
-                    .height(50 + this.appTopAvoidHeight)
+                    .height(60 + this.appTopAvoidHeight)
                     .width('100%')
                 } else {
                   Row()
@@ -202,20 +203,13 @@ export struct TokenListPage {
                 setTimeout(() => tkStore.updateTokenRank(from, to), 500);
               }
             })
-          ListItemGroup() {
-            ListItem() {
-              if (this.TabBarVisible) {
-                Row()
-                  .width('100%')
-                  .height(this.appBottomAvoidHeight > this.plus_btn_height ? this.appBottomAvoidHeight : this.plus_btn_height)
-              } else {
-                Row()
-                  .width('100%')
-                  .height(this.appBottomAvoidHeight)
-              }
 
-            }
+          ListItem() {
+            Row()
+              .height(this.TabBarVisible ? (50 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .width('100%')
           }
+          .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
         .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
@@ -248,24 +242,47 @@ export struct TokenListPage {
         })
       }
       if (this.TabBarVisible) {
-        Button({ type: ButtonType.Circle }) {
-          SymbolGlyph($r('sys.symbol.plus'))
-            .fontSize(40)
-            .fontWeight(FontWeight.Bold)
-            .fontColor([Color.White])
-            .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
-              this.btn_token_add_clicked)
+        Row() {
+          HdsActionBar({
+            startButtons: [new ActionBarButton({
+              baseIcon: $r('sys.symbol.plus'),
+              hoverTips: $r('app.string.app_ua_add_token'),
+              accessibilityText: $r('app.string.app_ua_add_token'),
+              onClick: () => {
+                this.isExpand = !this.isExpand;
+              }
+            })],
+            endButtons: [new ActionBarButton({
+              baseIcon: $r('sys.symbol.line_viewfinder'),
+              hoverTips: $r('app.string.app_scan_code'),
+              accessibilityText: $r('app.string.app_scan_code'),
+              onClick: () => {
+                this.isExpand = !this.isExpand;
+                this.start_quick_scan();
+              }
+            })],
+            primaryButton: new ActionBarButton({
+              baseIcon: $r('sys.symbol.plus'),
+              altIcon: $r('sys.symbol.xmark'),
+              hoverTips: this.primaryHoverTips,
+              accessibilityText: this.primaryHoverTips,
+              onClick: () => {
+                this.isExpand = !this.isExpand;
+                this.isPrimaryIconChanged = !this.isPrimaryIconChanged;
+                this.primaryHoverTips = this.isExpand ? '收起' : '展开';
+              }
+            }),
+            actionBarStyle: new ActionBarStyle({
+              isPrimaryIconChanged: this.isPrimaryIconChanged,
+            }),
+            isExpand: this.isExpand
+          })
+            // .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
         }
-        .height(this.plus_btn_height)
-        .backgroundColor($r('app.color.token_number'))
-        .shadow({ radius: 10, color: $r('app.color.shadow') })
-        .margin({ bottom: 10, right: 10 })
-        .padding(10)
-        .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
-        .onClick(() => {
-          this.btn_token_add_clicked += 1
-        })
-        .accessibilityText($r('app.string.app_ua_add_token'))
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
+        .margin({ bottom: this.appBottomAvoidHeight + 35 })
+        .hitTestBehavior(HitTestMode.None)
       }
     }
   }

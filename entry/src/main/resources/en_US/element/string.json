@@ -250,7 +250,11 @@
     },
     {
       "name": "app_ua_add_token",
-      "value": "Add Secret"
+      "value": "Add Token"
+    },
+    {
+      "name": "app_ua_search_token",
+      "value": "Search Token"
     },
     {
       "name": "drop_file_import_data",

@@ -4,7 +4,7 @@ import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer, util } from '@kit.ArkTS';
-import promptAction from '@ohos.promptAction'
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { SelectIconDialog } from './SelectIconDialog';
 
@@ -83,22 +83,22 @@ export struct FortiConfigDialog {
       });
     } catch (err) {
       this.btn_wait_from_forti = false;
-      promptAction.showToast({message: `Error: ${err.message}`})
+      showSnackBar(`Error: ${err.message}`, SnackBarNotifyType.ERROR);
     }
   }
 
   requestKeyFromForti(): void {
     if (this.conf.FortiToken.length !== 16) {
-      promptAction.showToast({ message: $r('app.string.toast_wrong_forti_token') })
+      showSnackBar($r('app.string.toast_wrong_forti_token'), SnackBarNotifyType.WARNING);
       return;
     }
     if (this.conf.FortiDevID.length !== 16) {
-      promptAction.showToast({ message: $r('app.string.toast_wrong_device_id') })
+      showSnackBar($r('app.string.toast_wrong_device_id'), SnackBarNotifyType.WARNING);
       return;
     }
     let raw_token = base32Decode(this.conf.FortiToken)
     if (!(raw_token[0] === 0x21)) {
-      promptAction.showToast({ message: $r('app.string.toast_wrong_user_token') })
+      showSnackBar($r('app.string.toast_wrong_user_token'), SnackBarNotifyType.WARNING);
       return;
     }
     this.btn_wait_from_forti = true;
@@ -133,7 +133,7 @@ export struct FortiConfigDialog {
           if (resp.d.error != undefined) {
             this.btn_wait_from_forti = false;
             console.error(`${resp.d.error.error_message}, code ${resp.d.error.error_code}`)
-            promptAction.showToast({ message: `${resp.d.error.error_message}, code ${resp.d.error.error_code}` })
+            showSnackBar(`${resp.d.error.error_message}, code ${resp.d.error.error_code}`, SnackBarNotifyType.ERROR);
           } else {
             this.decrypt_seed(resp.d.seed!)
             this.conf.TokenName = resp.d.issuer!
@@ -310,7 +310,7 @@ export struct FortiConfigDialog {
                 this.controller.close()
               }
             } else {
-              promptAction.showToast({ message: 'Enter a correct key' })
+              showSnackBar('Enter a correct key', SnackBarNotifyType.WARNING);
             }
           })
           .width('100%')

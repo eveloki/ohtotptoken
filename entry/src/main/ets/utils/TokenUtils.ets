@@ -4,11 +4,11 @@ import { common } from '@kit.AbilityKit';
 import { otpType, TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { pasteboard } from '@kit.BasicServicesKit';
-import { promptAction } from '@kit.ArkUI';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { readFileContent } from './FileUtils';
 import { fileIo } from '@kit.CoreFileKit';
 import { AppPreference } from './AppPreference';
+import { showSnackBar, SnackBarNotifyType } from './HdsSnackBarUtils';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -234,7 +234,7 @@ export function copyText(text: string, msg: string = '') {
   const systemPasteboard = pasteboard.getSystemPasteboard();
   systemPasteboard.setData(pasteboardData);
   if (msg !== undefined && msg !== '') {
-    promptAction.showToast({ message: msg });
+    showSnackBar(msg, SnackBarNotifyType.INFO);
   }
 }
 
@@ -336,7 +336,7 @@ export class TokenIconPacks {
     const icon_path_json = path + "/pack.json";
     if (!fileIo.accessSync(icon_path_json)) {
       // Display invalid icon pack directories
-      // promptAction.showToast({ message: $r('app.string.toast_icon_pack_invalid') });
+      // showSnackBar($r('app.string.toast_icon_pack_invalid'), SnackBarNotifyType.WARNING);
       // return Promise.reject(new Error("invalid aegis icon pack"));
       let pack: AegisIconPack = new AegisIconPack();
       pack.invalid = true;
@@ -345,7 +345,7 @@ export class TokenIconPacks {
       return;
     }
     if (TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path === path).length > 0) {
-      promptAction.showToast({ message: $r('app.string.toast_icon_pack_already_installed') });
+      showSnackBar($r('app.string.toast_icon_pack_already_installed'), SnackBarNotifyType.WARNING);
       return;
     }
     return readFileContent(icon_path_json).then((val) => {

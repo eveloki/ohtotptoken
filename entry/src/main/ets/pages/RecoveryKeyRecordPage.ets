@@ -10,6 +10,7 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent,
   writeFileContentCheckHashEqual } from '../utils/FileUtils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { throttle } from '../utils/UiUtils';
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
 
 @Entry
@@ -41,7 +42,7 @@ struct RecoveryKeyRecordPage {
   }
   confirmRecoveryKey(){
     //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
-    //  this.getUIContext().getPromptAction().showToast({ message: b?"恢复密钥OK":"恢复密钥Err", bottom: this.TOAST_BOTTOM })
+    //  showSnackBar(b ? "恢复密钥OK" : "恢复密钥Err", SnackBarNotifyType.INFO)
     //})
     //this.appCtx?.eventHub.emit('onMasterKeyPageBack');
     router.back({ url: 'pages/Index' });
@@ -50,7 +51,7 @@ struct RecoveryKeyRecordPage {
     showSaveFilePicker([`totp_recovery_key.text`], ['Text|.text']).then((uris) => {
       if (uris[0] !== undefined && uris[0] !== '') {
         writeFileContentCheckHashEqual(uris[0], this.recoverySecretKey).then(()=>{
-          this.getUIContext().getPromptAction().showToast({ message: "OK", bottom: this.TOAST_BOTTOM })
+          showSnackBar('OK', SnackBarNotifyType.SUCCESS);
         });
       }
     });
