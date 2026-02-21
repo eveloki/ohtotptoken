@@ -26,6 +26,7 @@ export struct SettingPage {
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
+  @Param listScroller: Scroller = new Scroller();
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
   @Local versionName?: string;
@@ -272,15 +273,13 @@ export struct SettingPage {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#40000000')
         .justifyContent(FlexAlign.Center)
       } else {
-        List({ space: 10 }) {
+        List({ space: 10, scroller: this.listScroller }) {
           ListItemGroup() {
             ListItem() {
 
             }
-            .height(60 + this.appTopAvoidHeight)
           }
 
           ListItem() {
@@ -633,7 +632,6 @@ export struct SettingPage {
         .chainAnimation(true)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
-        .backgroundColor($r('app.color.window_background'))
       }
     }
   }

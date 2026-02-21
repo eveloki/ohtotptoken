@@ -5,7 +5,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -21,8 +21,11 @@ import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
-import { HdsNavigation, HdsTabsAttribute, HdsNavigationTitleMode, HdsTabs,
-  ScrollEffectType } from '@kit.UIDesignKit';
+import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
+  ScrollEffectType, HdsListItemCard,
+  PrefixIcon,
+  IconSize,
+  SuffixArrow} from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 
 const TAG = 'PrivacySubscribe';
@@ -38,6 +41,11 @@ struct Index {
   @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  @Local tokenListScroller: Scroller = new Scroller();
+  @Local arcTokenListScroller: Scroller = new Scroller();
+  @Local settingEntryScroller: Scroller = new Scroller();
+  @Local isSettingSheetVisible: boolean = false;
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   CurrentTokensCount: number = 0;
 
   private appIsInit = false;
@@ -374,6 +382,58 @@ struct Index {
     });
   }
 
+  @Builder
+  SettingSheetBuilder() {
+  SettingPage({
+      Tokens: this.CurrentTokens,
+      appBottomAvoidHeight: this.window.AvoidBottomHeight,
+      appTopAvoidHeight: 0,
+      listScroller: this.settingEntryScroller,
+      backupReload: async (conf) => {
+        await this.updateTokenConfigs(conf);
+        tkStore.sortTokens();
+      }
+    })
+      .height('100%')
+  }
+
+  @Builder
+  SettingEntryCardBuilder() {
+    List({ space: 10, scroller: this.settingEntryScroller }) {
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.gearshape')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.button_settings')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isSettingSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isSettingSheetVisible, this.SettingSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.button_settings') },
+          })
+      }
+      .padding({top: 120})
+    }
+    .width('100%')
+    .height('100%')
+    .scrollBar(BarState.Off)
+    .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+    .backgroundColor($r('app.color.window_background'))
+  }
+
   build() {
     Stack() {
       if (this.token_loading) {
@@ -402,16 +462,17 @@ struct Index {
           appWindowSize: this.window.Size,
           updateTokenConfig: this.updateTokenConfig,
           updateTokenConfigs: this.updateTokenConfigs,
+          listScroller: this.arcTokenListScroller,
         })
       }
+      .bindToScrollable([this.arcTokenListScroller])
       .titleMode(HdsNavigationTitleMode.MODAL)
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
-            // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+            scrollEffectType: ScrollEffectType.GRADIENT_BLUR
           }
         },
         content: {
@@ -449,19 +510,20 @@ struct Index {
             appWindowSize: this.window.Size,
             updateTokenConfig: this.updateTokenConfig,
             updateTokenConfigs: this.updateTokenConfigs,
+            listScroller: this.tokenListScroller,
           })
         }
         .backgroundColor($r('app.color.window_background'))
 
       }
+      .bindToScrollable([this.tokenListScroller])
       .titleMode(HdsNavigationTitleMode.MODAL)
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
-            // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+            scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
           }
         },
         content: {
@@ -499,16 +561,17 @@ struct Index {
                 appWindowSize: this.window.Size,
                 updateTokenConfig: this.updateTokenConfig,
                 updateTokenConfigs: this.updateTokenConfigs,
+                listScroller: this.tokenListScroller,
               })
             }
+            .bindToScrollable([this.tokenListScroller])
             .titleMode(HdsNavigationTitleMode.MODAL)
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
-                  // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
                 }
               },
               content: {
@@ -535,7 +598,7 @@ struct Index {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier($r('sys.symbol.key')),
+              normal: new SymbolGlyphModifier($r('sys.symbol.key_fill')),
               selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
             },
             $r('app.string.tab_token'))
@@ -546,30 +609,21 @@ struct Index {
 
           TabContent() {
             HdsNavigation() {
-              SettingPage({
-                Tokens: this.CurrentTokens,
-                appBottomAvoidHeight: this.window.AvoidBottomHeight,
-                appTopAvoidHeight: this.window.AvoidTopHeight,
-                backupReload: async (conf) => {
-                  await this.updateTokenConfigs(conf);
-                  tkStore.sortTokens();
-                }
-              })
-                .height('100%')
+              this.SettingEntryCardBuilder()
             }
+            .bindToScrollable([this.settingEntryScroller])
             .titleMode(HdsNavigationTitleMode.MODAL)
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.COMMON_BLUR // 实时模糊，渐变是GRADIENT_BLUR
-                  // scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
                 }
               },
               content: {
                 title: {
-                  mainTitle: $r('app.string.tab_setting')
+                  mainTitle: $r('app.string.tab_me')
                 },
                 menu: {
                   value: []
@@ -580,10 +634,10 @@ struct Index {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
-              selected: new SymbolGlyphModifier($r('sys.symbol.gearshape_fill')),
+              normal: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
+              selected: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
             },
-            $r('app.string.tab_setting'))
+            $r('app.string.tab_me'))
             .verticalAlign(VerticalAlign.Top)
             .padding({top: 10})
           )

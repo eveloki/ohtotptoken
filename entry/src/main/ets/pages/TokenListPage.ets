@@ -24,6 +24,7 @@ export struct TokenListPage {
   @Require @Param appTopAvoidHeight: number = 0;
   @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
+  @Param listScroller: Scroller = new Scroller();
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
@@ -87,7 +88,7 @@ export struct TokenListPage {
 
       }
       Column() {
-        List({ space: this.token_preference.app_appearance_item_space, initialIndex: 0 }) {
+        List({ space: this.token_preference.app_appearance_item_space, initialIndex: 0, scroller: this.listScroller }) {
           ListItemGroup() {
             ListItem() {
               Column() {

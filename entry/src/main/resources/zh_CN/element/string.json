@@ -41,7 +41,11 @@
       "value": "Steam令牌"
     },
     {
-      "name": "tab_setting",
+      "name": "tab_me",
+      "value": "我的"
+    },
+    {
+      "name": "button_settings",
       "value": "设置"
     },
     {

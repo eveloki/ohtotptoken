@@ -41,7 +41,11 @@
       "value": "Steam Token"
     },
     {
-      "name": "tab_setting",
+      "name": "tab_me",
+      "value": "Me"
+    },
+    {
+      "name": "button_settings",
       "value": "Settings"
     },
     {
