@@ -41,8 +41,12 @@
       "value": "Forti Token"
     },
     {
-      "name": "tab_setting",
-      "value": "Setting"
+      "name": "tab_me",
+      "value": "Me"
+    },
+    {
+      "name": "button_settings",
+      "value": "Settings"
     },
     {
       "name": "alert_remove_confirm_msg",
