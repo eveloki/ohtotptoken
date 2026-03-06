@@ -1,6 +1,12 @@
 import { bundleManager,common } from '@kit.AbilityKit';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
-import { SettingPage } from '../pages/SettingPage'
+import { SettingPage } from '../pages/setting/SettingPage'
+import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
+import { SecuritySheet } from '../pages/setting/SecuritySheet'
+import { AppearanceSheet } from '../pages/setting/AppearanceSheet'
+import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
+import { AgreementSheet } from '../pages/setting/AgreementSheet'
+import { AboutSheet } from '../pages/setting/AboutSheet'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -46,6 +52,12 @@ struct Index {
   @Local arcTokenListScroller: Scroller = new Scroller();
   @Local settingEntryScroller: Scroller = new Scroller();
   @Local isSettingSheetVisible: boolean = false;
+  @Local isBackupSheetVisible: boolean = false;
+  @Local isSafetySheetVisible: boolean = false;
+  @Local isAppearanceSheetVisible: boolean = false;
+  @Local isDataSyncSheetVisible: boolean = false;
+  @Local isAgreementSheetVisible: boolean = false;
+  @Local isAboutSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   CurrentTokensCount: number = 0;
 
@@ -399,35 +411,243 @@ struct Index {
   }
 
   @Builder
+  BackupAndMigrationSheetBuilder() {
+    BackupAndMigrationSheet({
+      Tokens: this.CurrentTokens,
+      backupReload: async (conf) => {
+        await this.updateTokenConfigs(conf);
+        tkStore.sortTokens();
+      }
+    })
+      .height('100%')
+  }
+
+  @Builder
+  SecuritySheetBuilder() {
+    SecuritySheet()
+      .height('100%')
+  }
+
+  @Builder
+  AppearanceSheetBuilder() {
+    AppearanceSheet()
+      .height('100%')
+  }
+
+  @Builder
+  DataSyncSheetBuilder() {
+    DataSyncSheet()
+      .height('100%')
+  }
+
+  @Builder
+  AgreementSheetBuilder() {
+    AgreementSheet()
+      .height('100%')
+  }
+
+  @Builder
+  AboutSheetBuilder() {
+    AboutSheet()
+      .height('100%')
+  }
+
+  @Builder
   SettingEntryCardBuilder() {
     List({ space: 10, scroller: this.settingEntryScroller }) {
+
+      // 原有的设置入口（保留以兼容其他设置）
+      //ListItem() {
+      //  HdsListItemCard({
+      //    cardHeight: this.token_preference.app_appearance_item_height,
+      //    prefixItem: new PrefixIcon({
+      //      iconSize: IconSize.SYSTEM_ICON,
+      //      iconValue: {
+      //        symbol: $r('sys.symbol.gearshape')
+      //      }
+      //    }),
+      //   textItem: {
+      //     primaryText: {
+      //        text: $r('app.string.button_settings')
+      //      }
+      //    },
+      //   suffixItem: new SuffixArrow({}),
+      //    onClick: () => {
+      //      this.isSettingSheetVisible = true;
+      //    }
+      //  })
+      //    .bindSheet($$this.isSettingSheetVisible, this.SettingSheetBuilder(), {
+      //     detents: [SheetSize.LARGE],
+      //     preferType: SheetType.BOTTOM,
+      //     title: { title: $r('app.string.button_settings') },
+      //   })
+      //}
+      // 备份与迁移入口
       ListItem() {
         HdsListItemCard({
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
             iconValue: {
-              symbol: $r('sys.symbol.gearshape')
+              symbol: $r('sys.symbol.save')
             }
           }),
           textItem: {
             primaryText: {
-              text: $r('app.string.button_settings')
+              text: $r('app.string.setting_backup')
             }
           },
           suffixItem: new SuffixArrow({}),
           onClick: () => {
-            this.isSettingSheetVisible = true;
+            this.isBackupSheetVisible = true;
           }
         })
-          .bindSheet($$this.isSettingSheetVisible, this.SettingSheetBuilder(), {
+          .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.button_settings') },
+            title: { title: $r('app.string.setting_backup') },
           })
       }
-      .padding({top: 120})
+
+      // 安全性入口
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.staroflife_rectangle')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.setting_safety')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isSafetySheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.setting_safety') },
+          })
+      }
+
+      // 外观与功能入口
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.chevron_up_2_circle')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.app_appearance')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isAppearanceSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.app_appearance') },
+          })
+      }
+
+      // 数据同步入口
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.link')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.data_sync')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isDataSyncSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.data_sync') },
+          })
+      }
+
+      // 协议与声明入口
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.person_shield')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.setting_agreement_statement')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isAgreementSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.setting_agreement_statement') },
+          })
+      }
+
+      // 关于入口
+      ListItem() {
+        HdsListItemCard({
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.info_circle')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.setting_about')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isAboutSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            title: { title: $r('app.string.setting_about') },
+          })
+      }
+
+
     }
+
+    .padding({top: 120})
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
