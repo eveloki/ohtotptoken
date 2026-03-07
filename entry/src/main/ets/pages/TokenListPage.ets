@@ -249,16 +249,12 @@ export struct TokenListPage {
               baseIcon: $r('sys.symbol.plus'),
               hoverTips: $r('app.string.app_ua_add_token'),
               accessibilityText: $r('app.string.app_ua_add_token'),
-              onClick: () => {
-                this.isExpand = !this.isExpand;
-              }
             })],
             endButtons: [new ActionBarButton({
               baseIcon: $r('sys.symbol.line_viewfinder'),
               hoverTips: $r('app.string.app_scan_code'),
               accessibilityText: $r('app.string.app_scan_code'),
               onClick: () => {
-                this.isExpand = !this.isExpand;
                 this.start_quick_scan();
               }
             })],
