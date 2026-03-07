@@ -1,24 +1,24 @@
-import { TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../../utils/TokenConfig';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
-import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
-import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { SubItemToggle } from '../components/SubItemToggle'
+import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUtils'
+import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
+import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../utils/AppPreference';
-import { SubItemButton } from '../components/SubItemButton';
-import { SettingItem } from '../components/SettingItem';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../../utils/AppPreference';
+import { SubItemButton } from '../../components/SubItemButton';
+import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
-import { PermissionManager } from '../utils/PermissionManager';
-import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
-import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../utils/FileUtils';
-import { throttle,startBrowsableAbility } from '../utils/UiUtils';
-import { SubItemDivider } from '../components/SubItemDivider';
-import { SubItemSelect } from '../components/SubItemSelect';
+import { PermissionManager } from '../../utils/PermissionManager';
+import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
+import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/TokenBackup';
+import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../../utils/FileUtils';
+import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
+import { SubItemDivider } from '../../components/SubItemDivider';
+import { SubItemSelect } from '../../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
-import { SubItemIconManager } from '../components/SubItemIconManager';
-import { AppWindowInfo } from '../entryability/EntryAbility';
+import { SubItemIconManager } from '../../components/SubItemIconManager';
+import { AppWindowInfo } from '../../entryability/EntryAbility';
 
 @Preview
 @ComponentV2
