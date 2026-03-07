@@ -33,6 +33,7 @@ import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   IconSize,
   SuffixArrow} from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
+import { LengthMetrics } from '@kit.ArkUI';
 import { testProtobufToJson } from '../utils/GoogleAuthUtils';
 
 const TAG = 'PrivacySubscribe';
@@ -59,7 +60,7 @@ struct Index {
   @Local isAgreementSheetVisible: boolean = false;
   @Local isAboutSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
-  CurrentTokensCount: number = 0;
+  @Local CurrentTokensCount: number = 0;
 
   private appIsInit = false;
   private appIsShow = false;
@@ -647,7 +648,7 @@ struct Index {
 
     }
 
-    .padding({top: 120})
+    .padding({top: LengthMetrics.vp(120)})
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
@@ -693,7 +694,7 @@ struct Index {
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+            scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
           }
         },
         content: {
@@ -824,7 +825,7 @@ struct Index {
             },
             $r('app.string.tab_token'))
             .verticalAlign(VerticalAlign.Top)
-            .padding({top: 10})
+            .padding({top: LengthMetrics.vp(10)})
           )
           .tabIndex(0)
 
@@ -860,7 +861,7 @@ struct Index {
             },
             $r('app.string.tab_me'))
             .verticalAlign(VerticalAlign.Top)
-            .padding({top: 10})
+            .padding({top:  LengthMetrics.vp(10)})
           )
           .tabIndex(1)
         }
