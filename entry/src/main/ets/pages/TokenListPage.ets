@@ -45,6 +45,7 @@ export struct TokenListPage {
   @Local isExpand: boolean = false;
   @Local isPrimaryIconChanged: boolean = false;
   @Local primaryHoverTips: string = '收起';
+  @Local isTokenAddMenuShown: boolean = false;
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
@@ -250,7 +251,7 @@ export struct TokenListPage {
               hoverTips: $r('app.string.app_ua_add_token'),
               accessibilityText: $r('app.string.app_ua_add_token'),
               onClick: () => {
-                this.isExpand = !this.isExpand;
+                this.isTokenAddMenuShown = true;
               }
             })],
             endButtons: [new ActionBarButton({
@@ -258,7 +259,6 @@ export struct TokenListPage {
               hoverTips: $r('app.string.app_scan_code'),
               accessibilityText: $r('app.string.app_scan_code'),
               onClick: () => {
-                this.isExpand = !this.isExpand;
                 this.start_quick_scan();
               }
             })],
@@ -278,7 +278,12 @@ export struct TokenListPage {
             }),
             isExpand: this.isExpand
           })
-            // .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
+            .bindMenu(this.isTokenAddMenuShown, this.TokenAddMenu, {
+              placement: Placement.BottomLeft,
+              onWillDisappear: () => {
+                this.isTokenAddMenuShown = false;
+              }
+            })
         }
         .width('100%')
         .justifyContent(FlexAlign.Center)
