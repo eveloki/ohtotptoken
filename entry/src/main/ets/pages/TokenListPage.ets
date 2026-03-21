@@ -10,11 +10,20 @@ import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
 import { AppStorageV2, ComponentContent, curves, window } from "@kit.ArkUI";
 import { ActionBarButton, ActionBarStyle, HdsActionBar } from "@kit.UIDesignKit";
 import { url } from "@kit.ArkTS";
+import { abilityAccessCtrl, bundleManager, common, Permissions } from "@kit.AbilityKit";
+import { BusinessError } from "@kit.BasicServicesKit";
+import { motion } from "@kit.MultimodalAwarenessKit";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 
 let tkStore = TokenStore.getInstance();
+
+enum HoldingHandLayoutMode {
+  LEFT = 'left',
+  CENTER = 'center',
+  RIGHT = 'right'
+}
 
 @Preview
 @ComponentV2
@@ -30,6 +39,7 @@ export struct TokenListPage {
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   @Local token_copy_guide_popup: boolean = false;
 
@@ -43,12 +53,19 @@ export struct TokenListPage {
   @Local isPrimaryIconChanged: boolean = false;
   @Local primaryHoverTips: string = '收起';
   @Local isTokenAddMenuShown: boolean = false;
+  @Local actionBarOffsetX: number = 0;
+  @Local holdingHandLayoutMode: HoldingHandLayoutMode = HoldingHandLayoutMode.CENTER;
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
+  private readonly holdingHandPermission: Permissions = 'ohos.permission.DETECT_GESTURE';
+  private readonly actionBarMoveRatio: number = 0.22;
+  private readonly actionBarMoveMaxOffset: number = 120;
+  private holdingHandSubscribed: boolean = false;
+  private holdingHandCallback?: Callback<motion.HoldingHandStatus>;
 
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
@@ -69,6 +86,11 @@ export struct TokenListPage {
     }
     getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
     getContext(this).eventHub.on('toggleTokenSearch', () => { this.toggleTokenSearchByTitleBar() });
+    this.initHoldingHandAwareness();
+  }
+
+  aboutToDisappear(): void {
+    this.unsubscribeHoldingHandAwareness();
   }
 
   private toggleTokenSearchByTitleBar(): void {
@@ -88,6 +110,122 @@ export struct TokenListPage {
       setTimeout(() => {
         focusControl.requestFocus(this.id_list[1])
       }, 100)
+    }
+  }
+
+  private async initHoldingHandAwareness(): Promise<void> {
+    this.holdingHandCallback = (status: motion.HoldingHandStatus) => {
+      this.applyHoldingHandLayout(this.mapHoldingHandStatusToLayout(status));
+    };
+    const hasPermission = await this.ensureHoldingHandPermission();
+    if (!hasPermission) {
+      this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      return;
+    }
+    this.subscribeHoldingHandAwareness();
+  }
+
+  private async ensureHoldingHandPermission(): Promise<boolean> {
+    const granted = await this.checkPermissionGranted(this.holdingHandPermission);
+    if (granted) {
+      return true;
+    }
+    if (!this.appCtx) {
+      return false;
+    }
+    try {
+      const requestResult = await abilityAccessCtrl.createAtManager()
+        .requestPermissionsFromUser(this.appCtx, [this.holdingHandPermission]);
+      return requestResult.authResults.every((status) => status === 0);
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to request holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      return false;
+    }
+  }
+
+  private async checkPermissionGranted(permission: Permissions): Promise<boolean> {
+    try {
+      const bundleInfo = await bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+      const grantStatus = await abilityAccessCtrl.createAtManager().checkAccessToken(bundleInfo.appInfo.accessTokenId, permission);
+      return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED;
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to check holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      return false;
+    }
+  }
+
+  private subscribeHoldingHandAwareness(): void {
+    if (this.holdingHandSubscribed || !this.holdingHandCallback) {
+      return;
+    }
+    try {
+      motion.on('holdingHandChanged', this.holdingHandCallback);
+      this.holdingHandSubscribed = true;
+    } catch (error) {
+      const err = error as BusinessError;
+      if (err.code === 801 || err.code === 201) {
+        this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      }
+      console.error(`Failed to subscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+    }
+  }
+
+  private unsubscribeHoldingHandAwareness(): void {
+    if (!this.holdingHandSubscribed) {
+      return;
+    }
+    try {
+      if (this.holdingHandCallback) {
+        motion.off('holdingHandChanged', this.holdingHandCallback);
+      } else {
+        motion.off('holdingHandChanged');
+      }
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to unsubscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+    } finally {
+      this.holdingHandSubscribed = false;
+    }
+  }
+
+  private mapHoldingHandStatusToLayout(status: motion.HoldingHandStatus): HoldingHandLayoutMode {
+    switch (status) {
+      case motion.HoldingHandStatus.LEFT_HAND_HELD:
+        return HoldingHandLayoutMode.LEFT;
+      case motion.HoldingHandStatus.RIGHT_HAND_HELD:
+        return HoldingHandLayoutMode.RIGHT;
+      case motion.HoldingHandStatus.BOTH_HANDS_HELD:
+      case motion.HoldingHandStatus.NOT_HELD:
+      case motion.HoldingHandStatus.UNKNOWN_STATUS:
+      default:
+        return HoldingHandLayoutMode.CENTER;
+    }
+  }
+
+  private applyHoldingHandLayout(mode: HoldingHandLayoutMode): void {
+    const nextOffset = this.getActionBarOffsetByMode(mode);
+    if (this.holdingHandLayoutMode === mode && this.actionBarOffsetX === nextOffset) {
+      return;
+    }
+    this.window.uiContext?.animateTo({ duration: 300, curve: curves.springMotion() }, () => {
+      this.holdingHandLayoutMode = mode;
+      this.actionBarOffsetX = nextOffset;
+    })
+  }
+
+  private getActionBarOffsetByMode(mode: HoldingHandLayoutMode): number {
+    const width = Number(this.appWindowSize.width ?? 0);
+    const baseOffset = Math.min(width * this.actionBarMoveRatio, this.actionBarMoveMaxOffset);
+    switch (mode) {
+      case HoldingHandLayoutMode.LEFT:
+        return -baseOffset;
+      case HoldingHandLayoutMode.RIGHT:
+        return baseOffset;
+      case HoldingHandLayoutMode.CENTER:
+      default:
+        return 0;
     }
   }
 
@@ -270,6 +408,7 @@ export struct TokenListPage {
             }),
             isExpand: this.isExpand
           })
+            .translate({ x: this.actionBarOffsetX, y: 0 })
             .bindMenu(this.isTokenAddMenuShown, this.TokenAddMenu, {
               placement: Placement.BottomLeft,
               onWillDisappear: () => {
