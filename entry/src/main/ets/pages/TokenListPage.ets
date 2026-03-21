@@ -37,7 +37,7 @@ export struct TokenListPage {
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
   @Local token_list_search_str: string = '';
-  @Local id_list: string[] = ['search_bar'];
+  @Local id_list: string[] = ['search_bar', 'search_blur_anchor'];
 
   @Local isExpand: boolean = false;
   @Local isPrimaryIconChanged: boolean = false;
@@ -72,21 +72,34 @@ export struct TokenListPage {
   }
 
   private toggleTokenSearchByTitleBar(): void {
+    const nextVisible = !this.token_list_search_visible;
     this.window.uiContext?.animateTo({ duration: 250, curve: curves.springMotion() }, () => {
-      this.token_list_search_visible = !this.token_list_search_visible;
-      if (!this.token_list_search_visible && this.token_list_search_str.length === 0) {
+      this.token_list_search_visible = nextVisible;
+      if (!this.token_list_search_visible) {
+        this.token_list_search_str = '';
         this.token_list_search_enable = false;
       }
     })
-    if (!this.token_list_search_visible) {
+    if (nextVisible) {
       setTimeout(() => {
         focusControl.requestFocus(this.id_list[0])
       }, 180)
+    } else {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[1])
+      }, 100)
     }
   }
 
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
+      Button('')
+        .id(this.id_list[1])
+        .focusable(true)
+        .width(1)
+        .height(1)
+        .opacity(0)
+        .position({ x: 0, y: 0 })
       if (this.Tokens.length === 0) {
         Row() {
           Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') :
@@ -127,23 +140,24 @@ export struct TokenListPage {
                     .onSubmit(() => {
                       this.filterCurrentTokens(this.token_list_search_str);
                     })
-                  SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
-                  $r('sys.symbol.magnifyingglass'))
+                  SymbolGlyph($r('sys.symbol.xmark'))
                     .fontSize(20)
                     .fontWeight(FontWeight.Medium)
                     .fontColor([$r('app.color.item_fg')])
                     .padding({ right: 10 })
                     .onClick(() => {
-                      if (this.token_list_search_enable) {
-                        this.token_list_search_str = '';
-                      }
-                      this.filterCurrentTokens(this.token_list_search_str);
+                      this.toggleTokenSearchByTitleBar();
                     })
                 }
-                .padding({ left: 10, right: 10, top: 10 })
+                .padding({ left: 10, right: 10, top: this.token_list_search_visible || this.token_list_search_enable ? 10 : 0 })
                 .width('100%')
-                .visibility(this.token_list_search_visible || this.token_list_search_enable ?
-                Visibility.Visible : Visibility.None)
+                .height(this.token_list_search_visible || this.token_list_search_enable ? 56 : 0)
+                .opacity(this.token_list_search_visible || this.token_list_search_enable ? 1 : 0)
+                .translate({
+                  x: 0,
+                  y: this.token_list_search_visible || this.token_list_search_enable ? 0 : -12
+                })
+                .clip(true)
               }
             }
           }
