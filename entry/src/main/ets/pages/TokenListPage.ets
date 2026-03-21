@@ -34,11 +34,8 @@ export struct TokenListPage {
   @Local token_copy_guide_popup: boolean = false;
 
   @Local token_list_search_result: TokenConfig[] = [];
-  @Local token_list_search_start: boolean = false;
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
-  @Local token_list_touch_down_pos: number = 0;
-  @Local token_list_touch_move_pos: number = 0;
   @Local token_list_search_str: string = '';
   @Local id_list: string[] = ['search_bar'];
 
@@ -71,6 +68,21 @@ export struct TokenListPage {
       this.token_copy_guide_popup = true;
     }
     getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
+    getContext(this).eventHub.on('toggleTokenSearch', () => { this.toggleTokenSearchByTitleBar() });
+  }
+
+  private toggleTokenSearchByTitleBar(): void {
+    this.window.uiContext?.animateTo({ duration: 250, curve: curves.springMotion() }, () => {
+      this.token_list_search_visible = !this.token_list_search_visible;
+      if (!this.token_list_search_visible && this.token_list_search_str.length === 0) {
+        this.token_list_search_enable = false;
+      }
+    })
+    if (!this.token_list_search_visible) {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[0])
+      }, 180)
+    }
   }
 
   build() {
@@ -183,19 +195,6 @@ export struct TokenListPage {
                 },
               }
             })
-            .onTouch((event?: TouchEvent) => {
-              let isMoving = false;
-              if (event?.type === TouchType.Down) {
-                setTimeout(() => {
-                  if (!isMoving) this.token_list_search_start = false;
-                }, 200)
-              }
-              if (event?.type === TouchType.Move) {
-                isMoving = true;
-              } else {
-                this.token_list_search_start = true;
-              }
-            })
           }, (item: TokenConfig) => {
             return JSON.stringify(item)
           })
@@ -221,27 +220,6 @@ export struct TokenListPage {
         .chainAnimation(true)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .onTouch((event?: TouchEvent) => {
-          this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-            if (event?.type === TouchType.Down) {
-              this.token_list_touch_down_pos = event.touches[0].y;
-            }
-            if (event?.type === TouchType.Move) {
-              this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
-              if (this.token_list_search_start) {
-                if (this.token_list_touch_move_pos > 200) {
-                  this.token_list_search_visible = true;
-                  focusControl.requestFocus(this.id_list[0])
-                } else if (this.token_list_touch_move_pos < -50) {
-                  this.token_list_search_visible = false;
-                }
-              } else {
-                this.token_list_search_visible = false;
-              }
-            }
-          })
-
-        })
       }
       if (this.TabBarVisible) {
         Row() {
