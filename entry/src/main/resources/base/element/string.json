@@ -313,6 +313,14 @@
       "value": "Display the next token below the current token to enhance usability."
     },
     {
+      "name": "setting_holding_hand_awareness",
+      "value": "Adaptive Grip Sense"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "Moves the action bar left, center, or right based on left-hand, both-hand, or right-hand grip. Disabled by default."
+    },
+    {
       "name": "swap_host_user",
       "value": "Swap Displayed Hostname & Username"
     },

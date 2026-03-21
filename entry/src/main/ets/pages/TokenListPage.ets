@@ -86,7 +86,10 @@ export struct TokenListPage {
     }
     getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
     getContext(this).eventHub.on('toggleTokenSearch', () => { this.toggleTokenSearchByTitleBar() });
-    this.initHoldingHandAwareness();
+    getContext(this).eventHub.on('holdingHandPreferenceChanged', (enabled: boolean) => {
+      this.handleHoldingHandPreferenceChanged(enabled);
+    });
+    this.handleHoldingHandPreferenceChanged(this.token_preference.app_appearance_holding_hand_enable);
   }
 
   aboutToDisappear(): void {
@@ -123,6 +126,15 @@ export struct TokenListPage {
       return;
     }
     this.subscribeHoldingHandAwareness();
+  }
+
+  private handleHoldingHandPreferenceChanged(enabled: boolean): void {
+    if (!enabled) {
+      this.unsubscribeHoldingHandAwareness();
+      this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      return;
+    }
+    this.initHoldingHandAwareness();
   }
 
   private async ensureHoldingHandPermission(): Promise<boolean> {
