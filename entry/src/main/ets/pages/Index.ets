@@ -709,7 +709,7 @@ struct Index {
                   icon: $r('sys.symbol.magnifyingglass'),
                   isEnabled: true,
                   action: () => {
-                    //TODO: 下拉搜索触发改成这里触发
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
                   }
                 }
               }
@@ -760,7 +760,7 @@ struct Index {
                   icon: $r('sys.symbol.magnifyingglass'),
                   isEnabled: true,
                   action: () => {
-                    //TODO: 下拉搜索触发改成这里触发
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
                   }
                 }
               }
@@ -808,7 +808,7 @@ struct Index {
                         icon: $r('sys.symbol.magnifyingglass'),
                         isEnabled: true,
                         action: () => {
-                          //TODO: 下拉搜索触发改成这里触发
+                          if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
                         }
                       }
                     }

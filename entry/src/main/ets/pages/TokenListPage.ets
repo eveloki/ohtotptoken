@@ -10,11 +10,20 @@ import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
 import { AppStorageV2, ComponentContent, curves, window } from "@kit.ArkUI";
 import { ActionBarButton, ActionBarStyle, HdsActionBar } from "@kit.UIDesignKit";
 import { url } from "@kit.ArkTS";
+import { abilityAccessCtrl, bundleManager, common, Permissions } from "@kit.AbilityKit";
+import { BusinessError } from "@kit.BasicServicesKit";
+import { motion } from "@kit.MultimodalAwarenessKit";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 
 let tkStore = TokenStore.getInstance();
+
+enum HoldingHandLayoutMode {
+  LEFT = 'left',
+  CENTER = 'center',
+  RIGHT = 'right'
+}
 
 @Preview
 @ComponentV2
@@ -30,28 +39,33 @@ export struct TokenListPage {
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   @Local token_copy_guide_popup: boolean = false;
 
   @Local token_list_search_result: TokenConfig[] = [];
-  @Local token_list_search_start: boolean = false;
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
-  @Local token_list_touch_down_pos: number = 0;
-  @Local token_list_touch_move_pos: number = 0;
   @Local token_list_search_str: string = '';
-  @Local id_list: string[] = ['search_bar'];
+  @Local id_list: string[] = ['search_bar', 'search_blur_anchor'];
 
   @Local isExpand: boolean = false;
   @Local isPrimaryIconChanged: boolean = false;
   @Local primaryHoverTips: string = '收起';
   @Local isTokenAddMenuShown: boolean = false;
+  @Local actionBarOffsetX: number = 0;
+  @Local holdingHandLayoutMode: HoldingHandLayoutMode = HoldingHandLayoutMode.CENTER;
 
   private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
+  private readonly holdingHandPermission: Permissions = 'ohos.permission.DETECT_GESTURE';
+  private readonly actionBarMoveRatio: number = 0.22;
+  private readonly actionBarMoveMaxOffset: number = 120;
+  private holdingHandSubscribed: boolean = false;
+  private holdingHandCallback?: Callback<motion.HoldingHandStatus>;
 
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
@@ -71,10 +85,171 @@ export struct TokenListPage {
       this.token_copy_guide_popup = true;
     }
     getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
+    getContext(this).eventHub.on('toggleTokenSearch', () => { this.toggleTokenSearchByTitleBar() });
+    getContext(this).eventHub.on('holdingHandPreferenceChanged', (enabled: boolean) => {
+      this.handleHoldingHandPreferenceChanged(enabled);
+    });
+    this.handleHoldingHandPreferenceChanged(this.token_preference.app_appearance_holding_hand_enable);
+  }
+
+  aboutToDisappear(): void {
+    this.unsubscribeHoldingHandAwareness();
+  }
+
+  private toggleTokenSearchByTitleBar(): void {
+    const nextVisible = !this.token_list_search_visible;
+    this.window.uiContext?.animateTo({ duration: 250, curve: curves.springMotion() }, () => {
+      this.token_list_search_visible = nextVisible;
+      if (!this.token_list_search_visible) {
+        this.token_list_search_str = '';
+        this.token_list_search_enable = false;
+      }
+    })
+    if (nextVisible) {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[0])
+      }, 180)
+    } else {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[1])
+      }, 100)
+    }
+  }
+
+  private async initHoldingHandAwareness(): Promise<void> {
+    this.holdingHandCallback = (status: motion.HoldingHandStatus) => {
+      this.applyHoldingHandLayout(this.mapHoldingHandStatusToLayout(status));
+    };
+    const hasPermission = await this.ensureHoldingHandPermission();
+    if (!hasPermission) {
+      this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      return;
+    }
+    this.subscribeHoldingHandAwareness();
+  }
+
+  private handleHoldingHandPreferenceChanged(enabled: boolean): void {
+    if (!enabled) {
+      this.unsubscribeHoldingHandAwareness();
+      this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      return;
+    }
+    this.initHoldingHandAwareness();
+  }
+
+  private async ensureHoldingHandPermission(): Promise<boolean> {
+    const granted = await this.checkPermissionGranted(this.holdingHandPermission);
+    if (granted) {
+      return true;
+    }
+    if (!this.appCtx) {
+      return false;
+    }
+    try {
+      const requestResult = await abilityAccessCtrl.createAtManager()
+        .requestPermissionsFromUser(this.appCtx, [this.holdingHandPermission]);
+      return requestResult.authResults.every((status) => status === 0);
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to request holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      return false;
+    }
+  }
+
+  private async checkPermissionGranted(permission: Permissions): Promise<boolean> {
+    try {
+      const bundleInfo = await bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+      const grantStatus = await abilityAccessCtrl.createAtManager().checkAccessToken(bundleInfo.appInfo.accessTokenId, permission);
+      return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED;
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to check holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      return false;
+    }
+  }
+
+  private subscribeHoldingHandAwareness(): void {
+    if (this.holdingHandSubscribed || !this.holdingHandCallback) {
+      return;
+    }
+    try {
+      motion.on('holdingHandChanged', this.holdingHandCallback);
+      this.holdingHandSubscribed = true;
+    } catch (error) {
+      const err = error as BusinessError;
+      if (err.code === 801 || err.code === 201) {
+        this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
+      }
+      console.error(`Failed to subscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+    }
+  }
+
+  private unsubscribeHoldingHandAwareness(): void {
+    if (!this.holdingHandSubscribed) {
+      return;
+    }
+    try {
+      if (this.holdingHandCallback) {
+        motion.off('holdingHandChanged', this.holdingHandCallback);
+      } else {
+        motion.off('holdingHandChanged');
+      }
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error(`Failed to unsubscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+    } finally {
+      this.holdingHandSubscribed = false;
+    }
+  }
+
+  private mapHoldingHandStatusToLayout(status: motion.HoldingHandStatus): HoldingHandLayoutMode {
+    switch (status) {
+      case motion.HoldingHandStatus.LEFT_HAND_HELD:
+        return HoldingHandLayoutMode.LEFT;
+      case motion.HoldingHandStatus.RIGHT_HAND_HELD:
+        return HoldingHandLayoutMode.RIGHT;
+      case motion.HoldingHandStatus.BOTH_HANDS_HELD:
+      case motion.HoldingHandStatus.NOT_HELD:
+      case motion.HoldingHandStatus.UNKNOWN_STATUS:
+      default:
+        return HoldingHandLayoutMode.CENTER;
+    }
+  }
+
+  private applyHoldingHandLayout(mode: HoldingHandLayoutMode): void {
+    const nextOffset = this.getActionBarOffsetByMode(mode);
+    if (this.holdingHandLayoutMode === mode && this.actionBarOffsetX === nextOffset) {
+      return;
+    }
+    this.window.uiContext?.animateTo({ duration: 300, curve: curves.springMotion() }, () => {
+      this.holdingHandLayoutMode = mode;
+      this.actionBarOffsetX = nextOffset;
+    })
+  }
+
+  private getActionBarOffsetByMode(mode: HoldingHandLayoutMode): number {
+    const width = Number(this.appWindowSize.width ?? 0);
+    const baseOffset = Math.min(width * this.actionBarMoveRatio, this.actionBarMoveMaxOffset);
+    switch (mode) {
+      case HoldingHandLayoutMode.LEFT:
+        return -baseOffset;
+      case HoldingHandLayoutMode.RIGHT:
+        return baseOffset;
+      case HoldingHandLayoutMode.CENTER:
+      default:
+        return 0;
+    }
   }
 
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
+      Button('')
+        .id(this.id_list[1])
+        .focusable(true)
+        .width(1)
+        .height(1)
+        .opacity(0)
+        .position({ x: 0, y: 0 })
       if (this.Tokens.length === 0) {
         Row() {
           Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') :
@@ -115,23 +290,24 @@ export struct TokenListPage {
                     .onSubmit(() => {
                       this.filterCurrentTokens(this.token_list_search_str);
                     })
-                  SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
-                  $r('sys.symbol.magnifyingglass'))
+                  SymbolGlyph($r('sys.symbol.xmark'))
                     .fontSize(20)
                     .fontWeight(FontWeight.Medium)
                     .fontColor([$r('app.color.item_fg')])
                     .padding({ right: 10 })
                     .onClick(() => {
-                      if (this.token_list_search_enable) {
-                        this.token_list_search_str = '';
-                      }
-                      this.filterCurrentTokens(this.token_list_search_str);
+                      this.toggleTokenSearchByTitleBar();
                     })
                 }
-                .padding({ left: 10, right: 10, top: 10 })
+                .padding({ left: 10, right: 10, top: this.token_list_search_visible || this.token_list_search_enable ? 10 : 0 })
                 .width('100%')
-                .visibility(this.token_list_search_visible || this.token_list_search_enable ?
-                Visibility.Visible : Visibility.None)
+                .height(this.token_list_search_visible || this.token_list_search_enable ? 56 : 0)
+                .opacity(this.token_list_search_visible || this.token_list_search_enable ? 1 : 0)
+                .translate({
+                  x: 0,
+                  y: this.token_list_search_visible || this.token_list_search_enable ? 0 : -12
+                })
+                .clip(true)
               }
             }
           }
@@ -183,19 +359,6 @@ export struct TokenListPage {
                 },
               }
             })
-            .onTouch((event?: TouchEvent) => {
-              let isMoving = false;
-              if (event?.type === TouchType.Down) {
-                setTimeout(() => {
-                  if (!isMoving) this.token_list_search_start = false;
-                }, 200)
-              }
-              if (event?.type === TouchType.Move) {
-                isMoving = true;
-              } else {
-                this.token_list_search_start = true;
-              }
-            })
           }, (item: TokenConfig) => {
             return JSON.stringify(item)
           })
@@ -221,27 +384,6 @@ export struct TokenListPage {
         .chainAnimation(true)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .onTouch((event?: TouchEvent) => {
-          this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-            if (event?.type === TouchType.Down) {
-              this.token_list_touch_down_pos = event.touches[0].y;
-            }
-            if (event?.type === TouchType.Move) {
-              this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
-              if (this.token_list_search_start) {
-                if (this.token_list_touch_move_pos > 200) {
-                  this.token_list_search_visible = true;
-                  focusControl.requestFocus(this.id_list[0])
-                } else if (this.token_list_touch_move_pos < -50) {
-                  this.token_list_search_visible = false;
-                }
-              } else {
-                this.token_list_search_visible = false;
-              }
-            }
-          })
-
-        })
       }
       if (this.TabBarVisible) {
         Row() {
@@ -278,6 +420,7 @@ export struct TokenListPage {
             }),
             isExpand: this.isExpand
           })
+            .translate({ x: this.actionBarOffsetX, y: 0 })
             .bindMenu(this.isTokenAddMenuShown, this.TokenAddMenu, {
               placement: Placement.BottomLeft,
               onWillDisappear: () => {
