@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference,SettingTopEffectType,SettingBottomTabsType } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -456,33 +456,12 @@ struct Index {
   @Builder
   SettingEntryCardBuilder() {
     List({ space: 10, scroller: this.settingEntryScroller }) {
-
-      // 原有的设置入口（保留以兼容其他设置）
-      //ListItem() {
-      //  HdsListItemCard({
-      //    cardHeight: this.token_preference.app_appearance_item_height,
-      //    prefixItem: new PrefixIcon({
-      //      iconSize: IconSize.SYSTEM_ICON,
-      //      iconValue: {
-      //        symbol: $r('sys.symbol.gearshape')
-      //      }
-      //    }),
-      //   textItem: {
-      //     primaryText: {
-      //        text: $r('app.string.button_settings')
-      //      }
-      //    },
-      //   suffixItem: new SuffixArrow({}),
-      //    onClick: () => {
-      //      this.isSettingSheetVisible = true;
-      //    }
-      //  })
-      //    .bindSheet($$this.isSettingSheetVisible, this.SettingSheetBuilder(), {
-      //     detents: [SheetSize.LARGE],
-      //     preferType: SheetType.BOTTOM,
-      //     title: { title: $r('app.string.button_settings') },
-      //   })
-      //}
+      // 顶部占位空间，用于触发渐变模糊效果
+      ListItem() {
+        Column()
+          .width('100%')
+          .height(LengthMetrics.vp(120).value)
+      }
       // 备份与迁移入口
       ListItem() {
         HdsListItemCard({
@@ -648,7 +627,6 @@ struct Index {
 
     }
 
-    .padding({top: LengthMetrics.vp(120)})
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)

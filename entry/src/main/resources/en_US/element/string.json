@@ -811,6 +811,50 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "Sync tokens from other devices"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "Top Blur Type"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "Control the type of top blur effect"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "Disabled"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "Common Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "Gradual Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "Gradient Blur"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "Immersive Gradient Blur"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "Bottom Tabs Type"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "Control the display type of bottom tab bar"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "Flatten"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "Suspension"
     }
   ]
 }

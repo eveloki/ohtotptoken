@@ -811,6 +811,50 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "從其他設備同步令牌"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "頂部模糊類型"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "控制頂部模糊效果的類型"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "關閉"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "通用模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "過渡模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "漸變模糊"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "沉浸式漸變模糊"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "底部Tabs類型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "控制底部標籤欄的顯示類型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "平鋪"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "懸浮"
     }
   ]
 }

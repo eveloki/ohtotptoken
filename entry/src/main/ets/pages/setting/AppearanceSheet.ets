@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, TokenPreference } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode,SettingTopEffectType,SettingBottomTabsType, TokenPreference } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -112,6 +112,35 @@ export struct AppearanceSheet {
             .onClick(throttle((event) => {
               router.pushUrl({ url: 'pages/AppearancePage' });
             }, 1000))
+          SubItemDivider()
+
+          SubItemSelect({
+            icon: $r('sys.symbol.slider_horizontal_2'),
+            title: $r('app.string.setting_top_effect_type'),
+            values: [$r('app.string.setting_top_effect_type_disable'), $r('app.string.setting_top_effect_type_common_blur'),
+              $r('app.string.setting_top_effect_type_gradual_blur'), $r('app.string.setting_top_effect_type_gradient_blur'),
+              ],//$r('app.string.setting_top_effect_type_immersive_gradient_blur') 沉浸式渐变模糊需要api23 现在不支持
+            description: $r('app.string.setting_top_effect_type_desc'),
+            selected: AppPreference.getPreference('app_appearance_top_effect_type') as number ??
+            SettingTopEffectType.GRADUAL_BLUR,
+            onChange: (index: number) => {
+              AppPreference.setPreference('app_appearance_top_effect_type', index);
+            }
+          })
+
+          SubItemDivider()
+
+          SubItemSelect({
+            icon: $r('sys.symbol.slider_horizontal_2'),
+            title: $r('app.string.setting_bottom_tabs_type'),
+            values: [$r('app.string.setting_bottom_tabs_type_flatten'), $r('app.string.setting_bottom_tabs_type_suspension')],
+            description: $r('app.string.setting_bottom_tabs_type_desc'),
+            selected: AppPreference.getPreference('app_appearance_bottom_tabs_type') as number ??
+            SettingBottomTabsType.FLATTEN,
+            onChange: (index: number) => {
+              AppPreference.setPreference('app_appearance_bottom_tabs_type', index);
+            }
+          })
         }
       }
       .padding({ left: 10, right: 10 })
