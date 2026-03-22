@@ -7,6 +7,19 @@ export enum SettingColorMode {
   Dark,
   Light,
 }
+//顶部模糊类型
+export enum SettingTopEffectType {
+  DISABLE,//关闭
+  COMMON_BLUR,//通用模糊
+  GRADUAL_BLUR,//过渡模糊
+  GRADIENT_BLUR,//渐变模糊
+  IMMERSIVE_GRADIENT_BLUR//沉浸式渐变模糊 Api23
+}
+//底部Tabs类型
+export enum SettingBottomTabsType {
+  FLATTEN,//平铺
+  SUSPENSION,//悬浮
+}
 
 @ObservedV2
 export class TokenPreference {
@@ -117,7 +130,11 @@ export class AppPreference {
     ['app_appearance_issuer_font_weight', 400],
     ['app_appearance_user_name_font_size', 10],
     ['app_appearance_user_name_font_weight', 400],
-    ['app_appearance_item_max_width', 800]
+    ['app_appearance_item_max_width', 800],
+    // 外观-顶部模糊类型
+    ['app_appearance_top_effect_type', SettingTopEffectType.GRADUAL_BLUR],
+    // 外观-底部Tabs类型
+    ['app_appearance_bottom_tabs_type', SettingBottomTabsType.FLATTEN]
   ]);
 
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([

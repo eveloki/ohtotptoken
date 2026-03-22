@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference,SettingTopEffectType,SettingBottomTabsType } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
