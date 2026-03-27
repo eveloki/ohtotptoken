@@ -313,6 +313,14 @@
       "value": "在目前令牌下方展示下一個令牌，提高易用性。"
     },
     {
+      "name": "setting_holding_hand_awareness",
+      "value": "啟用智感握姿"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "根據左手、雙手或右手握持狀態，自動將操作欄移動到左側、中間或右側。預設關閉。"
+    },
+    {
       "name": "swap_host_user",
       "value": "交換主機名稱與使用者名稱"
     },

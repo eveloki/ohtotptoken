@@ -85,6 +85,7 @@ export const AVAILABLE_BOTTOM_TABS_TYPES: EnumSelectOption[] = [
 export class TokenPreference {
   @Trace app_safety_hide_token_enable = false;
   @Trace app_appearance_show_next_token_enable = false;
+  @Trace app_appearance_holding_hand_enable = false;
   @Trace app_appearance_swap_host_user_enable = false;
   @Trace app_appearance_item_height = 60;
   @Trace app_appearance_item_space = 10;
@@ -139,6 +140,8 @@ export class AppPreference {
     ['app_safety_background_blur_enable', false],
     // 外观-显示下一个令牌
     ['app_appearance_show_next_token_enable', false],
+    // 外观-智感握姿
+    ['app_appearance_holding_hand_enable', false],
     // 外观-颜色模式
     ['app_appearance_color_mode', SettingColorMode.System],
     // 外观-图标包
@@ -250,6 +253,7 @@ export class AppPreference {
     let token_appearance: TokenPreference = AppStorageV2.connect(TokenPreference, () => new TokenPreference())!;
     token_appearance.app_safety_hide_token_enable = AppPreference.getPreference('app_safety_hide_token_enable') as boolean;
     token_appearance.app_appearance_show_next_token_enable = AppPreference.getPreference('app_appearance_show_next_token_enable') as boolean;
+    token_appearance.app_appearance_holding_hand_enable = AppPreference.getPreference('app_appearance_holding_hand_enable') as boolean;
     token_appearance.app_appearance_swap_host_user_enable = AppPreference.getPreference('app_appearance_swap_host_user_enable') as boolean;
     token_appearance.app_appearance_logo_background = AppPreference.getPreference('app_appearance_logo_background') as boolean;
     token_appearance.app_appearance_item_height = AppPreference.getPreference('app_appearance_item_height') as number;
