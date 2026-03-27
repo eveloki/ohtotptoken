@@ -1,26 +1,86 @@
 import { PreferenceManager } from "./PreferenceManager";
 import { AppStorageV2 } from "@kit.ArkUI";
 
+/**
+ * 设置值的联合类型
+ */
 export type SettingValue = boolean | string | number | SettingColorMode;
+
+/**
+ * 颜色模式枚举
+ */
 export enum SettingColorMode {
+  /** 跟随系统 */
   System,
+  /** 深色模式 */
   Dark,
+  /** 浅色模式 */
   Light,
 }
-//顶部模糊类型
+
+/**
+ * 顶部模糊效果类型枚举
+ */
 export enum SettingTopEffectType {
-  DISABLE,//关闭
-  COMMON_BLUR,//通用模糊
-  GRADUAL_BLUR,//过渡模糊
-  GRADIENT_BLUR,//渐变模糊
-  IMMERSIVE_GRADIENT_BLUR//沉浸式渐变模糊 Api23
-}
-//底部Tabs类型
-export enum SettingBottomTabsType {
-  FLATTEN,//平铺
-  SUSPENSION,//悬浮
+  /** 关闭模糊效果 */
+  DISABLE,
+  /** 通用模糊 */
+  COMMON_BLUR,
+  /** 过渡模糊 */
+  GRADUAL_BLUR,
+  /** 渐变模糊 */
+  GRADIENT_BLUR,
+  /** 沉浸式渐变模糊（需要API23支持） */
+  IMMERSIVE_GRADIENT_BLUR
 }
 
+/**
+ * 枚举选择选项接口
+ * 用于SubItemEnumSelect组件，将UI显示文本与枚举值进行映射
+ */
+export interface EnumSelectOption {
+  /** 显示文本，支持字符串或资源引用 */
+  label: string | Resource;
+  /** 对应的枚举值（number类型） */
+  value: number;
+}
+
+/**
+ * 当前支持的顶部模糊类型选项数组
+ *
+ * @example
+ * 当API23支持后，可添加沉浸式渐变模糊选项
+ */
+export const AVAILABLE_TOP_EFFECT_TYPES: EnumSelectOption[] = [
+  { label: $r('app.string.setting_top_effect_type_common_blur'), value: SettingTopEffectType.COMMON_BLUR },
+  { label: $r('app.string.setting_top_effect_type_gradual_blur'), value: SettingTopEffectType.GRADUAL_BLUR },
+  { label: $r('app.string.setting_top_effect_type_gradient_blur'), value: SettingTopEffectType.GRADIENT_BLUR },
+  // 未来API23支持后可添加：
+  // { label: $r('app.string.setting_top_effect_type_immersive_gradient_blur'), value: SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR },
+];
+
+/**
+ * 底部Tabs类型枚举
+ */
+export enum SettingBottomTabsType {
+  /** 平铺模式 */
+  FLATTEN,
+  /** 悬浮模式 */
+  SUSPENSION,
+}
+
+/**
+ * 当前支持的底部Tabs类型选项数组
+ */
+export const AVAILABLE_BOTTOM_TABS_TYPES: EnumSelectOption[] = [
+  { label: $r('app.string.setting_bottom_tabs_type_flatten'), value: SettingBottomTabsType.FLATTEN },
+  { label: $r('app.string.setting_bottom_tabs_type_suspension'), value: SettingBottomTabsType.SUSPENSION },
+];
+
+/**
+ * Token外观配置类
+ * 用于存储和管理令牌的外观相关设置
+ */
 @ObservedV2
 export class TokenPreference {
   @Trace app_safety_hide_token_enable = false;
@@ -58,7 +118,12 @@ export class TokenPreference {
   @Trace app_appearance_item_max_width = 800;
 }
 
+/**
+ * 应用偏好设置管理类
+ * 提供应用设置的读取、写入和持久化功能
+ */
 export class AppPreference {
+  /** 偏好设置管理器实例 */
   private static prefMgr = PreferenceManager.getInstance();
 
   private static settings_default: Map<string, SettingValue> = new Map<string, SettingValue>([
@@ -142,15 +207,29 @@ export class AppPreference {
     ...Array.from(AppPreference.appearance_default.entries())
   ]);
 
+  /**
+   * 获取偏好设置值
+   * @param key - 设置键名
+   * @returns 设置值，如果不存在则返回空字符串
+   */
   public static getPreference(key: string): SettingValue {
     return AppPreference.settings.get(key) ?? '';
   }
 
+  /**
+   * 设置偏好设置值
+   * @param key - 设置键名
+   * @param value - 设置值
+   */
   public static setPreference(key: string, value: SettingValue): void {
     AppPreference.settings.set(key, value);
     AppPreference.prefMgr.setValue<SettingValue>(key, value);
   }
 
+  /**
+   * 从持久化存储加载所有设置
+   * @returns Promise对象，表示加载操作完成
+   */
   public static async loadSettings(): Promise<void> {
     const promises = Array.from(AppPreference.settings.keys()).map(async (k) => {
       await AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
@@ -163,6 +242,10 @@ export class AppPreference {
     AppPreference.loadTokenAppearance();
   }
 
+  /**
+   * 加载Token外观设置到AppStorageV2
+   * 从偏好设置中读取外观相关配置并更新到TokenPreference对象
+   */
   private static loadTokenAppearance(): void {
     let token_appearance: TokenPreference = AppStorageV2.connect(TokenPreference, () => new TokenPreference())!;
     token_appearance.app_safety_hide_token_enable = AppPreference.getPreference('app_safety_hide_token_enable') as boolean;
@@ -200,6 +283,10 @@ export class AppPreference {
     token_appearance.app_appearance_item_max_width = AppPreference.getPreference('app_appearance_item_max_width') as number;
   }
 
+  /**
+   * 重置外观设置为默认值
+   * 将所有外观相关设置恢复为默认配置
+   */
   public static resetAppearanceToDefault(): void {
     for (const entry of AppPreference.appearance_default) {
       AppPreference.setPreference(entry[0], entry[1]);

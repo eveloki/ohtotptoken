@@ -2,11 +2,12 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode,SettingTopEffectType,SettingBottomTabsType, TokenPreference } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingTopEffectType, SettingBottomTabsType, TokenPreference, AVAILABLE_TOP_EFFECT_TYPES, AVAILABLE_BOTTOM_TABS_TYPES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { SubItemSelect } from '../../components/SubItemSelect';
+import { SubItemEnumSelect } from '../../components/SubItemEnumSelect';
 import { SubItemIconManager } from '../../components/SubItemIconManager';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
@@ -100,31 +101,32 @@ export struct AppearanceSheet {
             }, 1000))
           SubItemDivider()
 
-          SubItemSelect({
+          // 顶部模糊效果类型选择
+          SubItemEnumSelect({
             icon: $r('sys.symbol.slider_horizontal_2'),
             title: $r('app.string.setting_top_effect_type'),
-            values: [$r('app.string.setting_top_effect_type_disable'), $r('app.string.setting_top_effect_type_common_blur'),
-              $r('app.string.setting_top_effect_type_gradual_blur'), $r('app.string.setting_top_effect_type_gradient_blur'),
-              ],//$r('app.string.setting_top_effect_type_immersive_gradient_blur') 沉浸式渐变模糊需要api23 现在不支持
+            options: AVAILABLE_TOP_EFFECT_TYPES,
             description: $r('app.string.setting_top_effect_type_desc'),
             selected: AppPreference.getPreference('app_appearance_top_effect_type') as number ??
             SettingTopEffectType.GRADUAL_BLUR,
-            onChange: (index: number) => {
-              AppPreference.setPreference('app_appearance_top_effect_type', index);
+            onChange: (value: number) => {
+              AppPreference.setPreference('app_appearance_top_effect_type', value);
             }
           })
 
+          //底部tabs暂时不知道怎么实现 先屏蔽
           SubItemDivider()
 
-          SubItemSelect({
+          // 底部Tabs类型选择
+          SubItemEnumSelect({
             icon: $r('sys.symbol.slider_horizontal_2'),
             title: $r('app.string.setting_bottom_tabs_type'),
-            values: [$r('app.string.setting_bottom_tabs_type_flatten'), $r('app.string.setting_bottom_tabs_type_suspension')],
+            options: AVAILABLE_BOTTOM_TABS_TYPES,
             description: $r('app.string.setting_bottom_tabs_type_desc'),
             selected: AppPreference.getPreference('app_appearance_bottom_tabs_type') as number ??
             SettingBottomTabsType.FLATTEN,
-            onChange: (index: number) => {
-              AppPreference.setPreference('app_appearance_bottom_tabs_type', index);
+            onChange: (value: number) => {
+              AppPreference.setPreference('app_appearance_bottom_tabs_type', value);
             }
           })
         }
