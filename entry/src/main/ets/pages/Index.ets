@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -71,7 +71,7 @@ struct Index {
   get currentScrollEffectType(): ScrollEffectType {
     // 依赖scrollEffectVersion以触发重新计算
     const _ = this.scrollEffectVersion;
-    const topEffectType = AppPreference.getPreference('app_appearance_top_effect_type') as SettingTopEffectType;
+    const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
     return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
   }
 
@@ -288,10 +288,10 @@ struct Index {
     this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
     //备份还原场景检测是否有备份数据
-    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference("app_db_kv_archive_is_running")) {
+    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING)) {
       //todo需要申请锁屏后读取权限 需要实现后台任务备份
       try {
-        AppPreference.setPreference("app_db_kv_archive_is_running",true)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,true)
         //申请锁屏后访问加密文件的权限
         let acquireStatus = screenLockFileManager.acquireAccess();
         if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
@@ -340,14 +340,14 @@ struct Index {
     let windowStage = context.windowStage;
     windowStage.on("windowStageEvent", (data) => {
       this.background_blur_flag = (
-        AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
+        AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
         data === window.WindowStageEventType.PAUSED
       );
     })
 
-    if (AppPreference.getPreference('app_want_quick_scan')) {
+    if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);
-      AppPreference.setPreference('app_want_quick_scan', false);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, false);
     }
   }
 

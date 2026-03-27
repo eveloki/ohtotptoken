@@ -7,7 +7,7 @@ import { pasteboard } from '@kit.BasicServicesKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { readFileContent } from './FileUtils';
 import { fileIo } from '@kit.CoreFileKit';
-import { AppPreference } from './AppPreference';
+import { AppPreference, PREF_KEYS } from './AppPreference';
 import { showSnackBar, SnackBarNotifyType } from './HdsSnackBarUtils';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -326,7 +326,7 @@ export class TokenIconPacks {
   public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
   public static aegis_icon_packs: AegisIconPack[] = [];
   public static user_added_icon_packs: UserAddedIconPack = new UserAddedIconPack();
-  public static selected_icon_pack: number = AppPreference.getPreference('app_appearance_icon_pack_selected') as number ?? 0;
+  public static selected_icon_pack: number = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED) as number ?? 0;
 
   public static async addUserIconPack(path: string): Promise<void> {
     TokenIconPacks.user_added_icon_packs.initIconPack(path);

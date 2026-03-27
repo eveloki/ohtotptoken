@@ -2,7 +2,7 @@ import { cryptoFramework } from "@kit.CryptoArchitectureKit";
 import { userAuth } from "@kit.UserAuthenticationKit";
 import { BusinessError } from "@kit.BasicServicesKit";
 import { router } from "@kit.ArkUI";
-import { AppPreference } from "../utils/AppPreference";
+import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
 import { common } from "@kit.AbilityKit";
 
 @Entry
@@ -12,9 +12,9 @@ export struct AppLockPage {
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   onPageShow(): void {
-    if (!AppPreference.getPreference('app_safety_lock_enable')) {
+    if (!AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
       router.replaceUrl({ url: 'pages/Index' });
-    } else if (AppPreference.getPreference('app_safety_auto_unlock_enable')) {
+    } else if (AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE)) {
       requireUserAuth(this.appCtx);
     }
   }

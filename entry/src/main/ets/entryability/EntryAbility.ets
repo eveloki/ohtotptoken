@@ -8,7 +8,7 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, router, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, PREF_KEYS } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 
 //单版本分布式键值数据库
@@ -54,7 +54,7 @@ export default class EntryAbility extends UIAbility {
       },
       onApplicationBackground() {
         console.info('applicationStateChangeCallback onApplicationBackground');
-        if (AppPreference.getPreference('app_safety_lock_enable')) {
+        if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
           router.pushUrl({ url: 'pages/AppLockPage' })
         }
       }
@@ -157,7 +157,7 @@ export default class EntryAbility extends UIAbility {
 
   applySettings(windowClass: window.Window): void {
     // Color Mode
-    const color_mode = AppPreference.getPreference('app_appearance_color_mode') as number;
+    const color_mode = AppPreference.getPreference(PREF_KEYS.APPEARANCE_COLOR_MODE) as number;
     const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
       [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
       [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
@@ -166,7 +166,7 @@ export default class EntryAbility extends UIAbility {
     this.context.getApplicationContext().setColorMode(color_map.get(color_mode ?? 0));
 
     // 设置隐私模式
-    let privacy_mode = AppPreference.getPreference('app_safety_privacy_enable') as boolean;
+    let privacy_mode = AppPreference.getPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE) as boolean;
     if (privacy_mode) {
       try {
         windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {

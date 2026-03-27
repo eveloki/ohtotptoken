@@ -5,7 +5,7 @@ import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUti
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -34,10 +34,10 @@ export struct SettingPage {
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
-  @Local is_master_key_enable: boolean = AppPreference.getPreference('app_use_master_key') as boolean;
-  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
+  @Local is_master_key_enable: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
+  @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
 
-  @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
+  @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
@@ -55,8 +55,8 @@ export struct SettingPage {
     this.versionCode = bundleInfo?.versionCode;
     this.versionName = 'Version:' + bundleInfo?.versionName;
     this.appName = bundleInfo?.name;
-    this.RdbSyncEnable = AppPreference.getPreference('app_db_rds_sync_enable');
-    this.RdbCloudSyncEnable = AppPreference.getPreference('app_db_rds_cloud_sync_enable');
+    this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
+    this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     //订阅权限变更
     this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
     this.str_about_app =
@@ -73,7 +73,7 @@ export struct SettingPage {
       "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
     this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
-      this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
+      this.is_master_key_set = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
     })
   }
 
@@ -322,13 +322,13 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.staroflife_rectangle'),
                 title: $r('app.string.restore_master_key'),
-                isOn: AppPreference.getPreference('app_use_master_key') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean,
                 description: $r('app.string.restore_master_key_msg'),
                 onChange: (IsOn: boolean) => {
                   this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                     this.is_master_key_enable = IsOn;
                   })
-                  AppPreference.setPreference('app_use_master_key', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.USE_MASTER_KEY, IsOn);
                 }
               })
               if (this.is_master_key_enable) {
@@ -349,10 +349,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'),
-                isOn: AppPreference.getPreference('app_safety_privacy_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_privacy_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE, IsOn);
                   try {
                     this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
                       console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
@@ -368,7 +368,7 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.key_shield'),
                 title: $r('app.string.setting_safety_lock'),
-                isOn: AppPreference.getPreference('app_safety_lock_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -389,10 +389,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.eye_slash'),
                 title: $r('app.string.setting_hide_token'),
-                isOn: AppPreference.getPreference('app_safety_hide_token_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_hide_token_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE, IsOn);
                   this.token_preference.app_safety_hide_token_enable = IsOn;
                 }
               })
@@ -402,10 +402,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.blur_bar'),
                 title: $r('app.string.setting_background_blur'),
-                isOn: AppPreference.getPreference('app_safety_background_blur_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean,
                 description: $r('app.string.setting_background_blur_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_background_blur_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE, IsOn);
                 }
               })
             }
@@ -417,10 +417,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.chevron_up_2_circle'),
                 title: $r('app.string.show_next_token'),
-                isOn: AppPreference.getPreference('app_appearance_show_next_token_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean,
                 description: $r('app.string.show_next_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_show_next_token_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE, IsOn);
                   this.token_preference.app_appearance_show_next_token_enable = IsOn;
                 }
               })
@@ -430,10 +430,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_draw'),
                 title: $r('app.string.setting_holding_hand_awareness'),
-                isOn: AppPreference.getPreference('app_appearance_holding_hand_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean,
                 description: $r('app.string.setting_holding_hand_awareness_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_holding_hand_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE, IsOn);
                   this.token_preference.app_appearance_holding_hand_enable = IsOn;
                   this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
                 }
@@ -445,13 +445,13 @@ export struct SettingPage {
                 SubItemToggle({
                   icon: $r('sys.symbol.gearshape'),
                   title: $r('app.string.debug_mode'),
-                  isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
+                  isOn: AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
                     this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
-                    AppPreference.setPreference('app_debug_mode_on', IsOn);
+                    AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, IsOn);
                   }
                 })
 
@@ -461,10 +461,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
                 title: $r('app.string.auto_unlock'),
-                isOn: AppPreference.getPreference('app_safety_auto_unlock_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE) as boolean,
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_auto_unlock_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, IsOn);
                 }
               })
 
@@ -476,10 +476,10 @@ export struct SettingPage {
                 values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'),
                   $r('app.string.setting_color_mode_light'),],
                 description: $r('app.string.setting_color_mode_desc'),
-                selected: AppPreference.getPreference('app_appearance_color_mode') as number ??
+                selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_COLOR_MODE) as number ??
                 SettingColorMode.System,
                 onChange: (index: number) => {
-                  AppPreference.setPreference('app_appearance_color_mode', index);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_COLOR_MODE, index);
                   const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
                     [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
                     [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],

@@ -1,7 +1,7 @@
 import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, PREF_KEYS } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -32,7 +32,7 @@ struct RestoreDataPage {
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   aboutToAppear(): void {
     this.isBegin = false;
-    this.isEnabledKDF=AppPreference.getPreference("app_use_master_key") as boolean;
+    this.isEnabledKDF=AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
   }
   restoreData() {
     this.isBegin = true;

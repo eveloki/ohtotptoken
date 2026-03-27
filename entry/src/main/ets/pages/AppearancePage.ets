@@ -4,7 +4,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemToggle } from '../components/SubItemToggle';
 import { TokenItem } from '../components/TokenItem';
 import { TopNavigationView } from '../components/TopNavigationView';
-import { AppPreference, TokenPreference, EVENT_NAMES } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
@@ -83,10 +83,10 @@ struct AppearancePage {
               SubItemToggle({
                 icon: $r('sys.symbol.transfer_station'),
                 title: $r('app.string.swap_host_user'),
-                isOn: AppPreference.getPreference('app_appearance_swap_host_user_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_SWAP_HOST_USER_ENABLE) as boolean,
                 description: $r('app.string.swap_host_user_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_swap_host_user_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_SWAP_HOST_USER_ENABLE, IsOn);
                   this.token_preference.app_appearance_swap_host_user_enable = IsOn;
                 }
               })
@@ -96,10 +96,10 @@ struct AppearancePage {
               SubItemToggle({
                 icon: $r('sys.symbol.star_square_stack_fill'),
                 title: $r('app.string.enable_icon_background'),
-                isOn: AppPreference.getPreference('app_appearance_logo_background') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND) as boolean,
                 description: $r('app.string.enable_icon_background_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_logo_background', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND, IsOn);
                   this.token_preference.app_appearance_logo_background = IsOn;
                 }
               })
@@ -109,10 +109,10 @@ struct AppearancePage {
               SubItemToggle({
                 icon: $r('sys.symbol.circle_lefthalf_inset_filled'),
                 title: $r('app.string.enable_dark_icon_filter'),
-                isOn: AppPreference.getPreference('app_appearance_logo_dark_filter') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER) as boolean,
                 description: $r('app.string.enable_dark_icon_filter_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_logo_dark_filter', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER, IsOn);
                   this.token_preference.app_appearance_logo_dark_filter = IsOn;
                 }
               })
