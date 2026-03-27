@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference,SettingTopEffectType,SettingBottomTabsType } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -61,6 +61,16 @@ struct Index {
   @Local isAboutSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
+
+  /**
+   * 获取当前的滚动效果类型
+   * 根据用户设置的顶部效果类型映射到对应的ScrollEffectType
+   */
+  @Computed
+  get currentScrollEffectType(): ScrollEffectType {
+    const topEffectType = AppPreference.getPreference('app_appearance_top_effect_type') as SettingTopEffectType;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
+  }
 
   private appIsInit = false;
   private appIsShow = false;
@@ -672,7 +682,7 @@ struct Index {
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
+            scrollEffectType: this.currentScrollEffectType,
           }
         },
         content: {
@@ -723,7 +733,7 @@ struct Index {
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
+            scrollEffectType: this.currentScrollEffectType // 渐变模糊
           }
         },
         content: {
@@ -771,7 +781,7 @@ struct Index {
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
+                  scrollEffectType: this.currentScrollEffectType // 渐变模糊
                 }
               },
               content: {
@@ -818,7 +828,7 @@ struct Index {
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
                 }
               },
               content: {

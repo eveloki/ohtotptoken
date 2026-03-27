@@ -1,5 +1,6 @@
 import { PreferenceManager } from "./PreferenceManager";
 import { AppStorageV2 } from "@kit.ArkUI";
+import { ScrollEffectType } from "@kit.UIDesignKit";
 
 /**
  * 设置值的联合类型
@@ -76,6 +77,16 @@ export const AVAILABLE_BOTTOM_TABS_TYPES: EnumSelectOption[] = [
   { label: $r('app.string.setting_bottom_tabs_type_flatten'), value: SettingBottomTabsType.FLATTEN },
   { label: $r('app.string.setting_bottom_tabs_type_suspension'), value: SettingBottomTabsType.SUSPENSION },
 ];
+
+/**
+ * 顶部效果类型到滚动效果类型的映射
+ * 将SettingTopEffectType映射到ScrollEffectType
+ */
+export const SCROLL_EFFECT_TYPE_MAP: Map<SettingTopEffectType, ScrollEffectType> = new Map([
+  [SettingTopEffectType.COMMON_BLUR, ScrollEffectType.COMMON_BLUR],
+  [SettingTopEffectType.GRADUAL_BLUR, ScrollEffectType.GRADUAL_BLUR],
+  [SettingTopEffectType.GRADIENT_BLUR, ScrollEffectType.GRADIENT_BLUR],
+]);
 
 /**
  * Token外观配置类
