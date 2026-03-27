@@ -4,7 +4,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemToggle } from '../components/SubItemToggle';
 import { TokenItem } from '../components/TokenItem';
 import { TopNavigationView } from '../components/TopNavigationView';
-import { AppPreference, TokenPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES } from '../utils/AppPreference';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
@@ -27,7 +27,7 @@ struct AppearancePage {
     setInterval(() => {
       const timestamp = Math.floor(systemDateTime.getTime() / 1000);
       if (this.context.eventHub != undefined) {
-        this.context.eventHub.emit('onTimestampChanged', timestamp, false);
+        this.context.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
       }
     }, 1000);
   }

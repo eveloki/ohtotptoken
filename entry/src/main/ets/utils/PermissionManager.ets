@@ -16,6 +16,7 @@
 import { common } from '@kit.AbilityKit';
 import { abilityAccessCtrl, bundleManager, Permissions, PermissionRequestResult } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { EVENT_NAMES } from './AppPreference';
 
 //权限管理
 export class PermissionManager {
@@ -161,6 +162,6 @@ export class PermissionManager {
     let appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
     let isAccess = await this.verifyPermissionsBool()
     //向前台告知授权信息
-    appCtx.eventHub.emit('DATASYNCPermissionsUpdate', isAccess)
+    appCtx.eventHub.emit(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, isAccess)
   }
 }

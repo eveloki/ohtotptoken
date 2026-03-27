@@ -1,7 +1,7 @@
 import { ConfigurationConstant } from "@kit.AbilityKit";
 import { TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
-import { TokenPreference } from "../utils/AppPreference";
+import { TokenPreference, EVENT_NAMES } from "../utils/AppPreference";
 import { AppStorageV2 } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 
@@ -74,7 +74,7 @@ export struct TokenIcon {
 
   aboutToAppear(): void {
     this.refreshIcon(this.issuer);
-    getContext(this).eventHub.on('onIconPackChanged', () => this.onIconPackChanged());
+    getContext(this).eventHub.on(EVENT_NAMES.ICON_PACK_CHANGED, () => this.onIconPackChanged());
   }
 
   stringToColor(str: string): string {

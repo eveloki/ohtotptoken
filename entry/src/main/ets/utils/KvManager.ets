@@ -1,7 +1,7 @@
 import { bundleManager, common } from '@kit.AbilityKit';
 import { distributedKVStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference } from './AppPreference';
+import { AppPreference, EVENT_NAMES } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
 import { TokenConfig } from './TokenConfig';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -86,12 +86,12 @@ export class KvManager {
       //订阅同步完成事件
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
         console.info(`syncComplete ${data}`);
-        ctx.eventHub.emit('KVStoreSyncComplete');
+        ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
 
       this._kvStore.on('dataChange', distributedKVStore.SubscribeType.SUBSCRIBE_TYPE_LOCAL, (data: distributedKVStore.ChangeNotification) => {
         console.info(`dataChange callback call data: ${data}`);
-        //ctx.eventHub.emit('KVStoreSyncComplete');
+        //ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
     }).catch((reason: BusinessError) => {
       console.error(reason.message);

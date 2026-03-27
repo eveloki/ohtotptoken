@@ -5,7 +5,7 @@ import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUti
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -58,7 +58,7 @@ export struct SettingPage {
     this.RdbSyncEnable = AppPreference.getPreference('app_db_rds_sync_enable');
     this.RdbCloudSyncEnable = AppPreference.getPreference('app_db_rds_cloud_sync_enable');
     //订阅权限变更
-    this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
     this.str_about_app =
       "Github: SolidFaker/ohtotptoken\n" +
       "E-mail: enbinli@outlook.com\n" +
@@ -72,7 +72,7 @@ export struct SettingPage {
       "Github: ss23/fortitoken-mobile-registration\n" +
       "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
-    this.appCtx.eventHub.on('onMasterKeyPageBack',()=>{
+    this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
       this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
     })
   }
@@ -257,7 +257,7 @@ export struct SettingPage {
   // 在自定义组件即将析构销毁时将dialogController置空
   aboutToDisappear() {
     this.password_input_dialog = null // 将dialogController置空
-    this.appCtx.eventHub.off('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
   build() {
@@ -435,7 +435,7 @@ export struct SettingPage {
                 onChange: (IsOn: boolean) => {
                   AppPreference.setPreference('app_appearance_holding_hand_enable', IsOn);
                   this.token_preference.app_appearance_holding_hand_enable = IsOn;
-                  this.appCtx.eventHub.emit('holdingHandPreferenceChanged', IsOn);
+                  this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
                 }
               })
 

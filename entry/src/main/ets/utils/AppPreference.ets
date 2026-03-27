@@ -3,6 +3,36 @@ import { AppStorageV2 } from "@kit.ArkUI";
 import { ScrollEffectType } from "@kit.UIDesignKit";
 
 /**
+ * 事件名称常量
+ */
+export enum EVENT_NAMES {
+  /** 顶部模糊效果类型变更事件 */
+  TOP_EFFECT_TYPE_CHANGED = 'onTopEffectTypeChanged',
+  /** Token变更事件 */
+  TOKEN_CHANGED = 'onTokenChanged',
+  /** 时间戳变更事件 */
+  TIMESTAMP_CHANGED = 'onTimestampChanged',
+  /** 文件拖放事件 */
+  FILE_DROP = 'onFileDrop',
+  /** 图标包变更事件 */
+  ICON_PACK_CHANGED = 'onIconPackChanged',
+  /** KV数据库同步完成事件 */
+  KV_STORE_SYNC_COMPLETE = 'KVStoreSyncComplete',
+  /** RDB数据库同步完成事件 */
+  RDB_STORE_SYNC_COMPLETE = 'RDBStoreSyncComplete',
+  /** 数据同步权限更新事件 */
+  DATASYNC_PERMISSIONS_UPDATE = 'DATASYNCPermissionsUpdate',
+  /** 开始快速扫描事件 */
+  START_QUICK_SCAN = 'startQuickScan',
+  /** 切换Token搜索事件 */
+  TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
+  /** 主密钥页面返回事件 */
+  MASTER_KEY_PAGE_BACK = 'onMasterKeyPageBack',
+  /** 握手偏好设置变更事件 */
+  HOLDING_HAND_PREFERENCE_CHANGED = 'holdingHandPreferenceChanged',
+}
+
+/**
  * 设置值的联合类型
  */
 export type SettingValue = boolean | string | number | SettingColorMode;
@@ -211,7 +241,7 @@ export class AppPreference {
     ['app_appearance_user_name_font_weight', 400],
     ['app_appearance_item_max_width', 800],
     // 外观-顶部模糊类型
-    ['app_appearance_top_effect_type', SettingTopEffectType.GRADUAL_BLUR],
+    ['app_appearance_top_effect_type', SettingTopEffectType.GRADIENT_BLUR],
     // 外观-底部Tabs类型
     ['app_appearance_bottom_tabs_type', SettingBottomTabsType.FLATTEN]
   ]);

@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, TokenPreference } from '../../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -19,13 +19,13 @@ export struct SecuritySheet {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   aboutToAppear(): void {
-    this.appCtx.eventHub.on('onMasterKeyPageBack',()=>{
+    this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
       this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
     })
   }
 
   aboutToDisappear() {
-    this.appCtx.eventHub.off('onMasterKeyPageBack');
+    this.appCtx.eventHub.off(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
   }
 
   build() {

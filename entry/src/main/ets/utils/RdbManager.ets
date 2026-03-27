@@ -15,7 +15,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { relationalStore } from '@kit.ArkData';
-import { AppPreference } from './AppPreference';
+import { AppPreference, EVENT_NAMES } from './AppPreference';
 import { cloudData } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 
@@ -54,7 +54,7 @@ export class RdbManager {
         for (let i = 0; i < result.length; i++) {
           console.info(`device= ${result[i][0]}, status= ${result[i][1]}`);
         }
-        this.appCtx.eventHub.emit("RDBStoreSyncComplete")
+        this.appCtx.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       })
     }
     //端云同步 暂时屏蔽 等待实现
@@ -76,7 +76,7 @@ export class RdbManager {
           return;
         }
         console.info('Cloud sync succeeded');
-        //this.context.eventHub.emit("RDBStoreSyncComplete")
+        //this.context.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       });
     }
   }

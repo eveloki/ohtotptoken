@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingTopEffectType, SettingBottomTabsType, TokenPreference, AVAILABLE_TOP_EFFECT_TYPES, AVAILABLE_BOTTOM_TABS_TYPES } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingTopEffectType, SettingBottomTabsType, TokenPreference, AVAILABLE_TOP_EFFECT_TYPES, AVAILABLE_BOTTOM_TABS_TYPES, EVENT_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -46,7 +46,7 @@ export struct AppearanceSheet {
             onChange: (IsOn: boolean) => {
               AppPreference.setPreference('app_appearance_holding_hand_enable', IsOn);
               this.token_preference.app_appearance_holding_hand_enable = IsOn;
-              this.appCtx.eventHub.emit('holdingHandPreferenceChanged', IsOn);
+              this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
             }
           })
 
@@ -125,6 +125,10 @@ export struct AppearanceSheet {
             SettingTopEffectType.GRADUAL_BLUR,
             onChange: (value: number) => {
               AppPreference.setPreference('app_appearance_top_effect_type', value);
+              // 发送事件通知Index页面更新滚动效果类型
+              if (this.appCtx.eventHub != undefined) {
+                this.appCtx.eventHub.emit(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED);
+              }
             }
           })
 

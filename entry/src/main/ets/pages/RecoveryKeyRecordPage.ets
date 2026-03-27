@@ -1,7 +1,7 @@
 import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -44,7 +44,7 @@ struct RecoveryKeyRecordPage {
     //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
     //  showSnackBar(b ? "恢复密钥OK" : "恢复密钥Err", SnackBarNotifyType.INFO)
     //})
-    //this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+    //this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
     router.back({ url: 'pages/Index' });
   }
   exportRecoveryKey(){

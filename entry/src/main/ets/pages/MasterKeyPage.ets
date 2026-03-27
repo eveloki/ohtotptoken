@@ -1,7 +1,7 @@
 import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -54,7 +54,7 @@ struct MasterKeyPage {
           this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
           AppPreference.setPreference('app_use_master_key_set',true)
           this.is_loaded=false;
-          this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+          this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
           router.pushUrl({ url: 'pages/RecoveryKeyRecordPage',params: {
             recoverySecretKey: this.recoverySecretKey,
             recoverySecretKeyShow:this.recoverySecretKeyShow
