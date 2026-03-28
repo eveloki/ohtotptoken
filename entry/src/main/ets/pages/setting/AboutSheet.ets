@@ -3,12 +3,12 @@ import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager } from '@kit.AbilityKit';
 import { AppStorageV2, curves } from '@kit.ArkUI';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
-import { AppPreference } from '../../utils/AppPreference';
+import { AppPreference, PREF_KEYS } from '../../utils/AppPreference';
 
 @Preview
 @ComponentV2
 export struct AboutSheet {
-  @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
+  @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private str_about_app: string = '';
   private str_opensource_leg: string = '';

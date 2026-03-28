@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference,SettingTopEffectType,SettingBottomTabsType } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -61,6 +61,19 @@ struct Index {
   @Local isAboutSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
+  @Local scrollEffectVersion: number = 0;
+
+  /**
+   * 获取当前的滚动效果类型
+   * 根据用户设置的顶部效果类型映射到对应的ScrollEffectType
+   */
+  @Computed
+  get currentScrollEffectType(): ScrollEffectType {
+    // 依赖scrollEffectVersion以触发重新计算
+    const _ = this.scrollEffectVersion;
+    const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
+  }
 
   private appIsInit = false;
   private appIsShow = false;
@@ -120,7 +133,12 @@ struct Index {
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
 
     tkStore.initTokenStore().then(() => {
-      if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
+      // 订阅顶部模糊效果类型变更事件
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
+        // 触发UI重新渲染，更新滚动效果类型
+        this.scrollEffectVersion++;
+      });
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.CurrentTokensCount = tokens.length;
@@ -144,11 +162,11 @@ struct Index {
     });
 
     // save certification for forti token
-    let cer_path = getContext(this).filesDir + "/fmt.ks"
+    let cer_path = this.appCtx.filesDir + "/fmt.ks"
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
       if (!exist) {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
-          let arr = getContext(this).resourceManager.getRawFileContentSync('ftm.ks')
+          let arr = this.appCtx.resourceManager.getRawFileContentSync('ftm.ks')
           fs.write(cer_file.fd, arr.buffer).then((cnt) => {
             console.log('store fmt.ks to cache dir')
           })
@@ -161,17 +179,17 @@ struct Index {
 
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
-    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('KVStoreSyncComplete',() => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
       AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
-    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('RDBStoreSyncComplete',() => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE,() => {
       //todo 接收同步完成后刷新数据
     })
 
     //订阅权限变更 主页面不需要取消订阅 没有意义
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
         AppPreference.setPreference('app_db_rds_sync_enable', false);
@@ -179,7 +197,7 @@ struct Index {
       }
     })
 
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onFileDrop', (uri: string) => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
       this.backup_select_uri = uri;
       if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
         this.password_input_dialog?.open();
@@ -247,8 +265,8 @@ struct Index {
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    if (getContext(this).eventHub != undefined) {
-      getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    if (this.appCtx.eventHub != undefined) {
+      this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
     }
   }
 
@@ -270,10 +288,10 @@ struct Index {
     this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
     //备份还原场景检测是否有备份数据
-    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference("app_db_kv_archive_is_running")) {
+    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING)) {
       //todo需要申请锁屏后读取权限 需要实现后台任务备份
       try {
-        AppPreference.setPreference("app_db_kv_archive_is_running",true)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,true)
         //申请锁屏后访问加密文件的权限
         let acquireStatus = screenLockFileManager.acquireAccess();
         if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
@@ -308,7 +326,7 @@ struct Index {
     router.clear();
     this.appIsShow = true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
     //页面打开的时候刷新token
     tkStore.LoadTokenByDataBase().then(() => {
       // 接收同步完成后刷新数据
@@ -318,18 +336,18 @@ struct Index {
       });
     });
 
-    let context = getContext(this) as common.UIAbilityContext;
+    let context = this.appCtx as common.UIAbilityContext;
     let windowStage = context.windowStage;
     windowStage.on("windowStageEvent", (data) => {
       this.background_blur_flag = (
-        AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
+        AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
         data === window.WindowStageEventType.PAUSED
       );
     })
 
-    if (AppPreference.getPreference('app_want_quick_scan')) {
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('startQuickScan');
-      AppPreference.setPreference('app_want_quick_scan', false);
+    if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, false);
     }
   }
 
@@ -672,7 +690,7 @@ struct Index {
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
+            scrollEffectType: this.currentScrollEffectType,
           }
         },
         content: {
@@ -687,7 +705,7 @@ struct Index {
                   icon: $r('sys.symbol.magnifyingglass'),
                   isEnabled: true,
                   action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
                   }
                 }
               }
@@ -723,7 +741,7 @@ struct Index {
         style: {
           scrollEffectOpts: {
             enableScrollEffect: true,
-            scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
+            scrollEffectType: this.currentScrollEffectType // 渐变模糊
           }
         },
         content: {
@@ -738,7 +756,7 @@ struct Index {
                   icon: $r('sys.symbol.magnifyingglass'),
                   isEnabled: true,
                   action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
                   }
                 }
               }
@@ -771,7 +789,7 @@ struct Index {
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 渐变模糊
+                  scrollEffectType: this.currentScrollEffectType // 渐变模糊
                 }
               },
               content: {
@@ -786,7 +804,7 @@ struct Index {
                         icon: $r('sys.symbol.magnifyingglass'),
                         isEnabled: true,
                         action: () => {
-                          if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit('toggleTokenSearch');
+                          if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
                         }
                       }
                     }
@@ -818,7 +836,7 @@ struct Index {
               style: {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR // 实时模糊，渐变是GRADIENT_BLUR
+                  scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
                 }
               },
               content: {

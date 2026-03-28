@@ -1,7 +1,7 @@
 import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -23,7 +23,7 @@ struct MasterKeyPage {
   @Local masterKey: string = "";//用户设置的主密码
   @Local masterKeyErr: boolean= false;//用户设置的主密码错误
   @Local is_loaded: boolean = false;
-  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
+  @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
   TOAST_BOTTOM: number = 135;
   tkStore = TokenStore.getInstance();
 
@@ -54,7 +54,7 @@ struct MasterKeyPage {
           this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
           AppPreference.setPreference('app_use_master_key_set',true)
           this.is_loaded=false;
-          this.appCtx?.eventHub.emit('onMasterKeyPageBack');
+          this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
           router.pushUrl({ url: 'pages/RecoveryKeyRecordPage',params: {
             recoverySecretKey: this.recoverySecretKey,
             recoverySecretKeyShow:this.recoverySecretKeyShow

@@ -5,7 +5,7 @@ import { AegisIconPack, TokenIconPacks } from '../utils/TokenUtils';
 import { BusinessError, zlib } from '@kit.BasicServicesKit';
 import { AppStorageV2 } from '@kit.ArkUI';
 import { SubItemDivider } from './SubItemDivider';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { throttle,startBrowsableAbility } from '../utils/UiUtils';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
@@ -123,8 +123,8 @@ export struct SubItemIconManager {
                     if (checked) {
                       TokenIconPacks.selected_icon_pack = 0;
                       this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                      AppPreference.setPreference('app_appearance_icon_pack_selected', 0);
-                      this.window.Context?.eventHub.emit('onIconPackChanged');
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED, 0);
+                      this.window.Context?.eventHub.emit(EVENT_NAMES.ICON_PACK_CHANGED);
                     }
                   })
                 Column() {
@@ -156,8 +156,8 @@ export struct SubItemIconManager {
                       if (checked) {
                         TokenIconPacks.selected_icon_pack = index + 1;
                         this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                        AppPreference.setPreference('app_appearance_icon_pack_selected', index + 1);
-                        this.window.Context?.eventHub.emit('onIconPackChanged');
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED, index + 1);
+                        this.window.Context?.eventHub.emit(EVENT_NAMES.ICON_PACK_CHANGED);
                       }
                     })
                   Column() {
@@ -245,7 +245,7 @@ export struct SubItemIconManager {
                       zlib.decompressFile(fd.path, out_path).then(() => {
                         TokenIconPacks.addAegisIconPack(out_path).then(() => {
                           this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
-                          this.window.Context?.eventHub.emit('onIconPackChanged');
+                          this.window.Context?.eventHub.emit(EVENT_NAMES.ICON_PACK_CHANGED);
                           fs.close(fd.fd);
                         }).catch(() => {
                           fs.rmdir(out_path);

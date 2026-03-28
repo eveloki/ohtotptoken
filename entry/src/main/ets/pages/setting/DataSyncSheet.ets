@@ -1,6 +1,6 @@
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, router } from '@kit.ArkUI';
-import { AppPreference, SettingValue } from '../../utils/AppPreference';
+import { AppPreference, SettingValue, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -18,10 +18,10 @@ export struct DataSyncSheet {
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
   aboutToAppear(): void {
-    this.RdbSyncEnable = AppPreference.getPreference('app_db_rds_sync_enable');
-    this.RdbCloudSyncEnable = AppPreference.getPreference('app_db_rds_cloud_sync_enable');
+    this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
+    this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     //订阅权限变更
-    this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
   //更新数据同步权限
@@ -36,7 +36,7 @@ export struct DataSyncSheet {
   }
 
   aboutToDisappear() {
-    this.appCtx.eventHub.off('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
   build() {

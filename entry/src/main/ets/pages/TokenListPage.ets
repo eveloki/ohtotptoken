@@ -3,7 +3,7 @@ import { FortiConfigDialog } from "../dialogs/FortiConfigDialog";
 import { TOTPConfigDialog } from "../dialogs/OTPConfigDialog";
 import { QRCodeDialog } from "../dialogs/QRCodeDialog";
 import { SteamConfigDialog } from "../dialogs/SteamConfigDialog";
-import { AppPreference, SettingValue, TokenPreference } from "../utils/AppPreference";
+import { AppPreference, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from "../utils/AppPreference";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
@@ -81,12 +81,12 @@ export struct TokenListPage {
 
   aboutToAppear(): void {
     // 如果已经点击了我知道了则永远不提示了
-    if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
+    if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
-    getContext(this).eventHub.on('toggleTokenSearch', () => { this.toggleTokenSearchByTitleBar() });
-    getContext(this).eventHub.on('holdingHandPreferenceChanged', (enabled: boolean) => {
+    getContext(this).eventHub.on(EVENT_NAMES.START_QUICK_SCAN, () => { this.start_quick_scan() });
+    getContext(this).eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
+    getContext(this).eventHub.on(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, (enabled: boolean) => {
       this.handleHoldingHandPreferenceChanged(enabled);
     });
     this.handleHoldingHandPreferenceChanged(this.token_preference.app_appearance_holding_hand_enable);
@@ -337,8 +337,8 @@ export struct TokenListPage {
                       .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
                       .toString(),
                     action: () => {
-                      if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
-                        AppPreference.setPreference('app_show_guide_tips', false)
+                      if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
+                        AppPreference.setPreference(PREF_KEYS.SHOW_GUIDE_TIPS, false)
                       }
                       this.token_copy_guide_popup = false;
                     }

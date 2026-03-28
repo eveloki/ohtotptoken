@@ -2,7 +2,7 @@ import { AppStorageV2, router } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
 import { deviceInfo } from '@kit.BasicServicesKit';
-import { AppPreference, SettingValue } from '../utils/AppPreference';
+import { AppPreference, SettingValue, PREF_KEYS } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { TokenStore } from '../utils/TokenStore';
 import { SubItemDivider } from '../components/SubItemDivider';
@@ -18,8 +18,8 @@ struct ShowDataSyncDetailsPage {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   aboutToAppear(): void {
-    this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
-    this.AppDbKVArchiveTime = AppPreference.getPreference('app_db_kv_archive_time');
+    this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
+    this.AppDbKVArchiveTime = AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME);
     if (this.AppDbKVSyncTime == '' || this.AppDbKVSyncTime == null) {
       this.AppDbKVSyncTime = 'invalid';
     }
@@ -114,9 +114,9 @@ struct ShowDataSyncDetailsPage {
                       TokenStore.getInstance().DataSync().then(()=>{
                         setTimeout(() => {
                           this.Is_loaded = false;
-                          AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
-                          this.AppDbKVSyncTime = AppPreference.getPreference('app_db_kv_sync_time');
-                          this.AppDbKVArchiveTime = AppPreference.getPreference('app_db_kv_archive_time');
+                          AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
+                          this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
+                          this.AppDbKVArchiveTime = AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME);
                           }, 1500);
                       });
                     })

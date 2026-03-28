@@ -1,13 +1,39 @@
 
+/**
+ * 基础选择组件
+ * 提供下拉选择功能，适用于选项与索引一一对应的场景
+ *
+ * @example
+ * ```typescript
+ * SubItemSelect({
+ *   title: '颜色模式',
+ *   values: ['跟随系统', '深色模式', '浅色模式'],
+ *   selected: 0,
+ *   onChange: (index: number) => {
+ *     console.log('选择了索引:', index);
+ *   }
+ * })
+ * ```
+ *
+ * @remarks
+ * 如果选项与枚举值不对应（如跳过某些值），建议使用SubItemEnumSelect组件
+ */
 @Preview
 @ComponentV2
 export struct SubItemSelect {
+  /** 选择变化时的回调函数，参数为选中的索引 */
   @Require @Param onChange: (selected: number) => void = () => {};
+  /** 标题文本，支持字符串或资源引用 */
   @Require @Param title: string | Resource = '';
+  /** 选项文本数组，支持字符串或资源引用 */
   @Require @Param values: string[] | Resource[] = [];
+  /** 当前选中的索引 */
   @Require @Param selected: number = 0;
+  /** 是否禁用选择 */
   @Param disable: boolean = false;
+  /** 图标资源 */
   @Param icon: Resource | undefined = undefined;
+  /** 描述文本，支持字符串或资源引用 */
   @Param description: string  | Resource = '';
 
   build() {

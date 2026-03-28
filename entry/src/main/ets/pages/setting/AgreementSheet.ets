@@ -34,8 +34,7 @@ export struct AgreementSheet {
 
           SubItemButton({ symbol: $r("sys.symbol.questionmark_circle"), text: $r('app.string.app_issue_feedback') })
             .onClick(throttle((event) => {
-              const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
-              startBrowsableAbility(context,'https://github.com/SolidFaker/ohtotptoken/issues');
+              startBrowsableAbility(this.appCtx,'https://github.com/SolidFaker/ohtotptoken/issues');
             }, 1000))
 
         }

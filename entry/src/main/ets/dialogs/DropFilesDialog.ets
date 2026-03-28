@@ -1,5 +1,6 @@
 import { unifiedDataChannel, uniformTypeDescriptor } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
+import { EVENT_NAMES } from '../utils/AppPreference';
 //文件拖拽
 @Preview
 @CustomDialog
@@ -33,7 +34,7 @@ export struct DropFilesDialog {
           if (event!=null) {
             let records: Array<unifiedDataChannel.UnifiedRecord >= event.getData().getRecords();
             let plainfile: unifiedDataChannel.File = records[0] as unifiedDataChannel.File;
-            this.appCtx.eventHub.emit('onFileDrop',plainfile.uri);
+            this.appCtx.eventHub.emit(EVENT_NAMES.FILE_DROP, plainfile.uri);
           }
         })
         .onDragEnter((event) => {

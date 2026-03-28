@@ -15,7 +15,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { relationalStore } from '@kit.ArkData';
-import { AppPreference } from './AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
 import { cloudData } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 
@@ -42,7 +42,7 @@ export class RdbManager {
 
   //同步
   async DataSync(): Promise<void> {
-    if (AppPreference.getPreference('app_db_rds_sync_enable')) {
+    if (AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE)) {
       let predicates = new relationalStore.RdbPredicates("EMPLOYEE");
       predicates.inAllDevices();
       this._rdbStore?.sync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, predicates, (err, result) => {
@@ -54,13 +54,13 @@ export class RdbManager {
         for (let i = 0; i < result.length; i++) {
           console.info(`device= ${result[i][0]}, status= ${result[i][1]}`);
         }
-        this.appCtx.eventHub.emit("RDBStoreSyncComplete")
+        this.appCtx.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       })
     }
     //端云同步 暂时屏蔽 等待实现
     //todo 实现设置是否开启云同步 默认开启本地设备同步
     //todo 同步完成前台刷新数据
-    if (AppPreference.getPreference('app_db_rds_cloud_sync_enable')) {
+    if (AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE)) {
       //仅WIFI同步
       cloudData.setCloudStrategy(cloudData.StrategyType.NETWORK, [cloudData.NetWorkStrategy.WIFI]).then(() => {
         console.info('Succeeded in setting the cloud strategy');
@@ -76,7 +76,7 @@ export class RdbManager {
           return;
         }
         console.info('Cloud sync succeeded');
-        //this.context.eventHub.emit("RDBStoreSyncComplete")
+        //this.context.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       });
     }
   }
