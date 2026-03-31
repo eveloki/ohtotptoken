@@ -14,6 +14,8 @@ const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
+let appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+
 export type Base32Variant = 'RFC3548' | 'RFC4648' | 'RFC4648-HEX' | 'Crockford';
 
 export type HMACAlgorithm = 'SHA1' | 'SHA224' | 'SHA256' | 'SHA384' | 'SHA512' | 'SM3' | 'MD5';
@@ -59,8 +61,7 @@ export async function ScanBarCode(): Promise<string> {
         enableMultiMode: true,
         enableAlbum: true
       };
-      let context = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-      return scanBarcode.startScanForResult(context, options).then((result: scanBarcode.ScanResult) => {
+      return scanBarcode.startScanForResult(appCtx, options).then((result: scanBarcode.ScanResult) => {
         return result.originalValue;
       });
     }
@@ -291,7 +292,7 @@ export class OTPDefaultIconPack {
 }
 
 export class UserAddedIconPack {
-  public name: string = "User Added";
+  public name: string = appCtx.resourceManager.getStringSync($r('app.string.dialog_icon_select_custom').id);
   public user_icon_path: string = '';
   public icon_path: string[] = [];
   public latest_icon_path: string = '';

@@ -401,6 +401,10 @@
       "value": "自动"
     },
     {
+      "name": "dialog_icon_select_custom",
+      "value": "用户自定义"
+    },
+    {
       "name": "icon_alert_remove_confirm_msg",
       "value": "是否删除这个图标?"
     },

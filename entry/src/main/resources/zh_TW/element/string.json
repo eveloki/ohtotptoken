@@ -401,6 +401,10 @@
       "value": "自動"
     },
     {
+      "name": "dialog_icon_select_custom",
+      "value": "使用者自定義"
+    },
+    {
       "name": "icon_alert_remove_confirm_msg",
       "value": "是否刪除這個圖示?"
     },
