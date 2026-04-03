@@ -197,8 +197,7 @@ export const AVAILABLE_TOP_EFFECT_TYPES: EnumSelectOption[] = [
   { label: $r('app.string.setting_top_effect_type_common_blur'), value: SettingTopEffectType.COMMON_BLUR },
   { label: $r('app.string.setting_top_effect_type_gradual_blur'), value: SettingTopEffectType.GRADUAL_BLUR },
   { label: $r('app.string.setting_top_effect_type_gradient_blur'), value: SettingTopEffectType.GRADIENT_BLUR },
-  // 未来API23支持后可添加：
-  // { label: $r('app.string.setting_top_effect_type_immersive_gradient_blur'), value: SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR },
+  { label: $r('app.string.setting_top_effect_type_immersive_gradient_blur'), value: SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR },
 ];
 
 /**
