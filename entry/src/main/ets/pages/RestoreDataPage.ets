@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppPreference, PREF_KEYS } from '../utils/AppPreference';
@@ -14,8 +14,9 @@ import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
 @Entry
 @ComponentV2
-struct RestoreDataPage {
+export struct RestoreDataPage {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  private navPathStack: NavPathStack = AppStorage.get<NavPathStack>('navPathStack') ?? new NavPathStack();
   @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入朱密码的UI场景
   @Local isBegin: boolean = false;//是否开始恢复
   @Local isRestoreSuccess: boolean = false;//是否恢复成功
@@ -150,8 +151,8 @@ struct RestoreDataPage {
       TopNavigationView({
         title: $r('app.string.restore_data'),
         onBackClick: () => {
-          router.back();
-        }
+            this.navPathStack.pop();
+          }
       })
       Column() {
         Column() {

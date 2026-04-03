@@ -25,8 +25,9 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
+import { RestoreDataPage } from './RestoreDataPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
   PrefixIcon,
@@ -62,6 +63,7 @@ struct Index {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
+  @Local navPathStack: NavPathStack = new NavPathStack();
 
   /**
    * 获取当前的滚动效果类型
@@ -124,6 +126,8 @@ struct Index {
   private backup_select_uri: string = '';
 
   aboutToAppear(): void {
+    // 将 navPathStack 存入 AppStorage，供子组件和 NavDestination 访问
+    AppStorage.setOrCreate('navPathStack', this.navPathStack);
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
@@ -275,7 +279,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          router.pushUrl({ url: 'pages/RestoreDataPage' });
+          this.navPathStack.pushPath({ name: 'RestoreDataPage' });
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -323,7 +327,7 @@ struct Index {
   }
 
   onPageShow(): void {
-    router.clear();
+    this.navPathStack.clear();
     this.appIsShow = true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
@@ -652,7 +656,15 @@ struct Index {
     .backgroundColor($r('app.color.window_background'))
   }
 
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === 'RestoreDataPage') {
+      RestoreDataPage()
+    }
+  }
+
   build() {
+    Navigation(this.navPathStack) {
     Stack() {
       if (this.token_loading) {
         Column() {
@@ -898,5 +910,9 @@ struct Index {
       colorMode: ThemeColorMode.SYSTEM,
       adaptiveColor: AdaptiveColor.DEFAULT
     })
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
   }
 }
