@@ -6,9 +6,9 @@ import {
   ConfigurationConstant,
 } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { AppStorageV2, router, window } from '@kit.ArkUI';
+import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, SettingColorMode, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 
 //单版本分布式键值数据库
@@ -43,8 +43,8 @@ export default class EntryAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
 
     if ((want.parameters!['action'] as string) == 'quick_scan') {
-      AppPreference.setPreference('app_want_quick_scan', true);
-      AppPreference.setPreference('app_want_uri', want.uri!);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
+      AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
 
     //监听前后台变化
@@ -55,7 +55,7 @@ export default class EntryAbility extends UIAbility {
       onApplicationBackground() {
         console.info('applicationStateChangeCallback onApplicationBackground');
         if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
-          router.pushUrl({ url: 'pages/AppLockPage' })
+          AppStorage.setOrCreate('app_lock_visible', true);
         }
       }
     }
@@ -84,7 +84,10 @@ export default class EntryAbility extends UIAbility {
 
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
-      windowStage.loadContent('pages/AppLockPage', (err) => {
+      if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+        AppStorage.setOrCreate('app_lock_visible', true);
+      }
+      windowStage.loadContent('pages/Index', (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;
@@ -131,8 +134,8 @@ export default class EntryAbility extends UIAbility {
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     if ((want.parameters!['action'] as string) == 'quick_scan') {
-      AppPreference.setPreference('app_want_quick_scan', true);
-      AppPreference.setPreference('app_want_uri', want.uri!);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
+      AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
   }
 

@@ -87,7 +87,7 @@ export struct RestoreDataPage {
     this.tkStore.RestoreByKVAsync().then((n)=>{
       //更新存档时间
       if (n>0) {
-        AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
       }
     }).catch((err:BusinessError)=>{
       hilog.error(err.code,"RestoreByKVAsync",`${err.message}`)

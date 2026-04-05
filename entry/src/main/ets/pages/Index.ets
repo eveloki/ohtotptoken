@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -33,6 +33,7 @@ import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCodePage } from './ShowCodePage';
 import { PrivacyPage } from './PrivacyPage';
 import { AgreementPage } from './AgreementPage';
+import { AppLockPage } from './AppLockPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
@@ -86,11 +87,12 @@ struct Index {
 
   private appIsInit = false;
   private appIsShow = false;
+
+  private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
   private DropFilesDialogIsOpen:boolean = false;
 
-  private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   // 订阅者信息, 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
   private subscriber: CommonEventManager.CommonEventSubscriber | undefined = undefined;
   // 事件列表
@@ -155,7 +157,7 @@ struct Index {
         // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
-        AppPreference.setPreference("app_db_kv_archive_is_running",false)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false)
       });
     });
 
@@ -189,7 +191,7 @@ struct Index {
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
-      AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
+      AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
@@ -201,8 +203,8 @@ struct Index {
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setPreference('app_db_rds_sync_enable', false);
-        AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
       }
     })
 
@@ -284,7 +286,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          this.pageInfos.pushPathByName('RestoreDataPage', null);
+          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -310,22 +312,22 @@ struct Index {
             //tkStore.RestoreByKVAsync();
             //更新存档时间
             if (n > 0) {
-              AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
             }
           }).catch((err:BusinessError) => {
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
           }).finally(() => {
-            AppPreference.setPreference("app_db_kv_archive_is_running",false);
+            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
           });
         }
         else
         {
-          AppPreference.setPreference("app_db_kv_archive_is_running",false);
+          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
         }
       } catch (err) {
         let message = (err as BusinessError).message;
         hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference("app_db_kv_archive_is_running",false);
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
       }
 
     }
@@ -663,21 +665,21 @@ struct Index {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === 'RestoreDataPage') {
+    if (name === ROUTE_NAMES.RestoreDataPage) {
       RestoreDataPage()
-    } else if (name === 'MasterKeyPage') {
+    } else if (name === ROUTE_NAMES.MasterKeyPage) {
       MasterKeyPage()
-    } else if (name === 'RecoveryKeyRecordPage') {
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
-    } else if (name === 'AppearancePage') {
+    } else if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage()
-    } else if (name === 'ShowDataSyncDetailsPage') {
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage()
-    } else if (name === 'ShowCodePage') {
+    } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
-    } else if (name === 'PrivacyPage') {
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
       PrivacyPage()
-    } else if (name === 'AgreementPage') {
+    } else if (name === ROUTE_NAMES.AgreementPage) {
       AgreementPage()
     }
   }
