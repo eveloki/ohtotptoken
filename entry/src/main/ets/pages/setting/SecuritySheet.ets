@@ -119,6 +119,18 @@ export struct SecuritySheet {
             SubItemDivider()
 
             SubItemToggle({
+              icon: $r('sys.symbol.face'),
+              title: $r('app.string.auto_unlock'),
+              isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE) as boolean,
+              description: $r('app.string.auto_unlock_des'),
+              onChange: (IsOn: boolean) => {
+                AppPreference.setPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, IsOn);
+              }
+            })
+
+            SubItemDivider()
+
+            SubItemToggle({
               icon: $r('sys.symbol.eye_slash'),
               title: $r('app.string.setting_hide_token'),
               isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean,

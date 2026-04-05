@@ -85,18 +85,6 @@ export struct AppearanceSheet {
               SubItemDivider()
             }
 
-            SubItemToggle({
-              icon: $r('sys.symbol.face'),
-              title: $r('app.string.auto_unlock'),
-              isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE) as boolean,
-              description: $r('app.string.auto_unlock_des'),
-              onChange: (IsOn: boolean) => {
-                AppPreference.setPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, IsOn);
-              }
-            })
-
-            SubItemDivider()
-
             SubItemSelect({
               icon: $r('sys.symbol.dark'),
               title: $r('app.string.setting_color_mode'),
