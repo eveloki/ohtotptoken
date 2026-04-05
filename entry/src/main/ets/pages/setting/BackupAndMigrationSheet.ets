@@ -9,7 +9,7 @@ import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/TokenBackup';
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../../utils/FileUtils';
 import { SubItemDivider } from '../../components/SubItemDivider';
-import { AppWindowInfo } from '../../entryability/EntryAbility';
+import { LengthMetrics } from '@kit.ArkUI';
 
 @Preview
 @ComponentV2
@@ -201,7 +201,13 @@ export struct BackupAndMigrationSheet {
   }
 
   build() {
-    List({ space: 10 }) {
+    Column() {
+      Text($r('app.string.setting_backup'))
+        .fontSize(24)
+        .fontWeight(FontWeight.Bold)
+        .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
+        .width('100%')
+      List({ space: 10 }) {
       ListItem() {
         SettingItem({ title: "" }) {
           SubItemButton({
@@ -239,8 +245,13 @@ export struct BackupAndMigrationSheet {
     }
     .width('100%')
     .height('100%')
-    .scrollBar(BarState.Off)
-    .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+      .backgroundColor($r('app.color.window_background'))
+      .layoutWeight(1)
+    }
+    .width('100%')
+    .height('100%')
     .backgroundColor($r('app.color.window_background'))
   }
 }

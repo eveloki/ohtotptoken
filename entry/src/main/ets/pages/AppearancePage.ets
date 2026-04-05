@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { SettingItem } from '../components/SettingItem';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemToggle } from '../components/SubItemToggle';
@@ -13,10 +13,11 @@ import { SubItemButton } from '../components/SubItemButton';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { common } from '@kit.AbilityKit';
 
-@Preview
 @Entry
+@Preview
 @ComponentV2
-struct AppearancePage {
+export struct AppearancePage {
+  pageInfos: NavPathStack | null = null;
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -33,11 +34,12 @@ struct AppearancePage {
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.customize_appearance'),
         onBackClick: () => {
-          router.back();
+          this.pageInfos?.pop('');
         }
       })
         .zIndex(1)
@@ -491,7 +493,15 @@ struct AppearancePage {
       .width('100%')
       .height('100%')
     }
-    .padding({ top: this.window.AvoidTopHeight })
-    .backdropBlur(10)
+    .padding({ top: 16 })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      return true;
+    });
   }
 }

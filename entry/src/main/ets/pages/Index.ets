@@ -26,6 +26,13 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
 import { RestoreDataPage } from './RestoreDataPage';
+import { MasterKeyPage } from './MasterKeyPage';
+import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
+import { AppearancePage } from './AppearancePage';
+import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCodePage } from './ShowCodePage';
+import { PrivacyPage } from './PrivacyPage';
+import { AgreementPage } from './AgreementPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
@@ -63,7 +70,7 @@ struct Index {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
-  @Local navPathStack: NavPathStack = new NavPathStack();
+  pageInfos: NavPathStack = new NavPathStack();
 
   /**
    * 获取当前的滚动效果类型
@@ -126,8 +133,6 @@ struct Index {
   private backup_select_uri: string = '';
 
   aboutToAppear(): void {
-    // 将 navPathStack 存入 AppStorage，供子组件和 NavDestination 访问
-    AppStorage.setOrCreate('navPathStack', this.navPathStack);
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
@@ -279,7 +284,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          this.navPathStack.pushPath({ name: 'RestoreDataPage' });
+          this.pageInfos.pushPathByName('RestoreDataPage', null);
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -327,7 +332,7 @@ struct Index {
   }
 
   onPageShow(): void {
-    this.navPathStack.clear();
+    this.pageInfos.clear();
     this.appIsShow = true;
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
@@ -507,7 +512,7 @@ struct Index {
           .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_backup') },
+            dragBar: true,
           })
       }
 
@@ -534,7 +539,7 @@ struct Index {
           .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_safety') },
+            dragBar: true,
           })
       }
 
@@ -561,7 +566,7 @@ struct Index {
           .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.app_appearance') },
+            dragBar: true,
           })
       }
 
@@ -588,7 +593,7 @@ struct Index {
           .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.data_sync') },
+            dragBar: true,
           })
       }
 
@@ -615,7 +620,7 @@ struct Index {
           .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_agreement_statement') },
+            dragBar: true,
           })
       }
 
@@ -642,7 +647,7 @@ struct Index {
           .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_about') },
+            dragBar: true,
           })
       }
 
@@ -660,11 +665,25 @@ struct Index {
   navDestinationBuilder(name: string, param: Object) {
     if (name === 'RestoreDataPage') {
       RestoreDataPage()
+    } else if (name === 'MasterKeyPage') {
+      MasterKeyPage()
+    } else if (name === 'RecoveryKeyRecordPage') {
+      RecoveryKeyRecordPage()
+    } else if (name === 'AppearancePage') {
+      AppearancePage()
+    } else if (name === 'ShowDataSyncDetailsPage') {
+      ShowDataSyncDetailsPage()
+    } else if (name === 'ShowCodePage') {
+      ShowCodePage()
+    } else if (name === 'PrivacyPage') {
+      PrivacyPage()
+    } else if (name === 'AgreementPage') {
+      AgreementPage()
     }
   }
 
   build() {
-    Navigation(this.navPathStack) {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.token_loading) {
         Column() {

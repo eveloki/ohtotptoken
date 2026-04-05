@@ -7,18 +7,18 @@
         "material": {
           "certpath": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BE9F9A07C1CDA59BEC492B1A3DDED5A281532FF41404316B074D930AE5E3BFD7E16F8103271DBC5",
+          "keyPassword": "0000001BF7C24E3B81B01411C11AE0F7EB8FD23208529B3B1FD5F38D63BE27C33920D17C6C2793B2CBBB5A",
           "profile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p12",
-          "storePassword": "0000001B94FC3B4A9A843F9850F1F352432E9CF411610B4CADC2A7650E9C1889FD86AA02B895DE374B01BA"
+          "storePassword": "0000001BDC811685D47F0540B4E2C8C12727693BD918DCD4D202518C63A97A2EAE0C824014F608C0637373"
         }
       }
     ],
     "products": [
       {
         "name": "default",
-        "signingConfig": "debug",
+        "signingConfig": "default",
         "compatibleSdkVersion": "6.0.2(22)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {

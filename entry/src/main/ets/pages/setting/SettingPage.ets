@@ -4,7 +4,7 @@ import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUtils'
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
-import { AppStorageV2, curves, router } from '@kit.ArkUI';
+import { AppStorageV2, curves } from '@kit.ArkUI';
 import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
@@ -19,10 +19,17 @@ import { SubItemSelect } from '../../components/SubItemSelect';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../../components/SubItemIconManager';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
+import { MasterKeyPage } from '../MasterKeyPage';
+import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
+import { AppearancePage } from '../AppearancePage';
+import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
+import { PrivacyPage } from '../PrivacyPage';
+import { AgreementPage } from '../AgreementPage';
 
 @Preview
 @ComponentV2
 export struct SettingPage {
+  pageInfos: NavPathStack = new NavPathStack();
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
@@ -260,7 +267,25 @@ export struct SettingPage {
     this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === 'MasterKeyPage') {
+      MasterKeyPage()
+    } else if (name === 'RecoveryKeyRecordPage') {
+      RecoveryKeyRecordPage()
+    } else if (name === 'AppearancePage') {
+      AppearancePage()
+    } else if (name === 'ShowDataSyncDetailsPage') {
+      ShowDataSyncDetailsPage()
+    } else if (name === 'PrivacyPage') {
+      PrivacyPage()
+    } else if (name === 'AgreementPage') {
+      AgreementPage()
+    }
+  }
+
   build() {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.is_loaded) {
         Column() {
@@ -340,7 +365,7 @@ export struct SettingPage {
                   descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
                 })
                   .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/MasterKeyPage' });
+                    this.pageInfos.pushPathByName('MasterKeyPage',null);
                   }, 1000))
               }
 
@@ -500,7 +525,7 @@ export struct SettingPage {
                 text: $r('app.string.customize_appearance')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AppearancePage' });
+                  this.pageInfos.pushPathByName('AppearancePage',null);
                 }, 1000))
             }
           }
@@ -548,7 +573,7 @@ export struct SettingPage {
                 text: $r('app.string.data_rdb_sync_details')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/ShowDataSyncDetailsPage' });
+                    this.pageInfos.pushPathByName('ShowDataSyncDetailsPage',null);
                 }, 1000))
             }
           }
@@ -558,7 +583,7 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/PrivacyPage' });
+                    this.pageInfos.pushPathByName('PrivacyPage',null);
                 }, 1000))
 
               SubItemDivider()
@@ -568,7 +593,7 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AgreementPage' });
+                  this.pageInfos.pushPathByName('AgreementPage',null);
                 }, 1000))
 
               SubItemDivider()
@@ -648,5 +673,9 @@ export struct SettingPage {
         .scrollBar(BarState.Off)
       }
     }
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
   }
 }

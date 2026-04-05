@@ -11,12 +11,11 @@ import { showSelectFilePicker, readFileContentAndCheckSize } from '../utils/File
 import { fileIo as fs } from "@kit.CoreFileKit";
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
-
 @Entry
 @ComponentV2
 export struct RestoreDataPage {
+  pageInfos: NavPathStack | null = null;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-  private navPathStack: NavPathStack = AppStorage.get<NavPathStack>('navPathStack') ?? new NavPathStack();
   @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入朱密码的UI场景
   @Local isBegin: boolean = false;//是否开始恢复
   @Local isRestoreSuccess: boolean = false;//是否恢复成功
@@ -147,11 +146,12 @@ export struct RestoreDataPage {
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.restore_data'),
         onBackClick: () => {
-            this.navPathStack.pop();
+            this.pageInfos?.pop('');
           }
       })
       Column() {
@@ -301,7 +301,14 @@ export struct RestoreDataPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      return true;
+    });
   }
 }
