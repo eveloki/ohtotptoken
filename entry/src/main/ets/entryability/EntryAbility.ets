@@ -87,7 +87,7 @@ export default class EntryAbility extends UIAbility {
       if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
         AppStorage.setOrCreate('app_lock_visible', true);
       }
-      windowStage.loadContent('pages/Index', (err) => {
+      windowStage.loadContent(ROUTE_NAMES.AppLockPage, (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;

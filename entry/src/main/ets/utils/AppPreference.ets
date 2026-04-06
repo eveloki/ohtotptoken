@@ -150,6 +150,10 @@ export enum PREF_KEYS {
  * 统一管理所有pushPathByName使用的路由名称
  */
 export enum ROUTE_NAMES {
+  /** 主页面 */
+  Index = 'pages/Index',
+  /** 应用锁定页面 */
+  AppLockPage = 'pages/AppLockPage',
   /** 恢复数据页面 */
   RestoreDataPage = 'RestoreDataPage',
   /** 主密钥设置页面 */
