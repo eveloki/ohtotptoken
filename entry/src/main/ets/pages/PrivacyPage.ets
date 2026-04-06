@@ -47,7 +47,6 @@ export struct PrivacyPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
-      this.pageInfos?.pop('');
       return true;
     });
   }

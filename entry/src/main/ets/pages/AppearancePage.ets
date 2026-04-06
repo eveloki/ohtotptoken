@@ -4,7 +4,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemToggle } from '../components/SubItemToggle';
 import { TokenItem } from '../components/TokenItem';
 import { TopNavigationView } from '../components/TopNavigationView';
-import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
@@ -137,7 +137,7 @@ export struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN, value);
+                      AppPreference.setPreference('app_appearance_token_counter_next_margin', value);
                       this.token_preference.app_appearance_token_counter_next_margin = value;
                       break;
                     }
@@ -201,32 +201,32 @@ export struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, value);
+                      AppPreference.setPreference('app_appearance_item_max_width', value);
                       this.token_preference.app_appearance_item_max_width = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_HEIGHT, value);
+                      AppPreference.setPreference('app_appearance_item_height', value);
                       this.token_preference.app_appearance_item_height = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_SPACE, value);
+                      AppPreference.setPreference('app_appearance_item_space', value);
                       this.token_preference.app_appearance_item_space = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_SIZE, value);
+                      AppPreference.setPreference('app_appearance_logo_size', value);
                       this.token_preference.app_appearance_logo_size = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_SIZE, value);
+                      AppPreference.setPreference('app_appearance_logo_background_size', value);
                       this.token_preference.app_appearance_logo_background_size = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS, value);
+                      AppPreference.setPreference('app_appearance_logo_background_radius', value);
                       this.token_preference.app_appearance_logo_background_radius = value;
                       break;
                     }
@@ -287,32 +287,32 @@ export struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_SIZE, value);
+                      AppPreference.setPreference('app_appearance_token_font_size', value);
                       this.token_preference.app_appearance_token_font_size = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_WEIGHT, value);
+                      AppPreference.setPreference('app_appearance_token_font_weight', value);
                       this.token_preference.app_appearance_token_font_weight = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_SIZE, value);
+                      AppPreference.setPreference('app_appearance_issuer_font_size', value);
                       this.token_preference.app_appearance_issuer_font_size = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_WEIGHT, value);
+                      AppPreference.setPreference('app_appearance_issuer_font_weight', value);
                       this.token_preference.app_appearance_issuer_font_weight = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE, value);
+                      AppPreference.setPreference('app_appearance_user_name_font_size', value);
                       this.token_preference.app_appearance_user_name_font_size = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT, value);
+                      AppPreference.setPreference('app_appearance_user_name_font_weight', value);
                       this.token_preference.app_appearance_user_name_font_weight = value;
                       break;
                     }
@@ -391,72 +391,72 @@ export struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR, value);
+                      AppPreference.setPreference('app_appearance_logo_background_color', value);
                       this.token_preference.app_appearance_logo_background_color = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER_COLOR, value);
+                      AppPreference.setPreference('app_appearance_logo_dark_filter_color', value);
                       this.token_preference.app_appearance_logo_dark_filter_color = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR, value);
+                      AppPreference.setPreference('app_appearance_token_color', value);
                       this.token_preference.app_appearance_token_color = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR, value);
+                      AppPreference.setPreference('app_appearance_token_next_color', value);
                       this.token_preference.app_appearance_token_next_color = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR_DARK, value);
+                      AppPreference.setPreference('app_appearance_token_color_dark', value);
                       this.token_preference.app_appearance_token_color_dark = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR_DARK, value);
+                      AppPreference.setPreference('app_appearance_token_next_color_dark', value);
                       this.token_preference.app_appearance_token_next_color_dark = value;
                       break;
                     }
                     case 6: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_START, value);
+                      AppPreference.setPreference('app_appearance_token_counter_light_color_start', value);
                       this.token_preference.app_appearance_token_counter_light_color_start = value;
                       break;
                     }
                     case 7: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_END, value);
+                      AppPreference.setPreference('app_appearance_token_counter_light_color_end', value);
                       this.token_preference.app_appearance_token_counter_light_color_end = value;
                       break;
                     }
                     case 8: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_START, value);
+                      AppPreference.setPreference('app_appearance_token_counter_dark_color_start', value);
                       this.token_preference.app_appearance_token_counter_dark_color_start = value;
                       break;
                     }
                     case 9: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_END, value);
+                      AppPreference.setPreference('app_appearance_token_counter_dark_color_end', value);
                       this.token_preference.app_appearance_token_counter_dark_color_end = value;
                       break;
                     }
                     case 10: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_START, value);
+                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_start', value);
                       this.token_preference.app_appearance_token_counter_next_light_color_start = value;
                       break;
                     }
                     case 11: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_END, value);
+                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_end', value);
                       this.token_preference.app_appearance_token_counter_next_light_color_end = value;
                       break;
                     }
                     case 12: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_START, value);
+                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_start', value);
                       this.token_preference.app_appearance_token_counter_next_dark_color_start = value;
                       break;
                     }
                     case 13: {
-                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_END, value);
+                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_end', value);
                       this.token_preference.app_appearance_token_counter_next_dark_color_end = value;
                       break;
                     }
@@ -501,7 +501,6 @@ export struct AppearancePage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
-      this.pageInfos?.pop('');
       return true;
     });
   }

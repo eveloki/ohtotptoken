@@ -1,7 +1,7 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -56,7 +56,7 @@ export struct MasterKeyPage {
           this.isBegin = true;
           this.recoverySecretKey=rk.replace(/=/g,"");
           this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
-          AppPreference.setPreference(PREF_KEYS.USE_MASTER_KEY_SET,true)
+          AppPreference.setPreference('app_use_master_key_set',true)
           this.is_loaded=false;
           this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
 
@@ -64,7 +64,7 @@ export struct MasterKeyPage {
             recoverySecretKey: this.recoverySecretKey,
             recoverySecretKeyShow: this.recoverySecretKeyShow
           };
-          this.pageInfos?.pushPathByName(ROUTE_NAMES.RecoveryKeyRecordPage,params);
+          this.pageInfos?.pushPathByName('RecoveryKeyRecordPage',params);
         })
       }
       else
@@ -279,7 +279,6 @@ export struct MasterKeyPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
-      this.pageInfos?.pop('');
       return true;
     });
   }

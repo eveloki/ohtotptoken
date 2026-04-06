@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingTopEffectType, SettingBottomTabsType, TokenPreference, AVAILABLE_TOP_EFFECT_TYPES, AVAILABLE_BOTTOM_TABS_TYPES, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingTopEffectType, SettingBottomTabsType, TokenPreference, AVAILABLE_TOP_EFFECT_TYPES, AVAILABLE_BOTTOM_TABS_TYPES, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -25,7 +25,7 @@ export struct AppearanceSheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.AppearancePage) {
+    if (name === 'AppearancePage') {
       AppearancePage()
     }
   }
@@ -115,7 +115,7 @@ export struct AppearanceSheet {
               text: $r('app.string.customize_appearance')
             })
               .onClick(throttle((event) => {
-                this.pageInfos.pushPathByName(ROUTE_NAMES.AppearancePage, null);
+                this.pageInfos.pushPathByName('AppearancePage', null);
               }, 1000))
             SubItemDivider()
 

@@ -7,7 +7,6 @@ import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
 import { LengthMetrics } from '@kit.ArkUI';
-import { ROUTE_NAMES } from '../../utils/AppPreference';
 
 @Preview
 @ComponentV2
@@ -17,9 +16,9 @@ export struct AgreementSheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.PrivacyPage) {
+    if (name === 'PrivacyPage') {
       PrivacyPage()
-    } else if (name === ROUTE_NAMES.AgreementPage) {
+    } else if (name === 'AgreementPage') {
       AgreementPage()
     }
   }
@@ -37,7 +36,7 @@ export struct AgreementSheet {
           SettingItem({ title: "" }) {
             SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
               .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage, null);
+                  this.pageInfos.pushPathByName('PrivacyPage', null);
               }, 1000))
 
             SubItemDivider()
@@ -47,7 +46,7 @@ export struct AgreementSheet {
               text: $r('app.string.user_agreement')
             })
               .onClick(throttle((event) => {
-                this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage, null);
+                this.pageInfos.pushPathByName('AgreementPage', null);
               }, 1000))
 
             SubItemDivider()

@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -33,8 +33,8 @@ import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCodePage } from './ShowCodePage';
 import { PrivacyPage } from './PrivacyPage';
 import { AgreementPage } from './AgreementPage';
-import { AppLockPage } from './AppLockPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
+import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
@@ -71,6 +71,7 @@ struct Index {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
+  @Local isAppLockOverlayVisible: boolean = false;
   pageInfos: NavPathStack = new NavPathStack();
 
   /**
@@ -87,12 +88,11 @@ struct Index {
 
   private appIsInit = false;
   private appIsShow = false;
-
-  private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
   private DropFilesDialogIsOpen:boolean = false;
 
+  private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   // 订阅者信息, 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
   private subscriber: CommonEventManager.CommonEventSubscriber | undefined = undefined;
   // 事件列表
@@ -157,7 +157,7 @@ struct Index {
         // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false)
+        AppPreference.setPreference("app_db_kv_archive_is_running",false)
       });
     });
 
@@ -191,7 +191,7 @@ struct Index {
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
-      AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
+      AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
@@ -203,8 +203,8 @@ struct Index {
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
-        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
+        AppPreference.setPreference('app_db_rds_sync_enable', false);
+        AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
       }
     })
 
@@ -286,7 +286,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
+          this.pageInfos.pushPathByName('RestoreDataPage', null);
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -312,30 +312,37 @@ struct Index {
             //tkStore.RestoreByKVAsync();
             //更新存档时间
             if (n > 0) {
-              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
+              AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
             }
           }).catch((err:BusinessError) => {
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
           }).finally(() => {
-            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
+            AppPreference.setPreference("app_db_kv_archive_is_running",false);
           });
         }
         else
         {
-          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
+          AppPreference.setPreference("app_db_kv_archive_is_running",false);
         }
       } catch (err) {
         let message = (err as BusinessError).message;
         hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false);
+        AppPreference.setPreference("app_db_kv_archive_is_running",false);
       }
 
     }
   }
 
   onPageShow(): void {
-    this.pageInfos.clear();
     this.appIsShow = true;
+    const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
+    if (!needShowLock) {
+      this.pageInfos.clear();
+    }
+    if (needShowLock && AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      this.isAppLockOverlayVisible = true;
+    }
+    AppStorage.setOrCreate('app_lock_need_show', false);
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
     //页面打开的时候刷新token
@@ -480,6 +487,15 @@ struct Index {
   AboutSheetBuilder() {
     AboutSheet()
       .height('100%')
+  }
+
+  @Builder
+  AppLockOverlayBuilder() {
+    AppLockOverlay({
+      onUnlock: () => {
+        this.isAppLockOverlayVisible = false;
+      }
+    })
   }
 
   @Builder
@@ -665,21 +681,21 @@ struct Index {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.RestoreDataPage) {
+    if (name === 'RestoreDataPage') {
       RestoreDataPage()
-    } else if (name === ROUTE_NAMES.MasterKeyPage) {
+    } else if (name === 'MasterKeyPage') {
       MasterKeyPage()
-    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
+    } else if (name === 'RecoveryKeyRecordPage') {
       RecoveryKeyRecordPage()
-    } else if (name === ROUTE_NAMES.AppearancePage) {
+    } else if (name === 'AppearancePage') {
       AppearancePage()
-    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+    } else if (name === 'ShowDataSyncDetailsPage') {
       ShowDataSyncDetailsPage()
-    } else if (name === ROUTE_NAMES.ShowCodePage) {
+    } else if (name === 'ShowCodePage') {
       ShowCodePage()
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
+    } else if (name === 'PrivacyPage') {
       PrivacyPage()
-    } else if (name === ROUTE_NAMES.AgreementPage) {
+    } else if (name === 'AgreementPage') {
       AgreementPage()
     }
   }
@@ -935,5 +951,8 @@ struct Index {
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
     .navDestination(this.navDestinationBuilder)
+    .bindContentCover($$this.isAppLockOverlayVisible, this.AppLockOverlayBuilder(), {
+      modalTransition: ModalTransition.NONE,
+    })
   }
 }

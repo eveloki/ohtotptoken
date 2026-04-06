@@ -56,7 +56,7 @@ export struct AboutSheet {
           if (this.debug_mode_counter > 7) {
               this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                 this.debug_mode_is_on = true;
-                AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, true);
+                AppPreference.setPreference('app_debug_mode_on', true);
                 showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
               })
 

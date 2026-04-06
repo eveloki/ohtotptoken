@@ -141,35 +141,6 @@ export enum PREF_KEYS {
   APPEARANCE_USER_NAME_FONT_WEIGHT = 'app_appearance_user_name_font_weight',
   /** Token项目最大宽度 */
   APPEARANCE_ITEM_MAX_WIDTH = 'app_appearance_item_max_width',
-  /** 快速扫描URI */
-  WANT_URI = 'app_want_uri',
-}
-
-/**
- * 路由名称常量
- * 统一管理所有pushPathByName使用的路由名称
- */
-export enum ROUTE_NAMES {
-  /** 主页面 */
-  Index = 'pages/Index',
-  /** 应用锁定页面 */
-  AppLockPage = 'pages/AppLockPage',
-  /** 恢复数据页面 */
-  RestoreDataPage = 'RestoreDataPage',
-  /** 主密钥设置页面 */
-  MasterKeyPage = 'MasterKeyPage',
-  /** 恢复密钥记录页面 */
-  RecoveryKeyRecordPage = 'RecoveryKeyRecordPage',
-  /** 外观自定义页面 */
-  AppearancePage = 'AppearancePage',
-  /** 数据同步详情页面 */
-  ShowDataSyncDetailsPage = 'ShowDataSyncDetailsPage',
-  /** 展示验证码页面 */
-  ShowCodePage = 'ShowCodePage',
-  /** 隐私政策页面 */
-  PrivacyPage = 'PrivacyPage',
-  /** 用户协议页面 */
-  AgreementPage = 'AgreementPage',
 }
 
 /**
@@ -343,8 +314,7 @@ export class AppPreference {
     // 是否使用主密码增强安全
     [PREF_KEYS.USE_MASTER_KEY, false],
     // 是否已经配置了主密码
-    [PREF_KEYS.USE_MASTER_KEY_SET, false],
-    [PREF_KEYS.WANT_URI, '']
+    [PREF_KEYS.USE_MASTER_KEY_SET, false]
   ]);
 
   private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([

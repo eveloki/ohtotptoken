@@ -209,7 +209,7 @@ export struct SubItemIconManager {
                             if (this.selected_icon_pack > index) {
                               TokenIconPacks.selected_icon_pack = this.selected_icon_pack - 1;
                               this.selected_icon_pack = TokenIconPacks.selected_icon_pack;
-                               AppPreference.setPreference(PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED, this.selected_icon_pack);
+                              AppPreference.setPreference('app_appearance_icon_pack_selected', this.selected_icon_pack);
                             }
                             this.installed_icon_pack = TokenIconPacks.aegis_icon_packs;
                           });

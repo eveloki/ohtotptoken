@@ -43,7 +43,6 @@ export struct AgreementPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
-      this.pageInfos?.pop('');
       return true;
     });
   }
