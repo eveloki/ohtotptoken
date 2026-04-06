@@ -8,6 +8,7 @@ import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { bundleManager,common } from '@kit.AbilityKit';
 import { MasterKeyPage } from '../MasterKeyPage';
 import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
@@ -87,10 +88,10 @@ export struct SecuritySheet {
                 AppPreference.setPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE, IsOn);
                 try {
                   this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
-                    console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+                    hilog.error(err.code, 'SecuritySheet', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
                   });
                 } catch (exception) {
-                  console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+                  hilog.error(exception.code, 'SecuritySheet', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
                 }
               }
             })

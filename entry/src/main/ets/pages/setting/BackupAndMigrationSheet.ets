@@ -10,6 +10,7 @@ import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/To
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../../utils/FileUtils';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { LengthMetrics } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Preview
 @ComponentV2
@@ -55,8 +56,8 @@ export struct BackupAndMigrationSheet {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'BackupAndMigrationSheet', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'BackupAndMigrationSheet', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -101,16 +102,16 @@ export struct BackupAndMigrationSheet {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'BackupAndMigrationSheet', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'BackupAndMigrationSheet', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'BackupAndMigrationSheet', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'BackupAndMigrationSheet', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -159,16 +160,16 @@ export struct BackupAndMigrationSheet {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'BackupAndMigrationSheet', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'BackupAndMigrationSheet', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'BackupAndMigrationSheet', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'BackupAndMigrationSheet', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }

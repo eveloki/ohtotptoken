@@ -12,6 +12,7 @@ import { ActionBarButton, ActionBarStyle, HdsActionBar } from "@kit.UIDesignKit"
 import { url } from "@kit.ArkTS";
 import { abilityAccessCtrl, bundleManager, common, Permissions } from "@kit.AbilityKit";
 import { BusinessError } from "@kit.BasicServicesKit";
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { motion } from "@kit.MultimodalAwarenessKit";
 import { decodeProtobuf } from "../utils/GoogleAuthUtils";
 import { URIConfigDialog } from "../dialogs/URIConfigDialog";
@@ -151,7 +152,7 @@ export struct TokenListPage {
       return requestResult.authResults.every((status) => status === 0);
     } catch (error) {
       const err = error as BusinessError;
-      console.error(`Failed to request holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      hilog.error(err.code, 'TokenListPage', `Failed to request holding hand permission. Code: ${err.code}, message: ${err.message}`);
       return false;
     }
   }
@@ -163,7 +164,7 @@ export struct TokenListPage {
       return grantStatus === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED;
     } catch (error) {
       const err = error as BusinessError;
-      console.error(`Failed to check holding hand permission. Code: ${err.code}, message: ${err.message}`);
+      hilog.error(err.code, 'TokenListPage', `Failed to check holding hand permission. Code: ${err.code}, message: ${err.message}`);
       return false;
     }
   }
@@ -180,7 +181,7 @@ export struct TokenListPage {
       if (err.code === 801 || err.code === 201) {
         this.applyHoldingHandLayout(HoldingHandLayoutMode.CENTER);
       }
-      console.error(`Failed to subscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+      hilog.error(err.code, 'TokenListPage', `Failed to subscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
     }
   }
 
@@ -196,7 +197,7 @@ export struct TokenListPage {
       }
     } catch (error) {
       const err = error as BusinessError;
-      console.error(`Failed to unsubscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
+      hilog.error(err.code, 'TokenListPage', `Failed to unsubscribe holding hand awareness. Code: ${err.code}, message: ${err.message}`);
     } finally {
       this.holdingHandSubscribed = false;
     }

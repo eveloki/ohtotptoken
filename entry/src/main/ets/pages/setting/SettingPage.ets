@@ -16,6 +16,7 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../.
 import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { SubItemSelect } from '../../components/SubItemSelect';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../../components/SubItemIconManager';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
@@ -121,8 +122,8 @@ export struct SettingPage {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'SettingPage', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -167,16 +168,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -225,16 +226,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -380,10 +381,10 @@ export struct SettingPage {
                   AppPreference.setPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE, IsOn);
                   try {
                     this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
-                      console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+                      hilog.error(err.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
                     });
                   } catch (exception) {
-                    console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+                    hilog.error(exception.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
                   }
                 }
               })

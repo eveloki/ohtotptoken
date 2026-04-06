@@ -50,10 +50,10 @@ export default class EntryAbility extends UIAbility {
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {
       onApplicationForeground() {
-        console.info('applicationStateChangeCallback onApplicationForeground');
+        hilog.info(0x0000, 'testTag', 'applicationStateChangeCallback onApplicationForeground');
       },
       onApplicationBackground() {
-        console.info('applicationStateChangeCallback onApplicationBackground');
+        hilog.info(0x0000, 'testTag', 'applicationStateChangeCallback onApplicationBackground');
         if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
           AppStorage.setOrCreate('app_lock_need_show', true);
         }
@@ -66,7 +66,7 @@ export default class EntryAbility extends UIAbility {
       // 2.通过applicationContext注册应用前后台状态监听
       applicationContext.on('applicationStateChange', applicationStateChangeCallback);
     } catch (paramError) {
-      console.error(`error: ${(paramError as BusinessError).code}, ${(paramError as BusinessError).message}`);
+      hilog.error((paramError as BusinessError).code, 'testTag', `error: ${(paramError as BusinessError).code}, ${(paramError as BusinessError).message}`);
     }
   }
 
@@ -170,10 +170,10 @@ export default class EntryAbility extends UIAbility {
     if (privacy_mode) {
       try {
         windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {
-          console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+          hilog.error(err.code, 'testTag', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
         });
       } catch (exception) {
-        console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+        hilog.error(exception.code, 'testTag', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
       }
     }
   }
@@ -188,10 +188,10 @@ export default class EntryAbility extends UIAbility {
     relationalStore.getRdbStore(this.context, STORE_CONFIG, (err: BusinessError, __rdbStore: relationalStore.RdbStore) => {
       rdbStore = __rdbStore;
       if (err) {
-        console.error(`Get RdbStore failed, code is ${err.code},message is ${err.message}`);
+        hilog.error(err.code, 'testTag', `Get RdbStore failed, code is ${err.code},message is ${err.message}`);
         return;
       }
-      console.info('Get RdbStore successfully.');
+      hilog.info(0x0000, 'testTag', 'Get RdbStore successfully.');
     })
   }
 

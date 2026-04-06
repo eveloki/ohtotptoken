@@ -31,7 +31,7 @@ export struct RecoveryKeyRecordPage {
 
   // 页面销毁时释放动画资源
   aboutToDisappear(): void {
-    console.info('aboutToDisappear');
+    hilog.info(0, 'RecoveryKeyRecordPage', 'aboutToDisappear');
     lottie.destroy();
   }
 

@@ -115,8 +115,8 @@ struct Index {
       curve: Curve.EaseInOut, // 动画曲线
     }),
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       this.DropFilesDialogIsOpen=false;
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
@@ -177,10 +177,10 @@ struct Index {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
           let arr = this.appCtx.resourceManager.getRawFileContentSync('ftm.ks')
           fs.write(cer_file.fd, arr.buffer).then((cnt) => {
-            console.log('store fmt.ks to cache dir')
+            hilog.info(0, 'Index', 'store fmt.ks to cache dir')
           })
             .catch((err:BusinessError) => {
-              console.error(`${err.message}`)
+              hilog.error(err.code, 'Index', `${err.message}`)
             })
         })
       }
@@ -246,8 +246,8 @@ struct Index {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }

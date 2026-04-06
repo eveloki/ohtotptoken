@@ -2,6 +2,7 @@ import { TokenIcon } from "../components/TokenIcon";
 import { showSelectFilePicker } from "../utils/FileUtils";
 import { AegisIconPack, TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Preview
 @CustomDialog
@@ -244,7 +245,7 @@ class BasicDataSource implements IDataSource {
   // 该方法为框架侧调用，为LazyForEach组件向其数据源处添加listener监听
   registerDataChangeListener(listener: DataChangeListener): void {
     if (this.listeners.indexOf(listener) < 0) {
-      console.info('add listener');
+      hilog.info(0, 'SelectIconDialog', 'add listener');
       this.listeners.push(listener);
     }
   }
@@ -253,7 +254,7 @@ class BasicDataSource implements IDataSource {
   unregisterDataChangeListener(listener: DataChangeListener): void {
     const pos = this.listeners.indexOf(listener);
     if (pos >= 0) {
-      console.info('remove listener');
+      hilog.info(0, 'SelectIconDialog', 'remove listener');
       this.listeners.splice(pos, 1);
     }
   }

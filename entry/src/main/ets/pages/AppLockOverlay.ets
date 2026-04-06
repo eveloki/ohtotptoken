@@ -2,6 +2,7 @@ import { cryptoFramework } from "@kit.CryptoArchitectureKit";
 import { userAuth } from "@kit.UserAuthenticationKit";
 import { BusinessError } from "@kit.BasicServicesKit";
 import { common } from "@kit.AbilityKit";
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
 
 @ComponentV2
@@ -81,10 +82,10 @@ export struct AppLockOverlay {
         title: this.appCtx.resourceManager.getStringSync($r('app.string.user_auth_prompt').id)
       };
       const userAuthInstance = userAuth.getUserAuthInstance(authParam, widgetParam);
-      console.info('[AppLockOverlay] get userAuth instance success');
+      hilog.info(0, 'AppLockOverlay', 'get userAuth instance success');
       userAuthInstance.on('result', {
         onResult(result) {
-          console.info(`[AppLockOverlay] userAuthInstance callback result: ${JSON.stringify(result)}`);
+          hilog.info(0, 'AppLockOverlay', `userAuthInstance callback result: ${JSON.stringify(result)}`);
           if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
             onUnlock();
           }
@@ -92,10 +93,10 @@ export struct AppLockOverlay {
         }
       });
       userAuthInstance.start();
-      console.info('[AppLockOverlay] auth start success');
+      hilog.info(0, 'AppLockOverlay', 'auth start success');
     } catch (error) {
       const err: BusinessError = error as BusinessError;
-      console.error(`[AppLockOverlay] auth catch error. Code is ${err?.code}, message is ${err?.message}`);
+      hilog.error(err?.code ?? 0, 'AppLockOverlay', `auth catch error. Code is ${err?.code}, message is ${err?.message}`);
     }
   }
 }

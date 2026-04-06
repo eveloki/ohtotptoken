@@ -18,6 +18,7 @@ import { relationalStore } from '@kit.ArkData';
 import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
 import { cloudData } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 //rdb数据库管理 todo预备后面做云同步方案
 export class RdbManager {
@@ -47,12 +48,12 @@ export class RdbManager {
       predicates.inAllDevices();
       this._rdbStore?.sync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, predicates, (err, result) => {
         if (err) {
-          console.error(`Sync failed, code is ${err.code},message is ${err.message}`);
+          hilog.error(err.code, 'RdbManager', `Sync failed, code is ${err.code},message is ${err.message}`);
           return;
         }
-        console.info('Sync done.');
+        hilog.info(0, 'RdbManager', 'Sync done.');
         for (let i = 0; i < result.length; i++) {
-          console.info(`device= ${result[i][0]}, status= ${result[i][1]}`);
+          hilog.info(0, 'RdbManager', `device= ${result[i][0]}, status= ${result[i][1]}`);
         }
         this.appCtx.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       })
@@ -63,19 +64,19 @@ export class RdbManager {
     if (AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE)) {
       //仅WIFI同步
       cloudData.setCloudStrategy(cloudData.StrategyType.NETWORK, [cloudData.NetWorkStrategy.WIFI]).then(() => {
-        console.info('Succeeded in setting the cloud strategy');
+        hilog.info(0, 'RdbManager', 'Succeeded in setting the cloud strategy');
       }).catch((err: BusinessError) => {
-        console.error(`Failed to set cloud strategy. Code: ${err.code}, message: ${err.message}`);
+        hilog.error(err.code, 'RdbManager', `Failed to set cloud strategy. Code: ${err.code}, message: ${err.message}`);
       });
       //同步按照时间策略
       this._rdbStore?.cloudSync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, (progressDetails) => {
-        console.info(`Progess: ${progressDetails}`);
+        hilog.info(0, 'RdbManager', `Progess: ${progressDetails}`);
       }, (err) => {
         if (err) {
-          console.error(`Cloud sync failed, code is ${err.code},message is ${err.message}`);
+          hilog.error(err.code, 'RdbManager', `Cloud sync failed, code is ${err.code},message is ${err.message}`);
           return;
         }
-        console.info('Cloud sync succeeded');
+        hilog.info(0, 'RdbManager', 'Cloud sync succeeded');
         //this.context.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
       });
     }

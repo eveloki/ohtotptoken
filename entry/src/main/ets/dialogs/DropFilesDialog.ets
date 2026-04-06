@@ -1,6 +1,8 @@
 import { unifiedDataChannel, uniformTypeDescriptor } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { EVENT_NAMES } from '../utils/AppPreference';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
 //文件拖拽
 @Preview
 @CustomDialog
@@ -30,7 +32,7 @@ export struct DropFilesDialog {
         .justifyContent(FlexAlign.Center)
         .allowDrop([uniformTypeDescriptor.UniformDataType.FILE])
         .onDrop((event?: DragEvent, extraParams?: string) => {
-          console.log("enter onDrop")
+          hilog.info(0, 'DropFilesDialog', "enter onDrop")
           if (event!=null) {
             let records: Array<unifiedDataChannel.UnifiedRecord >= event.getData().getRecords();
             let plainfile: unifiedDataChannel.File = records[0] as unifiedDataChannel.File;

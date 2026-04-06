@@ -3,6 +3,7 @@ import { url } from '@kit.ArkTS';
 import { HMACAlgorithm, ScanBarCode } from '../utils/TokenUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { SelectIconDialog } from './SelectIconDialog';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Preview
 @CustomDialog
@@ -40,12 +41,12 @@ export struct TOTPConfigDialog {
     try {
       otp_url = url.URL.parseURL(uri)
     } catch (error) {
-      console.error('Invalid OTPAuth URL:', error);
+      hilog.error(0, 'OTPConfigDialog', 'Invalid OTPAuth URL:', error);
       return;
     }
 
     if (otp_url.protocol !== 'otpauth:') {
-      console.error('Invalid protocol');
+      hilog.error(0, 'OTPConfigDialog', 'Invalid protocol');
       return;
     }
 
@@ -56,7 +57,7 @@ export struct TOTPConfigDialog {
     } else if (type == 'hotp') {
       this.conf.TokenType = otpType.HOTP;
     } else {
-      console.error('Invalid type');
+      hilog.error(0, 'OTPConfigDialog', 'Invalid type');
       return;
     }
 
