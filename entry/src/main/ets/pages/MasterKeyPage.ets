@@ -1,7 +1,7 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -64,7 +64,7 @@ export struct MasterKeyPage {
             recoverySecretKey: this.recoverySecretKey,
             recoverySecretKeyShow: this.recoverySecretKeyShow
           };
-          this.pageInfos?.pushPathByName('RecoveryKeyRecordPage',params);
+          this.pageInfos?.pushPathByName(ROUTE_NAMES.RecoveryKeyRecordPage,params);
         })
       }
       else
@@ -279,6 +279,7 @@ export struct MasterKeyPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
+      this.pageInfos?.pop('');
       return true;
     });
   }

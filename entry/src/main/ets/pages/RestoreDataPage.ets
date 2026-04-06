@@ -308,6 +308,7 @@ export struct RestoreDataPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
+      this.pageInfos?.pop('');
       return true;
     });
   }

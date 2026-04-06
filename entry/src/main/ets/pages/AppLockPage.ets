@@ -2,7 +2,7 @@ import { cryptoFramework } from "@kit.CryptoArchitectureKit";
 import { userAuth } from "@kit.UserAuthenticationKit";
 import { BusinessError } from "@kit.BasicServicesKit";
 import { router } from "@kit.ArkUI";
-import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
+import { AppPreference, PREF_KEYS, ROUTE_NAMES } from "../utils/AppPreference";
 import { common } from "@kit.AbilityKit";
 
 @Entry
@@ -13,7 +13,7 @@ export struct AppLockPage {
 
   onPageShow(): void {
     if (!AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
-      router.replaceUrl({ url: 'pages/Index' });
+      router.replaceUrl({ url: ROUTE_NAMES.IndexPage });
     } else if (AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE)) {
       requireUserAuth(this.appCtx);
     }
@@ -100,7 +100,7 @@ export function requireUserAuth(ctx: Context): void {
         if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
           // 判断验证结果是否正确 只有正确验证了才能跳跃到首页
           if (ctx.eventHub != undefined) {
-            router.pushUrl({ url: 'pages/Index' });
+            router.pushUrl({ url: ROUTE_NAMES.IndexPage });
           }
         }
         userAuthInstance.off('result');

@@ -5,7 +5,7 @@ import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUti
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -90,8 +90,8 @@ export struct SettingPage {
       //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setPreference('app_db_rds_sync_enable', false);
-      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -269,17 +269,17 @@ export struct SettingPage {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === 'MasterKeyPage') {
+    if (name === ROUTE_NAMES.MasterKeyPage) {
       MasterKeyPage()
-    } else if (name === 'RecoveryKeyRecordPage') {
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
-    } else if (name === 'AppearancePage') {
+    } else if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage()
-    } else if (name === 'ShowDataSyncDetailsPage') {
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage()
-    } else if (name === 'PrivacyPage') {
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
       PrivacyPage()
-    } else if (name === 'AgreementPage') {
+    } else if (name === ROUTE_NAMES.AgreementPage) {
       AgreementPage()
     }
   }
@@ -365,7 +365,7 @@ export struct SettingPage {
                   descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
                 })
                   .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName('MasterKeyPage',null);
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage,null);
                   }, 1000))
               }
 
@@ -405,7 +405,7 @@ export struct SettingPage {
                       return;
                     }
                   }
-                  AppPreference.setPreference('app_safety_lock_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_LOCK_ENABLE, IsOn);
                 }
               })
 
@@ -525,7 +525,7 @@ export struct SettingPage {
                 text: $r('app.string.customize_appearance')
               })
                 .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName('AppearancePage',null);
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AppearancePage,null);
                 }, 1000))
             }
           }
@@ -543,7 +543,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, IsOn);
                 }
               })
 
@@ -560,7 +560,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
                 }
               })
                 .visibility(Visibility.None)
@@ -573,7 +573,7 @@ export struct SettingPage {
                 text: $r('app.string.data_rdb_sync_details')
               })
                 .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName('ShowDataSyncDetailsPage',null);
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage,null);
                 }, 1000))
             }
           }
@@ -583,7 +583,7 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName('PrivacyPage',null);
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage,null);
                 }, 1000))
 
               SubItemDivider()
@@ -593,7 +593,7 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName('AgreementPage',null);
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
                 }, 1000))
 
               SubItemDivider()
@@ -625,7 +625,7 @@ export struct SettingPage {
               if (this.debug_mode_counter > 7) {
                   this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                     this.debug_mode_is_on = true;
-                    AppPreference.setPreference('app_debug_mode_on', true);
+                    AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, true);
                     showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
                   })
 

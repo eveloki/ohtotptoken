@@ -1,6 +1,6 @@
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, LengthMetrics } from '@kit.ArkUI';
-import { AppPreference, SettingValue, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
+import { AppPreference, SettingValue, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -29,8 +29,8 @@ export struct DataSyncSheet {
     if (!isAccess) {
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setPreference('app_db_rds_sync_enable', false);
-      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -40,7 +40,7 @@ export struct DataSyncSheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === 'ShowDataSyncDetailsPage') {
+    if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage()
     }
   }
@@ -66,7 +66,7 @@ export struct DataSyncSheet {
                   PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                 }
                 this.RdbSyncEnable = IsOn;
-                AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
+                AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, IsOn);
               }
             })
 
@@ -83,7 +83,7 @@ export struct DataSyncSheet {
                   PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                 }
                 this.RdbCloudSyncEnable = IsOn;
-                AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
+                AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
               }
             })
               .visibility(Visibility.None)
@@ -96,7 +96,7 @@ export struct DataSyncSheet {
               text: $r('app.string.data_rdb_sync_details')
             })
               .onClick(throttle((event) => {
-                this.pageInfos.pushPathByName('ShowDataSyncDetailsPage', null);
+                this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage, null);
               }, 1000))
           }
         }

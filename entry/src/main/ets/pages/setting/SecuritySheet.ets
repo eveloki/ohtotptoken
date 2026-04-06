@@ -2,7 +2,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
-import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -33,9 +33,9 @@ export struct SecuritySheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === 'MasterKeyPage') {
+    if (name === ROUTE_NAMES.MasterKeyPage) {
       MasterKeyPage()
-    } else if (name === 'RecoveryKeyRecordPage') {
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
     }
   }
@@ -72,7 +72,7 @@ export struct SecuritySheet {
                 descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
               })
                 .onClick(() => {
-                  this.pageInfos.pushPathByName('MasterKeyPage', null);
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage, null);
                 })
             }
 
