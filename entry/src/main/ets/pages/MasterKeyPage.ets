@@ -279,6 +279,7 @@ export struct MasterKeyPage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
+      this.pageInfos?.pop('');
       return true;
     });
   }

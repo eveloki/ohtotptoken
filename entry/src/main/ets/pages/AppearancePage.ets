@@ -501,6 +501,7 @@ export struct AppearancePage {
       this.pageInfos = context.pathStack;
     })
     .onBackPressed(() => {
+      this.pageInfos?.pop('');
       return true;
     });
   }

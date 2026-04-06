@@ -154,6 +154,7 @@ export struct RecoveryKeyRecordPage {
       this.onReceiveParams(context);
     })
     .onBackPressed(() => {
+      this.pageInfos?.pop('');
       return true;
     });
   }
