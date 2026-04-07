@@ -27,44 +27,42 @@ export struct AppLockOverlay {
           scale: 1.0,
         })
 
-      RelativeContainer() {
-        Row() {
-          Column() {
-            SymbolGlyph($r('sys.symbol.lock_fill'))
-              .fontSize(70)
-              .fontWeight(FontWeight.Bold)
-              .fontColor([$r('app.color.str_main')])
-              .alignRules({
-                center: { anchor: '__container__', align: VerticalAlign.Center },
-                middle: { anchor: '__container__', align: HorizontalAlign.Center }
-              })
-              .effectStrategy(2)
-            Divider().vertical(false).height(20)
-            Text($r('app.string.app_locking'))
-              .fontSize(20)
-            Text($r('app.string.app_unlock'))
-              .fontSize(20)
-              .fontColor('#3498db')
-              .offset({ top: '40%' })
-              .textAlign(TextAlign.Center)
-          }
+      Column() {
+        Blank().layoutWeight(1)
+
+        Column({ space: 16 }) {
+          SymbolGlyph($r('sys.symbol.lock_fill'))
+            .fontSize(64)
+            .fontColor([$r('app.color.str_main')])
+            .effectStrategy(2)
+
+          Text($r('app.string.app_locking'))
+            .fontSize(16)
+            .fontColor($r('app.color.str_gray'))
+            .textAlign(TextAlign.Center)
         }
-        .width('80%')
-        .height('80%')
-        .alignRules({
-          top: { anchor: "__container__", align: VerticalAlign.Top },
-          bottom: { anchor: "__container__", align: VerticalAlign.Bottom },
-          left: { anchor: "__container__", align: HorizontalAlign.Start },
-          right: { anchor: "__container__", align: HorizontalAlign.End },
-          bias: { vertical: 0.3 }
-        })
+
+        Blank().layoutWeight(1)
+
+        Button($r('app.string.app_biometric_login'))
+          .width('75%')
+          .height(48)
+          .fontSize(18)
+          .fontColor(Color.White)
+          .backgroundColor($r('app.color.button_blue'))
+          .borderRadius(24)
+          .type(ButtonType.Normal)
+          .onClick(() => {
+            this.triggerAuth();
+          })
+
+        Blank().layoutWeight(0.4)
       }
+      .width('100%')
+      .height('100%')
     }
     .width('100%')
     .height('100%')
-    .onClick(() => {
-      this.triggerAuth();
-    })
   }
 
   private triggerAuth(): void {
