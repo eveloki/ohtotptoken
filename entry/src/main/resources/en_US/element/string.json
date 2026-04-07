@@ -209,6 +209,10 @@
       "value": "Unlock"
     },
     {
+      "name": "app_biometric_login",
+      "value": "Biometric Login"
+    },
+    {
       "name": "distributed_data_sync",
       "value": "For seamless transfer across multiple devices."
     },

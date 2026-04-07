@@ -209,6 +209,10 @@
       "value": "解锁"
     },
     {
+      "name": "app_biometric_login",
+      "value": "生物识别登录"
+    },
+    {
       "name": "distributed_data_sync",
       "value": "用于多设备自由流转."
     },
