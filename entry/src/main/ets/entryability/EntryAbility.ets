@@ -6,9 +6,9 @@ import {
   ConfigurationConstant,
 } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { AppStorageV2, router, window } from '@kit.ArkUI';
+import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 
 //单版本分布式键值数据库
@@ -43,19 +43,19 @@ export default class EntryAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
 
     if ((want.parameters!['action'] as string) == 'quick_scan') {
-      AppPreference.setPreference('app_want_quick_scan', true);
-      AppPreference.setPreference('app_want_uri', want.uri!);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
+      AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
 
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {
       onApplicationForeground() {
-        console.info('applicationStateChangeCallback onApplicationForeground');
+        hilog.info(0x0000, 'testTag', 'applicationStateChangeCallback onApplicationForeground');
       },
       onApplicationBackground() {
-        console.info('applicationStateChangeCallback onApplicationBackground');
+        hilog.info(0x0000, 'testTag', 'applicationStateChangeCallback onApplicationBackground');
         if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
-          router.pushUrl({ url: 'pages/AppLockPage' })
+          AppStorage.setOrCreate('app_lock_need_show', true);
         }
       }
     }
@@ -66,7 +66,7 @@ export default class EntryAbility extends UIAbility {
       // 2.通过applicationContext注册应用前后台状态监听
       applicationContext.on('applicationStateChange', applicationStateChangeCallback);
     } catch (paramError) {
-      console.error(`error: ${(paramError as BusinessError).code}, ${(paramError as BusinessError).message}`);
+      hilog.error((paramError as BusinessError).code, 'testTag', `error: ${(paramError as BusinessError).code}, ${(paramError as BusinessError).message}`);
     }
   }
 
@@ -84,7 +84,7 @@ export default class EntryAbility extends UIAbility {
 
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
-      windowStage.loadContent('pages/AppLockPage', (err) => {
+      windowStage.loadContent(ROUTE_NAMES.AppLockPage, (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;
@@ -131,8 +131,8 @@ export default class EntryAbility extends UIAbility {
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     if ((want.parameters!['action'] as string) == 'quick_scan') {
-      AppPreference.setPreference('app_want_quick_scan', true);
-      AppPreference.setPreference('app_want_uri', want.uri!);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
+      AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
   }
 
@@ -170,10 +170,10 @@ export default class EntryAbility extends UIAbility {
     if (privacy_mode) {
       try {
         windowClass.setWindowPrivacyMode(true).catch((err: BusinessError) => {
-          console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+          hilog.error(err.code, 'testTag', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
         });
       } catch (exception) {
-        console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+        hilog.error(exception.code, 'testTag', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
       }
     }
   }
@@ -188,10 +188,10 @@ export default class EntryAbility extends UIAbility {
     relationalStore.getRdbStore(this.context, STORE_CONFIG, (err: BusinessError, __rdbStore: relationalStore.RdbStore) => {
       rdbStore = __rdbStore;
       if (err) {
-        console.error(`Get RdbStore failed, code is ${err.code},message is ${err.message}`);
+        hilog.error(err.code, 'testTag', `Get RdbStore failed, code is ${err.code},message is ${err.message}`);
         return;
       }
-      console.info('Get RdbStore successfully.');
+      hilog.info(0x0000, 'testTag', 'Get RdbStore successfully.');
     })
   }
 

@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppPreference, EVENT_NAMES } from '../utils/AppPreference';
@@ -12,13 +12,13 @@ import lottie, { AnimationItem } from '@ohos/lottie';
 import { throttle } from '../utils/UiUtils';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
-
 @Entry
 @ComponentV2
-struct RecoveryKeyRecordPage {
+export struct RecoveryKeyRecordPage {
+  pageInfos: NavPathStack | null = null;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-  @Local recoverySecretKey: string = "";//恢复密钥
-  @Local recoverySecretKeyShow: string = "";//恢复密钥
+  @Local recoverySecretKey: string = "";
+  @Local recoverySecretKeyShow: string = "";
   tkStore = TokenStore.getInstance();
 
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
@@ -31,21 +31,25 @@ struct RecoveryKeyRecordPage {
 
   // 页面销毁时释放动画资源
   aboutToDisappear(): void {
-    console.info('aboutToDisappear');
+    hilog.info(0, 'RecoveryKeyRecordPage', 'aboutToDisappear');
     lottie.destroy();
   }
 
   aboutToAppear(): void {
-    let params = router.getParams() as Record<string, Object>;
-    this.recoverySecretKey=params['recoverySecretKey'].toString();
-    this.recoverySecretKeyShow=params['recoverySecretKeyShow'].toString();
+  }
+  onReceiveParams(context: NavDestinationContext) {
+    const params = context.pathInfo.param as Record<string, string>;
+    if (params) {
+      this.recoverySecretKey = params['recoverySecretKey'] ?? '';
+      this.recoverySecretKeyShow = params['recoverySecretKeyShow'] ?? '';
+    }
   }
   confirmRecoveryKey(){
     //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
     //  showSnackBar(b ? "恢复密钥OK" : "恢复密钥Err", SnackBarNotifyType.INFO)
     //})
     //this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
-    router.back({ url: 'pages/Index' });
+    this.pageInfos?.clear();
   }
   exportRecoveryKey(){
     showSaveFilePicker([`totp_recovery_key.text`], ['Text|.text']).then((uris) => {
@@ -58,11 +62,12 @@ struct RecoveryKeyRecordPage {
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.restore_record_recovery_key'),
         onBackClick: () => {
-          router.back();
+          this.pageInfos?.pop('');
         }
       })
       Scroll() {
@@ -140,8 +145,18 @@ struct RecoveryKeyRecordPage {
     }
     .width('100%')
     .height('100%')
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+    .padding({ top: 16 })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+      this.onReceiveParams(context);
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 
   loadAnimation() {
@@ -152,7 +167,7 @@ struct RecoveryKeyRecordPage {
       autoplay: false,
       name: this.animateName,
       contentMode: 'Contain',
-      path: "pages/common/no-limit.json",
+      path: "lottie/OTPVerification.json",
     })
     // 因为动画是异步加载，所以对animateItem的操作需要放在动画加载完成回调里操作
     this.animateItem.addEventListener('DOMLoaded', (args: Object): void => {

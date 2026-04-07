@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
 import { deviceInfo } from '@kit.BasicServicesKit';
@@ -8,10 +8,11 @@ import { TokenStore } from '../utils/TokenStore';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 
-@Preview
 @Entry
+@Preview
 @ComponentV2
-struct ShowDataSyncDetailsPage {
+export struct ShowDataSyncDetailsPage {
+  pageInfos: NavPathStack | null = null;
   @Local AppDbKVSyncTime: SettingValue = '';
   @Local AppDbKVArchiveTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
@@ -29,11 +30,12 @@ struct ShowDataSyncDetailsPage {
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.data_rdb_sync_details'),
         onBackClick: () => {
-          router.back();
+          this.pageInfos?.pop('');
         }
       })
       RelativeContainer() {
@@ -137,6 +139,16 @@ struct ShowDataSyncDetailsPage {
     }
     .width('100%')
     .height('100%')
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+    .padding({ top: 16 })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 }

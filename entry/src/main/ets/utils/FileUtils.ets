@@ -3,6 +3,7 @@ import { common } from '@kit.AbilityKit';
 import { intArrayToString } from "./TokenUtils";
 import { BusinessError } from '@kit.BasicServicesKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { buffer } from '@kit.ArkTS';
 
 const BUFFER_SIZE = 4096;
@@ -50,7 +51,7 @@ export async function writeFileContent(uri: string, content: string): Promise<vo
       fs.close(f.fd);
     });
   }).catch((reason: BusinessError)=>{
-    console.log(reason.message)
+    hilog.error(reason.code, 'FileUtils', reason.message)
   });
 }
 //写入文件确认文件是否重复 如果重复放弃写入
@@ -70,7 +71,7 @@ export async function writeFileContentCheckHashEqual(uri: string, content: strin
         fs.close(f.fd);
       });
     }).catch((reason: BusinessError)=>{
-      console.log(reason.message)
+      hilog.error(reason.code, 'FileUtils', reason.message)
     });
   }
 
@@ -82,7 +83,7 @@ export async function Sha256Hash(content: string) {
   // 数据量较少时，可以只做一次update，将数据全部传入，接口未对入参长度做限制。
   await md.update({ data: new Uint8Array(buffer.from(content, 'utf-8').buffer) });
   let mdResult = await md.digest();
-  console.info('Md result:' + mdResult.data);
+  hilog.info(0, 'FileUtils', 'Md result:' + mdResult.data);
   return mdResult.data;
 }
 

@@ -141,6 +141,8 @@ export enum PREF_KEYS {
   APPEARANCE_USER_NAME_FONT_WEIGHT = 'app_appearance_user_name_font_weight',
   /** Token项目最大宽度 */
   APPEARANCE_ITEM_MAX_WIDTH = 'app_appearance_item_max_width',
+  /** 快速扫描URI */
+  WANT_URI = 'app_want_uri',
 }
 
 /**
@@ -197,8 +199,7 @@ export const AVAILABLE_TOP_EFFECT_TYPES: EnumSelectOption[] = [
   { label: $r('app.string.setting_top_effect_type_common_blur'), value: SettingTopEffectType.COMMON_BLUR },
   { label: $r('app.string.setting_top_effect_type_gradual_blur'), value: SettingTopEffectType.GRADUAL_BLUR },
   { label: $r('app.string.setting_top_effect_type_gradient_blur'), value: SettingTopEffectType.GRADIENT_BLUR },
-  // 未来API23支持后可添加：
-  // { label: $r('app.string.setting_top_effect_type_immersive_gradient_blur'), value: SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR },
+  { label: $r('app.string.setting_top_effect_type_immersive_gradient_blur'), value: SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR },
 ];
 
 /**
@@ -272,6 +273,32 @@ export class TokenPreference {
 }
 
 /**
+ * 路由名称常量
+ * 统一管理所有pushPathByName使用的路由名称
+ */
+export enum ROUTE_NAMES {
+  /** 恢复数据页面 */
+  RestoreDataPage = 'RestoreDataPage',
+  /** 主密钥设置页面 */
+  MasterKeyPage = 'MasterKeyPage',
+  /** 恢复密钥记录页面 */
+  RecoveryKeyRecordPage = 'RecoveryKeyRecordPage',
+  /** 外观自定义页面 */
+  AppearancePage = 'AppearancePage',
+  /** 数据同步详情页面 */
+  ShowDataSyncDetailsPage = 'ShowDataSyncDetailsPage',
+  /** 展示验证码页面 */
+  ShowCodePage = 'ShowCodePage',
+  /** 隐私政策页面 */
+  PrivacyPage = 'PrivacyPage',
+  /** 用户协议页面 */
+  AgreementPage = 'AgreementPage',
+  /** App锁定页面 */
+  AppLockPage= 'pages/AppLockPage',
+  /** App首页 */
+  IndexPage= 'pages/Index',
+}
+/**
  * 应用偏好设置管理类
  * 提供应用设置的读取、写入和持久化功能
  */
@@ -317,6 +344,8 @@ export class AppPreference {
     // 是否已经配置了主密码
     [PREF_KEYS.USE_MASTER_KEY_SET, false]
   ]);
+
+
 
   private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([
     // 外观-自定义

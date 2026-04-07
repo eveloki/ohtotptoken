@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { webview } from '@kit.ArkWeb';
 import { CommonConstants } from '../utils/CommonConstants';
 import { TopNavigationView } from '../components/TopNavigationView';
@@ -6,16 +6,18 @@ import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Entry
 @ComponentV2
-struct AgreementPage {
+export struct AgreementPage {
+  pageInfos: NavPathStack | null = null;
   @Local webViewController: webview.WebviewController = new webview.WebviewController();
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.user_agreement'),
         onBackClick: () => {
-          router.back();
+          this.pageInfos?.pop('');
         }
       })
       Stack() {
@@ -32,8 +34,17 @@ struct AgreementPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+    .padding({ top: 16 })
+    .backgroundColor($r('app.color.window_background'))
 
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 }

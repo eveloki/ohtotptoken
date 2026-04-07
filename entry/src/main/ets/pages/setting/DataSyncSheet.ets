@@ -1,6 +1,6 @@
 import { SubItemToggle } from '../../components/SubItemToggle'
-import { AppStorageV2, router } from '@kit.ArkUI';
-import { AppPreference, SettingValue, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
+import { AppStorageV2, LengthMetrics } from '@kit.ArkUI';
+import { AppPreference, SettingValue, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -8,10 +8,12 @@ import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager,common } from '@kit.AbilityKit';
 import { PermissionManager } from '../../utils/PermissionManager';
 import { throttle } from '../../utils/UiUtils';
+import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
 
 @Preview
 @ComponentV2
 export struct DataSyncSheet {
+  pageInfos: NavPathStack = new NavPathStack();
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -20,18 +22,15 @@ export struct DataSyncSheet {
   aboutToAppear(): void {
     this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
     this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
-    //订阅权限变更
     this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
-  //更新数据同步权限
   updateDATASYNCPermissions(isAccess: boolean) {
     if (!isAccess) {
-      //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setPreference('app_db_rds_sync_enable', false);
-      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -39,60 +38,83 @@ export struct DataSyncSheet {
     this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
-  build() {
-    List({ space: 10 }) {
-      ListItem() {
-        SettingItem({ title: "" }) {
-          SubItemToggle({
-            icon: $r('sys.symbol.link'),
-            title: $r('app.string.data_rdb_sync'),
-            isOn: this.RdbSyncEnable as boolean,
-            description: $r('app.string.data_rdb_sync_des'),
-            onChange: (IsOn: boolean) => {
-              if (IsOn) {
-                PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
-              }
-              this.RdbSyncEnable = IsOn;
-              AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
-            }
-          })
-
-          SubItemDivider()
-
-          SubItemToggle({
-            icon: $r('sys.symbol.icloud'),
-            title: $r('app.string.data_rdb_cloud_sync'),
-            isOn: this.RdbCloudSyncEnable as boolean,
-            description: $r('app.string.data_rdb_cloud_sync_des'),
-            disable: true,
-            onChange: (IsOn: boolean) => {
-              if (IsOn) {
-                PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
-              }
-              this.RdbCloudSyncEnable = IsOn;
-              AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
-            }
-          })
-            .visibility(Visibility.None)
-
-          SubItemDivider()
-            .visibility(Visibility.None)
-
-          SubItemButton({
-            symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
-            text: $r('app.string.data_rdb_sync_details')
-          })
-            .onClick(throttle((event) => {
-              router.pushUrl({ url: 'pages/ShowDataSyncDetailsPage' });
-            }, 1000))
-        }
-      }
-      .padding({ left: 10, right: 10 })
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+      ShowDataSyncDetailsPage()
     }
-    .width('100%')
-    .height('100%')
-    .scrollBar(BarState.Off)
-    .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
-    .backgroundColor($r('app.color.window_background'))
+  }
+
+  build() {
+    Navigation(this.pageInfos) {
+      Column() {
+        Text($r('app.string.data_sync'))
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
+          .width('100%')
+        List({ space: 10 }) {
+        ListItem() {
+          SettingItem({ title: "" }) {
+            SubItemToggle({
+              icon: $r('sys.symbol.link'),
+              title: $r('app.string.data_rdb_sync'),
+              isOn: this.RdbSyncEnable as boolean,
+              description: $r('app.string.data_rdb_sync_des'),
+              onChange: (IsOn: boolean) => {
+                if (IsOn) {
+                  PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
+                }
+                this.RdbSyncEnable = IsOn;
+                AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, IsOn);
+              }
+            })
+
+            SubItemDivider()
+
+            SubItemToggle({
+              icon: $r('sys.symbol.icloud'),
+              title: $r('app.string.data_rdb_cloud_sync'),
+              isOn: this.RdbCloudSyncEnable as boolean,
+              description: $r('app.string.data_rdb_cloud_sync_des'),
+              disable: true,
+              onChange: (IsOn: boolean) => {
+                if (IsOn) {
+                  PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
+                }
+                this.RdbCloudSyncEnable = IsOn;
+                AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
+              }
+            })
+              .visibility(Visibility.None)
+
+            SubItemDivider()
+              .visibility(Visibility.None)
+
+            SubItemButton({
+              symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
+              text: $r('app.string.data_rdb_sync_details')
+            })
+              .onClick(throttle((event) => {
+                this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage, null);
+              }, 1000))
+          }
+        }
+        .padding({ left: 10, right: 10 })
+      }
+      .width('100%')
+      .height('100%')
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+        .backgroundColor($r('app.color.window_background'))
+        .layoutWeight(1)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
   }
 }

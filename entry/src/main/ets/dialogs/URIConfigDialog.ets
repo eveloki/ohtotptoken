@@ -2,6 +2,7 @@ import { ScanBarCode } from "../utils/TokenUtils";
 import { url } from "@kit.ArkTS";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { readFileContent, showSelectFilePicker } from "../utils/FileUtils";
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Preview
 @CustomDialog
@@ -23,12 +24,12 @@ export struct URIConfigDialog {
       try {
         otp_url = url.URL.parseURL(uri)
       } catch (error) {
-        console.error('Invalid OTPAuth URL:', error);
+        hilog.error(0, 'URIConfigDialog', 'Invalid OTPAuth URL:', error);
         return;
       }
 
       if (otp_url.protocol !== 'otpauth:') {
-        console.error('Invalid protocol');
+        hilog.error(0, 'URIConfigDialog', 'Invalid protocol');
         return;
       }
 
@@ -39,7 +40,7 @@ export struct URIConfigDialog {
       } else if (type == 'hotp') {
         token.TokenType = otpType.HOTP;
       } else {
-        console.error('Invalid type');
+        hilog.error(0, 'URIConfigDialog', 'Invalid type');
         return;
       }
 

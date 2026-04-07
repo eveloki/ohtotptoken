@@ -1,4 +1,4 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { SettingItem } from '../components/SettingItem';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { SubItemToggle } from '../components/SubItemToggle';
@@ -13,10 +13,11 @@ import { SubItemButton } from '../components/SubItemButton';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { common } from '@kit.AbilityKit';
 
-@Preview
 @Entry
+@Preview
 @ComponentV2
-struct AppearancePage {
+export struct AppearancePage {
+  pageInfos: NavPathStack | null = null;
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -33,11 +34,12 @@ struct AppearancePage {
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.customize_appearance'),
         onBackClick: () => {
-          router.back();
+          this.pageInfos?.pop('');
         }
       })
         .zIndex(1)
@@ -135,7 +137,7 @@ struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference('app_appearance_token_counter_next_margin', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN, value);
                       this.token_preference.app_appearance_token_counter_next_margin = value;
                       break;
                     }
@@ -199,32 +201,32 @@ struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference('app_appearance_item_max_width', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, value);
                       this.token_preference.app_appearance_item_max_width = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference('app_appearance_item_height', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_HEIGHT, value);
                       this.token_preference.app_appearance_item_height = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference('app_appearance_item_space', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ITEM_SPACE, value);
                       this.token_preference.app_appearance_item_space = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference('app_appearance_logo_size', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_SIZE, value);
                       this.token_preference.app_appearance_logo_size = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference('app_appearance_logo_background_size', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_SIZE, value);
                       this.token_preference.app_appearance_logo_background_size = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference('app_appearance_logo_background_radius', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS, value);
                       this.token_preference.app_appearance_logo_background_radius = value;
                       break;
                     }
@@ -285,32 +287,32 @@ struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference('app_appearance_token_font_size', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_SIZE, value);
                       this.token_preference.app_appearance_token_font_size = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference('app_appearance_token_font_weight', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_WEIGHT, value);
                       this.token_preference.app_appearance_token_font_weight = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference('app_appearance_issuer_font_size', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_SIZE, value);
                       this.token_preference.app_appearance_issuer_font_size = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference('app_appearance_issuer_font_weight', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_WEIGHT, value);
                       this.token_preference.app_appearance_issuer_font_weight = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference('app_appearance_user_name_font_size', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE, value);
                       this.token_preference.app_appearance_user_name_font_size = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference('app_appearance_user_name_font_weight', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT, value);
                       this.token_preference.app_appearance_user_name_font_weight = value;
                       break;
                     }
@@ -389,72 +391,72 @@ struct AppearancePage {
                 onChange: (index, value) => {
                   switch (index) {
                     case 0: {
-                      AppPreference.setPreference('app_appearance_logo_background_color', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR, value);
                       this.token_preference.app_appearance_logo_background_color = value;
                       break;
                     }
                     case 1: {
-                      AppPreference.setPreference('app_appearance_logo_dark_filter_color', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER_COLOR, value);
                       this.token_preference.app_appearance_logo_dark_filter_color = value;
                       break;
                     }
                     case 2: {
-                      AppPreference.setPreference('app_appearance_token_color', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR, value);
                       this.token_preference.app_appearance_token_color = value;
                       break;
                     }
                     case 3: {
-                      AppPreference.setPreference('app_appearance_token_next_color', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR, value);
                       this.token_preference.app_appearance_token_next_color = value;
                       break;
                     }
                     case 4: {
-                      AppPreference.setPreference('app_appearance_token_color_dark', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR_DARK, value);
                       this.token_preference.app_appearance_token_color_dark = value;
                       break;
                     }
                     case 5: {
-                      AppPreference.setPreference('app_appearance_token_next_color_dark', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR_DARK, value);
                       this.token_preference.app_appearance_token_next_color_dark = value;
                       break;
                     }
                     case 6: {
-                      AppPreference.setPreference('app_appearance_token_counter_light_color_start', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_START, value);
                       this.token_preference.app_appearance_token_counter_light_color_start = value;
                       break;
                     }
                     case 7: {
-                      AppPreference.setPreference('app_appearance_token_counter_light_color_end', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_END, value);
                       this.token_preference.app_appearance_token_counter_light_color_end = value;
                       break;
                     }
                     case 8: {
-                      AppPreference.setPreference('app_appearance_token_counter_dark_color_start', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_START, value);
                       this.token_preference.app_appearance_token_counter_dark_color_start = value;
                       break;
                     }
                     case 9: {
-                      AppPreference.setPreference('app_appearance_token_counter_dark_color_end', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_END, value);
                       this.token_preference.app_appearance_token_counter_dark_color_end = value;
                       break;
                     }
                     case 10: {
-                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_start', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_START, value);
                       this.token_preference.app_appearance_token_counter_next_light_color_start = value;
                       break;
                     }
                     case 11: {
-                      AppPreference.setPreference('app_appearance_token_counter_next_light_color_end', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_END, value);
                       this.token_preference.app_appearance_token_counter_next_light_color_end = value;
                       break;
                     }
                     case 12: {
-                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_start', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_START, value);
                       this.token_preference.app_appearance_token_counter_next_dark_color_start = value;
                       break;
                     }
                     case 13: {
-                      AppPreference.setPreference('app_appearance_token_counter_next_dark_color_end', value);
+                      AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_END, value);
                       this.token_preference.app_appearance_token_counter_next_dark_color_end = value;
                       break;
                     }
@@ -491,7 +493,16 @@ struct AppearancePage {
       .width('100%')
       .height('100%')
     }
-    .padding({ top: this.window.AvoidTopHeight })
-    .backdropBlur(10)
+    .padding({ top: 16 })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 }

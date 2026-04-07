@@ -85,16 +85,16 @@ export class KvManager {
       this._kvStoreNoE = store[1];
       //订阅同步完成事件
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
-        console.info(`syncComplete ${data}`);
+        hilog.info(0, 'KvManager', `syncComplete ${data}`);
         ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
 
       this._kvStore.on('dataChange', distributedKVStore.SubscribeType.SUBSCRIBE_TYPE_LOCAL, (data: distributedKVStore.ChangeNotification) => {
-        console.info(`dataChange callback call data: ${data}`);
+        hilog.info(0, 'KvManager', `dataChange callback call data: ${data}`);
         //ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
     }).catch((reason: BusinessError) => {
-      console.error(reason.message);
+      hilog.error(reason.code, 'KvManager', reason.message);
     });
   }
   /**
@@ -206,7 +206,7 @@ export class KvManager {
         });
       } catch (e) {
         let error = e as BusinessError;
-        console.error(`duplicated calls should be ok. code is ${error.code}, message is ${error.message}`);
+        hilog.error(error.code, 'KvManager', `duplicated calls should be ok. code is ${error.code}, message is ${error.message}`);
       }
     }
     return token_array;
@@ -216,10 +216,10 @@ export class KvManager {
     if (this._kvStore) {
      this._kvStore.put(key, value, (err) => {
           if (err != undefined) {
-            console.error(`Failed to put.code is ${err.code},message is ${err.message}`);
-            return;
-          }
-          console.info("Succeeded in putting");
+          hilog.error(err.code, 'KvManager', `Failed to put.code is ${err.code},message is ${err.message}`);
+           return;
+         }
+         hilog.info(0, 'KvManager', "Succeeded in putting");
      });
     }
   }
@@ -243,10 +243,10 @@ export class KvManager {
     if (this._kvStoreNoE) {
       this._kvStoreNoE.put(key, value, (err) => {
         if (err != undefined) {
-          console.error(`Failed to put.code is ${err.code},message is ${err.message}`);
+          hilog.error(err.code, 'KvManager', `Failed to put.code is ${err.code},message is ${err.message}`);
           return;
         }
-        console.info("Succeeded in putting");
+        hilog.info(0, 'KvManager', "Succeeded in putting");
       });
     }
   }
@@ -685,7 +685,7 @@ export class KvManager {
         }
       } catch (err) {
         let e: BusinessError = err as BusinessError;
-        console.error('getAvailableDeviceListSync errCode:' + e.code + ', errMessage:' + e.message);
+        hilog.error(e.code, 'KvManager', 'getAvailableDeviceListSync errCode:' + e.code + ', errMessage:' + e.message);
       }
 
     }

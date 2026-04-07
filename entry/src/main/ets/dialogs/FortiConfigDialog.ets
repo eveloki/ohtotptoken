@@ -7,6 +7,7 @@ import { buffer, util } from '@kit.ArkTS';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { SelectIconDialog } from './SelectIconDialog';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 //"{\"d\":{\"__type\":\"SoftToken.MobileProvisionResponse\",\"__version\":\"\",\"__device_version\":\"\",\"__device_build\":\"\",\"mobile_id_hash\":\"\",\"seed\":\"\",\"token\":\"\",\"image_file\":\"\",\"pin_required\":\"\",\"pin_require_type\":\"\",\"pin_length\":0,\"counter\":0,\"encryption_key\":\"\",\"issuer\":\"\",\"result\":0,\"error\":{\"error_code\":40,\"error_message\":\"FTM token Activation Code is invalid\"}}}"
 class forti_server_resp_err {
@@ -127,12 +128,12 @@ export struct FortiConfigDialog {
       },
       (err: BusinessError, data: http.HttpResponse) => {
         if (!err) {
-          console.log(JSON.stringify(data.result))
+          hilog.info(0, 'FortiConfigDialog', JSON.stringify(data.result))
           let resp: forti_server_resp = JSON.parse(data.result.toString())
 
           if (resp.d.error != undefined) {
             this.btn_wait_from_forti = false;
-            console.error(`${resp.d.error.error_message}, code ${resp.d.error.error_code}`)
+            hilog.error(0, 'FortiConfigDialog', `${resp.d.error.error_message}, code ${resp.d.error.error_code}`)
             showSnackBar(`${resp.d.error.error_message}, code ${resp.d.error.error_code}`, SnackBarNotifyType.ERROR);
           } else {
             this.decrypt_seed(resp.d.seed!)
@@ -141,7 +142,7 @@ export struct FortiConfigDialog {
           httpRequest.destroy();
         } else {
           this.btn_wait_from_forti = false;
-          console.info('error:' + JSON.stringify(err));
+          hilog.info(0, 'FortiConfigDialog', 'error:' + JSON.stringify(err));
           httpRequest.destroy();
         }
       });

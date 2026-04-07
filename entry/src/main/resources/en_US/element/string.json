@@ -401,6 +401,10 @@
       "value": "Auto"
     },
     {
+      "name": "dialog_icon_select_custom",
+      "value": "Custom"
+    },
+    {
       "name": "icon_alert_remove_confirm_msg",
       "value": "Delete this icon?"
     },

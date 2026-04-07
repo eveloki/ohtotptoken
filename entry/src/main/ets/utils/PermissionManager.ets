@@ -17,6 +17,7 @@ import { common } from '@kit.AbilityKit';
 import { abilityAccessCtrl, bundleManager, Permissions, PermissionRequestResult } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { EVENT_NAMES } from './AppPreference';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 //权限管理
 export class PermissionManager {
@@ -45,7 +46,7 @@ export class PermissionManager {
       tokenId = appInfo.accessTokenId;
     } catch (error) {
       const err: BusinessError = error as BusinessError;
-      console.error(`Failed to get bundle info for self. Code is ${err.code}, message is ${err.message}`);
+      hilog.error(err.code, 'PermissionManager', `Failed to get bundle info for self. Code is ${err.code}, message is ${err.message}`);
     }
 
     // 校验应用是否被授予权限
@@ -53,7 +54,7 @@ export class PermissionManager {
       grantStatus = await atManager.verifyAccessToken(tokenId, permission);
     } catch (error) {
       const err: BusinessError = error as BusinessError;
-      console.error(`Failed to check access token. Code is ${err.code}, message is ${err.message}`);
+      hilog.error(err.code, 'PermissionManager', `Failed to check access token. Code is ${err.code}, message is ${err.message}`);
     }
 
     return grantStatus;
@@ -72,7 +73,7 @@ export class PermissionManager {
       tokenId = appInfo.accessTokenId;
     } catch (error) {
       const err: BusinessError = error as BusinessError;
-      console.error(`Failed to get bundle info for self. Code is ${err.code}, message is ${err.message}`);
+      hilog.error(err.code, 'PermissionManager', `Failed to get bundle info for self. Code is ${err.code}, message is ${err.message}`);
     }
 
     // 校验应用是否被授予权限
@@ -80,7 +81,7 @@ export class PermissionManager {
       grantStatus = await atManager.checkAccessToken(tokenId, permission);
     } catch (error) {
       const err: BusinessError = error as BusinessError;
-      console.error(`Failed to check access token. Code is ${err.code}, message is ${err.message}`);
+      hilog.error(err.code, 'PermissionManager', `Failed to check access token. Code is ${err.code}, message is ${err.message}`);
     }
 
     return grantStatus;
@@ -145,11 +146,11 @@ export class PermissionManager {
           // 用户拒绝授权，提示用户必须授权才能访问当前页面的功能，并引导用户到系统设置中打开相应的权限
           atManager.requestPermissionOnSetting(context, [PermissionManager.permissions[i]])
             .then((data: Array<abilityAccessCtrl.GrantStatus>) => {
-              console.info('data:' + JSON.stringify(data));
+              hilog.info(0, 'PermissionManager', 'data:' + JSON.stringify(data));
               this.verifyPermissionsAndPushEvent();
             })
             .catch((err: BusinessError) => {
-              console.error('data:' + JSON.stringify(err));
+              hilog.error(err.code, 'PermissionManager', 'data:' + JSON.stringify(err));
             });
         }
       }

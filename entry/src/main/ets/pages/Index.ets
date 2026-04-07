@@ -11,7 +11,7 @@ import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
-import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -25,8 +25,17 @@ import { TokenIconPacks } from '../utils/TokenUtils';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
+import { RestoreDataPage } from './RestoreDataPage';
+import { MasterKeyPage } from './MasterKeyPage';
+import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
+import { AppearancePage } from './AppearancePage';
+import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCodePage } from './ShowCodePage';
+import { PrivacyPage } from './PrivacyPage';
+import { AgreementPage } from './AgreementPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, router, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { AppLockOverlay } from './AppLockOverlay';
+import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
   PrefixIcon,
@@ -62,6 +71,8 @@ struct Index {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
+  @Local isAppLockOverlayVisible: boolean = false;
+  pageInfos: NavPathStack = new NavPathStack();
 
   /**
    * 获取当前的滚动效果类型
@@ -104,8 +115,8 @@ struct Index {
       curve: Curve.EaseInOut, // 动画曲线
     }),
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       this.DropFilesDialogIsOpen=false;
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
@@ -146,11 +157,9 @@ struct Index {
         // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
-        AppPreference.setPreference("app_db_kv_archive_is_running",false)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
       });
     });
-
-    // create icon pack dir
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -168,10 +177,10 @@ struct Index {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
           let arr = this.appCtx.resourceManager.getRawFileContentSync('ftm.ks')
           fs.write(cer_file.fd, arr.buffer).then((cnt) => {
-            console.log('store fmt.ks to cache dir')
+            hilog.info(0, 'Index', 'store fmt.ks to cache dir')
           })
             .catch((err:BusinessError) => {
-              console.error(`${err.message}`)
+              hilog.error(err.code, 'Index', `${err.message}`)
             })
         })
       }
@@ -180,7 +189,7 @@ struct Index {
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
-      AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
+      AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
@@ -192,8 +201,8 @@ struct Index {
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setPreference('app_db_rds_sync_enable', false);
-        AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
       }
     })
 
@@ -237,8 +246,8 @@ struct Index {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -252,7 +261,6 @@ struct Index {
     customStyle: false,
     cornerRadius: 10,
   })
-  //endregion
 
   refreshIconPack(): void {
     TokenIconPacks.addUserIconPack(this.user_icon_dir);
@@ -275,7 +283,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          router.pushUrl({ url: 'pages/RestoreDataPage' });
+          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -301,30 +309,37 @@ struct Index {
             //tkStore.RestoreByKVAsync();
             //更新存档时间
             if (n > 0) {
-              AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
             }
           }).catch((err:BusinessError) => {
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
           }).finally(() => {
-            AppPreference.setPreference("app_db_kv_archive_is_running",false);
+            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
           });
         }
         else
         {
-          AppPreference.setPreference("app_db_kv_archive_is_running",false);
+          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
         }
       } catch (err) {
         let message = (err as BusinessError).message;
         hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference("app_db_kv_archive_is_running",false);
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
       }
 
     }
   }
 
   onPageShow(): void {
-    router.clear();
     this.appIsShow = true;
+    const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
+    if (!needShowLock) {
+      this.pageInfos.clear();
+    }
+    if (needShowLock && AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      this.isAppLockOverlayVisible = true;
+    }
+    AppStorage.setOrCreate('app_lock_need_show', false);
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
     //页面打开的时候刷新token
@@ -472,6 +487,15 @@ struct Index {
   }
 
   @Builder
+  AppLockOverlayBuilder() {
+    AppLockOverlay({
+      onUnlock: () => {
+        this.isAppLockOverlayVisible = false;
+      }
+    })
+  }
+
+  @Builder
   SettingEntryCardBuilder() {
     List({ space: 10, scroller: this.settingEntryScroller }) {
       // 顶部占位空间，用于触发渐变模糊效果
@@ -503,7 +527,7 @@ struct Index {
           .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_backup') },
+            dragBar: true,
           })
       }
 
@@ -530,7 +554,7 @@ struct Index {
           .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_safety') },
+            dragBar: true,
           })
       }
 
@@ -557,7 +581,7 @@ struct Index {
           .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.app_appearance') },
+            dragBar: true,
           })
       }
 
@@ -584,7 +608,7 @@ struct Index {
           .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.data_sync') },
+            dragBar: true,
           })
       }
 
@@ -611,7 +635,7 @@ struct Index {
           .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_agreement_statement') },
+            dragBar: true,
           })
       }
 
@@ -638,7 +662,7 @@ struct Index {
           .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
             detents: [SheetSize.LARGE],
             preferType: SheetType.BOTTOM,
-            title: { title: $r('app.string.setting_about') },
+            dragBar: true,
           })
       }
 
@@ -652,7 +676,29 @@ struct Index {
     .backgroundColor($r('app.color.window_background'))
   }
 
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.RestoreDataPage) {
+      RestoreDataPage()
+    } else if (name === ROUTE_NAMES.MasterKeyPage) {
+      MasterKeyPage()
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
+      RecoveryKeyRecordPage()
+    } else if (name === ROUTE_NAMES.AppearancePage) {
+      AppearancePage()
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+      ShowDataSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.ShowCodePage) {
+      ShowCodePage()
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
+      PrivacyPage()
+    } else if (name === ROUTE_NAMES.AgreementPage) {
+      AgreementPage()
+    }
+  }
+
   build() {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.token_loading) {
         Column() {
@@ -897,6 +943,13 @@ struct Index {
     .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
       colorMode: ThemeColorMode.SYSTEM,
       adaptiveColor: AdaptiveColor.DEFAULT
+    })
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
+    .bindContentCover($$this.isAppLockOverlayVisible, this.AppLockOverlayBuilder(), {
+      modalTransition: ModalTransition.NONE,
     })
   }
 }

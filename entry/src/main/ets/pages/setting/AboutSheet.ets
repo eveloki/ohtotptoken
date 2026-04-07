@@ -1,7 +1,7 @@
 import { SettingItem } from '../../components/SettingItem';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager } from '@kit.AbilityKit';
-import { AppStorageV2, curves } from '@kit.ArkUI';
+import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { AppPreference, PREF_KEYS } from '../../utils/AppPreference';
 
@@ -32,7 +32,13 @@ export struct AboutSheet {
   }
 
   build() {
-    List({ space: 10 }) {
+    Column() {
+      Text($r('app.string.setting_about'))
+        .fontSize(24)
+        .fontWeight(FontWeight.Bold)
+        .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
+        .width('100%')
+      List({ space: 10 }) {
       ListItem() {
         SettingItem({ title: "" }) {
           Text(this.str_about_app)
@@ -92,8 +98,13 @@ export struct AboutSheet {
     }
     .width('100%')
     .height('100%')
-    .scrollBar(BarState.Off)
-    .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+      .backgroundColor($r('app.color.window_background'))
+      .layoutWeight(1)
+    }
+    .width('100%')
+    .height('100%')
     .backgroundColor($r('app.color.window_background'))
   }
 }

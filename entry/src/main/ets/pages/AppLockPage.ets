@@ -2,8 +2,9 @@ import { cryptoFramework } from "@kit.CryptoArchitectureKit";
 import { userAuth } from "@kit.UserAuthenticationKit";
 import { BusinessError } from "@kit.BasicServicesKit";
 import { router } from "@kit.ArkUI";
-import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
+import { AppPreference, PREF_KEYS, ROUTE_NAMES } from "../utils/AppPreference";
 import { common } from "@kit.AbilityKit";
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Entry
 @Preview
@@ -13,7 +14,7 @@ export struct AppLockPage {
 
   onPageShow(): void {
     if (!AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
-      router.replaceUrl({ url: 'pages/Index' });
+      router.replaceUrl({ url: ROUTE_NAMES.IndexPage });
     } else if (AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE)) {
       requireUserAuth(this.appCtx);
     }
@@ -24,7 +25,16 @@ export struct AppLockPage {
   }
 
   build() {
-    Row() {
+    Stack() {
+      Column()
+        .width('100%')
+        .height('100%')
+        .foregroundBlurStyle(BlurStyle.Thin, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0,
+        })
+
       RelativeContainer() {
         Row() {
           Column() {
@@ -82,26 +92,26 @@ export function requireUserAuth(ctx: Context): void {
     };
     // 获取认证对象
     const userAuthInstance = userAuth.getUserAuthInstance(authParam, widgetParam);
-    console.info('get userAuth instance success');
+    hilog.info(0, 'AppLockPage', 'get userAuth instance success');
     // 订阅认证结果
     userAuthInstance.on('result', {
       onResult(result) {
-        console.info(`userAuthInstance callback result: ${JSON.stringify(result)}`);
+        hilog.info(0, 'AppLockPage', `userAuthInstance callback result: ${JSON.stringify(result)}`);
         // 可在认证结束或其他业务需要场景，取消订阅认证结果
         if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
           // 判断验证结果是否正确 只有正确验证了才能跳跃到首页
           if (ctx.eventHub != undefined) {
-            router.pushUrl({ url: 'pages/Index' });
+            router.pushUrl({ url: ROUTE_NAMES.IndexPage });
           }
         }
         userAuthInstance.off('result');
       }
     });
-    console.info('auth on success');
+    hilog.info(0, 'AppLockPage', 'auth on success');
     userAuthInstance.start();
-    console.info('auth start success');
+    hilog.info(0, 'AppLockPage', 'auth start success');
   } catch (error) {
     const err: BusinessError = error as BusinessError;
-    console.error(`auth catch error. Code is ${err?.code}, message is ${err?.message}`);
+    hilog.error(err?.code ?? 0, 'AppLockPage', `auth catch error. Code is ${err?.code}, message is ${err?.message}`);
   }
 }

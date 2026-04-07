@@ -4,8 +4,8 @@ import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUtils'
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
-import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../../utils/AppPreference';
+import { AppStorageV2, curves } from '@kit.ArkUI';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
@@ -16,13 +16,21 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../.
 import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { SubItemSelect } from '../../components/SubItemSelect';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../../components/SubItemIconManager';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
+import { MasterKeyPage } from '../MasterKeyPage';
+import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
+import { AppearancePage } from '../AppearancePage';
+import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
+import { PrivacyPage } from '../PrivacyPage';
+import { AgreementPage } from '../AgreementPage';
 
 @Preview
 @ComponentV2
 export struct SettingPage {
+  pageInfos: NavPathStack = new NavPathStack();
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
@@ -83,8 +91,8 @@ export struct SettingPage {
       //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setPreference('app_db_rds_sync_enable', false);
-      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -114,8 +122,8 @@ export struct SettingPage {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'SettingPage', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -160,16 +168,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -218,16 +226,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -260,7 +268,25 @@ export struct SettingPage {
     this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.MasterKeyPage) {
+      MasterKeyPage()
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
+      RecoveryKeyRecordPage()
+    } else if (name === ROUTE_NAMES.AppearancePage) {
+      AppearancePage()
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+      ShowDataSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
+      PrivacyPage()
+    } else if (name === ROUTE_NAMES.AgreementPage) {
+      AgreementPage()
+    }
+  }
+
   build() {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.is_loaded) {
         Column() {
@@ -340,7 +366,7 @@ export struct SettingPage {
                   descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
                 })
                   .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/MasterKeyPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage,null);
                   }, 1000))
               }
 
@@ -355,10 +381,10 @@ export struct SettingPage {
                   AppPreference.setPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE, IsOn);
                   try {
                     this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
-                      console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+                      hilog.error(err.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
                     });
                   } catch (exception) {
-                    console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+                    hilog.error(exception.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
                   }
                 }
               })
@@ -380,7 +406,7 @@ export struct SettingPage {
                       return;
                     }
                   }
-                  AppPreference.setPreference('app_safety_lock_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_LOCK_ENABLE, IsOn);
                 }
               })
 
@@ -500,7 +526,7 @@ export struct SettingPage {
                 text: $r('app.string.customize_appearance')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AppearancePage' });
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AppearancePage,null);
                 }, 1000))
             }
           }
@@ -518,7 +544,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, IsOn);
                 }
               })
 
@@ -535,7 +561,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
                 }
               })
                 .visibility(Visibility.None)
@@ -548,7 +574,7 @@ export struct SettingPage {
                 text: $r('app.string.data_rdb_sync_details')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/ShowDataSyncDetailsPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage,null);
                 }, 1000))
             }
           }
@@ -558,7 +584,7 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/PrivacyPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage,null);
                 }, 1000))
 
               SubItemDivider()
@@ -568,7 +594,7 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AgreementPage' });
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
                 }, 1000))
 
               SubItemDivider()
@@ -600,7 +626,7 @@ export struct SettingPage {
               if (this.debug_mode_counter > 7) {
                   this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                     this.debug_mode_is_on = true;
-                    AppPreference.setPreference('app_debug_mode_on', true);
+                    AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, true);
                     showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
                   })
 
@@ -648,5 +674,9 @@ export struct SettingPage {
         .scrollBar(BarState.Off)
       }
     }
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
   }
 }
