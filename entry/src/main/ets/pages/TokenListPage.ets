@@ -64,7 +64,7 @@ export struct TokenListPage {
   private dialog_qrcode?: CustomDialogController;
   private readonly holdingHandPermission: Permissions = 'ohos.permission.DETECT_GESTURE';
   private readonly actionBarMoveRatio: number = 0.22;
-  private readonly actionBarMoveMaxOffset: number = 120;
+  private readonly actionBarMoveMaxOffset: number = 80;
   private holdingHandSubscribed: boolean = false;
   private holdingHandCallback?: Callback<motion.HoldingHandStatus>;
 
