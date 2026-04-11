@@ -507,6 +507,7 @@ struct Index {
       // 备份与迁移入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
@@ -534,6 +535,7 @@ struct Index {
       // 安全性入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
@@ -561,6 +563,7 @@ struct Index {
       // 外观与功能入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
@@ -588,6 +591,7 @@ struct Index {
       // 数据同步入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
@@ -615,6 +619,7 @@ struct Index {
       // 协议与声明入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
@@ -642,6 +647,7 @@ struct Index {
       // 关于入口
       ListItem() {
         HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
           cardHeight: this.token_preference.app_appearance_item_height,
           prefixItem: new PrefixIcon({
             iconSize: IconSize.SYSTEM_ICON,
