@@ -33,6 +33,7 @@ import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCodePage } from './ShowCodePage';
 import { PrivacyPage } from './PrivacyPage';
 import { AgreementPage } from './AgreementPage';
+import { FeedbackPage } from './FeedbackPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
@@ -700,6 +701,8 @@ struct Index {
       PrivacyPage()
     } else if (name === ROUTE_NAMES.AgreementPage) {
       AgreementPage()
+    } else if (name === ROUTE_NAMES.FeedbackPage) {
+      FeedbackPage()
     }
   }
 

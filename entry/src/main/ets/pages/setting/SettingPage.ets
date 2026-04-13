@@ -13,7 +13,7 @@ import { PermissionManager } from '../../utils/PermissionManager';
 import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/TokenBackup';
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../../utils/FileUtils';
-import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
+import { throttle } from '../../utils/UiUtils';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { SubItemSelect } from '../../components/SubItemSelect';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -26,6 +26,7 @@ import { AppearancePage } from '../AppearancePage';
 import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
+import { FeedbackPage } from '../FeedbackPage';
 
 @Preview
 @ComponentV2
@@ -282,6 +283,8 @@ export struct SettingPage {
       PrivacyPage()
     } else if (name === ROUTE_NAMES.AgreementPage) {
       AgreementPage()
+    } else if (name === ROUTE_NAMES.FeedbackPage) {
+      FeedbackPage()
     }
   }
 
@@ -595,14 +598,6 @@ export struct SettingPage {
               })
                 .onClick(throttle((event) => {
                   this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
-                }, 1000))
-
-              SubItemDivider()
-
-              SubItemButton({ symbol: $r("sys.symbol.questionmark_circle"), text: $r('app.string.app_issue_feedback') })
-                .onClick(throttle((event) => {
-                  const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
-                  startBrowsableAbility(context,'https://github.com/SolidFaker/ohtotptoken/issues');
                 }, 1000))
 
             }

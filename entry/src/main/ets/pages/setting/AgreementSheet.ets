@@ -1,19 +1,16 @@
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
-import { AppWindowInfo } from '../../entryability/EntryAbility';
-import { bundleManager,common } from '@kit.AbilityKit';
-import { throttle,startBrowsableAbility } from '../../utils/UiUtils';
+import { LengthMetrics } from '@kit.ArkUI';
+import { throttle } from '../../utils/UiUtils';
+import { ROUTE_NAMES } from '../../utils/AppPreference';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
-import { LengthMetrics } from '@kit.ArkUI';
-import { ROUTE_NAMES } from '../../utils/AppPreference';
 
 @Preview
 @ComponentV2
 export struct AgreementSheet {
   pageInfos: NavPathStack = new NavPathStack();
-  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
@@ -48,13 +45,6 @@ export struct AgreementSheet {
             })
               .onClick(throttle((event) => {
                 this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage, null);
-              }, 1000))
-
-            SubItemDivider()
-
-            SubItemButton({ symbol: $r("sys.symbol.questionmark_circle"), text: $r('app.string.app_issue_feedback') })
-              .onClick(throttle((event) => {
-                startBrowsableAbility(this.appCtx,'https://github.com/SolidFaker/ohtotptoken/issues');
               }, 1000))
 
           }

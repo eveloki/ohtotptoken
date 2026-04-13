@@ -1,14 +1,17 @@
 import { SettingItem } from '../../components/SettingItem';
+import { SubItemButton } from '../../components/SubItemButton';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager } from '@kit.AbilityKit';
 import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { AppPreference, PREF_KEYS } from '../../utils/AppPreference';
+import { FeedbackSheet } from './FeedbackSheet';
 
 @Preview
 @ComponentV2
 export struct AboutSheet {
   @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
+  @Local isFeedbackSheetVisible: boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private str_about_app: string = '';
   private str_opensource_leg: string = '';
@@ -29,6 +32,12 @@ export struct AboutSheet {
       "Github: ss23/fortitoken-mobile-registration\n" +
       "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
+  }
+
+  @Builder
+  FeedbackSheetBuilder() {
+    FeedbackSheet()
+      .height('100%')
   }
 
   build() {
@@ -74,6 +83,24 @@ export struct AboutSheet {
         }
       }
       .padding({ left: 10, right: 10 })
+
+      ListItem() {
+        SettingItem({ title: "" }) {
+          SubItemButton({
+            symbol: $r("sys.symbol.questionmark_circle"),
+            text: $r('app.string.app_issue_feedback')
+          })
+            .onClick(() => {
+              this.isFeedbackSheetVisible = true;
+            })
+        }
+      }
+      .padding({ left: 10, right: 10 })
+      .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(), {
+        detents: [SheetSize.LARGE],
+        preferType: SheetType.BOTTOM,
+        dragBar: true,
+      })
 
       ListItemGroup() {
         ListItem() {

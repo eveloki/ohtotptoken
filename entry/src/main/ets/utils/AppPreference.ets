@@ -293,11 +293,27 @@ export enum ROUTE_NAMES {
   PrivacyPage = 'PrivacyPage',
   /** 用户协议页面 */
   AgreementPage = 'AgreementPage',
+  /** 问题反馈页面 */
+  FeedbackPage = 'FeedbackPage',
   /** App锁定页面 */
   AppLockPage= 'pages/AppLockPage',
   /** App首页 */
   IndexPage= 'pages/Index',
 }
+
+/**
+ * 外部链接常量
+ * 统一管理所有外部跳转URL
+ */
+export enum EXTERNAL_URLS {
+  /** 问卷反馈 */
+  FEEDBACK_SURVEY = 'https://wj.qq.com/s2/24518107/2b26/',
+  /** 反馈QQ群 */
+  FEEDBACK_QQ_GROUP = 'https://qm.qq.com/cgi-bin/qm/qr?k=pEChk7DRZB0uSKJhPBgCqG6C98xjlfbx&jump_from=webapi&authKey=1ea6AhefdUGzJ4OTisbXM6PkKPA4VulIFq1bRUnwvLOZfDhHL7GtoMmj4ph3OonT',
+  /** GitHub反馈 */
+  FEEDBACK_GITHUB = 'https://github.com/SolidFaker/ohtotptoken/issues',
+}
+
 /**
  * 应用偏好设置管理类
  * 提供应用设置的读取、写入和持久化功能
