@@ -230,15 +230,163 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "云同步"
+      "value": "华为云同步"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "数据将会通过华为云同步至您华为账户登录的其他设备上。"
+      "value": "通过华为云同步应用数据，数据将自动同步至您华为账号登录的其他设备，换机时也可自动恢复。"
     },
     {
       "name": "data_rdb_sync_details",
-      "value": "同步详情"
+      "value": "跨设备同步详情"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "华为云同步详情"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "同步状态"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "上次同步时间"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "从未同步"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "云端数据大小"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "已同步令牌数"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "数据加密"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "网络要求"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "仅Wi-Fi"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "华为账号"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "未登录"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "计算中..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "已启用"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "未启用"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "清空云存储"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "清空云存储？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "此操作将永久删除华为云上的所有已同步数据，且无法恢复。确认要继续吗？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "请先关闭云同步后再清空云存储。"
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "云存储已清空"
+    },
+    {
+      "name": "cloud_sync_encryption_master_key",
+      "value": "主密码加密"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "未加密"
+    },
+    {
+      "name": "cloud_sync_require_master_key_title",
+      "value": "需要设置主密码"
+    },
+    {
+      "name": "cloud_sync_require_master_key_msg",
+      "value": "云备份需要主密码来加密您的数据以确保安全。请先设置主密码。"
+    },
+    {
+      "name": "cloud_sync_require_master_key_set",
+      "value": "去设置"
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "备份历史"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "查看、恢复或删除云端备份"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "暂无备份记录"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "最多保留5份备份，每天一份"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d 个令牌"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "恢复备份"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "确定恢复 %s 的备份？当前数据将被替换。"
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "备份恢复成功"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "备份恢复失败"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "删除备份"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "确定删除 %s 的备份？此操作不可撤销。"
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "备份删除成功"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "备份删除失败"
     },
     {
       "name": "data_kv_sync_time",

@@ -30,6 +30,8 @@ import { MasterKeyPage } from './MasterKeyPage';
 import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
 import { AppearancePage } from './AppearancePage';
 import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
+import { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
 import { ShowCodePage } from './ShowCodePage';
 import { PrivacyPage } from './PrivacyPage';
 import { AgreementPage } from './AgreementPage';
@@ -688,6 +690,10 @@ struct Index {
       AppearancePage()
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
+      ShowCloudSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
+      ShowCloudBackupHistoryPage()
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
     } else if (name === ROUTE_NAMES.PrivacyPage) {

@@ -230,15 +230,163 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "雲端同步"
+      "value": "華為雲端同步"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "資料將會透過華為雲同步至您華為帳號登入的其他裝置上。"
+      "value": "透過華為雲端同步應用資料，資料將自動同步至您華為帳號登入的其他裝置，換機時也可自動恢復。"
     },
     {
       "name": "data_rdb_sync_details",
-      "value": "同步詳情"
+      "value": "跨裝置同步詳情"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "華為雲端同步詳情"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "同步狀態"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "上次同步時間"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "從未同步"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "雲端資料大小"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "已同步令牌數"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "資料加密"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "網路要求"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "僅Wi-Fi"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "華為帳號"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "未登入"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "計算中..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "已啟用"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "未啟用"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "清空雲端儲存"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "清空雲端儲存？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "此操作將永久刪除華為雲端上的所有已同步資料，且無法恢復。確認要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "請先關閉雲端同步後再清空雲端儲存。"
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "雲端儲存已清空"
+    },
+    {
+      "name": "cloud_sync_encryption_master_key",
+      "value": "主密碼加密"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "未加密"
+    },
+    {
+      "name": "cloud_sync_require_master_key_title",
+      "value": "需要設定主密碼"
+    },
+    {
+      "name": "cloud_sync_require_master_key_msg",
+      "value": "雲端備份需要主密碼來加密您的資料以確保安全。請先設定主密碼。"
+    },
+    {
+      "name": "cloud_sync_require_master_key_set",
+      "value": "去設定"
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "備份歷史"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "查看、恢復或刪除雲端備份"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "暫無備份記錄"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "最多保留5份備份，每天一份"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d 個令牌"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "恢復備份"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "確定恢復 %s 的備份？目前資料將被替換。"
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "備份恢復成功"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "備份恢復失敗"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "刪除備份"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "確定刪除 %s 的備份？此操作不可撤銷。"
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "備份刪除成功"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "備份刪除失敗"
     },
     {
       "name": "data_kv_sync_time",

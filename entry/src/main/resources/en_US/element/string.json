@@ -230,15 +230,163 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "Cloud Sync"
+      "value": "Huawei Cloud Sync"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "Data will be synced via Huawei Cloud to other devices logged into your Huawei account."
+      "value": "Sync app data via Huawei Cloud. Data will be synced to other devices logged into your Huawei account, and auto-restored when switching devices."
     },
     {
       "name": "data_rdb_sync_details",
-      "value": "Sync Details"
+      "value": "Cross-device Sync Details"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "Huawei Cloud Sync Details"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "Sync Status"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "Last Sync Time"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "Never synced"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "Cloud Data Size"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "Synced Tokens"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "Data Encryption"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "Network Requirement"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "Wi-Fi Only"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "Huawei Account"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "Not logged in"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "Calculating..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "Enabled"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "Disabled"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "Clear Cloud Storage"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "Clear Cloud Storage?"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "This will permanently delete all synced data from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "Please disable cloud sync before clearing cloud storage."
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "Cloud storage cleared"
+    },
+    {
+      "name": "cloud_sync_encryption_master_key",
+      "value": "Master Password Encryption"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "Not Encrypted"
+    },
+    {
+      "name": "cloud_sync_require_master_key_title",
+      "value": "Master Password Required"
+    },
+    {
+      "name": "cloud_sync_require_master_key_msg",
+      "value": "Cloud backup requires a master password to encrypt your data. Please set a master password first."
+    },
+    {
+      "name": "cloud_sync_require_master_key_set",
+      "value": "Set Master Password"
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "Backup History"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "View, restore or delete cloud backups"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "No backup records"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "Up to 5 backup copies, one per day"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d tokens"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "Restore Backup"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "Restore backup from %s? Current data will be replaced."
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "Backup restored successfully"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "Failed to restore backup"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "Delete Backup"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "Delete backup from %s? This cannot be undone."
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "Backup deleted successfully"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "Failed to delete backup"
     },
     {
       "name": "data_kv_sync_time",

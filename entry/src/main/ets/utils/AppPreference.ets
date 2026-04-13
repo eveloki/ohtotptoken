@@ -69,6 +69,8 @@ export enum PREF_KEYS {
   DB_RDS_SYNC_ENABLE = 'app_db_rds_sync_enable',
   /** RDB云端同步开关 */
   DB_RDS_CLOUD_SYNC_ENABLE = 'app_db_rds_cloud_sync_enable',
+  /** 云端同步最后时间 */
+  CLOUD_SYNC_LAST_TIME = 'app_cloud_sync_last_time',
   /** KV数据库同步时间 */
   DB_KV_SYNC_TIME = 'app_db_kv_sync_time',
   /** KV数据库归档时间 */
@@ -287,6 +289,10 @@ export enum ROUTE_NAMES {
   AppearancePage = 'AppearancePage',
   /** 数据同步详情页面 */
   ShowDataSyncDetailsPage = 'ShowDataSyncDetailsPage',
+  /** 华为云同步详情页面 */
+  ShowCloudSyncDetailsPage = 'ShowCloudSyncDetailsPage',
+  /** 云端备份历史页面 */
+  ShowCloudBackupHistoryPage = 'ShowCloudBackupHistoryPage',
   /** 展示验证码页面 */
   ShowCodePage = 'ShowCodePage',
   /** 隐私政策页面 */
@@ -327,6 +333,8 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED, 0],
     // 数据库是否启用云同步
     [PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false],
+    // 云端同步最后时间
+    [PREF_KEYS.CLOUD_SYNC_LAST_TIME, ''],
     // 数据库是否启用跨设备流转
     [PREF_KEYS.DB_RDS_SYNC_ENABLE, false],
     // kv数据库同步时间

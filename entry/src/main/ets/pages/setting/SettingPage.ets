@@ -24,6 +24,8 @@ import { MasterKeyPage } from '../MasterKeyPage';
 import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
 import { AppearancePage } from '../AppearancePage';
 import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
+import { ShowCloudSyncDetailsPage } from '../ShowCloudSyncDetailsPage';
+import { ShowCloudBackupHistoryPage } from '../ShowCloudBackupHistoryPage';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
 
@@ -82,6 +84,10 @@ export struct SettingPage {
       "Github: andOTP/andOTP - Icons";
     this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
       this.is_master_key_set = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
+      if (this.is_master_key_set && !this.RdbCloudSyncEnable) {
+        this.RdbCloudSyncEnable = true;
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, true);
+      }
     })
   }
 
@@ -278,6 +284,10 @@ export struct SettingPage {
       AppearancePage()
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
+      ShowCloudSyncDetailsPage()
+    } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
+      ShowCloudBackupHistoryPage()
     } else if (name === ROUTE_NAMES.PrivacyPage) {
       PrivacyPage()
     } else if (name === ROUTE_NAMES.AgreementPage) {
@@ -550,31 +560,45 @@ export struct SettingPage {
 
               SubItemDivider()
 
-              SubItemToggle({
-                icon: $r('sys.symbol.icloud'),
-                title: $r('app.string.data_rdb_cloud_sync'),
-                isOn: this.RdbCloudSyncEnable as boolean,
-                description: $r('app.string.data_rdb_cloud_sync_des'),
-                disable: true,
-                onChange: (IsOn: boolean) => {
-                  if (IsOn) {
-                    PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
-                  }
-                  this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
-                }
-              })
-                .visibility(Visibility.None)
-
-              SubItemDivider()
-                .visibility(Visibility.None)
-
               SubItemButton({
                 symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                 text: $r('app.string.data_rdb_sync_details')
               })
                 .onClick(throttle((event) => {
                     this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage,null);
+                }, 1000))
+            }
+          }
+          .padding({ left: 10, right: 10 })
+
+          ListItem() {
+            SettingItem({ title: "" }) {
+              SubItemToggle({
+                icon: $r('sys.symbol.icloud'),
+                title: $r('app.string.data_rdb_cloud_sync'),
+                isOn: this.RdbCloudSyncEnable as boolean,
+                description: $r('app.string.data_rdb_cloud_sync_des'),
+                onChange: (IsOn: boolean) => {
+                  if (IsOn) {
+                    if (!this.is_master_key_set) {
+                      this.RdbCloudSyncEnable = false;
+                      this.showCloudSyncMasterKeyDialog();
+                      return;
+                    }
+                  }
+                  this.RdbCloudSyncEnable = IsOn;
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemButton({
+                symbol: $r('sys.symbol.icloud'),
+                text: $r('app.string.data_huawei_cloud_sync_details')
+              })
+                .onClick(throttle((event) => {
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowCloudSyncDetailsPage, null);
                 }, 1000))
             }
           }
@@ -678,5 +702,30 @@ export struct SettingPage {
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
     .navDestination(this.navDestinationBuilder)
+  }
+
+  private showCloudSyncMasterKeyDialog(): void {
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.cloud_sync_require_master_key_title'),
+      message: $r('app.string.cloud_sync_require_master_key_msg'),
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.cloud_sync_require_master_key_set'),
+          action: () => {
+            this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage, null);
+          }
+        },
+        {
+          value: $r('app.string.dialog_btn_cancel'),
+          action: () => {}
+        },
+      ],
+      cancel: () => {},
+    });
   }
 }
