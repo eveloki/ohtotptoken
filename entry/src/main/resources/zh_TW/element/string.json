@@ -869,12 +869,12 @@
       "value": "問卷回饋"
     },
     {
-      "name": "feedback_qq_group",
-      "value": "回饋QQ群"
-    },
-    {
       "name": "feedback_github",
       "value": "GitHub回饋"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "建議與回饋"
     }
   ]
 }

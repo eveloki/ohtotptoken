@@ -1,8 +1,10 @@
+import { LengthMetrics } from '@kit.ArkUI';
 
 @Preview
 @ComponentV2
 export struct SubItemButton {
   @Param symbol: Resource | undefined = $r('sys.symbol.tip_fit_test');
+  @Param icon: Resource | undefined = undefined;
   @Require @Param text: ResourceStr | string = 'TEST';
   @Param description: string  | Resource = '';
   @Param descriptionColor: ResourceColor = $r('sys.color.ohos_id_color_text_secondary');
@@ -10,10 +12,17 @@ export struct SubItemButton {
   build() {
     Column() {
       Row({ space: 10 }) {
-        SymbolGlyph(this.symbol)
-          .fontSize(20)
-          .fontWeight(FontWeight.Medium)
-          .fontColor([$r('app.color.str_main')])
+        if (this.icon !== undefined) {
+          Image(this.icon)
+            .width(LengthMetrics.vp(20).value)
+            .height(LengthMetrics.vp(20).value)
+            .fillColor($r('app.color.str_main'))
+        } else {
+          SymbolGlyph(this.symbol)
+            .fontSize(LengthMetrics.vp(20).value)
+            .fontWeight(FontWeight.Medium)
+            .fontColor([$r('app.color.str_main')])
+        }
         Column({ space: 4 }) {
           Text(this.text)
             .fontSize($r('sys.float.ohos_id_text_size_body1'))

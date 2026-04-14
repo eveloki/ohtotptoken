@@ -1,6 +1,5 @@
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
-import { SubItemDivider } from '../../components/SubItemDivider';
 import { common } from '@kit.AbilityKit';
 import { throttle, startBrowsableAbility } from '../../utils/UiUtils';
 import { ROUTE_NAMES, EXTERNAL_URLS } from '../../utils/AppPreference';
@@ -23,7 +22,7 @@ export struct FeedbackSheet {
   build() {
     Navigation(this.pageInfos) {
       Column() {
-        Text($r('app.string.app_issue_feedback'))
+        Text($r('app.string.setting_feedback'))
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
           .padding({
@@ -44,20 +43,8 @@ export struct FeedbackSheet {
                   this.pageInfos.pushPathByName(ROUTE_NAMES.FeedbackPage, null);
                 }, 1000))
 
-              SubItemDivider()
-
               SubItemButton({
-                symbol: $r("sys.symbol.person_2"),
-                text: $r('app.string.feedback_qq_group')
-              })
-                .onClick(throttle((event) => {
-                  startBrowsableAbility(this.appCtx, EXTERNAL_URLS.FEEDBACK_QQ_GROUP);
-                }, 1000))
-
-              SubItemDivider()
-
-              SubItemButton({
-                symbol: $r("sys.symbol.chevron_left_circle"),
+                icon: $r('app.media.github_logo'),
                 text: $r('app.string.feedback_github')
               })
                 .onClick(throttle((event) => {

@@ -308,8 +308,6 @@ export enum ROUTE_NAMES {
 export enum EXTERNAL_URLS {
   /** 问卷反馈 */
   FEEDBACK_SURVEY = 'https://wj.qq.com/s2/24518107/2b26/',
-  /** 反馈QQ群 */
-  FEEDBACK_QQ_GROUP = 'https://qm.qq.com/cgi-bin/qm/qr?k=pEChk7DRZB0uSKJhPBgCqG6C98xjlfbx&jump_from=webapi&authKey=1ea6AhefdUGzJ4OTisbXM6PkKPA4VulIFq1bRUnwvLOZfDhHL7GtoMmj4ph3OonT',
   /** GitHub反馈 */
   FEEDBACK_GITHUB = 'https://github.com/SolidFaker/ohtotptoken/issues',
 }

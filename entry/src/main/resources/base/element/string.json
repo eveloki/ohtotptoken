@@ -817,12 +817,12 @@
       "value": "Survey Feedback"
     },
     {
-      "name": "feedback_qq_group",
-      "value": "QQ Group Feedback"
-    },
-    {
       "name": "feedback_github",
       "value": "GitHub Feedback"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "Suggest & Feedback"
     }
   ]
 }
