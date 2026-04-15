@@ -7,6 +7,7 @@ import { AppearanceSheet } from '../pages/setting/AppearanceSheet'
 import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
 import { AgreementSheet } from '../pages/setting/AgreementSheet'
 import { AboutSheet } from '../pages/setting/AboutSheet'
+import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
 import { util } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -33,6 +34,7 @@ import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCodePage } from './ShowCodePage';
 import { PrivacyPage } from './PrivacyPage';
 import { AgreementPage } from './AgreementPage';
+import { FeedbackPage } from './FeedbackPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
@@ -68,6 +70,7 @@ struct Index {
   @Local isDataSyncSheetVisible: boolean = false;
   @Local isAgreementSheetVisible: boolean = false;
   @Local isAboutSheetVisible: boolean = false;
+  @Local isFeedbackSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
@@ -487,6 +490,12 @@ struct Index {
   }
 
   @Builder
+  FeedbackSheetBuilder() {
+    FeedbackSheet()
+      .height('100%')
+  }
+
+  @Builder
   AppLockOverlayBuilder() {
     AppLockOverlay({
       onUnlock: () => {
@@ -644,6 +653,34 @@ struct Index {
           })
       }
 
+      // 建议与反馈入口
+      ListItem() {
+        HdsListItemCard({
+          cardBackgroundColor: $r('app.color.item_bg'),
+          cardHeight: this.token_preference.app_appearance_item_height,
+          prefixItem: new PrefixIcon({
+            iconSize: IconSize.SYSTEM_ICON,
+            iconValue: {
+              symbol: $r('sys.symbol.envelope')
+            }
+          }),
+          textItem: {
+            primaryText: {
+              text: $r('app.string.setting_feedback')
+            }
+          },
+          suffixItem: new SuffixArrow({}),
+          onClick: () => {
+            this.isFeedbackSheetVisible = true;
+          }
+        })
+          .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(), {
+            detents: [SheetSize.LARGE],
+            preferType: SheetType.BOTTOM,
+            dragBar: true,
+          })
+      }
+
       // 关于入口
       ListItem() {
         HdsListItemCard({
@@ -700,6 +737,8 @@ struct Index {
       PrivacyPage()
     } else if (name === ROUTE_NAMES.AgreementPage) {
       AgreementPage()
+    } else if (name === ROUTE_NAMES.FeedbackPage) {
+      FeedbackPage()
     }
   }
 

@@ -863,6 +863,18 @@
     {
       "name": "setting_bottom_tabs_type_suspension",
       "value": "Suspension"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "Survey Feedback"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub Feedback"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "Suggest & Feedback"
     }
   ]
 }

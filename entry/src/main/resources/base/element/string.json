@@ -811,6 +811,18 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "Sync tokens from other devices"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "Survey Feedback"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub Feedback"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "Suggest & Feedback"
     }
   ]
 }
