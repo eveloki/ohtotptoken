@@ -269,15 +269,10 @@ export struct TokenListPage {
           ListItemGroup() {
             ListItem() {
               Column() {
-                if (this.TabBarVisible) {
-                  Row()
-                    .height(60 + this.appTopAvoidHeight)
-                    .width('100%')
-                } else {
-                  Row()
-                    .height(this.appTopAvoidHeight)
-                    .width('100%')
-                }
+                Row()
+                  .height(60 + this.appTopAvoidHeight)
+                  .width('100%')
+                
                 Stack({ alignContent: Alignment.End }) {
                   TextInput({
                     placeholder: $r('app.string.token_search_placeholder'),
@@ -372,7 +367,7 @@ export struct TokenListPage {
 
           ListItem() {
             Row()
-              .height(this.TabBarVisible ? (50 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .height(this.TabBarVisible ? (120 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
               .width('100%')
           }
           .selectable(false)
