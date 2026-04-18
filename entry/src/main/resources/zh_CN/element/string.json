@@ -1011,6 +1011,18 @@
     {
       "name": "setting_bottom_tabs_type_suspension",
       "value": "悬浮"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "问卷反馈"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub反馈"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "建议与反馈"
     }
   ]
 }
