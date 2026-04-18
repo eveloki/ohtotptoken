@@ -97,9 +97,9 @@ export function requireUserAuth(ctx: Context): void {
         hilog.info(0, 'AppLockPage', `userAuthInstance callback result: ${JSON.stringify(result)}`);
         // 可在认证结束或其他业务需要场景，取消订阅认证结果
         if (result.result == userAuth.UserAuthResultCode.SUCCESS) {
-          // 判断验证结果是否正确 只有正确验证了才能跳跃到首页
           if (ctx.eventHub != undefined) {
-            router.pushUrl({ url: ROUTE_NAMES.IndexPage });
+            AppStorage.setOrCreate('app_lock_need_show', false);
+            router.replaceUrl({ url: ROUTE_NAMES.IndexPage });
           }
         }
         userAuthInstance.off('result');

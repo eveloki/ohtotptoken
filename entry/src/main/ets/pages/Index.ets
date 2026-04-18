@@ -995,6 +995,8 @@ struct Index {
     .navDestination(this.navDestinationBuilder)
     .bindContentCover($$this.isAppLockOverlayVisible, this.AppLockOverlayBuilder(), {
       modalTransition: ModalTransition.NONE,
+      onWillDismiss: (dismissContentCoverAction: DismissContentCoverAction) => {
+      },
     })
   }
 }
