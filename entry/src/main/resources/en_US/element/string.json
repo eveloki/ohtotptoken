@@ -217,6 +217,10 @@
       "value": "For seamless transfer across multiple devices."
     },
     {
+      "name": "cloud_file_sync_reason",
+      "value": "Used for cloud backup and sync of token data."
+    },
+    {
       "name": "data_sync",
       "value": "Data Sync"
     },

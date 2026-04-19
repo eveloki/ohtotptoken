@@ -217,6 +217,10 @@
       "value": "用於多裝置自由流轉."
     },
     {
+      "name": "cloud_file_sync_reason",
+      "value": "用於令牌資料的雲端備份和同步。"
+    },
+    {
       "name": "data_sync",
       "value": "資料同步"
     },

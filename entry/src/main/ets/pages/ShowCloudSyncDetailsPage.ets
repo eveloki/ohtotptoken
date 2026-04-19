@@ -1,3 +1,37 @@
+/*
+ * Copyright (c) 2023-2024 ohtotptoken Project Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * 华为云同步详情页面
+ * 
+ * 显示云同步相关状态信息和提供操作入口：
+ * - 同步状态：显示是否启用云同步
+ * - 华为账号：显示登录状态
+ * - 最后同步时间：显示上次同步时间
+ * - 同步令牌数量：显示已同步的令牌数量
+ * - 数据大小：显示云端数据大小
+ * - 加密方式：显示是否使用主密码加密
+ * - 网络要求：显示仅在 WiFi 下同步
+ * - 手动同步：触发立即备份到云端
+ * - 备份历史：查看、恢复、删除历史备份
+ * - 清空云存储：删除所有云端备份
+ * - 设备信息：显示设备名称和设备ID
+ * 
+ * @module ShowCloudSyncDetailsPage
+ */
+
 import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
@@ -10,18 +44,32 @@ import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 
+/**
+ * 华为云同步详情页面组件
+ */
 @Entry
 @Preview
 @ComponentV2
 export struct ShowCloudSyncDetailsPage {
+  /** 导航栈 */
   pageInfos: NavPathStack | null = null;
+  /** 云同步是否启用 */
   @Local cloudSyncEnabled: SettingValue = false;
+  /** 是否已设置主密码 */
   @Local masterKeySet: boolean = false;
+  /** 最后同步时间 */
   @Local lastSyncTime: string = '';
+  /** 令牌数量 */
   @Local tokenCount: number = 0;
+  /** 是否正在加载/同步 */
   @Local Is_loaded: boolean = false;
+  /** 窗口信息 */
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
+  /**
+   * 页面即将显示时调用
+   * 初始化页面状态数据
+   */
   aboutToAppear(): void {
     this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     this.masterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
@@ -180,7 +228,7 @@ export struct ShowCloudSyncDetailsPage {
                     })
                       .onClick(() => {
                         this.Is_loaded = true;
-                        this.triggerMockCloudSync();
+                        this.triggerCloudSync();
                       })
                   }
                 }
@@ -189,7 +237,7 @@ export struct ShowCloudSyncDetailsPage {
                 ListItem() {
                   SettingItem({ title: '' }) {
                     SubItemButton({
-                      symbol: $r('sys.symbol.clock_arrow_circlepath'),
+                      symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                       text: $r('app.string.cloud_backup_history_title'),
                       description: $r('app.string.cloud_backup_history_subtitle')
                     })
@@ -264,6 +312,12 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
+  /**
+   * 显示清空云存储确认对话框
+   * 
+   * 如果云同步已启用，则提示用户先禁用云同步
+   * 否则显示确认对话框，用户确认后执行清空操作
+   */
   private showClearCloudStorageDialog(): void {
     if (this.cloudSyncEnabled) {
       showSnackBar($r('app.string.cloud_sync_clear_storage_disabled_msg'), SnackBarNotifyType.WARNING);
@@ -281,7 +335,7 @@ export struct ShowCloudSyncDetailsPage {
         {
           value: $r('app.string.dialog_btn_confirm'),
           action: () => {
-            this.triggerMockClearCloudStorage();
+            this.triggerClearCloudStorage();
           }
         },
         {
@@ -293,7 +347,12 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
-  private triggerMockCloudSync(): void {
+  /**
+   * 触发云端备份
+   * 调用 CloudBackupManager.backupToCloud() 备份令牌数据到云端
+   * 备份完成后更新最后同步时间
+   */
+  private triggerCloudSync(): void {
     CloudBackupManager.getInstance().backupToCloud().then(success => {
       this.Is_loaded = false;
       if (success) {
@@ -302,7 +361,12 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
-  private triggerMockClearCloudStorage(): void {
+  /**
+   * 触发清空云存储
+   * 调用 CloudBackupManager.clearCloudStorage() 删除所有云端备份
+   * 清空完成后重置最后同步时间并显示成功提示
+   */
+  private triggerClearCloudStorage(): void {
     this.Is_loaded = true;
     CloudBackupManager.getInstance().clearCloudStorage().then(() => {
       this.Is_loaded = false;

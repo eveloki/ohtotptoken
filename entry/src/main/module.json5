@@ -62,6 +62,26 @@
           ],
           "when": "inuse"
         }
+      },
+      {
+        "name": "ohos.permission.CLOUDFILE_SYNC",
+        "reason": "$string:cloud_file_sync_reason",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.CLOUDFILE_SYNC_MANAGER",
+        "reason": "$string:cloud_file_sync_reason",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "inuse"
+        }
       }
     ],
     "deliveryWithInstall": true,

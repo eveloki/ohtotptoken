@@ -52,7 +52,7 @@ export struct ShowCloudBackupHistoryPage {
             Column() {
               if (this.backupRecords.length === 0 && !this.isLoading) {
                 Column() {
-                  SymbolGlyph($r('sys.symbol.tray'))
+                  SymbolGlyph($r('sys.symbol.rectangle_split_3x1'))
                     .fontSize(48)
                     .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
                   Text($r('app.string.cloud_backup_history_empty'))
@@ -155,7 +155,7 @@ export struct ShowCloudBackupHistoryPage {
         .alignItems(HorizontalAlign.Start)
 
         Row({ space: 6 }) {
-          SymbolGlyph($r('sys.symbol.arrow_turn_down'))
+          SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
             .fontSize(20)
             .fontColor([$r('app.color.str_main')])
             .onClick(() => {
@@ -176,7 +176,7 @@ export struct ShowCloudBackupHistoryPage {
       .alignItems(VerticalAlign.Center)
 
       Row() {
-        SymbolGlyph($r('sys.symbol.device_phone_portrait'))
+        SymbolGlyph($r('sys.symbol.icloud'))
           .fontSize(12)
           .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
         Text(record.deviceName)

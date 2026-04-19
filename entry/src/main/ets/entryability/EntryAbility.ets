@@ -10,6 +10,7 @@ import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference, SettingColorMode, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 
 //单版本分布式键值数据库
 let rdbStore: relationalStore.RdbStore | null = null;
@@ -46,6 +47,9 @@ export default class EntryAbility extends UIAbility {
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
       AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
+
+    // 初始化设备信息（根据华为文档，建议只调用一次）
+    DeviceInfoHelper.getInstance().init();
 
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {

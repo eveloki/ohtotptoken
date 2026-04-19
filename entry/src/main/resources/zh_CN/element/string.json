@@ -217,6 +217,10 @@
       "value": "用于多设备自由流转."
     },
     {
+      "name": "cloud_file_sync_reason",
+      "value": "用于令牌数据的云端备份和同步。"
+    },
+    {
       "name": "data_sync",
       "value": "数据同步"
     },
