@@ -127,11 +127,13 @@ export struct ArcTokenIcon {
             .width(this.token_preference.app_appearance_logo_size)
             .fillColor(this.token_preference.app_appearance_logo_dark_filter_color)
             .objectFit(ImageFit.Contain)
+            .borderRadius(20)
         } else {
           Image(this.icon)
             .height(this.token_preference.app_appearance_logo_size)
             .width(this.token_preference.app_appearance_logo_size)
             .objectFit(ImageFit.Contain)
+            .borderRadius(20)
         }
       }
     }

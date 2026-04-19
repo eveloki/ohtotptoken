@@ -315,6 +315,18 @@ export class UserAddedIconPack {
     fs.copyFileSync(file.fd, this.user_icon_path + "/" + file.name);
   }
 
+  /**
+   * 通过路径添加已复制的图标（用于裁剪后的图标和直接复制的小图标）
+   * 与 addIcon(fileIo.File) 不同，此方法跳过文件复制，直接注册路径
+   * @param iconPath 已存在于用户图标目录的文件路径（file://前缀）
+   */
+  public addIconByPath(iconPath: string): void {
+    this.latest_icon_path = iconPath;
+    if (this.icon_path.findIndex(_ => _ === iconPath) < 0) {
+      this.icon_path.push(iconPath);
+    }
+  }
+
   public removeIcon(path: string): void {
     this.icon_path = this.icon_path.filter(_ => _ !== path);
     fs.unlink(path.slice(7));

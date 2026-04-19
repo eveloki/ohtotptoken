@@ -1,12 +1,12 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
-import { deviceInfo } from '@kit.BasicServicesKit';
 import { AppPreference, SettingValue, PREF_KEYS } from '../utils/AppPreference';
 import { SubItemButton } from '../components/SubItemButton';
 import { TokenStore } from '../utils/TokenStore';
 import { SubItemDivider } from '../components/SubItemDivider';
 import { AppWindowInfo } from '../entryability/EntryAbility';
+import { DeviceInfoHelper,DeviceInfoData } from '../utils/DeviceInfoHelper';
 
 @Entry
 @Preview
@@ -17,6 +17,8 @@ export struct ShowDataSyncDetailsPage {
   @Local AppDbKVArchiveTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local deviceName: string = '';
+  @Local deviceId: string = '';
 
   aboutToAppear(): void {
     this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
@@ -27,6 +29,10 @@ export struct ShowDataSyncDetailsPage {
     if (this.AppDbKVArchiveTime == '' || this.AppDbKVArchiveTime == null) {
       this.AppDbKVArchiveTime = 'invalid';
     }
+
+    const deviceInfo:DeviceInfoData = DeviceInfoHelper.getInstance().getDeviceInfo();
+    this.deviceName = deviceInfo.marketName;
+    this.deviceId = deviceInfo.odid;
   }
 
   build() {
@@ -59,7 +65,7 @@ export struct ShowDataSyncDetailsPage {
               ListItem() {
                 SettingItem({ title: $r('app.string.data_dev_info') }) {
                   Row() {
-                    Text(deviceInfo.marketName)
+                    Text(this.deviceName)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
@@ -70,7 +76,7 @@ export struct ShowDataSyncDetailsPage {
                   SubItemDivider()
 
                   Row() {
-                    Text(deviceInfo.ODID)
+                    Text(this.deviceId)
                       .fontSize($r('sys.float.ohos_id_text_size_body2'))
                       .fontColor($r('sys.color.ohos_id_color_text_primary'))
                       .fontWeight(FontWeight.Medium)
