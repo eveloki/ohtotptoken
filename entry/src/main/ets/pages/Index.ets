@@ -962,6 +962,7 @@ struct Index {
         .vertical(false)
         .barHeight(50 + this.window.AvoidBottomHeight)
         .barMode(BarMode.Fixed)
+        .animationDuration(300)
         .onChange((index) => {
           this.tab_bar_index = index;
         })
