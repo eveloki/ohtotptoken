@@ -42,7 +42,8 @@ import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
   PrefixIcon,
   IconSize,
-  SuffixArrow} from '@kit.UIDesignKit';
+  SuffixArrow,
+  hdsMaterial} from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 import { LengthMetrics } from '@kit.ArkUI';
 import { testProtobufToJson } from '../utils/GoogleAuthUtils';
@@ -782,6 +783,10 @@ struct Index {
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType,
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
           }
         },
         content: {
@@ -833,6 +838,10 @@ struct Index {
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType // 渐变模糊
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
           }
         },
         content: {
@@ -881,6 +890,10 @@ struct Index {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 渐变模糊
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
                 }
               },
               content: {
@@ -911,8 +924,7 @@ struct Index {
               selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
             },
             $r('app.string.tab_token'))
-            .verticalAlign(VerticalAlign.Top)
-            .padding({top: LengthMetrics.vp(10)})
+            .verticalAlign(VerticalAlign.Center)
           )
           .tabIndex(0)
 
@@ -928,6 +940,10 @@ struct Index {
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
                 }
               },
               content: {
@@ -947,8 +963,7 @@ struct Index {
               selected: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
             },
             $r('app.string.tab_me'))
-            .verticalAlign(VerticalAlign.Top)
-            .padding({top:  LengthMetrics.vp(10)})
+            .verticalAlign(VerticalAlign.Center)
           )
           .tabIndex(1)
         }
@@ -959,8 +974,14 @@ struct Index {
         .barBackgroundColor(Color.Transparent)
         .barBackgroundBlurStyle(BlurStyle.Regular)
         .barPosition(BarPosition.End)
+        .barFloatingStyle({
+          barBottomMargin: 28,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        })
         .vertical(false)
-        .barHeight(50 + this.window.AvoidBottomHeight)
         .barMode(BarMode.Fixed)
         .animationDuration(300)
         .onChange((index) => {
