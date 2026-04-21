@@ -39,20 +39,42 @@ export struct SubItemEnumSelect {
 
   build() {
     Column() {
-      Row({ space: 10 }) {
-        if (this.icon != undefined) {
-          SymbolGlyph(this.icon)
-            .fontSize(20)
-            .fontWeight(FontWeight.Medium)
-            .fontColor([$r('app.color.str_main')])
-        }
-        Text(this.title)
-          .fontSize($r('sys.float.ohos_id_text_size_body1'))
-          .fontColor($r('sys.color.ohos_id_color_text_primary'))
-          .fontWeight(FontWeight.Regular)
-          .textAlign(TextAlign.Start)
+      Row({ space: 12 }) {
+        Column({ space: 4 }) {
+          Row({ space: 10 }) {
+            if (this.icon != undefined) {
+              SymbolGlyph(this.icon)
+                .fontSize(20)
+                .fontWeight(FontWeight.Medium)
+                .fontColor([$r('app.color.str_main')])
+            }
 
-        Blank()
+            Text(this.title)
+              .fontSize($r('sys.float.ohos_id_text_size_body1'))
+              .fontColor($r('sys.color.ohos_id_color_text_primary'))
+              .fontWeight(FontWeight.Regular)
+              .textAlign(TextAlign.Start)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+          }
+          .width('100%')
+          .alignItems(VerticalAlign.Center)
+
+          if (this.description != '') {
+            Text(this.description)
+              .fontSize($r('sys.float.ohos_id_text_size_body2'))
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontWeight(FontWeight.Regular)
+              .fontFamily('HarmonyHeiTi')
+              .lineHeight(19)
+              .textAlign(TextAlign.Start)
+              .maxLines(2)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
 
         Select(this.options.map((option: EnumSelectOption) => {
           return { value: option.label as string } as SelectOption;
@@ -68,15 +90,7 @@ export struct SubItemEnumSelect {
           })
       }
       .width('100%')
-      if (this.description != '') {
-        Text(this.description)
-          .fontSize($r('sys.float.ohos_id_text_size_body2'))
-          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-          .fontWeight(FontWeight.Regular)
-          .fontFamily('HarmonyHeiTi')
-          .lineHeight(19)
-          .width('100%')
-      }
+      .alignItems(VerticalAlign.Center)
     }
     .padding(10)
   }

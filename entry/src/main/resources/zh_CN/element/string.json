@@ -826,7 +826,7 @@
     },
     {
       "name": "setting_top_effect_type_desc",
-      "value": "控制顶部模糊效果的类型"
+      "value": "控制顶部模糊效果的类型。"
     },
     {
       "name": "setting_top_effect_type_disable",

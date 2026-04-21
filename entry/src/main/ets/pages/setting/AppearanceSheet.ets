@@ -106,6 +106,23 @@ export struct AppearanceSheet {
 
             SubItemDivider()
 
+            SubItemEnumSelect({
+              icon: $r('sys.symbol.slider_horizontal_2'),
+              title: $r('app.string.setting_top_effect_type'),
+              options: AVAILABLE_TOP_EFFECT_TYPES,
+              description: $r('app.string.setting_top_effect_type_desc'),
+              selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as number ??
+                SettingTopEffectType.GRADUAL_BLUR,
+              onChange: (value: number) => {
+                AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, value);
+                if (this.appCtx.eventHub != undefined) {
+                  this.appCtx.eventHub.emit(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED);
+                }
+              }
+            })
+
+            SubItemDivider()
+
             SubItemIconManager()
 
             SubItemDivider()
@@ -117,36 +134,8 @@ export struct AppearanceSheet {
               .onClick(throttle((event) => {
                 this.pageInfos.pushPathByName(ROUTE_NAMES.AppearancePage, null);
               }, 1000))
-            SubItemDivider()
-
-            SubItemEnumSelect({
-              icon: $r('sys.symbol.slider_horizontal_2'),
-              title: $r('app.string.setting_top_effect_type'),
-              options: AVAILABLE_TOP_EFFECT_TYPES,
-              description: $r('app.string.setting_top_effect_type_desc'),
-              selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as number ??
-              SettingTopEffectType.GRADUAL_BLUR,
-              onChange: (value: number) => {
-                AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, value);
-                if (this.appCtx.eventHub != undefined) {
-                  this.appCtx.eventHub.emit(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED);
-                }
-              }
-            })
 
             SubItemDivider()
-
-            SubItemEnumSelect({
-              icon: $r('sys.symbol.slider_horizontal_2'),
-              title: $r('app.string.setting_bottom_tabs_type'),
-              options: AVAILABLE_BOTTOM_TABS_TYPES,
-              description: $r('app.string.setting_bottom_tabs_type_desc'),
-              selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_BOTTOM_TABS_TYPE) as number ??
-              SettingBottomTabsType.FLATTEN,
-              onChange: (value: number) => {
-                AppPreference.setPreference(PREF_KEYS.APPEARANCE_BOTTOM_TABS_TYPE, value);
-              }
-            })
           }
         }
         .padding({ left: 10, right: 10 })
