@@ -112,7 +112,7 @@ export struct AppearanceSheet {
               options: AVAILABLE_TOP_EFFECT_TYPES,
               description: $r('app.string.setting_top_effect_type_desc'),
               selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as number ??
-                SettingTopEffectType.GRADUAL_BLUR,
+                SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR,
               onChange: (value: number) => {
                 AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, value);
                 if (this.appCtx.eventHub != undefined) {
