@@ -123,7 +123,7 @@ struct Index {
     // 依赖scrollEffectVersion以触发重新计算
     const _ = this.scrollEffectVersion;
     const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
-    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   }
 
   private appIsInit = false;
