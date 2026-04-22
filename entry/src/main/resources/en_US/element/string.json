@@ -970,11 +970,11 @@
     },
     {
       "name": "setting_top_effect_type",
-      "value": "Top Blur Type"
+      "value": "Title Bar Blur Type"
     },
     {
       "name": "setting_top_effect_type_desc",
-      "value": "Control the type of top blur effect"
+      "value": "Control the type of title bar blur effect"
     },
     {
       "name": "setting_top_effect_type_disable",

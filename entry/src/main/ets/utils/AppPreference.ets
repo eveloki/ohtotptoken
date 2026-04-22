@@ -83,8 +83,6 @@ export enum PREF_KEYS {
   APPEARANCE_SHOW_NEXT_TOKEN_ENABLE = 'app_appearance_show_next_token_enable',
   /** 握手感知开关 */
   APPEARANCE_HOLDING_HAND_ENABLE = 'app_appearance_holding_hand_enable',
-  /** 底部Tabs类型 */
-  APPEARANCE_BOTTOM_TABS_TYPE = 'app_appearance_bottom_tabs_type',
   /** 显示引导提示开关 */
   SHOW_GUIDE_TIPS = 'app_show_guide_tips',
   /** Token项目高度 */
@@ -404,8 +402,6 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.GRADIENT_BLUR],
-    // 外观-底部Tabs类型
-    [PREF_KEYS.APPEARANCE_BOTTOM_TABS_TYPE, SettingBottomTabsType.FLATTEN]
   ]);
 
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([

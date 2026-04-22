@@ -23,6 +23,11 @@ export struct ArcTokenIcon {
     return true;
   }
 
+  @Computed
+  get iconRadius(): number {
+    return TokenIconPacks.user_added_icon_packs.raster_icons.has(this.icon_path) ? 20 : 0;
+  }
+
   @Monitor("issuer")
   onStrChange(monitor: IMonitor) {
     monitor.dirty.forEach((path: string) => {
@@ -127,11 +132,13 @@ export struct ArcTokenIcon {
             .width(this.token_preference.app_appearance_logo_size)
             .fillColor(this.token_preference.app_appearance_logo_dark_filter_color)
             .objectFit(ImageFit.Contain)
+            .borderRadius(this.iconRadius)
         } else {
           Image(this.icon)
             .height(this.token_preference.app_appearance_logo_size)
             .width(this.token_preference.app_appearance_logo_size)
             .objectFit(ImageFit.Contain)
+            .borderRadius(this.iconRadius)
         }
       }
     }

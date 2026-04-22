@@ -38,3 +38,11 @@ Open source OTP Authenticator for HarmonyOS NEXT.
 - [andOTP/andOTP](https://github.com/andOTP/andOTP): icons
 - [iamhyc/Aigis](https://github.com/iamhyc/Aigis)
 - [nanopb/nanopb](https://github.com/nanopb/nanopb): protobuf for google authenticator migration
+
+## Contributors
+
+<a href="https://github.com/SolidFaker/ohtotptoken/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=SolidFaker/ohtotptoken" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
