@@ -1,5 +1,5 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../utils/TokenConfig';
 import { SettingPage } from '../pages/setting/SettingPage'
 import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
 import { SecuritySheet } from '../pages/setting/SecuritySheet'
@@ -902,6 +902,16 @@ struct Index {
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType,
@@ -957,6 +967,16 @@ struct Index {
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType // 渐变模糊
@@ -1020,6 +1040,16 @@ struct Index {
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 渐变模糊
@@ -1081,6 +1111,24 @@ struct Index {
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  },
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
+                scrollEffectStyle: {
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
