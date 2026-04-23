@@ -1,5 +1,5 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../utils/TokenConfig';
 import { SettingPage } from '../pages/setting/SettingPage'
 import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
 import { SecuritySheet } from '../pages/setting/SecuritySheet'
@@ -8,7 +8,7 @@ import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
 import { AgreementSheet } from '../pages/setting/AgreementSheet'
 import { AboutSheet } from '../pages/setting/AboutSheet'
 import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
-import { util } from '@kit.ArkTS';
+import { util, url } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
@@ -23,6 +23,7 @@ import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
@@ -39,19 +40,56 @@ import { AgreementPage } from './AgreementPage';
 import { FeedbackPage } from './FeedbackPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
-import { AppStorageV2, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
   PrefixIcon,
   IconSize,
-  SuffixArrow} from '@kit.UIDesignKit';
+  SuffixArrow,
+  hdsMaterial} from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
 import { LengthMetrics } from '@kit.ArkUI';
-import { testProtobufToJson } from '../utils/GoogleAuthUtils';
+import { decodeProtobuf } from '../utils/GoogleAuthUtils';
+import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
+import { URIConfigDialog } from '../dialogs/URIConfigDialog';
+import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
+import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
+import { ScanBarCode } from '../utils/TokenUtils';
 
 const TAG = 'PrivacySubscribe';
 
 let tkStore = TokenStore.getInstance();
+
+@Builder
+function TokenAddMenuBuilder(host: Index) {
+  Menu() {
+    MenuItem({ content: $r('app.string.app_scan_code') })
+      .onClick(() => {
+        host.start_quick_scan();
+      })
+      .accessibilityText($r('app.string.app_scan_code'))
+    MenuItem({ content: $r('app.string.tab_token_add_key') })
+      .onClick(() => {
+        host.openTotpAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_key'))
+    MenuItem({ content: $r('app.string.tab_token_add_uri') })
+      .onClick(() => {
+        host.openUriAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_uri'))
+    MenuItem({ content: $r('app.string.tab_token_add_forti_key') })
+      .onClick(() => {
+        host.openFortiAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_forti_key'))
+    MenuItem({ content: $r('app.string.tab_token_add_stream_key') })
+      .onClick(() => {
+        host.openSteamAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_stream_key'))
+  }
+}
 
 @Entry
 @ComponentV2
@@ -88,7 +126,7 @@ struct Index {
     // 依赖scrollEffectVersion以触发重新计算
     const _ = this.scrollEffectVersion;
     const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
-    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   }
 
   private appIsInit = false;
@@ -138,6 +176,11 @@ struct Index {
   })
 
   private backup_select_uri: string = '';
+  private readonly addTokenMenuTargetId: string = 'app_ua_add_token';
+  private dialog_uri_config?: CustomDialogController;
+  private dialog_totp_config?: CustomDialogController;
+  private dialog_forti_config?: CustomDialogController;
+  private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
@@ -190,7 +233,7 @@ struct Index {
         })
       }
     })
-
+    DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
@@ -210,6 +253,10 @@ struct Index {
         AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
       }
     })
+
+    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_QUICK_SCAN, () => {
+      this.start_quick_scan();
+    });
 
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
       this.backup_select_uri = uri;
@@ -390,6 +437,83 @@ struct Index {
       await this.updateTokenConfig(tokens[i], false);
     }
     showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+  }
+
+  private openAddTokenMenu(): void {
+    const uiContext = this.getUIContext();
+    const promptAction = uiContext.getPromptAction();
+    const contentNode = new ComponentContent(uiContext, wrapBuilder(TokenAddMenuBuilder), this);
+    try {
+      promptAction.openMenu(contentNode, { id: this.addTokenMenuTargetId }, {});
+    } catch (error) {
+      const err = error as BusinessError;
+      hilog.error(err.code, 'Index', `openAddTokenMenu failed: ${err.message}`);
+    }
+  }
+
+  start_quick_scan() {
+    ScanBarCode().then((code) => {
+      if (code.startsWith('otpauth-migration://offline?data=')) {
+        const data = new url.URLParams(url.URL.parseURL(code).search).get('data');
+        decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
+          this.updateTokenConfigs(confs);
+        });
+      } else if (code.startsWith('otpauth://')) {
+        this.dialog_totp_config = new CustomDialogController({
+          builder: TOTPConfigDialog({
+            scan_code_original_Value: code,
+            confirm: (new_conf) => {
+              this.updateTokenConfig(JSON.parse(new_conf), true)
+            }
+          })
+        })
+        this.dialog_totp_config.open()
+      }
+    });
+  }
+
+  openTotpAddDialog(): void {
+    this.dialog_totp_config = new CustomDialogController({
+      builder: TOTPConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_totp_config.open()
+  }
+
+  openUriAddDialog(): void {
+    this.dialog_uri_config = new CustomDialogController({
+      builder: URIConfigDialog({
+        confirm: (tokens) => {
+          this.updateTokenConfigs(tokens);
+        }
+      })
+    })
+    this.dialog_uri_config.open()
+  }
+
+  openFortiAddDialog(): void {
+    this.dialog_forti_config = new CustomDialogController({
+      builder: FortiConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_forti_config.open()
+  }
+
+  openSteamAddDialog(): void {
+    this.dialog_steam_config = new CustomDialogController({
+      builder: SteamConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_steam_config.open()
   }
 
   // 准备接入标准化隐私托管
@@ -781,13 +905,28 @@ struct Index {
         })
       }
       .bindToScrollable([this.arcTokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType,
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
           }
         },
         content: {
@@ -832,13 +971,28 @@ struct Index {
 
       }
       .bindToScrollable([this.tokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType // 渐变模糊
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
           }
         },
         content: {
@@ -854,6 +1008,17 @@ struct Index {
                   isEnabled: true,
                   action: () => {
                     if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
+                  }
+                }
+              },
+              {
+                content: {
+                  label: $r('app.string.app_ua_add_token'),
+                  icon: $r('sys.symbol.plus'),
+                  isEnabled: true,
+                  componentId: this.addTokenMenuTargetId,
+                  action: () => {
+                    this.openAddTokenMenu();
                   }
                 }
               }
@@ -880,13 +1045,28 @@ struct Index {
               })
             }
             .bindToScrollable([this.tokenListScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 渐变模糊
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
                 }
               },
               content: {
@@ -904,6 +1084,17 @@ struct Index {
                           if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
                         }
                       }
+                    },
+                    {
+                      content: {
+                        label: $r('app.string.app_ua_add_token'),
+                        icon: $r('sys.symbol.plus'),
+                        isEnabled: true,
+                        componentId: this.addTokenMenuTargetId,
+                        action: () => {
+                          this.openAddTokenMenu();
+                        }
+                      }
                     }
                   ]
                 }
@@ -917,8 +1108,7 @@ struct Index {
               selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
             },
             $r('app.string.tab_token'))
-            .verticalAlign(VerticalAlign.Top)
-            .padding({top: LengthMetrics.vp(10)})
+            .verticalAlign(VerticalAlign.Center)
           )
           .tabIndex(0)
 
@@ -927,13 +1117,36 @@ struct Index {
               this.SettingEntryCardBuilder()
             }
             .bindToScrollable([this.settingEntryScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  },
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
+                scrollEffectStyle: {
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
                 }
               },
               content: {
@@ -953,8 +1166,7 @@ struct Index {
               selected: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
             },
             $r('app.string.tab_me'))
-            .verticalAlign(VerticalAlign.Top)
-            .padding({top:  LengthMetrics.vp(10)})
+            .verticalAlign(VerticalAlign.Center)
           )
           .tabIndex(1)
         }
@@ -965,9 +1177,16 @@ struct Index {
         .barBackgroundColor(Color.Transparent)
         .barBackgroundBlurStyle(BlurStyle.Regular)
         .barPosition(BarPosition.End)
+        .barFloatingStyle({
+          barBottomMargin: 28,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        })
         .vertical(false)
-        .barHeight(50 + this.window.AvoidBottomHeight)
         .barMode(BarMode.Fixed)
+        .animationDuration(300)
         .onChange((index) => {
           this.tab_bar_index = index;
         })

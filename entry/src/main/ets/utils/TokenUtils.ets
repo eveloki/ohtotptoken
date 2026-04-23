@@ -296,6 +296,17 @@ export class UserAddedIconPack {
   public user_icon_path: string = '';
   public icon_path: string[] = [];
   public latest_icon_path: string = '';
+  /**
+   * 记录需要圆角显示的位图图标路径（裁剪后的PNG、直接复制的小位图等）
+   * SVG 矢量图标不加入此集合，因为它们有自身形状不适合强制圆角
+   * UI 层通过此集合判断是否添加 borderRadius
+   */
+  public raster_icons: Set<string> = new Set();
+
+  private isRasterFile(path: string): boolean {
+    const lower = path.toLowerCase();
+    return !lower.endsWith('.svg');
+  }
 
   public initIconPack(path: string): void {
     this.user_icon_path = path;
@@ -304,7 +315,11 @@ export class UserAddedIconPack {
     }
     fs.listFile(path).then((files) => {
       files.forEach((file) => {
-        this.icon_path.push("file://" + this.user_icon_path + "/" + file);
+        const fullPath = "file://" + this.user_icon_path + "/" + file;
+        this.icon_path.push(fullPath);
+        if (this.isRasterFile(file)) {
+          this.raster_icons.add(fullPath);
+        }
       })
     });
   }
@@ -312,11 +327,30 @@ export class UserAddedIconPack {
   public addIcon(file: fileIo.File): void {
     this.latest_icon_path = "file://" + this.user_icon_path + "/" + file.name;
     this.icon_path.push(this.latest_icon_path);
+    if (this.isRasterFile(file.name)) {
+      this.raster_icons.add(this.latest_icon_path);
+    }
     fs.copyFileSync(file.fd, this.user_icon_path + "/" + file.name);
+  }
+
+  /**
+   * 通过路径添加已复制的图标（用于裁剪后的图标和直接复制的小图标）
+   * 与 addIcon(fileIo.File) 不同，此方法跳过文件复制，直接注册路径
+   * @param iconPath 已存在于用户图标目录的文件路径（file://前缀）
+   */
+  public addIconByPath(iconPath: string): void {
+    this.latest_icon_path = iconPath;
+    if (this.icon_path.findIndex(_ => _ === iconPath) < 0) {
+      this.icon_path.push(iconPath);
+    }
+    if (this.isRasterFile(iconPath)) {
+      this.raster_icons.add(iconPath);
+    }
   }
 
   public removeIcon(path: string): void {
     this.icon_path = this.icon_path.filter(_ => _ !== path);
+    this.raster_icons.delete(path);
     fs.unlink(path.slice(7));
   }
 

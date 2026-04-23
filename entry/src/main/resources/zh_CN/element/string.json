@@ -526,7 +526,7 @@
     },
     {
       "name": "app_guide_msg",
-      "value": "点击下方+添加令牌"
+      "value": "点击右上角+添加令牌"
     },
     {
       "name": "setting_add_icon_pack",
@@ -978,7 +978,7 @@
     },
     {
       "name": "setting_top_effect_type_desc",
-      "value": "控制顶部模糊效果的类型"
+      "value": "控制顶部模糊效果的类型。"
     },
     {
       "name": "setting_top_effect_type_disable",
