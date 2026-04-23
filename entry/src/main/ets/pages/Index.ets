@@ -898,7 +898,8 @@ struct Index {
         })
       }
       .bindToScrollable([this.arcTokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
@@ -963,7 +964,8 @@ struct Index {
 
       }
       .bindToScrollable([this.tokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
@@ -1036,7 +1038,8 @@ struct Index {
               })
             }
             .bindToScrollable([this.tokenListScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
@@ -1107,7 +1110,8 @@ struct Index {
               this.SettingEntryCardBuilder()
             }
             .bindToScrollable([this.settingEntryScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
