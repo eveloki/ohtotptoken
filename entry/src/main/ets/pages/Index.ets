@@ -1,5 +1,5 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../utils/TokenConfig';
 import { SettingPage } from '../pages/setting/SettingPage'
 import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
 import { SecuritySheet } from '../pages/setting/SecuritySheet'
@@ -23,6 +23,7 @@ import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
@@ -125,7 +126,7 @@ struct Index {
     // 依赖scrollEffectVersion以触发重新计算
     const _ = this.scrollEffectVersion;
     const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
-    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.GRADIENT_BLUR;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   }
 
   private appIsInit = false;
@@ -232,7 +233,7 @@ struct Index {
         })
       }
     })
-
+    DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
@@ -904,10 +905,21 @@ struct Index {
         })
       }
       .bindToScrollable([this.arcTokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType,
@@ -959,10 +971,21 @@ struct Index {
 
       }
       .bindToScrollable([this.tokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
       .titleBar({
         avoidLayoutSafeArea: true, // 状态栏安全区沉浸
         style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.currentScrollEffectType // 渐变模糊
@@ -1022,10 +1045,21 @@ struct Index {
               })
             }
             .bindToScrollable([this.tokenListScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 渐变模糊
@@ -1083,10 +1117,29 @@ struct Index {
               this.SettingEntryCardBuilder()
             }
             .bindToScrollable([this.settingEntryScroller])
-            .titleMode(HdsNavigationTitleMode.MODAL)
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
             .titleBar({
               avoidLayoutSafeArea: true, // 状态栏安全区沉浸
               style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  },
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
+                scrollEffectStyle: {
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
                   scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR

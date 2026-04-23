@@ -228,6 +228,7 @@ export const SCROLL_EFFECT_TYPE_MAP: Map<SettingTopEffectType, ScrollEffectType>
   [SettingTopEffectType.COMMON_BLUR, ScrollEffectType.COMMON_BLUR],
   [SettingTopEffectType.GRADUAL_BLUR, ScrollEffectType.GRADUAL_BLUR],
   [SettingTopEffectType.GRADIENT_BLUR, ScrollEffectType.GRADIENT_BLUR],
+  [SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR, ScrollEffectType.IMMERSIVE_GRADIENT_BLUR],
 ]);
 
 /**
@@ -401,7 +402,7 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT, 400],
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
     // 外观-顶部模糊类型
-    [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.GRADIENT_BLUR],
+    [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
   ]);
 
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
