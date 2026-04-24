@@ -1,0 +1,114 @@
+{
+  "objectTypeName": "user",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "username",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "nickname",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "portrait",
+      "fieldType": "Text",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "union_id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "open_id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "user_type",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "2",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "create_time",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "update_time",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "union_id_index",
+      "indexList": [{ "fieldName": "union_id", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "open_id_index",
+      "indexList": [{ "fieldName": "open_id", "sortType": "ASC" }]
+    }
+  ],
+  "permissions": [
+    {
+      "role": "World",
+      "rights": ["Read"]
+    },
+    {
+      "role": "Authenticated",
+      "rights": ["Read", "Upsert"]
+    },
+    {
+      "role": "Creator",
+      "rights": ["Read", "Upsert", "Delete"]
+    },
+    {
+      "role": "Administrator",
+      "rights": ["Read", "Upsert", "Delete"]
+    }
+  ]
+}
