@@ -1,15 +1,19 @@
 import { SettingItem } from '../../components/SettingItem';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { bundleManager } from '@kit.AbilityKit';
-import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
+import { AppStorageV2, curves } from '@kit.ArkUI';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { AppPreference, PREF_KEYS } from '../../utils/AppPreference';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct AboutSheet {
+  @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  private sheetScroller: Scroller = new Scroller();
   private str_about_app: string = '';
   private str_opensource_leg: string = '';
   private debug_mode_counter: number = 0;
@@ -33,12 +37,11 @@ export struct AboutSheet {
 
   build() {
     Column() {
-      Text($r('app.string.setting_about'))
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
-        .width('100%')
-      List({ space: 10 }) {
+      HdsNavigation() {
+        List({ scroller: this.sheetScroller, space: 10 }) {
+        ListItem()
+          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
       ListItem() {
         SettingItem({ title: "" }) {
           Text(this.str_about_app)
@@ -102,6 +105,42 @@ export struct AboutSheet {
       .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
       .backgroundColor($r('app.color.window_background'))
       .layoutWeight(1)
+      }
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectStyle
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_about'),
+          },
+        }
+      })
     }
     .width('100%')
     .height('100%')

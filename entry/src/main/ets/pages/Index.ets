@@ -563,6 +563,7 @@ struct Index {
       Tokens: this.CurrentTokens,
       appBottomAvoidHeight: this.window.AvoidBottomHeight,
       appTopAvoidHeight: 0,
+      scrollEffectType: ScrollEffectType.IMMERSIVE_GRADIENT_BLUR,
       listScroller: this.settingEntryScroller,
       backupReload: async (conf) => {
         await this.updateTokenConfigs(conf);
@@ -576,6 +577,7 @@ struct Index {
   BackupAndMigrationSheetBuilder() {
     BackupAndMigrationSheet({
       Tokens: this.CurrentTokens,
+      scrollEffectStyle: this.currentScrollEffectType,
       backupReload: async (conf) => {
         await this.updateTokenConfigs(conf);
         tkStore.sortTokens();
@@ -586,37 +588,49 @@ struct Index {
 
   @Builder
   SecuritySheetBuilder() {
-    SecuritySheet()
+    SecuritySheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AppearanceSheetBuilder() {
-    AppearanceSheet()
+    AppearanceSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   DataSyncSheetBuilder() {
-    DataSyncSheet()
+    DataSyncSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AgreementSheetBuilder() {
-    AgreementSheet()
+    AgreementSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AboutSheetBuilder() {
-    AboutSheet()
+    AboutSheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   FeedbackSheetBuilder() {
-    FeedbackSheet()
+    FeedbackSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
@@ -674,7 +688,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -716,7 +730,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -758,7 +772,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -800,7 +814,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -842,7 +856,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -884,7 +898,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -926,7 +940,7 @@ struct Index {
           bottom: $r('sys.float.padding_level2'),
         })
         .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
-        .backgroundColor($r('sys.color.background_primary'))
+        .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
         left: $r('sys.float.padding_level8'),
@@ -950,17 +964,17 @@ struct Index {
     } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
     } else if (name === ROUTE_NAMES.AppearancePage) {
-      AppearancePage()
+      AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
-      ShowDataSyncDetailsPage()
+      ShowDataSyncDetailsPage( {scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
     } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage()
+      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage()
+      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage()
+      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
     }
   }
 

@@ -1,7 +1,7 @@
 import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
-import { AppStorageV2, curves, LengthMetrics } from '@kit.ArkUI';
+import { AppStorageV2, curves } from '@kit.ArkUI';
 import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
@@ -9,18 +9,22 @@ import { userAuth } from '@kit.UserAuthenticationKit';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { bundleManager,common } from '@kit.AbilityKit';
+import { common } from '@kit.AbilityKit';
 import { MasterKeyPage } from '../MasterKeyPage';
 import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct SecuritySheet {
   pageInfos: NavPathStack = new NavPathStack();
+  @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local is_master_key_enable: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
   @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  private sheetScroller: Scroller = new Scroller();
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   aboutToAppear(): void {
     this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
@@ -42,14 +46,14 @@ export struct SecuritySheet {
   }
 
   build() {
-    Navigation(this.pageInfos) {
+    Column() {
+      HdsNavigation() {
+        Navigation(this.pageInfos) {
       Column() {
-        Text($r('app.string.setting_safety'))
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
-          .width('100%')
-        List({ space: 10 }) {
+        List({ scroller: this.sheetScroller, space: 10 }) {
+        ListItem()
+          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
         ListItem() {
           SettingItem({ title: "" }) {
             SubItemToggle({
@@ -161,8 +165,8 @@ export struct SecuritySheet {
       .height('100%')
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
-        .backgroundColor($r('app.color.window_background'))
-        .layoutWeight(1)
+      .backgroundColor($r('app.color.window_background'))
+      .layoutWeight(1)
       }
       .width('100%')
       .height('100%')
@@ -171,5 +175,45 @@ export struct SecuritySheet {
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
     .navDestination(this.navDestinationBuilder)
+      }
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectStyle
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_safety'),
+          },
+        }
+      })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor($r('app.color.window_background'))
   }
 }

@@ -1,24 +1,18 @@
 import { webview } from '@kit.ArkWeb';
 import { CommonConstants } from '../utils/CommonConstants';
-import { TopNavigationView } from '../components/TopNavigationView';
 import { EXTERNAL_URLS } from '../utils/AppPreference';
+import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 
 @Entry
 @ComponentV2
 export struct FeedbackPage {
   pageInfos: NavPathStack | null = null;
+  @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local webViewController: webview.WebviewController = new webview.WebviewController();
 
   build() {
-    NavDestination() {
-    Column() {
-      TopNavigationView({
-        title: $r('app.string.feedback_survey'),
-        onBackClick: () => {
-          this.pageInfos?.pop('');
-        }
-      })
-      Stack() {
+    HdsNavDestination() {
+      Column() {
         Web({ controller: this.webViewController, src: EXTERNAL_URLS.FEEDBACK_SURVEY })
           .darkMode(WebDarkMode.Auto)
           .domStorageAccess(true)
@@ -29,19 +23,43 @@ export struct FeedbackPage {
           .javaScriptAccess(true)
           .width(CommonConstants.FULL_PERCENT)
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.window_background'))
     }
-    .width('100%')
-    .height('100%')
-    .padding({ top: 16 })
-    .backgroundColor($r('app.color.window_background'))
-    }
-    .hideTitleBar(true, true)
+    .titleMode(HdsNavDestinationTitleMode.MODAL)
+    .titleBar({
+      enableComponentSafeArea: true, // Web内容会溢出到titlebar，临时启用组件安全区
+      style: {
+        originalStyle: {
+          contentStyle: {
+            titleStyle: {
+              mainTitleColor: $r('sys.color.font_primary'),
+              subTitleColor: $r('sys.color.font_secondary')
+            }
+          },
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectStyle: {
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      },
+      content: {
+        title: {
+          mainTitle: $r('app.string.feedback_survey'),
+        },
+      }
+    })
     .onReady((context: NavDestinationContext) => {
       this.pageInfos = context.pathStack;
     })
-    .onBackPressed(() => {
-      this.pageInfos?.pop('');
-      return true;
-    });
   }
 }
