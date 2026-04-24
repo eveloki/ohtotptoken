@@ -1,0 +1,14 @@
+{
+  "name": "entry",
+  "version": "1.0.1",
+  "description": "Please describe the basic information.",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "libotpcutils.so": "file:./src/main/cpp/types/libotpcutils",
+    "long": "^5.2.1"
+  },
+  "devDependencies": {},
+  "dynamicDependencies": {}
+}

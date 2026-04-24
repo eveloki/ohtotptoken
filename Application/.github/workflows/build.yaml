@@ -1,0 +1,72 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "docs/**"
+      - ".gitignore"
+      - "**.md"
+
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+
+jobs:
+  build_ohos:
+    name: Build for ohos
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+
+      - name: Clone repository
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v1
+        with:
+          version: latest
+          cache: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl libgl1-mesa-dev
+        shell: bash
+      - run: hvigorw -v
+
+      - name: Install project dependencies
+        run: |
+          ohpm install --all --rt 5 --ri 5000
+
+      - name: Build hap
+        run: hvigorw clean assembleHap -p buildMode=release --config properties.ignoreSignHap=true
+        shell: bash
+
+      - name: Rename hap
+        run: |
+          HAP_FILE=$(find "${{ github.workspace }}/entry/build" -name "*.hap" -type f | head -n 1)
+          if [ -z "$HAP_FILE" ]; then
+            echo "::error::No hap file found in build output!"
+            exit 1
+          fi
+          echo "Found hap: $HAP_FILE"
+          cp "$HAP_FILE" "${{ github.workspace }}/ohtotptoken_ohos_canary.hap"
+
+      - name: Upload hap
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohos_outputs
+          path: ${{ github.workspace }}/ohtotptoken_ohos_canary.hap
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,1060 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "一次性密碼令牌管理軟體"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "一次性密碼令牌管理軟體"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "OTP令牌"
+    },
+    {
+      "name": "tab_token",
+      "value": "令牌"
+    },
+    {
+      "name": "tab_token_add_scan",
+      "value": "掃描QR碼"
+    },
+    {
+      "name": "tab_token_add_key",
+      "value": "通用令牌"
+    },
+    {
+      "name": "tab_token_add_forti_scan",
+      "value": "掃描Forti提供的QR碼"
+    },
+    {
+      "name": "tab_token_add_forti_key",
+      "value": "Forti令牌"
+    },
+    {
+      "name": "tab_token_add_hotp_key",
+      "value": "HOTP令牌"
+    },
+    {
+      "name": "tab_token_add_stream_key",
+      "value": "Steam令牌"
+    },
+    {
+      "name": "tab_me",
+      "value": "我的"
+    },
+    {
+      "name": "button_settings",
+      "value": "設置"
+    },
+    {
+      "name": "alert_remove_confirm_msg",
+      "value": "確認刪除%s的令牌嗎?"
+    },
+    {
+      "name": "dialog_btn_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "dialog_btn_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "dialog_cfg_tk_secret",
+      "value": "密鑰"
+    },
+    {
+      "name": "dialog_cfg_tk_issuer",
+      "value": "主機名稱"
+    },
+    {
+      "name": "dialog_cfg_tk_name",
+      "value": "使用者名稱"
+    },
+    {
+      "name": "dialog_cfg_tk_alg",
+      "value": "演算法"
+    },
+    {
+      "name": "dialog_cfg_tk_digits",
+      "value": "令牌長度"
+    },
+    {
+      "name": "dialog_cfg_tk_timeout",
+      "value": "更新時間"
+    },
+    {
+      "name": "dialog_cfg_tk_counter",
+      "value": "計數"
+    },
+    {
+      "name": "dialog_cfg_forti_dev_id",
+      "value": "裝置ID"
+    },
+    {
+      "name": "dialog_cfg_forti_token",
+      "value": "啟用碼"
+    },
+    {
+      "name": "dialog_cfg_forti_btn_gen_key",
+      "value": "取得密鑰"
+    },
+    {
+      "name": "dialog_backup_password",
+      "value": "密碼"
+    },
+    {
+      "name": "dialog_backup_password_placeholder",
+      "value": "輸入備份檔案的密碼..."
+    },
+    {
+      "name": "warn_forti_dev_id_popup",
+      "value": "Forti只允許你啟用一次並綁定此裝置ID"
+    },
+    {
+      "name": "setting_opensource_leg",
+      "value": "使用到的開源軟體"
+    },
+    {
+      "name": "setting_about",
+      "value": "關於"
+    },
+    {
+      "name": "setting_backup",
+      "value": "備份與遷移"
+    },
+    {
+      "name": "setting_backup_export",
+      "value": "匯出備份"
+    },
+    {
+      "name": "setting_backup_import",
+      "value": "匯入備份"
+    },
+    {
+      "name": "setting_safety",
+      "value": "安全性"
+    },
+    {
+      "name": "setting_safety_privacy",
+      "value": "隱私模式"
+    },
+    {
+      "name": "setting_safety_privacy_des",
+      "value": "禁止其他應用程式擷取您的螢幕畫面，包括一次性密碼。"
+    },
+    {
+      "name": "setting_safety_lock",
+      "value": "應用鎖定"
+    },
+    {
+      "name": "setting_safety_lock_des",
+      "value": "要求在開啟應用時鎖定螢幕驗證您的身份資訊。"
+    },
+    {
+      "name": "setting_backup_output",
+      "value": "匯出密碼？"
+    },
+    {
+      "name": "setting_backup_output_des",
+      "value": "如果您選擇普通匯出方式，密碼將以純文字形式顯示給有權存取該檔案的任何人。是否確實要匯出密碼？"
+    },
+    {
+      "name": "setting_backup_output_msg",
+      "value": "請選擇匯出方式"
+    },
+    {
+      "name": "setting_backup_type_default",
+      "value": "明文"
+    },
+    {
+      "name": "setting_backup_type_enc",
+      "value": "加密"
+    },
+    {
+      "name": "setting_backup_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "setting_backup_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "setting_agreement_statement",
+      "value": "協議與聲明"
+    },
+    {
+      "name": "privacy_statement",
+      "value": "隱私聲明"
+    },
+    {
+      "name": "user_agreement",
+      "value": "使用者協議"
+    },
+    {
+      "name": "opensource_license",
+      "value": "開放原始碼授權"
+    },
+    {
+      "name": "user_auth_prompt",
+      "value": "請進行使用者驗證"
+    },
+    {
+      "name": "app_locking",
+      "value": "應用已被鎖定"
+    },
+    {
+      "name": "app_unlock",
+      "value": "解鎖"
+    },
+    {
+      "name": "app_biometric_login",
+      "value": "生物識別登入"
+    },
+    {
+      "name": "distributed_data_sync",
+      "value": "用於多裝置自由流轉."
+    },
+    {
+      "name": "data_sync",
+      "value": "資料同步"
+    },
+    {
+      "name": "data_rdb_sync",
+      "value": "跨裝置資料流轉"
+    },
+    {
+      "name": "data_rdb_sync_des",
+      "value": "資料將會同步到一個組網環境中您華為帳號登入的其他裝置。"
+    },
+    {
+      "name": "data_rdb_cloud_sync",
+      "value": "華為雲端備份"
+    },
+    {
+      "name": "data_rdb_cloud_sync_des",
+      "value": "將應用資料備份至華為雲端，資料將安全存儲在華為雲端。"
+    },
+    {
+      "name": "data_rdb_sync_details",
+      "value": "跨裝置同步詳情"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "華為雲端備份詳情"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "備份狀態"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "上次備份時間"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "從未備份"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "雲端資料大小"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "已備份令牌數"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "資料加密"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "網路要求"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "僅Wi-Fi"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "華為帳號"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "未登入"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "計算中..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "已啟用"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "未啟用"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "清空雲端備份"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "清空雲端備份？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "此操作將永久刪除華為雲端上的所有備份資料，且無法恢復。確認要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "請先關閉雲端備份後再清空。"
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "雲端備份已清空"
+    },
+    {
+      "name": "cloud_sync_encryption_master_key",
+      "value": "主密碼加密"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "未加密"
+    },
+    {
+      "name": "cloud_sync_require_master_key_title",
+      "value": "需要設定主密碼"
+    },
+    {
+      "name": "cloud_sync_require_master_key_msg",
+      "value": "雲端備份需要主密碼來加密您的資料以確保安全。請先設定主密碼。"
+    },
+    {
+      "name": "cloud_sync_require_master_key_set",
+      "value": "去設定"
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "備份歷史"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "查看、恢復或刪除雲端備份"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "暫無備份記錄"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "最多保留5份備份，每天一份"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d 個令牌"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "恢復備份"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "確定恢復 %s 的備份？目前資料將被替換。"
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "備份恢復成功"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "備份恢復失敗"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "刪除備份"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "確定刪除 %s 的備份？此操作不可撤銷。"
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "備份刪除成功"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "備份刪除失敗"
+    },
+    {
+      "name": "data_kv_sync_time",
+      "value": "更新時間"
+    },
+    {
+      "name": "data_kv_archive_time",
+      "value": "存檔時間"
+    },
+    {
+      "name": "data_sync_manual",
+      "value": "手動備份"
+    },
+    {
+      "name": "data_dev_info",
+      "value": "裝置資訊"
+    },
+    {
+      "name": "app_ua_add_token",
+      "value": "新增密鑰"
+    },
+    {
+      "name": "app_ua_search_token",
+      "value": "搜索密鑰"
+    },
+    {
+      "name": "drop_file_import_data",
+      "value": "拖入檔案匯入資料"
+    },
+    {
+      "name": "app_filing_information",
+      "value": "備案資訊"
+    },
+    {
+      "name": "app_issue_feedback",
+      "value": "問題回饋"
+    },
+    {
+      "name": "app_scan_code",
+      "value": "快速掃碼"
+    },
+    {
+      "name": "dialog_cfg_steam_from_mafile",
+      "value": "從 maFile 檔案匯入"
+    },
+    {
+      "name": "setting_hide_token",
+      "value": "隱藏令牌"
+    },
+    {
+      "name": "setting_safety_hide_token_des",
+      "value": "預設不顯示令牌以提高安全性。"
+    },
+    {
+      "name": "tab_token_add_uri",
+      "value": "文字連結"
+    },
+    {
+      "name": "tab_token_add_uri_title",
+      "value": "輸入OTP URI"
+    },
+    {
+      "name": "tab_token_add_uri_desc",
+      "value": "OTP URI是以otpauth://開頭的文字，支援多行。"
+    },
+    {
+      "name": "app_appearance",
+      "value": "外觀與功能"
+    },
+    {
+      "name": "show_next_token",
+      "value": "顯示下一個令牌"
+    },
+    {
+      "name": "show_next_token_des",
+      "value": "在目前令牌下方展示下一個令牌，提高易用性。"
+    },
+    {
+      "name": "setting_holding_hand_awareness",
+      "value": "啟用智感握姿"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "根據左手、雙手或右手握持狀態，自動將操作欄移動到左側、中間或右側。預設關閉。"
+    },
+    {
+      "name": "swap_host_user",
+      "value": "交換主機名稱與使用者名稱"
+    },
+    {
+      "name": "swap_host_user_des",
+      "value": "交換顯示使用者名稱和主機名稱，用於需要優先分辨使用者名稱的場景。"
+    },
+    {
+      "name": "auto_unlock",
+      "value": "嘗試自動解鎖"
+    },
+    {
+      "name": "auto_unlock_des",
+      "value": "當啟用應用鎖定後進入鎖定頁面時自動觸發解鎖。"
+    },
+    {
+      "name": "setting_color_mode",
+      "value": "色彩模式"
+    },
+    {
+      "name": "setting_color_mode_desc",
+      "value": "控制應用是否跟隨系統深色模式或自行決定。"
+    },
+    {
+      "name": "setting_color_mode_system",
+      "value": "跟隨系統"
+    },
+    {
+      "name": "setting_color_mode_dark",
+      "value": "深色"
+    },
+    {
+      "name": "setting_color_mode_light",
+      "value": "亮色"
+    },
+    {
+      "name": "setting_icon_pack",
+      "value": "圖示包"
+    },
+    {
+      "name": "setting_icon_pack_desc",
+      "value": "管理和匯入Aegis格式的圖示包。"
+    },
+    {
+      "name": "setting_icon_pack_preview",
+      "value": "%d 個已安裝"
+    },
+    {
+      "name": "app_guide_msg",
+      "value": "點選右上角+新增令牌"
+    },
+    {
+      "name": "setting_add_icon_pack",
+      "value": "新增圖示包"
+    },
+    {
+      "name": "alert_icon_pack_remove_confirm_msg",
+      "value": "確認刪除%s圖示包嗎?"
+    },
+    {
+      "name": "setting_icon_pack_count",
+      "value": "共%d個圖示"
+    },
+    {
+      "name": "setting_icon_pack_title",
+      "value": "%s(v%s)"
+    },
+    {
+      "name": "setting_icon_pack_info",
+      "value": "推薦的圖示包:"
+    },
+    {
+      "name": "dialog_icon_recommend",
+      "value": "推薦"
+    },
+    {
+      "name": "dialog_icon_select_auto",
+      "value": "自動"
+    },
+    {
+      "name": "dialog_icon_select_custom",
+      "value": "使用者自定義"
+    },
+    {
+      "name": "icon_alert_remove_confirm_msg",
+      "value": "是否刪除這個圖示?"
+    },
+    {
+      "name": "token_copy_guide_popup",
+      "value": "小提示:長按可複製令牌、點選可切換隱藏/顯示令牌狀態"
+    },
+    {
+      "name": "token_copy_guide_popup_Confirm",
+      "value": "我知道啦"
+    },
+    {
+      "name": "token_copied",
+      "value": "已複製"
+    },
+    {
+      "name": "setting_migration",
+      "value": "匯出遷移檔案"
+    },
+    {
+      "name": "setting_migration_output",
+      "value": "匯出遷移檔案?"
+    },
+    {
+      "name": "setting_migration_output_des",
+      "value": "匯出的遷移檔案由未經加密的純文字OTP URI組成，極易導致令牌密鑰洩露，請確認您瞭解相關風險。"
+    },
+    {
+      "name": "setting_migration_output_msg",
+      "value": "您確定要匯出遷移檔案嗎?"
+    },
+    {
+      "name": "setting_migration_confirm",
+      "value": "確認"
+    },
+    {
+      "name": "token_search_placeholder",
+      "value": "搜尋..."
+    },
+    {
+      "name": "toast_backup_success",
+      "value": "備份成功"
+    },
+    {
+      "name": "toast_wrong_forti_token",
+      "value": "錯誤：Forti啟用碼不正確!"
+    },
+    {
+      "name": "toast_wrong_device_id",
+      "value": "錯誤：裝置ID不正確!"
+    },
+    {
+      "name": "toast_wrong_user_token",
+      "value": "錯誤：使用者Token不正確!"
+    },
+    {
+      "name": "toast_token_update",
+      "value": "令牌 %s:%s 已更新"
+    },
+    {
+      "name": "toast_multi_token_update",
+      "value": "%d個令牌已更新"
+    },
+    {
+      "name": "toast_icon_pack_invalid",
+      "value": "無效的Aegis圖示包"
+    },
+    {
+      "name": "toast_icon_pack_already_installed",
+      "value": "圖示包已安裝"
+    },
+    {
+      "name": "app_token_list_search_msg",
+      "value": "空"
+    },
+    {
+      "name": "debug_mode",
+      "value": "DEBUG模式"
+    },
+    {
+      "name": "debug_mode_des",
+      "value": "僅限開發者使用。若您不慎開啟此開關，請立即關閉以避免運行過程中產生不可預知的風險。"
+    },
+    {
+      "name": "customize_appearance",
+      "value": "自定義"
+    },
+    {
+      "name": "custom_layout",
+      "value": "佈局"
+    },
+    {
+      "name": "custom_color",
+      "value": "顏色"
+    },
+    {
+      "name": "custom_color_logo_background",
+      "value": "圖示背景色"
+    },
+    {
+      "name": "custom_color_logo_background_des",
+      "value": "圖示背景色僅在啟用背景時生效。"
+    },
+    {
+      "name": "enable_icon_background",
+      "value": "圖示背景"
+    },
+    {
+      "name": "enable_icon_background_des",
+      "value": "圖示背景可以讓某些圖示在深色模式時獲得更好的可視度。"
+    },
+    {
+      "name": "enable_dark_icon_filter",
+      "value": "深色模式圖示濾鏡"
+    },
+    {
+      "name": "enable_dark_icon_filter_des",
+      "value": "濾鏡可以在深色模式時獲得更好的可視度，但也有可能丟失圖示細節。"
+    },
+    {
+      "name": "token_item_slider",
+      "value": "尺寸與佈局"
+    },
+    {
+      "name": "token_item_slider_desc",
+      "value": "微調令牌介面的大小和間距。"
+    },
+    {
+      "name": "token_item_hight",
+      "value": "高度"
+    },
+    {
+      "name": "token_item_space",
+      "value": "間距"
+    },
+    {
+      "name": "appearance_reset_to_default",
+      "value": "恢復預設"
+    },
+    {
+      "name": "token_logo_size",
+      "value": "圖示"
+    },
+    {
+      "name": "token_logo_bg_size",
+      "value": "背景"
+    },
+    {
+      "name": "token_logo_bg_r",
+      "value": "背景半徑"
+    },
+    {
+      "name": "token_font_slider",
+      "value": "字體"
+    },
+    {
+      "name": "token_item_font_desc",
+      "value": "微調令牌介面的字體大小與字重。"
+    },
+    {
+      "name": "token_font_size",
+      "value": "令牌大小"
+    },
+    {
+      "name": "token_font_weight",
+      "value": "令牌字重"
+    },
+    {
+      "name": "token_issuer_font_size",
+      "value": "發行者大小"
+    },
+    {
+      "name": "token_issuer_font_weight",
+      "value": "發行者字重"
+    },
+    {
+      "name": "token_user_name_font_size",
+      "value": "用戶大小"
+    },
+    {
+      "name": "token_user_name_font_weight",
+      "value": "用戶字重"
+    },
+    {
+      "name": "custom_appearance_cmd",
+      "value": "指令"
+    },
+    {
+      "name": "custom_color_palette",
+      "value": "顏色調色盤"
+    },
+    {
+      "name": "custom_color_palette_des",
+      "value": "控制令牌顯示的顏色方案。"
+    },
+    {
+      "name": "setting_background_blur",
+      "value": "後颱模糊"
+    },
+    {
+      "name": "setting_background_blur_des",
+      "value": "切出APP時模糊界麵保護隱私。"
+    },
+    {
+      "name": "restore_data",
+      "value": "恢復資料"
+    },
+    {
+      "name": "restore_data_msg",
+      "value": "偵測到您正在進行備份恢復或資料遷移，是否需要立即恢復資料？"
+    },
+    {
+      "name": "restore_data_kdf_msg",
+      "value": "偵測到您正在進行備份恢復或資料遷移，且已啟用主密碼加密功能。請輸入您的主密碼以恢復資料。"
+    },
+    {
+      "name": "restore_data_kdf_err_msg",
+      "value": "主密碼輸入錯誤，資料恢復失敗。"
+    },
+    {
+      "name": "restore_data_ok_msg",
+      "value": "資料已成功恢復！请重新打开APP."
+    },
+    {
+      "name": "restore_data_cancel",
+      "value": "請耐心等待"
+    },
+    {
+      "name": "restore_data_restoring",
+      "value": "恢復中"
+    },
+    {
+      "name": "token_right_menu_show_qrcode",
+      "value": "二維碼"
+    },
+    {
+      "name": "token_right_menu_edit",
+      "value": "編輯"
+    },
+    {
+      "name": "token_right_menu_delete",
+      "value": "刪除"
+    },
+    {
+      "name": "token_right_menu_copy",
+      "value": "複製"
+    },
+    {
+      "name": "token_item_max_width",
+      "value": "最大寬度"
+    },
+    {
+      "name": "restore_master_key",
+      "value": "主密碼安全增強"
+    },
+    {
+      "name": "restore_master_key_msg",
+      "value": "使用主密碼加密資料，提供更高層級的安全防護。"
+    },
+    {
+      "name": "restore_master_key_set",
+      "value": "設定主密碼"
+    },
+    {
+      "name": "restore_master_key_set_msg",
+      "value": "請設定主密碼：\n- 至少8個字元\n- 包含大小寫字母、數字及特殊符號\n- 避免連續相同字元\n- 請勿使用姓名、電話或生日等個人資訊\n\n請注意：系統不儲存您的主密碼。一旦遺失，將無法進行資料恢復或遷移，請妥善保存。"
+    },
+    {
+      "name": "restore_master_key_recovery_key_msg",
+      "value": "請立即記錄恢復金鑰：\n✎ 使用紙張等實體媒介保存\n✎ 此為遺失主密碼後唯一的恢復途徑"
+    },
+    {
+      "name": "restore_master_key_recovery_key_err_msg",
+      "value": "恢復金鑰錯誤，資料恢復失敗。"
+    },
+    {
+      "name": "restore_master_key_no_set_desc",
+      "value": "您沒有配置主密碼，點擊配置。"
+    },
+    {
+      "name": "restore_master_key_reset_desc",
+      "value": "您已經配置了主密碼，點擊重新配置。"
+    },
+    {
+      "name": "restore_master_key_password_too_short_msg",
+      "value": "密碼過短"
+    },
+    {
+      "name": "restore_recovery_key",
+      "value": "恢復金鑰"
+    },
+    {
+      "name": "restore_recovery_key_confirm",
+      "value": "確認已經記錄恢復密鑰"
+    },
+    {
+      "name": "restore_recovery_key_export",
+      "value": "導出恢復密鑰"
+    },
+    {
+      "name": "restore_master_key_err_msg",
+      "value": "主密碼錯誤，資料恢復失敗。"
+    },
+    {
+      "name": "restore_use_recovery_key",
+      "value": "忘記主密碼？使用恢復金鑰。"
+    },
+    {
+      "name": "restore_use_master_key",
+      "value": "使用主密碼恢復"
+    },
+    {
+      "name": "restore_input_recovery_key",
+      "value": "輸入恢復金鑰"
+    },
+    {
+      "name": "restore_input_master_key",
+      "value": "輸入主密碼"
+    },
+    {
+      "name": "restore_import_recovery_key",
+      "value": "匯入恢復金鑰檔案"
+    },
+    {
+      "name": "restore_record_recovery_key",
+      "value": "立即備份恢復金鑰"
+    },
+    {
+      "name": "custom_color_logo_dark_filter_color",
+      "value": "濾鏡顏色"
+    },
+    {
+      "name": "custom_color_token_color",
+      "value": "默認令牌"
+    },
+    {
+      "name": "custom_color_token_next_color",
+      "value": "即將失效的令牌"
+    },
+    {
+      "name": "custom_color_token_color_dark",
+      "value": "默認令牌 (深色)"
+    },
+    {
+      "name": "custom_color_token_next_color_dark",
+      "value": "即將失效的令牌 (深色)"
+    },
+    {
+      "name": "custom_color_token_counter_light_color_start",
+      "value": "計數器顏色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_light_color_end",
+      "value": "計數器顏色 1"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_start",
+      "value": "計數器顏色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_dark_color_end",
+      "value": "計數器顏色 1 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_light_color_start",
+      "value": "即將失效計數器顏色 0"
+    },
+    {
+      "name": "custom_color_token_next_counter_next_light_color_end",
+      "value": "即將失效計數器顏色 1"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_start",
+      "value": "即將失效計數器顏色 0 (暗色)"
+    },
+    {
+      "name": "custom_color_token_counter_next_dark_color_end",
+      "value": "即將失效計數器顏色 1 (暗色)"
+    },
+    {
+      "name": "custom_decoration_color",
+      "value": "裝飾與顏色"
+    },
+    {
+      "name": "custom_function",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_function_slider",
+      "value": "功能"
+    },
+    {
+      "name": "token_item_color_change_threshold",
+      "value": "計數器過期閾值"
+    },
+    {
+      "name": "token_item_function_slider_desc",
+      "value": "微調令牌功能相關設定。"
+    },
+    {
+      "name": "setting_invalid_icon_pack_title",
+      "value": "無效的圖示包"
+    },
+    {
+      "name": "shortcut_quick_scan",
+      "value": "掃描QR碼"
+    },
+    {
+      "name": "app_wearable_guide_msg",
+      "value": "從其他設備同步令牌"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "頂部模糊類型"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "控制頂部模糊效果的類型。"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "關閉"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "通用模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "過渡模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "漸變模糊"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "沉浸式漸變模糊"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "底部Tabs類型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "控制底部標籤欄的顯示類型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "平鋪"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "懸浮"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "問卷回饋"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub回饋"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "建議與回饋"
+    },
+    {
+      "name": "huawei_account_login",
+      "value": "登入華為帳號"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "點擊登入"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "確定要登出嗎？"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "登入成功"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "登入失敗"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "未登入"
+    }
+  ]
+}

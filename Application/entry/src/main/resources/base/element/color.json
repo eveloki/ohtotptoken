@@ -1,0 +1,92 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "window_background",
+      "value": "#eeeeee"
+    },
+    {
+      "name": "item_bg",
+      "value": "#FFFFFFFF"
+    },
+    {
+      "name": "item_fg",
+      "value": "#FF131313"
+    },
+    {
+      "name": "shadow",
+      "value": "#FFD9D9D9"
+    },
+    {
+      "name": "str_gray",
+      "value": "#FFBCBABA"
+    },
+    {
+      "name": "str_main",
+      "value": "#FF161616"
+    },
+    {
+      "name": "token_number",
+      "value": "#FF012EE0"
+    },
+    {
+      "name": "tab_bar_bg",
+      "value": "#fdfdfd"
+    },
+    {
+      "name": "itemActivated",
+      "value": "#335291FF"
+    },
+    {
+      "name": "itemInactivated",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "icon_pack_bg",
+      "value": "#FFECEBEB"
+    },
+    {
+      "name": "token_progress_normal_color_start",
+      "value": "#FF86c1ff"
+    },
+    {
+      "name": "token_progress_normal_color_end",
+      "value": "#FF254ff7"
+    },
+    {
+      "name": "token_progress_next_color_start",
+      "value": "#FFF18585"
+    },
+    {
+      "name": "token_progress_next_color_end",
+      "value": "#FFD71616"
+    },
+    {
+      "name": "button_blue",
+      "value": "#0A59F7"
+    },
+    {
+      "name": "btn_text_blue",
+      "value": "#0A59F7"
+    },
+    {
+      "name": "button_light_gray",
+      "value": "#0D182431"
+    },
+    {
+      "name": "white",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "gray",
+      "value": "#F7F7F7"
+    },
+    {
+      "name": "light_gray",
+      "value": "#F1F3F5"
+    }
+  ]
+}

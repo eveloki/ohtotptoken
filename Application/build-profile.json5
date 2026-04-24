@@ -1,0 +1,61 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BE3A8F14B28B2F60E7F1A00E5BBF74FA02A03A9B1471A6BFA8AD49C86F7366C04DB66C1799A2454",
+          "profile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\evelo\\.ohos\\config\\default_ohtotptoken_V9sJGc5Sthk3VHwBTW8ioyLx7Yr9aJmD60s1yuv5aGw=.p12",
+          "storePassword": "0000001B6C3DFD7C80BEE8EB460A546E615F7E8FDC1C6B510BA8EE3AD39CEF2B9E3340D3431BD352B4C72E"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "6.1.0(23)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          },
+          "arkOptions": {
+            "buildProfileFields": {
+              "ignoreSignHap": false
+            }
+          }
+        },
+        "targetSdkVersion": "6.1.0(23)"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

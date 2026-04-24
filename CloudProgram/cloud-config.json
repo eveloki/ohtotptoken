@@ -1,0 +1,28 @@
+{
+  "appSelected": {
+    "appId": "5765880207855727701",
+    "appName": "OTP令牌",
+    "deviceTypes": [
+      {
+        "appAdapters": "",
+        "deviceType": 4
+      },
+      {
+        "appAdapters": "",
+        "deviceType": 5
+      },
+      {
+        "appAdapters": "",
+        "deviceType": 19
+      }
+    ],
+    "enableSites": "CN",
+    "installationFree": 0,
+    "packageType": 7,
+    "projectId": "461323198428934036",
+    "projectName": "open",
+    "siteId": "CN"
+  },
+  "teamId": "10086000821130081",
+  "uid": "260086000302701187"
+}

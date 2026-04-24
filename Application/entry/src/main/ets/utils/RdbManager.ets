@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { common } from '@kit.AbilityKit';
+import { relationalStore } from '@kit.ArkData';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
+import { cloudData } from '@kit.ArkData';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+//rdb数据库管理 todo预备后面做云同步方案
+export class RdbManager {
+  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+  private _rdbStore: relationalStore.RdbStore | undefined = undefined;
+  private static instance: RdbManager;
+
+  private constructor() {
+    this.initPreference();
+  }
+
+  public static getInstance(): RdbManager {
+    if (!RdbManager.instance) {
+      RdbManager.instance = new RdbManager();
+    }
+    return RdbManager.instance;
+  }
+
+  async initPreference(): Promise<void> {
+    this._rdbStore = AppStorage.get<relationalStore.RdbStore>('rdbStore');
+  }
+
+  //同步
+  async DataSync(): Promise<void> {
+    if (AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE)) {
+      let predicates = new relationalStore.RdbPredicates("EMPLOYEE");
+      predicates.inAllDevices();
+      this._rdbStore?.sync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, predicates, (err, result) => {
+        if (err) {
+          hilog.error(err.code, 'RdbManager', `Sync failed, code is ${err.code},message is ${err.message}`);
+          return;
+        }
+        hilog.info(0, 'RdbManager', 'Sync done.');
+        for (let i = 0; i < result.length; i++) {
+          hilog.info(0, 'RdbManager', `device= ${result[i][0]}, status= ${result[i][1]}`);
+        }
+        this.appCtx.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
+      })
+    }
+    //端云同步 暂时屏蔽 等待实现
+    //todo 实现设置是否开启云同步 默认开启本地设备同步
+    //todo 同步完成前台刷新数据
+    if (AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE)) {
+      //仅WIFI同步
+      cloudData.setCloudStrategy(cloudData.StrategyType.NETWORK, [cloudData.NetWorkStrategy.WIFI]).then(() => {
+        hilog.info(0, 'RdbManager', 'Succeeded in setting the cloud strategy');
+      }).catch((err: BusinessError) => {
+        hilog.error(err.code, 'RdbManager', `Failed to set cloud strategy. Code: ${err.code}, message: ${err.message}`);
+      });
+      //同步按照时间策略
+      this._rdbStore?.cloudSync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, (progressDetails) => {
+        hilog.info(0, 'RdbManager', `Progess: ${progressDetails}`);
+      }, (err) => {
+        if (err) {
+          hilog.error(err.code, 'RdbManager', `Cloud sync failed, code is ${err.code},message is ${err.message}`);
+          return;
+        }
+        hilog.info(0, 'RdbManager', 'Cloud sync succeeded');
+        //this.context.eventHub.emit(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE)
+      });
+    }
+  }
+}
