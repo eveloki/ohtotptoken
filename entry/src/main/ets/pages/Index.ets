@@ -53,6 +53,7 @@ import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
+import { CommonConstants } from '../utils/CommonConstants';
 
 const TAG = 'PrivacySubscribe';
 
@@ -635,7 +636,7 @@ struct Index {
       ListItem() {
         Column()
           .width('100%')
-          .height(LengthMetrics.vp(120).value)
+          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
       }
       // 备份与迁移入口
       ListItem() {

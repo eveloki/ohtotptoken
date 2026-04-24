@@ -46,6 +46,9 @@ export class CommonConstants {
   static readonly MD_COLUMN_COUNT: number = 2;
   static readonly LG_COLUMN_COUNT: number = 3;
 
+  // Height and width
+  static readonly AVOID_TOP_BASE_HEIGHT: number = 56;
+
   // Swiper duration
   static readonly SWIPER_DURATION: number = 1000;
   // Percent
