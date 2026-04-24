@@ -687,7 +687,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -729,7 +729,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -771,7 +771,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -813,7 +813,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -855,7 +855,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -897,7 +897,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
@@ -939,7 +939,7 @@ struct Index {
           top: $r('sys.float.padding_level2'),
           bottom: $r('sys.float.padding_level2'),
         })
-        .borderRadius($r('sys.float.ohos_id_menu_inner_border_radius'))
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
         .backgroundColor($r('app.color.item_bg'))
       }
       .padding({
