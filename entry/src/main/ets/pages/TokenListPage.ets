@@ -9,6 +9,7 @@ import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI } from "../utils/TokenUtils";
 import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
+import { CommonConstants } from "../utils/CommonConstants";
 
 let tkStore = TokenStore.getInstance();
 
@@ -108,7 +109,7 @@ export struct TokenListPage {
             ListItem() {
               Column() {
                 Row()
-                  .height(60 + this.appTopAvoidHeight)
+                  .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight)
                   .width('100%')
                 
                 Stack({ alignContent: Alignment.End }) {

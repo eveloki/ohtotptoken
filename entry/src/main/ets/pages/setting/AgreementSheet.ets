@@ -1,69 +1,109 @@
 import { SubItemButton } from '../../components/SubItemButton';
 import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
-import { LengthMetrics } from '@kit.ArkUI';
 import { throttle } from '../../utils/UiUtils';
 import { ROUTE_NAMES } from '../../utils/AppPreference';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct AgreementSheet {
   pageInfos: NavPathStack = new NavPathStack();
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  private sheetScroller: Scroller = new Scroller();
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
     if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage()
+      PrivacyPage({ scrollEffectType: this.scrollEffectType })
     } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage()
+      AgreementPage({ scrollEffectType: this.scrollEffectType })
     }
   }
 
   build() {
-    Navigation(this.pageInfos) {
-      Column() {
-        Text($r('app.string.setting_agreement_statement'))
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
-          .width('100%')
-        List({ space: 10 }) {
-        ListItem() {
-          SettingItem({ title: "" }) {
-            SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
-              .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage, null);
-              }, 1000))
+    Column() {
+      HdsNavigation(this.pageInfos) {
+        Column() {
+          List({ scroller: this.sheetScroller, space: 10 }) {
+            ListItem()
+              .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-            SubItemDivider()
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
+                  .onClick(throttle((event) => {
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage, null);
+                  }, 1000))
 
-            SubItemButton({
-              symbol: $r("sys.symbol.doc_plaintext_and_pencil"),
-              text: $r('app.string.user_agreement')
-            })
-              .onClick(throttle((event) => {
-                this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage, null);
-              }, 1000))
+                SubItemDivider()
 
+                SubItemButton({
+                  symbol: $r("sys.symbol.doc_plaintext_and_pencil"),
+                  text: $r('app.string.user_agreement')
+                })
+                  .onClick(throttle((event) => {
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage, null);
+                  }, 1000))
+
+              }
+            }
+            .padding({ left: 10, right: 10 })
           }
+          .width('100%')
+          .height('100%')
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+          .backgroundColor($r('app.color.window_background'))
+          .layoutWeight(1)
         }
-        .padding({ left: 10, right: 10 })
-      }
-      .width('100%')
-      .height('100%')
-      .scrollBar(BarState.Off)
-      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+        .width('100%')
+        .height('100%')
         .backgroundColor($r('app.color.window_background'))
-        .layoutWeight(1)
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.window_background'))
+      .mode(NavigationMode.Stack)
+      .navDestination(this.navDestinationBuilder)
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectType
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_agreement_statement'),
+          },
+        }
+      })
     }
-    .hideTitleBar(true)
-    .mode(NavigationMode.Stack)
-    .navDestination(this.navDestinationBuilder)
   }
 }

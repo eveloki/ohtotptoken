@@ -16,17 +16,21 @@ import { AppPreference, SettingValue, PREF_KEYS, ROUTE_NAMES } from '../../utils
 import { throttle } from '../../utils/UiUtils';
 import { ShowCloudSyncDetailsPage } from '../ShowCloudSyncDetailsPage';
 import { ShowCloudBackupHistoryPage } from '../ShowCloudBackupHistoryPage';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct BackupAndMigrationSheet {
   pageInfos: NavPathStack = new NavPathStack();
   @Require @Param Tokens: Array<TokenConfig> = [];
+  @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
   @Local versionCode?: number;
   @Local cloudBackupEnabled: boolean = false;
   @Local isMasterKeySet: boolean = false;
+  private sheetScroller: Scroller = new Scroller();
 
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
@@ -221,96 +225,135 @@ export struct BackupAndMigrationSheet {
   }
 
   build() {
-    Navigation(this.pageInfos) {
-      Column() {
-        Text($r('app.string.setting_backup'))
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
-          .width('100%')
-        List({ space: 10 }) {
-          ListItem() {
-            SettingItem({ title: "" }) {
-              SubItemButton({
-                symbol: $r('sys.symbol.save'),
-                text: $r('app.string.setting_backup_export')
-              })
-                .onClick(() => {
-                  this.backup_is_input = true;
-                  this.callFilePickerSaveFile()
+    Column() {
+      HdsNavigation(this.pageInfos) {
+        Column({ space: LengthMetrics.vp(12).value }) {
+          List({ scroller: this.sheetScroller, space: 10 }) {
+            ListItem()
+              .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemButton({
+                  symbol: $r('sys.symbol.save'),
+                  text: $r('app.string.setting_backup_export')
                 })
+                  .onClick(() => {
+                    this.backup_is_input = true;
+                    this.callFilePickerSaveFile()
+                  })
 
-              SubItemDivider()
+                SubItemDivider()
 
-              SubItemButton({
-                symbol: $r('sys.symbol.folder'),
-                text: $r('app.string.setting_backup_import')
-              })
-                .onClick(() => {
-                  this.backup_is_input = false;
-                  this.callFilePickerSelectFile()
+                SubItemButton({
+                  symbol: $r('sys.symbol.folder'),
+                  text: $r('app.string.setting_backup_import')
                 })
+                  .onClick(() => {
+                    this.backup_is_input = false;
+                    this.callFilePickerSelectFile()
+                  })
 
-              SubItemDivider()
+                SubItemDivider()
 
-              SubItemButton({
-                symbol: $r('sys.symbol.briefcase'),
-                text: $r('app.string.setting_migration')
-              })
-                .onClick(() => {
-                  this.callFilePickerSaveMigrationFile()
+                SubItemButton({
+                  symbol: $r('sys.symbol.briefcase'),
+                  text: $r('app.string.setting_migration')
                 })
+                  .onClick(() => {
+                    this.callFilePickerSaveMigrationFile()
+                  })
+              }
             }
-          }
-          .padding({ left: 10, right: 10 })
+            .padding({ left: 10, right: 10 })
 
-          ListItem() {
-            SettingItem({ title: "" }) {
-              SubItemToggle({
-                icon: $r('sys.symbol.icloud'),
-                title: $r('app.string.data_rdb_cloud_sync'),
-                isOn: this.cloudBackupEnabled as boolean,
-                description: $r('app.string.data_rdb_cloud_sync_des'),
-                onChange: (IsOn: boolean) => {
-                  if (IsOn) {
-                    if (!this.isMasterKeySet) {
-                      this.cloudBackupEnabled = false;
-                      this.showMasterKeyRequiredDialog();
-                      return;
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemToggle({
+                  icon: $r('sys.symbol.icloud'),
+                  title: $r('app.string.data_rdb_cloud_sync'),
+                  isOn: this.cloudBackupEnabled as boolean,
+                  description: $r('app.string.data_rdb_cloud_sync_des'),
+                  onChange: (IsOn: boolean) => {
+                    if (IsOn) {
+                      if (!this.isMasterKeySet) {
+                        this.cloudBackupEnabled = false;
+                        this.showMasterKeyRequiredDialog();
+                        return;
+                      }
                     }
+                    this.cloudBackupEnabled = IsOn;
+                    AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, IsOn);
                   }
-                  this.cloudBackupEnabled = IsOn;
-                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, IsOn);
-                }
-              })
+                })
 
-              SubItemDivider()
+                SubItemDivider()
 
-              SubItemButton({
-                symbol: $r('sys.symbol.icloud'),
-                text: $r('app.string.data_huawei_cloud_sync_details')
-              })
-                .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.ShowCloudSyncDetailsPage, null);
-                }, 1000))
+                SubItemButton({
+                  symbol: $r('sys.symbol.icloud'),
+                  text: $r('app.string.data_huawei_cloud_sync_details')
+                })
+                  .onClick(throttle((event) => {
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowCloudSyncDetailsPage, null);
+                  }, 1000))
+              }
             }
+            .padding({ left: 10, right: 10 })
           }
-          .padding({ left: 10, right: 10 })
+          .width('100%')
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .backgroundColor($r('app.color.window_background'))
         }
         .width('100%')
         .height('100%')
-        .scrollBar(BarState.Off)
-        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .backgroundColor($r('app.color.window_background'))
-        .layoutWeight(1)
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.window_background'))
+      .mode(NavigationMode.Stack)
+      .navDestination(this.navDestinationBuilder)
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectStyle
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_backup'),
+          },
+        }
+      })
     }
-    .hideTitleBar(true)
-    .mode(NavigationMode.Stack)
-    .navDestination(this.navDestinationBuilder)
+    .width('100%')
+    .height('100%')
+    .backgroundColor($r('app.color.window_background'))
   }
 
   private showMasterKeyRequiredDialog(): void {
