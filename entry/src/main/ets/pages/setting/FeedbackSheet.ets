@@ -4,69 +4,104 @@ import { common } from '@kit.AbilityKit';
 import { throttle, startBrowsableAbility } from '../../utils/UiUtils';
 import { ROUTE_NAMES, EXTERNAL_URLS } from '../../utils/AppPreference';
 import { FeedbackPage } from '../FeedbackPage';
-import { LengthMetrics } from '@kit.ArkUI';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct FeedbackSheet {
   pageInfos: NavPathStack = new NavPathStack();
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  private sheetScroller: Scroller = new Scroller();
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
     if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage()
+      FeedbackPage({ scrollEffectType: this.scrollEffectType })
     }
   }
 
   build() {
-    Navigation(this.pageInfos) {
-      Column() {
-        Text($r('app.string.setting_feedback'))
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .padding({
-            left: LengthMetrics.vp(24).value,
-            right: LengthMetrics.vp(24).value,
-            top: LengthMetrics.vp(16).value,
-            bottom: LengthMetrics.vp(8).value
-          })
-          .width('100%')
-        List({ space: 10 }) {
-          ListItem() {
-            SettingItem({ title: "" }) {
-              SubItemButton({
-                symbol: $r("sys.symbol.doc_plaintext"),
-                text: $r('app.string.feedback_survey')
-              })
-                .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.FeedbackPage, null);
-                }, 1000))
+    Column() {
+      HdsNavigation(this.pageInfos) {
+        Column() {
+          List({ scroller: this.sheetScroller, space: 10 }) {
+            ListItem()
+              .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-              SubItemButton({
-                icon: $r('app.media.github_logo'),
-                text: $r('app.string.feedback_github')
-              })
-                .onClick(throttle((event) => {
-                  startBrowsableAbility(this.appCtx, EXTERNAL_URLS.FEEDBACK_GITHUB);
-                }, 1000))
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemButton({
+                  symbol: $r("sys.symbol.doc_plaintext"),
+                  text: $r('app.string.feedback_survey')
+                })
+                  .onClick(throttle((event) => {
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.FeedbackPage, null);
+                  }, 1000))
+
+                SubItemButton({
+                  icon: $r('app.media.github_logo'),
+                  text: $r('app.string.feedback_github')
+                })
+                  .onClick(throttle((event) => {
+                    startBrowsableAbility(this.appCtx, EXTERNAL_URLS.FEEDBACK_GITHUB);
+                  }, 1000))
+              }
             }
+            .padding({ left: 10, right: 10 })
           }
-          .padding({ left: 10, right: 10 })
+          .width('100%')
+          .height('100%')
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .backgroundColor($r('app.color.window_background'))
+          .layoutWeight(1)
         }
         .width('100%')
         .height('100%')
-        .scrollBar(BarState.Off)
-        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .backgroundColor($r('app.color.window_background'))
-        .layoutWeight(1)
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.window_background'))
+      .mode(NavigationMode.Stack)
+      .navDestination(this.navDestinationBuilder)
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectType
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_feedback'),
+          },
+        }
+      })
     }
-    .hideTitleBar(true)
-    .mode(NavigationMode.Stack)
-    .navDestination(this.navDestinationBuilder)
   }
 }

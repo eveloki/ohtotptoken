@@ -53,6 +53,7 @@ import { URIConfigDialog } from '../dialogs/URIConfigDialog';
 import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
+import { CommonConstants } from '../utils/CommonConstants';
 
 const TAG = 'PrivacySubscribe';
 
@@ -562,6 +563,7 @@ struct Index {
       Tokens: this.CurrentTokens,
       appBottomAvoidHeight: this.window.AvoidBottomHeight,
       appTopAvoidHeight: 0,
+      scrollEffectType: ScrollEffectType.IMMERSIVE_GRADIENT_BLUR,
       listScroller: this.settingEntryScroller,
       backupReload: async (conf) => {
         await this.updateTokenConfigs(conf);
@@ -575,6 +577,7 @@ struct Index {
   BackupAndMigrationSheetBuilder() {
     BackupAndMigrationSheet({
       Tokens: this.CurrentTokens,
+      scrollEffectStyle: this.currentScrollEffectType,
       backupReload: async (conf) => {
         await this.updateTokenConfigs(conf);
         tkStore.sortTokens();
@@ -585,37 +588,49 @@ struct Index {
 
   @Builder
   SecuritySheetBuilder() {
-    SecuritySheet()
+    SecuritySheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AppearanceSheetBuilder() {
-    AppearanceSheet()
+    AppearanceSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   DataSyncSheetBuilder() {
-    DataSyncSheet()
+    DataSyncSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AgreementSheetBuilder() {
-    AgreementSheet()
+    AgreementSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   AboutSheetBuilder() {
-    AboutSheet()
+    AboutSheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
   @Builder
   FeedbackSheetBuilder() {
-    FeedbackSheet()
+    FeedbackSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
       .height('100%')
   }
 
@@ -635,211 +650,308 @@ struct Index {
       ListItem() {
         Column()
           .width('100%')
-          .height(LengthMetrics.vp(120).value)
+          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
       }
+
       // 备份与迁移入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.save')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.save')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_backup')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isBackupSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.setting_backup')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isBackupSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 安全性入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.staroflife_rectangle')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.staroflife_rectangle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_safety')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isSafetySheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.setting_safety')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isSafetySheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 外观与功能入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.chevron_up_2_circle')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.chevron_up_2_circle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.app_appearance')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAppearanceSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.app_appearance')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isAppearanceSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 数据同步入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.link')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.link')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.data_sync')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isDataSyncSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.data_sync')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isDataSyncSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 协议与声明入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.person_shield')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.person_shield')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_agreement_statement')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAgreementSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.setting_agreement_statement')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isAgreementSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 建议与反馈入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.envelope')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.envelope')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_feedback')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isFeedbackSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.setting_feedback')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isFeedbackSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 关于入口
       ListItem() {
-        HdsListItemCard({
-          cardBackgroundColor: $r('app.color.item_bg'),
-          cardHeight: this.token_preference.app_appearance_item_height,
-          prefixItem: new PrefixIcon({
-            iconSize: IconSize.SYSTEM_ICON,
-            iconValue: {
-              symbol: $r('sys.symbol.info_circle')
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.info_circle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_about')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAboutSheetVisible = true;
             }
-          }),
-          textItem: {
-            primaryText: {
-              text: $r('app.string.setting_about')
-            }
-          },
-          suffixItem: new SuffixArrow({}),
-          onClick: () => {
-            this.isAboutSheetVisible = true;
-          }
-        })
-          .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
-            detents: [SheetSize.LARGE],
-            preferType: SheetType.BOTTOM,
-            dragBar: true,
           })
+            .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
       }
-
-
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
     }
-
+    .chainAnimation(true)
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
-    .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+    .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     .backgroundColor($r('app.color.window_background'))
   }
 
@@ -852,17 +964,17 @@ struct Index {
     } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
     } else if (name === ROUTE_NAMES.AppearancePage) {
-      AppearancePage()
+      AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
-      ShowDataSyncDetailsPage()
+      ShowDataSyncDetailsPage( {scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
     } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage()
+      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage()
+      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage()
+      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
     }
   }
 

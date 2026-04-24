@@ -27,6 +27,7 @@ import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
 import { PrivacyPage } from '../PrivacyPage';
 import { AgreementPage } from '../AgreementPage';
 import { FeedbackPage } from '../FeedbackPage';
+import { ScrollEffectType } from '@kit.UIDesignKit';
 
 @Preview
 @ComponentV2
@@ -35,6 +36,7 @@ export struct SettingPage {
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Param listScroller: Scroller = new Scroller();
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
@@ -276,15 +278,15 @@ export struct SettingPage {
     } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
       RecoveryKeyRecordPage()
     } else if (name === ROUTE_NAMES.AppearancePage) {
-      AppearancePage()
+      AppearancePage({scrollEffectType: this.scrollEffectType})
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
-      ShowDataSyncDetailsPage()
+      ShowDataSyncDetailsPage({scrollEffectType: this.scrollEffectType})
     } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage()
+      PrivacyPage({ scrollEffectType: this.scrollEffectType })
     } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage()
+      AgreementPage({ scrollEffectType: this.scrollEffectType })
     } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage()
+      FeedbackPage({ scrollEffectType: this.scrollEffectType })
     }
   }
 

@@ -11,14 +11,18 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../.
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { LengthMetrics } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct BackupAndMigrationSheet {
   @Require @Param Tokens: Array<TokenConfig> = [];
+  @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
   @Local versionCode?: number;
+  private sheetScroller: Scroller = new Scroller();
 
   //备份时是否为导出模式
   private backup_is_input: boolean = true;
@@ -203,53 +207,94 @@ export struct BackupAndMigrationSheet {
 
   build() {
     Column() {
-      Text($r('app.string.setting_backup'))
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .padding({ left: LengthMetrics.vp(24).value, right: LengthMetrics.vp(24).value, top: LengthMetrics.vp(16).value, bottom: LengthMetrics.vp(8).value })
-        .width('100%')
-      List({ space: 10 }) {
-      ListItem() {
-        SettingItem({ title: "" }) {
-          SubItemButton({
-            symbol: $r('sys.symbol.save'),
-            text: $r('app.string.setting_backup_export')
-          })
-            .onClick(() => {
-              this.backup_is_input = true;
-              this.callFilePickerSaveFile()
-            })
+      HdsNavigation() {
+        Column({ space: LengthMetrics.vp(12).value }) {
+          List({ scroller: this.sheetScroller, space: 10 }) {
+            // 顶部避让
+            ListItem()
+              .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-          SubItemDivider()
+            // 选项内容
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemButton({
+                  symbol: $r('sys.symbol.save'),
+                  text: $r('app.string.setting_backup_export')
+                })
+                  .onClick(() => {
+                    this.backup_is_input = true;
+                    this.callFilePickerSaveFile()
+                  })
 
-          SubItemButton({
-            symbol: $r('sys.symbol.folder'),
-            text: $r('app.string.setting_backup_import')
-          })
-            .onClick(() => {
-              this.backup_is_input = false;
-              this.callFilePickerSelectFile()
-            })
+                SubItemDivider()
 
-          SubItemDivider()
+                SubItemButton({
+                  symbol: $r('sys.symbol.folder'),
+                  text: $r('app.string.setting_backup_import')
+                })
+                  .onClick(() => {
+                    this.backup_is_input = false;
+                    this.callFilePickerSelectFile()
+                  })
 
-          SubItemButton({
-            symbol: $r('sys.symbol.briefcase'),
-            text: $r('app.string.setting_migration')
-          })
-            .onClick(() => {
-              this.callFilePickerSaveMigrationFile()
-            })
+                SubItemDivider()
+
+                SubItemButton({
+                  symbol: $r('sys.symbol.briefcase'),
+                  text: $r('app.string.setting_migration')
+                })
+                  .onClick(() => {
+                    this.callFilePickerSaveMigrationFile()
+                  })
+              }
+            }
+            .padding({ left: 10, right: 10 })
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .backgroundColor($r('app.color.window_background'))
         }
+        .width('100%')
+        .height('100%')
+        .backgroundColor($r('app.color.window_background'))
       }
-      .padding({ left: 10, right: 10 })
-    }
-    .width('100%')
-    .height('100%')
-      .scrollBar(BarState.Off)
-      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
-      .backgroundColor($r('app.color.window_background'))
-      .layoutWeight(1)
+      .bindToScrollable([this.sheetScroller])
+      .titleMode(HdsNavigationTitleMode.MODAL)
+      .titleBar({
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+                subTitleColor: $r('sys.color.font_secondary')
+              }
+            },
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectStyle: {
+            backgroundStyle: {
+              maskExtraHeight: 0
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.scrollEffectStyle
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.setting_backup'),
+          },
+        }
+      })
     }
     .width('100%')
     .height('100%')
