@@ -14,21 +14,20 @@
  */
 
 /**
- * 华为云同步详情页面
- * 
- * 显示云同步相关状态信息和提供操作入口：
- * - 同步状态：显示是否启用云同步
+ * 华为云备份详情页面
+ *
+ * 显示云备份相关状态信息和提供操作入口：
+ * - 备份状态：显示是否启用云备份
  * - 华为账号：显示登录状态
- * - 最后同步时间：显示上次同步时间
- * - 同步令牌数量：显示已同步的令牌数量
- * - 数据大小：显示云端数据大小
+ * - 最后备份时间：显示上次备份时间
+ * - 已备份令牌数量：显示已备份的令牌数量
  * - 加密方式：显示是否使用主密码加密
- * - 网络要求：显示仅在 WiFi 下同步
- * - 手动同步：触发立即备份到云端
+ * - 网络要求：显示仅在 WiFi 下备份
+ * - 手动备份：触发立即备份到云端
  * - 备份历史：查看、恢复、删除历史备份
- * - 清空云存储：删除所有云端备份
+ * - 清空云端备份：删除所有云端备份
  * - 设备信息：显示设备名称和设备ID
- * 
+ *
  * @module ShowCloudSyncDetailsPage
  */
 
@@ -45,7 +44,7 @@ import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 
 /**
- * 华为云同步详情页面组件
+ * 华为云备份详情页面组件
  */
 @Entry
 @Preview
@@ -71,7 +70,7 @@ export struct ShowCloudSyncDetailsPage {
    * 初始化页面状态数据
    */
   aboutToAppear(): void {
-    this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
+    this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE);
     this.masterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
     this.lastSyncTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string ?? '';
     TokenStore.getInstance().getTokens().then(tokens => {
@@ -95,7 +94,7 @@ export struct ShowCloudSyncDetailsPage {
                 LoadingProgress()
                   .color(Color.White)
                   .width(80).height(80)
-                Text('Syncing...')
+                Text('Backing up...')
                   .fontSize(16)
                   .fontColor(Color.White)
               }
@@ -161,20 +160,6 @@ export struct ShowCloudSyncDetailsPage {
                       Text(`${this.tokenCount}`)
                         .fontSize($r('sys.float.ohos_id_text_size_body2'))
                         .fontColor($r('sys.color.ohos_id_color_text_primary'))
-                        .fontWeight(FontWeight.Medium)
-                        .textAlign(TextAlign.Start)
-                    }
-                    .padding(10)
-                  }
-                }
-                .padding({ left: 10, right: 10 })
-
-                ListItem() {
-                  SettingItem({ title: $r('app.string.cloud_sync_data_size') }) {
-                    Row() {
-                      Text($r('app.string.cloud_sync_calculating'))
-                        .fontSize($r('sys.float.ohos_id_text_size_body2'))
-                        .fontColor($r('sys.color.ohos_id_color_text_secondary'))
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }

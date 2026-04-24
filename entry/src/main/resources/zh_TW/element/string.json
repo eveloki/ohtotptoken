@@ -217,10 +217,6 @@
       "value": "用於多裝置自由流轉."
     },
     {
-      "name": "cloud_file_sync_reason",
-      "value": "用於令牌資料的雲端備份和同步。"
-    },
-    {
       "name": "data_sync",
       "value": "資料同步"
     },
@@ -234,11 +230,11 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "華為雲端同步"
+      "value": "華為雲端備份"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "透過華為雲端同步應用資料，資料將自動同步至您華為帳號登入的其他裝置，換機時也可自動恢復。"
+      "value": "將應用資料備份至華為雲端，資料將安全存儲在華為雲端。"
     },
     {
       "name": "data_rdb_sync_details",
@@ -246,19 +242,19 @@
     },
     {
       "name": "data_huawei_cloud_sync_details",
-      "value": "華為雲端同步詳情"
+      "value": "華為雲端備份詳情"
     },
     {
       "name": "cloud_sync_status",
-      "value": "同步狀態"
+      "value": "備份狀態"
     },
     {
       "name": "cloud_sync_last_time",
-      "value": "上次同步時間"
+      "value": "上次備份時間"
     },
     {
       "name": "cloud_sync_never",
-      "value": "從未同步"
+      "value": "從未備份"
     },
     {
       "name": "cloud_sync_data_size",
@@ -266,7 +262,7 @@
     },
     {
       "name": "cloud_sync_token_count",
-      "value": "已同步令牌數"
+      "value": "已備份令牌數"
     },
     {
       "name": "cloud_sync_encryption",
@@ -302,23 +298,23 @@
     },
     {
       "name": "cloud_sync_clear_storage",
-      "value": "清空雲端儲存"
+      "value": "清空雲端備份"
     },
     {
       "name": "cloud_sync_clear_storage_confirm",
-      "value": "清空雲端儲存？"
+      "value": "清空雲端備份？"
     },
     {
       "name": "cloud_sync_clear_storage_msg",
-      "value": "此操作將永久刪除華為雲端上的所有已同步資料，且無法恢復。確認要繼續嗎？"
+      "value": "此操作將永久刪除華為雲端上的所有備份資料，且無法恢復。確認要繼續嗎？"
     },
     {
       "name": "cloud_sync_clear_storage_disabled_msg",
-      "value": "請先關閉雲端同步後再清空雲端儲存。"
+      "value": "請先關閉雲端備份後再清空。"
     },
     {
       "name": "cloud_sync_clear_storage_success",
-      "value": "雲端儲存已清空"
+      "value": "雲端備份已清空"
     },
     {
       "name": "cloud_sync_encryption_master_key",
@@ -402,7 +398,7 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "手動同步"
+      "value": "手動備份"
     },
     {
       "name": "data_dev_info",

@@ -143,6 +143,8 @@ export enum PREF_KEYS {
   APPEARANCE_ITEM_MAX_WIDTH = 'app_appearance_item_max_width',
   /** 快速扫描URI */
   WANT_URI = 'app_want_uri',
+  /** 是否启用华为云备份 */
+  APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE="app_huawei_cloud_sync_enable",
 }
 
 /**
@@ -363,7 +365,9 @@ export class AppPreference {
     // 是否使用主密码增强安全
     [PREF_KEYS.USE_MASTER_KEY, false],
     // 是否已经配置了主密码
-    [PREF_KEYS.USE_MASTER_KEY_SET, false]
+    [PREF_KEYS.USE_MASTER_KEY_SET, false],
+    // 快速扫描URI
+    [PREF_KEYS.WANT_URI, ''],
   ]);
 
 
@@ -403,6 +407,7 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
+    [PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false],
   ]);
 
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
@@ -416,7 +421,16 @@ export class AppPreference {
    * @returns 设置值，如果不存在则返回空字符串
    */
   public static getPreference(key: string): SettingValue {
-    return AppPreference.settings.get(key) ?? '';
+    const cached = AppPreference.settings.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const persisted = AppPreference.prefMgr.getValueSync<SettingValue>(key);
+    if (persisted !== null) {
+      AppPreference.settings.set(key, persisted);
+      return persisted;
+    }
+    return '';
   }
 
   /**

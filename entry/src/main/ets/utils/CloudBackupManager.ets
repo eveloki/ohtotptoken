@@ -47,6 +47,8 @@ const MAX_BACKUP_COUNT = 5;
 const BACKUP_FILE_PREFIX = 'otp_backup_';
 /** 备份文件扩展名 */
 const BACKUP_FILE_EXT = '.enc';
+/** 备份元数据扩展名 */
+const BACKUP_META_EXT = '.meta';
 /** 设备信息文件名 */
 const DEVICE_INFO_FILE = 'otp_device_info.json';
 
@@ -285,6 +287,8 @@ export class CloudBackupManager {
       const writeLen = fs.writeSync(file.fd, encrypted);
       fs.closeSync(file);
       hilog.info(DOMAIN, TAG, `backupToCloud: wrote ${writeLen} bytes to ${fileName}`);
+
+      this.saveBackupMeta(fileName, tokens.length, encrypted.length);
     } catch (e) {
       hilog.error(DOMAIN, TAG, `backupToCloud: write error=${JSON.stringify(e)}`);
       return false;
@@ -399,6 +403,36 @@ export class CloudBackupManager {
   }
 
   /**
+   * 检查并在需要时自动备份
+   * 条件：云备份开关开启 + 主密码已设置 + 当天未备份
+   */
+  async checkAndAutoBackup(): Promise<void> {
+    const enabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    if (!enabled) {
+      return;
+    }
+
+    const masterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
+    if (!masterKeySet) {
+      return;
+    }
+
+    const lastTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string;
+    if (lastTime && lastTime.length >= 10) {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${this.padZero(today.getMonth() + 1)}-${this.padZero(today.getDate())}`;
+      if (lastTime.startsWith(todayStr)) {
+        hilog.info(DOMAIN, TAG, 'checkAndAutoBackup: already backed up today, skipping');
+        return;
+      }
+    }
+
+    hilog.info(DOMAIN, TAG, 'checkAndAutoBackup: starting auto backup');
+    const success = await this.backupToCloud();
+    hilog.info(DOMAIN, TAG, `checkAndAutoBackup: result=${success}`);
+  }
+
+  /**
    * 从指定的备份记录恢复令牌数据
    * 
    * 流程：
@@ -496,6 +530,10 @@ export class CloudBackupManager {
     const filePath = `${this.cloudDir}/${fileName}`;
     try {
       await fs.unlink(filePath);
+      const metaPath = `${this.cloudDir}/${fileName.replace(BACKUP_FILE_EXT, BACKUP_META_EXT)}`;
+      try {
+        await fs.unlink(metaPath);
+      } catch (_) {}
       hilog.info(DOMAIN, TAG, `deleteBackupFile: deleted ${fileName}`);
       return true;
     } catch (e) {
@@ -544,7 +582,7 @@ export class CloudBackupManager {
             id: fileName,
             date: dateStr,
             timestamp: timestamp,
-            tokenCount: 0,
+            tokenCount: this.readBackupMeta(fileName),
             size: stat.size,
             encrypted: true,
             deviceId: deviceInfo.deviceId,
@@ -604,6 +642,42 @@ export class CloudBackupManager {
    */
   get maxBackupCount(): number {
     return MAX_BACKUP_COUNT;
+  }
+
+  /**
+   * 保存备份元数据
+   * 将令牌数量等信息写入 .meta 文件
+   */
+  private saveBackupMeta(backupFileName: string, tokenCount: number, size: number): void {
+    const metaPath = `${this.cloudDir}/${backupFileName.replace(BACKUP_FILE_EXT, BACKUP_META_EXT)}`;
+    try {
+      const meta = JSON.stringify({ tokenCount: tokenCount, size: size });
+      const file = fs.openSync(metaPath, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      fs.writeSync(file.fd, meta);
+      fs.closeSync(file);
+      hilog.info(DOMAIN, TAG, `saveBackupMeta: saved meta for ${backupFileName}, tokenCount=${tokenCount}`);
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, `saveBackupMeta: error=${JSON.stringify(e)}`);
+    }
+  }
+
+  /**
+   * 读取备份元数据中的令牌数量
+   */
+  private readBackupMeta(backupFileName: string): number {
+    const metaPath = `${this.cloudDir}/${backupFileName.replace(BACKUP_FILE_EXT, BACKUP_META_EXT)}`;
+    try {
+      const file = fs.openSync(metaPath, fs.OpenMode.READ_ONLY);
+      const stat = fs.statSync(metaPath);
+      const buf = new ArrayBuffer(stat.size);
+      const readLen = fs.readSync(file.fd, buf);
+      fs.closeSync(file);
+      const text = buffer.from(new Uint8Array(buf.slice(0, readLen))).toString('utf-8');
+      const meta = JSON.parse(text) as Record<string, number>;
+      return meta['tokenCount'] ?? 0;
+    } catch (e) {
+      return 0;
+    }
   }
 
   /**

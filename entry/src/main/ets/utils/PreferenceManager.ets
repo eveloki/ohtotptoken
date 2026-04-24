@@ -69,6 +69,17 @@ export class PreferenceManager {
     }
   }
 
+  getValueSync<T>(key: string): T | null {
+    if (!this.preferences) {
+      return null;
+    }
+    const res: preferences.ValueType = this.preferences.getSync(key, '');
+    if (res === '' || res === null || res === undefined) {
+      return null;
+    }
+    return JSON.parse(res as string) as T;
+  }
+
   async hasValue(key: string): Promise<boolean> {
     if (this.preferences) {
       return this.preferences.has(key);

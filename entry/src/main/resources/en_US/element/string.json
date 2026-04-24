@@ -217,10 +217,6 @@
       "value": "For seamless transfer across multiple devices."
     },
     {
-      "name": "cloud_file_sync_reason",
-      "value": "Used for cloud backup and sync of token data."
-    },
-    {
       "name": "data_sync",
       "value": "Data Sync"
     },
@@ -234,11 +230,11 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "Huawei Cloud Sync"
+      "value": "Huawei Cloud Backup"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "Sync app data via Huawei Cloud. Data will be synced to other devices logged into your Huawei account, and auto-restored when switching devices."
+      "value": "Backup app data to Huawei Cloud. Data will be backed up to Huawei Cloud Drive."
     },
     {
       "name": "data_rdb_sync_details",
@@ -246,19 +242,19 @@
     },
     {
       "name": "data_huawei_cloud_sync_details",
-      "value": "Huawei Cloud Sync Details"
+      "value": "Huawei Cloud Backup Details"
     },
     {
       "name": "cloud_sync_status",
-      "value": "Sync Status"
+      "value": "Backup Status"
     },
     {
       "name": "cloud_sync_last_time",
-      "value": "Last Sync Time"
+      "value": "Last Backup Time"
     },
     {
       "name": "cloud_sync_never",
-      "value": "Never synced"
+      "value": "Never backed up"
     },
     {
       "name": "cloud_sync_data_size",
@@ -266,7 +262,7 @@
     },
     {
       "name": "cloud_sync_token_count",
-      "value": "Synced Tokens"
+      "value": "Backed Up Tokens"
     },
     {
       "name": "cloud_sync_encryption",
@@ -302,23 +298,23 @@
     },
     {
       "name": "cloud_sync_clear_storage",
-      "value": "Clear Cloud Storage"
+      "value": "Clear Cloud Backup"
     },
     {
       "name": "cloud_sync_clear_storage_confirm",
-      "value": "Clear Cloud Storage?"
+      "value": "Clear Cloud Backup?"
     },
     {
       "name": "cloud_sync_clear_storage_msg",
-      "value": "This will permanently delete all synced data from Huawei Cloud. This action cannot be undone. Are you sure?"
+      "value": "This will permanently delete all backup data from Huawei Cloud. This action cannot be undone. Are you sure?"
     },
     {
       "name": "cloud_sync_clear_storage_disabled_msg",
-      "value": "Please disable cloud sync before clearing cloud storage."
+      "value": "Please disable cloud backup before clearing."
     },
     {
       "name": "cloud_sync_clear_storage_success",
-      "value": "Cloud storage cleared"
+      "value": "Cloud backup cleared"
     },
     {
       "name": "cloud_sync_encryption_master_key",
@@ -402,7 +398,7 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "Manual Sync"
+      "value": "Manual Backup"
     },
     {
       "name": "data_dev_info",

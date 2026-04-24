@@ -217,10 +217,6 @@
       "value": "用于多设备自由流转."
     },
     {
-      "name": "cloud_file_sync_reason",
-      "value": "用于令牌数据的云端备份和同步。"
-    },
-    {
       "name": "data_sync",
       "value": "数据同步"
     },
@@ -234,11 +230,11 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "华为云同步"
+      "value": "华为云备份"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "通过华为云同步应用数据，数据将自动同步至您华为账号登录的其他设备，换机时也可自动恢复。"
+      "value": "将应用数据备份至华为云，数据将安全存储在华为云端。"
     },
     {
       "name": "data_rdb_sync_details",
@@ -246,19 +242,19 @@
     },
     {
       "name": "data_huawei_cloud_sync_details",
-      "value": "华为云同步详情"
+      "value": "华为云备份详情"
     },
     {
       "name": "cloud_sync_status",
-      "value": "同步状态"
+      "value": "备份状态"
     },
     {
       "name": "cloud_sync_last_time",
-      "value": "上次同步时间"
+      "value": "上次备份时间"
     },
     {
       "name": "cloud_sync_never",
-      "value": "从未同步"
+      "value": "从未备份"
     },
     {
       "name": "cloud_sync_data_size",
@@ -266,7 +262,7 @@
     },
     {
       "name": "cloud_sync_token_count",
-      "value": "已同步令牌数"
+      "value": "已备份令牌数"
     },
     {
       "name": "cloud_sync_encryption",
@@ -302,23 +298,23 @@
     },
     {
       "name": "cloud_sync_clear_storage",
-      "value": "清空云存储"
+      "value": "清空云端备份"
     },
     {
       "name": "cloud_sync_clear_storage_confirm",
-      "value": "清空云存储？"
+      "value": "清空云端备份？"
     },
     {
       "name": "cloud_sync_clear_storage_msg",
-      "value": "此操作将永久删除华为云上的所有已同步数据，且无法恢复。确认要继续吗？"
+      "value": "此操作将永久删除华为云上的所有备份数据，且无法恢复。确认要继续吗？"
     },
     {
       "name": "cloud_sync_clear_storage_disabled_msg",
-      "value": "请先关闭云同步后再清空云存储。"
+      "value": "请先关闭云备份后再清空。"
     },
     {
       "name": "cloud_sync_clear_storage_success",
-      "value": "云存储已清空"
+      "value": "云端备份已清空"
     },
     {
       "name": "cloud_sync_encryption_master_key",
@@ -402,7 +398,7 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "手动同步"
+      "value": "手动备份"
     },
     {
       "name": "data_dev_info",

@@ -24,6 +24,7 @@ import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { CloudBackupManager } from '../utils/CloudBackupManager';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
@@ -235,6 +236,7 @@ struct Index {
     })
     DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
+    CloudBackupManager.getInstance().checkAndAutoBackup();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
       AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
