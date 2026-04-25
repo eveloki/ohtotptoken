@@ -317,20 +317,20 @@
       "value": "云端备份已清空"
     },
     {
-      "name": "cloud_sync_encryption_master_key",
-      "value": "主密码加密"
+      "name": "cloud_sync_encryption_huawei_account",
+      "value": "华为账号加密"
     },
     {
       "name": "cloud_sync_encryption_none",
       "value": "未加密"
     },
     {
-      "name": "cloud_sync_require_master_key_title",
-      "value": "需要设置主密码"
+      "name": "cloud_sync_require_huawei_account_title",
+      "value": "需要登录华为账号"
     },
     {
-      "name": "cloud_sync_require_master_key_msg",
-      "value": "云备份需要主密码来加密您的数据以确保安全。请先设置主密码。"
+      "name": "cloud_sync_require_huawei_account_msg",
+      "value": "云备份需要华为账号登录来加密您的数据以确保安全。请先登录华为账号。"
     },
     {
       "name": "cloud_sync_require_master_key_set",
@@ -1059,6 +1059,46 @@
     {
       "name": "feedback_urgent",
       "value": "紧急反馈"
+    },
+    {
+      "name": "huawei_account_error_not_logged_in",
+      "value": "未登录华为账号，请登录后重试"
+    },
+    {
+      "name": "huawei_account_error_network",
+      "value": "网络异常，请检查网络后重试"
+    },
+    {
+      "name": "huawei_account_error_internal",
+      "value": "登录失败，请重试"
+    },
+    {
+      "name": "huawei_account_error_user_cancel",
+      "value": "已取消授权"
+    },
+    {
+      "name": "huawei_account_error_system_service",
+      "value": "系统服务异常，请稍后重试"
+    },
+    {
+      "name": "huawei_account_current",
+      "value": "当前登录账号"
+    },
+    {
+      "name": "huawei_account_select_title",
+      "value": "选择账号登录"
+    },
+    {
+      "name": "huawei_account_select_to_login",
+      "value": "使用已登录华为账号"
+    },
+    {
+      "name": "cloud_sync_status_synced",
+      "value": "已同步"
+    },
+    {
+      "name": "cloud_sync_status_cloud_only",
+      "value": "仅云端"
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 import { CloudBackupRecord } from '../utils/CloudBackupCrypto';
+import { AppPreference, PREF_KEYS } from '../utils/AppPreference';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
@@ -212,6 +213,29 @@ export struct ShowCloudBackupHistoryPage {
           .fontSize($r('sys.float.ohos_id_text_size_caption'))
           .fontColor($r('sys.color.ohos_id_color_text_secondary'))
           .margin({ left: 4 })
+
+        Text('·')
+          .fontSize($r('sys.float.ohos_id_text_size_caption'))
+          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+          .margin({ left: 4, right: 4 })
+
+        if (record.location === 2) {
+          SymbolGlyph($r('sys.symbol.arrow_down_circle'))
+            .fontSize(12)
+            .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
+          Text($r('app.string.cloud_sync_status_cloud_only'))
+            .fontSize($r('sys.float.ohos_id_text_size_caption'))
+            .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            .margin({ left: 2 })
+        } else {
+          SymbolGlyph($r('sys.symbol.checkmark_circle'))
+            .fontSize(12)
+            .fontColor([$r('app.color.str_main')])
+          Text($r('app.string.cloud_sync_status_synced'))
+            .fontSize($r('sys.float.ohos_id_text_size_caption'))
+            .fontColor($r('app.color.str_main'))
+            .margin({ left: 2 })
+        }
       }
       .padding({ left: 68, bottom: 10 })
       .width('100%')
@@ -296,11 +320,59 @@ export struct ShowCloudBackupHistoryPage {
     this.backupManager.deleteBackupRecord(recordId).then((success: boolean) => {
       this.isLoading = false;
       if (success) {
+        this.updateLastSyncTimeAfterDelete(recordId);
         showSnackBar($r('app.string.cloud_backup_delete_success'), SnackBarNotifyType.SUCCESS);
         this.loadBackupHistory();
       } else {
         showSnackBar($r('app.string.cloud_backup_delete_failed'), SnackBarNotifyType.WARNING);
       }
     });
+  }
+
+  private updateLastSyncTimeAfterDelete(deletedRecordId: string): void {
+    const lastTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string;
+    if (!lastTime || lastTime.length < 10) {
+      return;
+    }
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${this.padZero(today.getMonth() + 1)}-${this.padZero(today.getDate())}`;
+    if (!lastTime.startsWith(todayStr)) {
+      return;
+    }
+    let deletedIsToday = false;
+    for (const record of this.backupRecords) {
+      if (record.id === deletedRecordId) {
+        const recordDate = `${new Date(record.timestamp).getFullYear()}-${this.padZero(new Date(record.timestamp).getMonth() + 1)}-${this.padZero(new Date(record.timestamp).getDate())}`;
+        if (recordDate === todayStr) {
+          deletedIsToday = true;
+        }
+        break;
+      }
+    }
+    if (!deletedIsToday) {
+      return;
+    }
+    let latestRemaining: string = '';
+    for (const record of this.backupRecords) {
+      if (record.id === deletedRecordId) {
+        continue;
+      }
+      const recordDate = `${new Date(record.timestamp).getFullYear()}-${this.padZero(new Date(record.timestamp).getMonth() + 1)}-${this.padZero(new Date(record.timestamp).getDate())}`;
+      if (recordDate === todayStr) {
+        latestRemaining = record.date;
+        break;
+      }
+    }
+    if (latestRemaining.length > 0) {
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, latestRemaining);
+    } else {
+      const yesterday = new Date(today.getTime() - 86400000);
+      const yesterdayStr = `${yesterday.getFullYear()}-${this.padZero(yesterday.getMonth() + 1)}-${this.padZero(yesterday.getDate())} 23:59`;
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, yesterdayStr);
+    }
+  }
+
+  private padZero(n: number): string {
+    return n < 10 ? `0${n}` : `${n}`;
   }
 }

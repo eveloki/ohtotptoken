@@ -317,20 +317,20 @@
       "value": "Cloud backup cleared"
     },
     {
-      "name": "cloud_sync_encryption_master_key",
-      "value": "Master Password Encryption"
+      "name": "cloud_sync_encryption_huawei_account",
+      "value": "Huawei Account Encryption"
     },
     {
       "name": "cloud_sync_encryption_none",
       "value": "Not Encrypted"
     },
     {
-      "name": "cloud_sync_require_master_key_title",
-      "value": "Master Password Required"
+      "name": "cloud_sync_require_huawei_account_title",
+      "value": "Huawei Account Required"
     },
     {
-      "name": "cloud_sync_require_master_key_msg",
-      "value": "Cloud backup requires a master password to encrypt your data. Please set a master password first."
+      "name": "cloud_sync_require_huawei_account_msg",
+      "value": "Cloud backup requires Huawei account login to encrypt your data. Please log in with your Huawei account first."
     },
     {
       "name": "cloud_sync_require_master_key_set",
@@ -1059,6 +1059,46 @@
     {
       "name": "feedback_urgent",
       "value": "Urgent Feedback"
+    },
+    {
+      "name": "huawei_account_error_not_logged_in",
+      "value": "Not logged in to Huawei account. Please log in and retry."
+    },
+    {
+      "name": "huawei_account_error_network",
+      "value": "Network error. Please check your connection and retry."
+    },
+    {
+      "name": "huawei_account_error_internal",
+      "value": "Login failed. Please try again."
+    },
+    {
+      "name": "huawei_account_error_user_cancel",
+      "value": "Authorization cancelled."
+    },
+    {
+      "name": "huawei_account_error_system_service",
+      "value": "System service error. Please retry later."
+    },
+    {
+      "name": "huawei_account_current",
+      "value": "Current account"
+    },
+    {
+      "name": "huawei_account_select_title",
+      "value": "Select account to log in"
+    },
+    {
+      "name": "huawei_account_select_to_login",
+      "value": "Log in with this account"
+    },
+    {
+      "name": "cloud_sync_status_synced",
+      "value": "Synced"
+    },
+    {
+      "name": "cloud_sync_status_cloud_only",
+      "value": "Cloud only"
     }
   ]
 }

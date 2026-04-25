@@ -23,6 +23,7 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
+import { HuaweiAccountManager, HuaweiUserInfo } from '../utils/HuaweiAccountManager';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../utils/CommonConstants';
 
@@ -33,20 +34,29 @@ export struct ShowCloudSyncDetailsPage {
   pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local cloudSyncEnabled: SettingValue = false;
-  @Local masterKeySet: boolean = false;
   @Local lastSyncTime: string = '';
   @Local tokenCount: number = 0;
   @Local Is_loaded: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
+  @Local huaweiNickname: string = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE);
-    this.masterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
     this.lastSyncTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string ?? '';
+    this.syncHuaweiAccountState();
     TokenStore.getInstance().getTokens().then(tokens => {
       this.tokenCount = tokens.length;
     });
+  }
+
+  private syncHuaweiAccountState(): void {
+    const accountMgr = HuaweiAccountManager.getInstance();
+    this.isHuaweiLoggedIn = accountMgr.userLogin;
+    if (accountMgr.userAccount) {
+      this.huaweiNickname = accountMgr.userAccount.nickname;
+    }
   }
 
   build() {
@@ -96,9 +106,12 @@ export struct ShowCloudSyncDetailsPage {
                         SymbolGlyph($r('sys.symbol.person'))
                           .fontSize(20)
                           .fontColor([$r('app.color.str_main')])
-                        Text($r('app.string.cloud_sync_not_logged_in'))
+                        Text(this.isHuaweiLoggedIn ?
+                          this.huaweiNickname : $r('app.string.cloud_sync_not_logged_in'))
                           .fontSize($r('sys.float.ohos_id_text_size_body2'))
-                          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                          .fontColor(this.isHuaweiLoggedIn ?
+                            $r('sys.color.ohos_id_color_text_primary') :
+                            $r('sys.color.ohos_id_color_text_secondary'))
                           .fontWeight(FontWeight.Medium)
                           .textAlign(TextAlign.Start)
                       }
@@ -139,11 +152,11 @@ export struct ShowCloudSyncDetailsPage {
                 ListItem() {
                   SettingItem({ title: $r('app.string.cloud_sync_encryption') }) {
                     Row() {
-                      Text(this.masterKeySet ?
-                        $r('app.string.cloud_sync_encryption_master_key') :
+                      Text(this.isHuaweiLoggedIn ?
+                        $r('app.string.cloud_sync_encryption_huawei_account') :
                         $r('app.string.cloud_sync_encryption_none'))
                         .fontSize($r('sys.float.ohos_id_text_size_body2'))
-                        .fontColor(this.masterKeySet ?
+                        .fontColor(this.isHuaweiLoggedIn ?
                           $r('sys.color.ohos_id_color_text_primary') :
                           $r('sys.color.ohos_id_color_text_secondary'))
                         .fontWeight(FontWeight.Medium)
@@ -336,8 +349,15 @@ export struct ShowCloudSyncDetailsPage {
     this.Is_loaded = true;
     CloudBackupManager.getInstance().clearCloudStorage().then(() => {
       this.Is_loaded = false;
-      this.lastSyncTime = '';
+      const yesterday = new Date(Date.now() - 86400000);
+      const yesterdayStr = `${yesterday.getFullYear()}-${this.padZero(yesterday.getMonth() + 1)}-${this.padZero(yesterday.getDate())} 23:59`;
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, yesterdayStr);
+      this.lastSyncTime = yesterdayStr;
       showSnackBar($r('app.string.cloud_sync_clear_storage_success'), SnackBarNotifyType.SUCCESS);
     });
+  }
+
+  private padZero(n: number): string {
+    return n < 10 ? `0${n}` : `${n}`;
   }
 }

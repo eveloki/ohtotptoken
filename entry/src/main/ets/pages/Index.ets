@@ -55,7 +55,7 @@ import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { CommonConstants } from '../utils/CommonConstants';
-import { HuaweiAccountManager, HuaweiUserInfo } from '../utils/HuaweiAccountManager';
+import { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -114,6 +114,7 @@ struct Index {
   @Local isFeedbackSheetVisible: boolean = false;
   @Local isHuaweiLoggedIn: boolean = false;
   @Local huaweiUser: HuaweiUserInfo | null = null;
+  @Local isAccountSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
@@ -186,37 +187,35 @@ struct Index {
   private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
-    HuaweiAccountManager.getInstance().setContext(this.appCtx);
-    AppStorage.setOrCreate('huawei_is_logged_in', false);
-    AppStorage.setOrCreate('huawei_user', null);
-    HuaweiAccountManager.getInstance().restoreLoginState().then(() => {
+    const accountInitPromise = HuaweiAccountManager.getInstance().init().then(() => {
       this.syncHuaweiAccountState();
     });
-    PermissionManager.getInstance().verifyPermissionsAndPushEvent();
-    bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
-      AppStorage.setOrCreate("BundleInfo", bundleInfo);
-    });
-    //配置预定义好的来自华为官方的个人隐私条款链接
-    AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
-      'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
-
-    tkStore.initTokenStore().then(() => {
+    const tokenStoreInitPromise = tkStore.initTokenStore().then(() => {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
-      // 订阅顶部模糊效果类型变更事件
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
-        // 触发UI重新渲染，更新滚动效果类型
         this.scrollEffectVersion++;
       });
-      tkStore.getTokens().then((tokens) => {
+      return tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.CurrentTokensCount = tokens.length;
         this.token_loading = false;
-        // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
         AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
       });
     });
+
+    Promise.all([accountInitPromise, tokenStoreInitPromise]).then(() => {
+      CloudBackupManager.getInstance().checkAndAutoBackup();
+    });
+
+    this.subscribeDistributedAccountLogout();
+    PermissionManager.getInstance().verifyPermissionsAndPushEvent();
+    bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
+      AppStorage.setOrCreate("BundleInfo", bundleInfo);
+    });
+    AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
+      'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -244,7 +243,6 @@ struct Index {
     })
     DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
-    CloudBackupManager.getInstance().checkAndAutoBackup();
     // 订阅KV数据库同步完成事件
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
       AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
@@ -450,18 +448,33 @@ struct Index {
   }
 
   private syncHuaweiAccountState(): void {
-    this.isHuaweiLoggedIn = AppStorage.get<boolean>('huawei_is_logged_in') ?? false;
-    this.huaweiUser = AppStorage.get<HuaweiUserInfo>('huawei_user') ?? null;
+    this.isHuaweiLoggedIn = HuaweiAccountManager.getInstance().userLogin;
+    this.huaweiUser = HuaweiAccountManager.getInstance().userAccount;
   }
 
   private async triggerHuaweiLogin(): Promise<void> {
-    const result = await HuaweiAccountManager.getInstance().loginWithHuaweiID();
-    this.syncHuaweiAccountState();
-    if (result) {
-      showSnackBar($r('app.string.huawei_account_login_success'), SnackBarNotifyType.SUCCESS);
-    } else {
-      showSnackBar($r('app.string.huawei_account_login_failed'), SnackBarNotifyType.ERROR);
+    try {
+      const result = await HuaweiAccountManager.getInstance().login(this.getUIContext());
+      this.syncHuaweiAccountState();
+      this.isAccountSheetVisible = true;
+    } catch (error) {
+      this.syncHuaweiAccountState();
+      const loginError = error as HuaweiAccountLoginError;
+      if (HuaweiAccountManager.isUserCancel(loginError.code)) {
+        return;
+      }
+      const errorMsg = HuaweiAccountManager.getLoginErrorResource(loginError.code);
+      if (errorMsg) {
+        showSnackBar(errorMsg, SnackBarNotifyType.ERROR);
+      }
     }
+  }
+
+  private confirmHuaweiLogin(): void {
+    HuaweiAccountManager.getInstance().selectHuaweiAccountToLogin();
+    this.syncHuaweiAccountState();
+    this.isAccountSheetVisible = false;
+    showSnackBar($r('app.string.huawei_account_login_success'), SnackBarNotifyType.SUCCESS);
   }
 
   private showLogoutConfirmDialog(): void {
@@ -479,6 +492,7 @@ struct Index {
           action: () => {
             HuaweiAccountManager.getInstance().logout().then(() => {
               this.syncHuaweiAccountState();
+              this.isAccountSheetVisible = false;
             });
           }
         },
@@ -488,6 +502,23 @@ struct Index {
         },
       ],
       cancel: () => {},
+    });
+  }
+
+  private subscribeDistributedAccountLogout(): void {
+    const subscribeInfo: CommonEventManager.CommonEventSubscribeInfo = {
+      events: [
+        CommonEventManager.Support.COMMON_EVENT_DISTRIBUTED_ACCOUNT_LOGOUT,
+      ],
+    };
+    CommonEventManager.createSubscriber(subscribeInfo).then((subscriber) => {
+      CommonEventManager.subscribe(subscriber, (err) => {
+        if (!err) {
+          HuaweiAccountManager.getInstance().logout().then(() => {
+            this.syncHuaweiAccountState();
+          });
+        }
+      });
     });
   }
 
@@ -697,6 +728,84 @@ struct Index {
   }
 
   @Builder
+  AccountSheetBuilder() {
+    Column() {
+      Column() {
+        SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+          .fontSize($r('sys.float.Display_L'))
+          .fontColor([$r('sys.color.icon_emphasize')])
+          .aspectRatio(1)
+
+        Text(this.isHuaweiLoggedIn ?
+          $r('app.string.huawei_account_current') :
+          $r('app.string.huawei_account_select_title'))
+          .fontSize($r('sys.float.Title_M'))
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('sys.color.font_primary'))
+          .margin({ top: $r('sys.float.padding_level10') })
+
+        if (this.huaweiUser) {
+          if (this.huaweiUser.avatarUri !== '') {
+            Image(this.huaweiUser.avatarUri)
+              .draggable(false)
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .margin({ top: 40 })
+          } else if (this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize($r('sys.float.Title_M'))
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
+              .margin({ top: 40 })
+          }
+
+          Text(this.huaweiUser.nickname)
+            .margin({ top: $r('sys.float.padding_level12') })
+            .fontSize($r('sys.float.Body_L'))
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('sys.color.font_primary'))
+        }
+      }
+      .margin({ top: $r('sys.float.padding_level16') })
+
+      Blank();
+
+      Button(this.isHuaweiLoggedIn ?
+        $r('app.string.huawei_account_logout') :
+        $r('app.string.huawei_account_select_to_login'))
+        .type(ButtonType.Capsule)
+        .fontSize($r('sys.float.Body_L'))
+        .role(this.isHuaweiLoggedIn ? ButtonRole.ERROR : ButtonRole.NORMAL)
+        .buttonStyle(this.isHuaweiLoggedIn ? ButtonStyleMode.NORMAL : ButtonStyleMode.EMPHASIZED)
+        .width('100%')
+        .margin({ bottom: $r('sys.float.padding_level5') })
+        .onClick(() => {
+          if (this.isHuaweiLoggedIn) {
+            this.showLogoutConfirmDialog();
+          } else {
+            this.confirmHuaweiLogin();
+          }
+        })
+    }
+    .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
   SettingEntryCardBuilder() {
     List({ space: 10, scroller: this.settingEntryScroller }) {
       // 顶部占位空间，用于触发渐变模糊效果
@@ -709,25 +818,33 @@ struct Index {
       // 华为账号登录卡片
       ListItem() {
         Row({ space: 16 }) {
-          if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.avatarUri) {
+          if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.avatarUri !== '') {
             Image(this.huaweiUser.avatarUri)
-              .width(56)
-              .height(56)
-              .borderRadius(28)
-              .backgroundColor($r('app.color.item_bg'))
+              .draggable(false)
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+          } else if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize(20)
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
           } else {
-            Stack() {
-              Column()
-                .width(56)
-                .height(56)
-                .borderRadius(28)
-                .backgroundColor($r('app.color.item_bg'))
-              SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
-                .fontSize(32)
-                .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
-            }
-            .width(56)
-            .height(56)
+            SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+              .fontSize(48)
+              .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
           }
 
           Column({ space: 4 }) {
@@ -740,7 +857,7 @@ struct Index {
               .textOverflow({ overflow: TextOverflow.Ellipsis })
 
             Text(this.isHuaweiLoggedIn ?
-              'Huawei ID' :
+              $r('app.string.huawei_account_current') :
               $r('app.string.huawei_account_login_desc'))
               .fontSize(14)
               .fontColor($r('sys.color.ohos_id_color_text_secondary'))
@@ -748,17 +865,6 @@ struct Index {
           }
           .alignItems(HorizontalAlign.Start)
           .layoutWeight(1)
-
-          if (this.isHuaweiLoggedIn) {
-            Button($r('app.string.huawei_account_logout'))
-              .fontSize(12)
-              .height(32)
-              .type(ButtonType.Normal)
-              .borderRadius(16)
-              .onClick(() => {
-                this.showLogoutConfirmDialog();
-              })
-          }
         }
         .width('100%')
         .padding({ left: 20, right: 20, top: 16, bottom: 16 })
@@ -768,7 +874,14 @@ struct Index {
         .onClick(() => {
           if (!this.isHuaweiLoggedIn) {
             this.triggerHuaweiLogin();
+          } else {
+            this.isAccountSheetVisible = true;
           }
+        })
+        .bindSheet($$this.isAccountSheetVisible, this.AccountSheetBuilder(), {
+          detents: [SheetSize.MEDIUM],
+          preferType: SheetType.BOTTOM,
+          dragBar: true,
         })
       }
       .padding({

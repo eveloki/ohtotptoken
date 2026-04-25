@@ -16,6 +16,7 @@ import { AppPreference, SettingValue, PREF_KEYS, ROUTE_NAMES } from '../../utils
 import { throttle } from '../../utils/UiUtils';
 import { ShowCloudSyncDetailsPage } from '../ShowCloudSyncDetailsPage';
 import { ShowCloudBackupHistoryPage } from '../ShowCloudBackupHistoryPage';
+import { HuaweiAccountManager } from '../../utils/HuaweiAccountManager';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
 
@@ -29,7 +30,6 @@ export struct BackupAndMigrationSheet {
 
   @Local versionCode?: number;
   @Local cloudBackupEnabled: boolean = false;
-  @Local isMasterKeySet: boolean = false;
   private sheetScroller: Scroller = new Scroller();
 
   //备份时是否为导出模式
@@ -41,7 +41,6 @@ export struct BackupAndMigrationSheet {
     let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
     this.versionCode = bundleInfo?.versionCode;
     this.cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
-    this.isMasterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
   }
 
   //region 加密导入导出
@@ -276,9 +275,10 @@ export struct BackupAndMigrationSheet {
                   description: $r('app.string.data_rdb_cloud_sync_des'),
                   onChange: (IsOn: boolean) => {
                     if (IsOn) {
-                      if (!this.isMasterKeySet) {
+                      if (!HuaweiAccountManager.getInstance().userLogin) {
                         this.cloudBackupEnabled = false;
-                        this.showMasterKeyRequiredDialog();
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+                        this.showHuaweiAccountRequiredDialog();
                         return;
                       }
                     }
@@ -359,10 +359,10 @@ export struct BackupAndMigrationSheet {
     .backgroundColor($r('app.color.window_background'))
   }
 
-  private showMasterKeyRequiredDialog(): void {
+  private showHuaweiAccountRequiredDialog(): void {
     this.getUIContext().showAlertDialog({
-      title: $r('app.string.cloud_sync_require_master_key_title'),
-      message: $r('app.string.cloud_sync_require_master_key_msg'),
+      title: $r('app.string.cloud_sync_require_huawei_account_title'),
+      message: $r('app.string.cloud_sync_require_huawei_account_msg'),
       autoCancel: true,
       alignment: DialogAlignment.Bottom,
       gridCount: 4,
