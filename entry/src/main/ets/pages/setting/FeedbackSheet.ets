@@ -6,6 +6,7 @@ import { ROUTE_NAMES, EXTERNAL_URLS } from '../../utils/AppPreference';
 import { FeedbackPage } from '../FeedbackPage';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
+import { SubItemDivider } from '../../components/SubItemDivider';
 
 @Preview
 @ComponentV2
@@ -40,6 +41,8 @@ export struct FeedbackSheet {
                     this.pageInfos.pushPathByName(ROUTE_NAMES.FeedbackPage, null);
                   }, 1000))
 
+                SubItemDivider()
+
                 SubItemButton({
                   icon: $r('app.media.github_logo'),
                   text: $r('app.string.feedback_github')
@@ -47,6 +50,16 @@ export struct FeedbackSheet {
                   .onClick(throttle((event) => {
                     startBrowsableAbility(this.appCtx, EXTERNAL_URLS.FEEDBACK_GITHUB);
                   }, 1000))
+                //
+                // SubItemDivider()
+                //
+                // SubItemButton({
+                //   symbol: $r('sys.symbol.exclamationmark_triangle'),
+                //   text: $r('app.string.feedback_urgent')
+                // })
+                //   .onClick(throttle((event) => {
+                //
+                //   }, 1000))
               }
             }
             .padding({ left: 10, right: 10 })

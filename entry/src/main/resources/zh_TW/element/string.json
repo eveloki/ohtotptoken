@@ -875,6 +875,10 @@
     {
       "name": "setting_feedback",
       "value": "建議與回饋"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "緊急反饋"
     }
   ]
 }
