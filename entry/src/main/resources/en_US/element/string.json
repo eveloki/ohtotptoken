@@ -875,6 +875,10 @@
     {
       "name": "setting_feedback",
       "value": "Suggest & Feedback"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "Urgent Feedback"
     }
   ]
 }
