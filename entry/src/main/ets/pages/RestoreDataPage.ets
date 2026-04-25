@@ -16,7 +16,7 @@ import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 export struct RestoreDataPage {
   pageInfos: NavPathStack | null = null;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-  @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入朱密码的UI场景
+  @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入主密码的UI场景
   @Local isBegin: boolean = false;//是否开始恢复
   @Local isRestoreSuccess: boolean = false;//是否恢复成功
   @Local progress: number = 0;

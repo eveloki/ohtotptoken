@@ -29,12 +29,6 @@ const DOMAIN = 0xFF00;
 const MAX_BACKUP_COUNT = 5;
 const BACKUP_FILE_PREFIX = 'otp_backup_';
 const BACKUP_FILE_EXT = '.enc';
-const DEVICE_INFO_FILE = 'otp_device_info.json';
-
-interface DeviceInfo {
-  deviceId: string;
-  deviceName: string;
-}
 
 export class CloudBackupManager {
   private static instance: CloudBackupManager | null = null;
@@ -67,7 +61,6 @@ export class CloudBackupManager {
       this.cloudDir = this.context.cloudFileDir;
       hilog.info(DOMAIN, TAG, `init: cloudDir=${this.cloudDir}`);
       await this.ensureCloudDirExists();
-      await this.initDeviceInfo();
     } catch (e) {
       hilog.error(DOMAIN, TAG, `init: error=${JSON.stringify(e)}`);
     }
@@ -88,60 +81,6 @@ export class CloudBackupManager {
     }
   }
 
-  private async initDeviceInfo(): Promise<void> {
-    const deviceInfoPath = `${this.cloudDir}/${DEVICE_INFO_FILE}`;
-    try {
-      const file = fs.openSync(deviceInfoPath, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
-      const stat = await fs.stat(deviceInfoPath);
-      if (stat.size > 0) {
-        fs.closeSync(file);
-        hilog.info(DOMAIN, TAG, 'initDeviceInfo: device info file already exists');
-        return;
-      }
-      fs.closeSync(file);
-    } catch (e) {
-      hilog.info(DOMAIN, TAG, 'initDeviceInfo: no existing file, creating new');
-    }
-
-    const newDeviceInfo: DeviceInfo = {
-      deviceId: this.getDeviceId(),
-      deviceName: this.getDeviceName(),
-    };
-    const text = JSON.stringify(newDeviceInfo);
-    const file = fs.openSync(deviceInfoPath, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE);
-    const writeLen = fs.writeSync(file.fd, text);
-    fs.closeSync(file);
-    hilog.info(DOMAIN, TAG, `initDeviceInfo: created, deviceId=${newDeviceInfo.deviceId}, deviceName=${newDeviceInfo.deviceName}, wrote=${writeLen}`);
-  }
-
-  private getDeviceId(): string {
-    return DeviceInfoHelper.getInstance().getDeviceId();
-  }
-
-  private getDeviceName(): string {
-    return DeviceInfoHelper.getInstance().getDeviceName();
-  }
-
-  private async getDeviceInfo(): Promise<DeviceInfo> {
-    const deviceInfoPath = `${this.cloudDir}/${DEVICE_INFO_FILE}`;
-    try {
-      const file = fs.openSync(deviceInfoPath, fs.OpenMode.READ_ONLY);
-      const stat = await fs.stat(deviceInfoPath);
-      const bufferArray = new ArrayBuffer(stat.size);
-      const readLen = fs.readSync(file.fd, bufferArray);
-      fs.closeSync(file);
-      const uint8Array = new Uint8Array(bufferArray.slice(0, readLen));
-      const text = buffer.from(uint8Array).toString('utf-8');
-      return JSON.parse(text) as DeviceInfo;
-    } catch (e) {
-      hilog.error(DOMAIN, TAG, `getDeviceInfo: error=${JSON.stringify(e)}`);
-      return {
-        deviceId: 'unknown_device',
-        deviceName: 'Unknown Device',
-      };
-    }
-  }
-
   async backupToCloud(): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -157,7 +96,8 @@ export class CloudBackupManager {
 
     const encryptKey = accountMgr.userAccount.unionId;
     const mode = this.crypto.getMode(true);
-    const deviceInfo = await this.getDeviceInfo();
+    const deviceId = DeviceInfoHelper.getInstance().getDeviceId();
+    const deviceName = DeviceInfoHelper.getInstance().getDeviceName();
 
     hilog.info(DOMAIN, TAG, `backupToCloud: starting backup, mode=${mode}`);
 
@@ -170,7 +110,7 @@ export class CloudBackupManager {
     const token = await this.crypto.encrypt(
       plaintext, mode, encryptKey,
       tokens.length, now,
-      deviceInfo.deviceId, deviceInfo.deviceName,
+      deviceId, deviceName,
     );
 
     hilog.info(DOMAIN, TAG, `backupToCloud: token size=${token.length}`);
@@ -189,8 +129,9 @@ export class CloudBackupManager {
     }
 
     const records = await this.listBackupRecords();
-    if (records.length >= MAX_BACKUP_COUNT) {
-      const oldestRecord = records[records.length - 1];
+    const deviceRecords = records.filter(r => r.deviceId === deviceId);
+    if (deviceRecords.length > MAX_BACKUP_COUNT) {
+      const oldestRecord = deviceRecords[deviceRecords.length - 1];
       hilog.info(DOMAIN, TAG, `backupToCloud: max count reached, deleting oldest ${oldestRecord.id}`);
       await this.deleteBackupFile(oldestRecord.id);
     }
@@ -249,6 +190,31 @@ export class CloudBackupManager {
       return true;
     } catch (e) {
       hilog.error(DOMAIN, TAG, `clearCloudStorage: error=${JSON.stringify(e)}`);
+      return false;
+    }
+  }
+
+  async clearDeviceCloudStorage(): Promise<boolean> {
+    await this.init();
+    if (!this.context || !this.cloudDir) {
+      hilog.error(DOMAIN, TAG, 'clearDeviceCloudStorage: not initialized');
+      return false;
+    }
+
+    const deviceId = DeviceInfoHelper.getInstance().getDeviceId();
+    hilog.info(DOMAIN, TAG, `clearDeviceCloudStorage: clearing device=${deviceId}`);
+
+    try {
+      const records = await this.listBackupRecords();
+      const deviceRecords = records.filter((r: CloudBackupRecord) => r.deviceId === deviceId);
+      for (const record of deviceRecords) {
+        await this.deleteBackupFile(record.id);
+      }
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+      hilog.info(DOMAIN, TAG, `clearDeviceCloudStorage: completed, deleted ${deviceRecords.length}`);
+      return true;
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, `clearDeviceCloudStorage: error=${JSON.stringify(e)}`);
       return false;
     }
   }

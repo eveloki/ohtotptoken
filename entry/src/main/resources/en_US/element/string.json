@@ -249,6 +249,14 @@
       "value": "Backup Status"
     },
     {
+      "name": "cloud_sync_status_hint",
+      "value": "Backup data is stored in Huawei Cloud space, not on this app's servers. Syncing may take some time, please wait patiently. Please ensure Huawei Cloud is enabled and has sufficient storage. You also need to enable the cloud switch for this app in Settings > Cloud > Apps using cloud."
+    },
+    {
+      "name": "cloud_sync_open_cloud_space",
+      "value": "Open Huawei Cloud Settings"
+    },
+    {
       "name": "cloud_sync_last_time",
       "value": "Last Backup Time"
     },
@@ -1099,6 +1107,130 @@
     {
       "name": "cloud_sync_status_cloud_only",
       "value": "Cloud only"
+    },
+    {
+      "name": "cloud_sync_trigger_sync",
+      "value": "Trigger Sync"
+    },
+    {
+      "name": "cloud_sync_sync_state",
+      "value": "Sync State"
+    },
+    {
+      "name": "cloud_sync_sync_error",
+      "value": "Error"
+    },
+    {
+      "name": "cloud_sync_state_uploading",
+      "value": "Uploading"
+    },
+    {
+      "name": "cloud_sync_state_upload_failed",
+      "value": "Upload Failed"
+    },
+    {
+      "name": "cloud_sync_state_downloading",
+      "value": "Downloading"
+    },
+    {
+      "name": "cloud_sync_state_download_failed",
+      "value": "Download Failed"
+    },
+    {
+      "name": "cloud_sync_state_completed",
+      "value": "Synced"
+    },
+    {
+      "name": "cloud_sync_state_stopped",
+      "value": "Stopped"
+    },
+    {
+      "name": "cloud_sync_state_idle",
+      "value": "Idle"
+    },
+    {
+      "name": "cloud_sync_error_no_error",
+      "value": "None"
+    },
+    {
+      "name": "cloud_sync_error_network_unavailable",
+      "value": "Network unavailable"
+    },
+    {
+      "name": "cloud_sync_error_wifi_unavailable",
+      "value": "Wi-Fi unavailable"
+    },
+    {
+      "name": "cloud_sync_error_battery_low",
+      "value": "Battery low (<10%)"
+    },
+    {
+      "name": "cloud_sync_error_battery_warning",
+      "value": "Battery warning (<15%)"
+    },
+    {
+      "name": "cloud_sync_error_cloud_full",
+      "value": "Cloud storage full"
+    },
+    {
+      "name": "cloud_sync_error_local_full",
+      "value": "Local storage full"
+    },
+    {
+      "name": "cloud_sync_error_temperature_high",
+      "value": "Device overheated"
+    },
+    {
+      "name": "cloud_sync_error_server_error",
+      "value": "Server unavailable"
+    },
+    {
+      "name": "cloud_sync_start_failed",
+      "value": "Sync failed to start"
+    },
+    {
+      "name": "cloud_sync_started",
+      "value": "Sync started"
+    },
+    {
+      "name": "cloud_sync_syncing",
+      "value": "Syncing..."
+    },
+    {
+      "name": "cloud_sync_backing_up",
+      "value": "Backing up..."
+    },
+    {
+      "name": "cloud_sync_clearing",
+      "value": "Clearing..."
+    },
+    {
+      "name": "cloud_sync_cooldown",
+      "value": "Please wait before syncing again"
+    },
+    {
+      "name": "cloud_backup_this_device",
+      "value": "This Device"
+    },
+    {
+      "name": "cloud_backup_other_devices",
+      "value": "Other Devices"
+    },
+    {
+      "name": "cloud_sync_clear_device",
+      "value": "Clear This Device's Backups"
+    },
+    {
+      "name": "cloud_sync_clear_all",
+      "value": "Clear All Backups"
+    },
+    {
+      "name": "cloud_sync_clear_device_confirm_msg",
+      "value": "This will permanently delete this device's backup data from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_all_confirm_msg",
+      "value": "This will permanently delete ALL backup data from ALL devices from Huawei Cloud. This action cannot be undone. Are you sure?"
     }
   ]
 }

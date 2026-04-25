@@ -249,6 +249,14 @@
       "value": "備份狀態"
     },
     {
+      "name": "cloud_sync_status_hint",
+      "value": "備份資料儲存在華為雲空間中，不儲存於本應用的伺服器。同步需要一定時間，請耐心等待。請確保華為雲空間已開啟且空間充足，並已在「設定 > 雲空間 > 使用雲空間的應用」中開啟本應用的雲空間開關。"
+    },
+    {
+      "name": "cloud_sync_open_cloud_space",
+      "value": "開啟華為雲空間設定"
+    },
+    {
       "name": "cloud_sync_last_time",
       "value": "上次備份時間"
     },
@@ -1099,6 +1107,130 @@
     {
       "name": "cloud_sync_status_cloud_only",
       "value": "僅雲端"
+    },
+    {
+      "name": "cloud_sync_trigger_sync",
+      "value": "觸發同步"
+    },
+    {
+      "name": "cloud_sync_sync_state",
+      "value": "同步狀態"
+    },
+    {
+      "name": "cloud_sync_sync_error",
+      "value": "錯誤"
+    },
+    {
+      "name": "cloud_sync_state_uploading",
+      "value": "上傳中"
+    },
+    {
+      "name": "cloud_sync_state_upload_failed",
+      "value": "上傳失敗"
+    },
+    {
+      "name": "cloud_sync_state_downloading",
+      "value": "下載中"
+    },
+    {
+      "name": "cloud_sync_state_download_failed",
+      "value": "下載失敗"
+    },
+    {
+      "name": "cloud_sync_state_completed",
+      "value": "已同步"
+    },
+    {
+      "name": "cloud_sync_state_stopped",
+      "value": "已停止"
+    },
+    {
+      "name": "cloud_sync_state_idle",
+      "value": "閒置"
+    },
+    {
+      "name": "cloud_sync_error_no_error",
+      "value": "無"
+    },
+    {
+      "name": "cloud_sync_error_network_unavailable",
+      "value": "網路不可用"
+    },
+    {
+      "name": "cloud_sync_error_wifi_unavailable",
+      "value": "Wi-Fi不可用"
+    },
+    {
+      "name": "cloud_sync_error_battery_low",
+      "value": "電量不足（<10%）"
+    },
+    {
+      "name": "cloud_sync_error_battery_warning",
+      "value": "電量警告（<15%）"
+    },
+    {
+      "name": "cloud_sync_error_cloud_full",
+      "value": "雲端空間不足"
+    },
+    {
+      "name": "cloud_sync_error_local_full",
+      "value": "本機空間不足"
+    },
+    {
+      "name": "cloud_sync_error_temperature_high",
+      "value": "裝置溫度過高"
+    },
+    {
+      "name": "cloud_sync_error_server_error",
+      "value": "伺服器不可用"
+    },
+    {
+      "name": "cloud_sync_start_failed",
+      "value": "同步啟動失敗"
+    },
+    {
+      "name": "cloud_sync_started",
+      "value": "同步已啟動"
+    },
+    {
+      "name": "cloud_sync_syncing",
+      "value": "同步中..."
+    },
+    {
+      "name": "cloud_sync_backing_up",
+      "value": "備份中..."
+    },
+    {
+      "name": "cloud_sync_clearing",
+      "value": "清理中..."
+    },
+    {
+      "name": "cloud_sync_cooldown",
+      "value": "請稍後再試同步"
+    },
+    {
+      "name": "cloud_backup_this_device",
+      "value": "本裝置"
+    },
+    {
+      "name": "cloud_backup_other_devices",
+      "value": "其他裝置"
+    },
+    {
+      "name": "cloud_sync_clear_device",
+      "value": "清空本裝置備份"
+    },
+    {
+      "name": "cloud_sync_clear_all",
+      "value": "清空所有備份"
+    },
+    {
+      "name": "cloud_sync_clear_device_confirm_msg",
+      "value": "此操作將從華為雲永久刪除本裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_all_confirm_msg",
+      "value": "此操作將從華為雲永久刪除所有裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
     }
   ]
 }

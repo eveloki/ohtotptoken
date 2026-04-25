@@ -249,6 +249,14 @@
       "value": "备份状态"
     },
     {
+      "name": "cloud_sync_status_hint",
+      "value": "备份数据存储在华为云空间中，不存储于本应用的服务器。同步需要一定时间，请耐心等待。请确保华为云空间已开启且空间充足，并已在\"设置 > 云空间 > 使用云空间的应用\"中打开本应用的云空间开关。"
+    },
+    {
+      "name": "cloud_sync_open_cloud_space",
+      "value": "打开华为云空间设置"
+    },
+    {
       "name": "cloud_sync_last_time",
       "value": "上次备份时间"
     },
@@ -350,7 +358,7 @@
     },
     {
       "name": "cloud_backup_history_max_hint",
-      "value": "最多保留5份备份，每天一份"
+      "value": "每台设备最多保留5份备份，每天一份"
     },
     {
       "name": "cloud_backup_record_tokens",
@@ -1099,6 +1107,130 @@
     {
       "name": "cloud_sync_status_cloud_only",
       "value": "仅云端"
+    },
+    {
+      "name": "cloud_sync_trigger_sync",
+      "value": "触发同步"
+    },
+    {
+      "name": "cloud_sync_sync_state",
+      "value": "同步状态"
+    },
+    {
+      "name": "cloud_sync_sync_error",
+      "value": "错误"
+    },
+    {
+      "name": "cloud_sync_state_uploading",
+      "value": "上传中"
+    },
+    {
+      "name": "cloud_sync_state_upload_failed",
+      "value": "上传失败"
+    },
+    {
+      "name": "cloud_sync_state_downloading",
+      "value": "下载中"
+    },
+    {
+      "name": "cloud_sync_state_download_failed",
+      "value": "下载失败"
+    },
+    {
+      "name": "cloud_sync_state_completed",
+      "value": "已同步"
+    },
+    {
+      "name": "cloud_sync_state_stopped",
+      "value": "已停止"
+    },
+    {
+      "name": "cloud_sync_state_idle",
+      "value": "空闲"
+    },
+    {
+      "name": "cloud_sync_error_no_error",
+      "value": "无"
+    },
+    {
+      "name": "cloud_sync_error_network_unavailable",
+      "value": "网络不可用"
+    },
+    {
+      "name": "cloud_sync_error_wifi_unavailable",
+      "value": "Wi-Fi不可用"
+    },
+    {
+      "name": "cloud_sync_error_battery_low",
+      "value": "电量不足（<10%）"
+    },
+    {
+      "name": "cloud_sync_error_battery_warning",
+      "value": "电量警告（<15%）"
+    },
+    {
+      "name": "cloud_sync_error_cloud_full",
+      "value": "云端空间不足"
+    },
+    {
+      "name": "cloud_sync_error_local_full",
+      "value": "本地空间不足"
+    },
+    {
+      "name": "cloud_sync_error_temperature_high",
+      "value": "设备温度过高"
+    },
+    {
+      "name": "cloud_sync_error_server_error",
+      "value": "服务器不可用"
+    },
+    {
+      "name": "cloud_sync_start_failed",
+      "value": "同步启动失败"
+    },
+    {
+      "name": "cloud_sync_started",
+      "value": "同步已启动"
+    },
+    {
+      "name": "cloud_sync_syncing",
+      "value": "同步中..."
+    },
+    {
+      "name": "cloud_sync_backing_up",
+      "value": "备份中..."
+    },
+    {
+      "name": "cloud_sync_clearing",
+      "value": "清理中..."
+    },
+    {
+      "name": "cloud_sync_cooldown",
+      "value": "请稍后再试同步"
+    },
+    {
+      "name": "cloud_backup_this_device",
+      "value": "本设备"
+    },
+    {
+      "name": "cloud_backup_other_devices",
+      "value": "其他设备"
+    },
+    {
+      "name": "cloud_sync_clear_device",
+      "value": "清空本设备备份"
+    },
+    {
+      "name": "cloud_sync_clear_all",
+      "value": "清空所有备份"
+    },
+    {
+      "name": "cloud_sync_clear_device_confirm_msg",
+      "value": "此操作将从华为云永久删除本设备的所有备份数据，此操作不可撤销。确定要继续吗？"
+    },
+    {
+      "name": "cloud_sync_clear_all_confirm_msg",
+      "value": "此操作将从华为云永久删除所有设备的所有备份数据，此操作不可撤销。确定要继续吗？"
     }
   ]
 }

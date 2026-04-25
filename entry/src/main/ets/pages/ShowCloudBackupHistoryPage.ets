@@ -1,4 +1,4 @@
-import { AppStorageV2 } from '@kit.ArkUI';
+import { AppStorageV2, LengthMetrics } from '@kit.ArkUI';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 import { CloudBackupRecord } from '../utils/CloudBackupCrypto';
 import { AppPreference, PREF_KEYS } from '../utils/AppPreference';
@@ -6,6 +6,7 @@ import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../utils/CommonConstants';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 
 @Entry
 @Preview
@@ -14,12 +15,14 @@ export struct ShowCloudBackupHistoryPage {
   pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local backupRecords: CloudBackupRecord[] = [];
-  @Local isLoading: boolean = false;
+  @Local isLoading: boolean = true;
+  @Local currentDeviceId: string = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private backupManager: CloudBackupManager = CloudBackupManager.getInstance();
   private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
+    this.currentDeviceId = DeviceInfoHelper.getInstance().getDeviceId();
     this.loadBackupHistory();
   }
 
@@ -31,6 +34,14 @@ export struct ShowCloudBackupHistoryPage {
     });
   }
 
+  private getDeviceRecords(): CloudBackupRecord[] {
+    return this.backupRecords.filter(r => r.deviceId === this.currentDeviceId);
+  }
+
+  private getOtherDeviceRecords(): CloudBackupRecord[] {
+    return this.backupRecords.filter(r => r.deviceId !== this.currentDeviceId);
+  }
+
   build() {
     HdsNavDestination() {
       Column() {
@@ -40,7 +51,7 @@ export struct ShowCloudBackupHistoryPage {
               Column() {
                 LoadingProgress()
                   .color(Color.White)
-                  .width(80).height(80)
+                  .width(LengthMetrics.vp(80).value).height(LengthMetrics.vp(80).value)
               }
               .width('100%')
               .height('100%')
@@ -51,44 +62,77 @@ export struct ShowCloudBackupHistoryPage {
               if (this.backupRecords.length === 0 && !this.isLoading) {
                 Column() {
                   SymbolGlyph($r('sys.symbol.rectangle_split_3x1'))
-                    .fontSize(48)
+                    .fontSize(LengthMetrics.vp(48).value)
                     .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
                   Text($r('app.string.cloud_backup_history_empty'))
-                    .fontSize(16)
+                    .fontSize($r('sys.float.ohos_id_text_size_body1'))
                     .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-                    .margin({ top: 12 })
+                    .margin({ top: $r('sys.float.padding_level2') })
                 }
                 .width('100%')
                 .layoutWeight(1)
                 .justifyContent(FlexAlign.Center)
                 .alignItems(HorizontalAlign.Center)
               } else {
-                List({ space: 10, scroller: this.scroller }) {
+                List({ space: LengthMetrics.vp(10).value, scroller: this.scroller }) {
                   ListItem()
                     .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-                  ForEach(this.backupRecords, (record: CloudBackupRecord) => {
+                  if (this.getDeviceRecords().length > 0) {
                     ListItem() {
-                      this.BackupRecordItem(record)
+                      Row() {
+                        Text($r('app.string.cloud_backup_this_device'))
+                          .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
+                          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                          .fontWeight(FontWeight.Medium)
+                      }
+                      .width('100%')
+                      .padding({ left: $r('sys.float.padding_level8'), top: LengthMetrics.vp(4).value, bottom: LengthMetrics.vp(2).value })
                     }
-                  }, (record: CloudBackupRecord) => record.id)
+
+                    ForEach(this.getDeviceRecords(), (record: CloudBackupRecord) => {
+                      ListItem() {
+                        this.BackupRecordItem(record, true)
+                      }
+                    }, (record: CloudBackupRecord) => record.id)
+                  }
+
+                  if (this.getOtherDeviceRecords().length > 0) {
+                    ListItem() {
+                      Row() {
+                        Text($r('app.string.cloud_backup_other_devices'))
+                          .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
+                          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                          .fontWeight(FontWeight.Medium)
+                      }
+                      .width('100%')
+                      .padding({ left: $r('sys.float.padding_level8'), top: $r('sys.float.padding_level2'), bottom: LengthMetrics.vp(2).value })
+                    }
+
+                    ForEach(this.getOtherDeviceRecords(), (record: CloudBackupRecord) => {
+                      ListItem() {
+                        this.BackupRecordItem(record, false)
+                      }
+                    }, (record: CloudBackupRecord) => record.id)
+                  }
                 }
                 .chainAnimation(true)
                 .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
                 .scrollBar(BarState.Off)
+                .backgroundColor($r('app.color.window_background'))
                 .width('100%')
                 .layoutWeight(1)
-                .padding({ left: 10, right: 10, bottom: 10 })
+                .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8'), bottom: $r('sys.float.padding_level8') })
               }
 
               Row() {
                 Text($r('app.string.cloud_backup_history_max_hint'))
-                  .fontSize(12)
+                  .fontSize($r('sys.float.ohos_id_text_size_caption'))
                   .fontColor($r('sys.color.ohos_id_color_text_secondary'))
               }
               .width('100%')
               .justifyContent(FlexAlign.Center)
-              .padding({ top: 8, bottom: 16 })
+              .padding({ top: $r('sys.float.padding_level2'), bottom: $r('sys.float.padding_level5') })
             }
             .width('100%')
             .height('100%')
@@ -140,22 +184,22 @@ export struct ShowCloudBackupHistoryPage {
   }
 
   @Builder
-  BackupRecordItem(record: CloudBackupRecord) {
+  BackupRecordItem(record: CloudBackupRecord, isCurrentDevice: boolean) {
     Column() {
-      Row({ space: 12 }) {
+      Row({ space: LengthMetrics.vp(12).value }) {
         Column() {
           SymbolGlyph($r('sys.symbol.doc_text'))
-            .fontSize(24)
+            .fontSize(LengthMetrics.vp(24).value)
             .fontColor([$r('app.color.str_main')])
         }
-        .width(44)
-        .height(44)
-        .borderRadius(10)
+        .width(LengthMetrics.vp(44).value)
+        .height(LengthMetrics.vp(44).value)
+        .borderRadius($r('sys.float.corner_radius_level4'))
         .backgroundColor($r('app.color.item_bg'))
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
 
-        Column({ space: 4 }) {
+        Column({ space: LengthMetrics.vp(4).value }) {
           Text(record.date)
             .fontSize($r('sys.float.ohos_id_text_size_body1'))
             .fontColor($r('sys.color.ohos_id_color_text_primary'))
@@ -163,7 +207,7 @@ export struct ShowCloudBackupHistoryPage {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-          Row({ space: 8 }) {
+          Row({ space: LengthMetrics.vp(8).value }) {
             Text($r('app.string.cloud_backup_record_tokens', record.tokenCount))
               .fontSize($r('sys.float.ohos_id_text_size_caption'))
               .fontColor($r('sys.color.ohos_id_color_text_secondary'))
@@ -173,9 +217,9 @@ export struct ShowCloudBackupHistoryPage {
               .fontColor($r('sys.color.ohos_id_color_text_secondary'))
 
             if (record.encrypted) {
-              Row({ space: 2 }) {
+              Row({ space: LengthMetrics.vp(2).value }) {
                 SymbolGlyph($r('sys.symbol.lock'))
-                  .fontSize(10)
+                  .fontSize(LengthMetrics.vp(10).value)
                   .fontColor([$r('app.color.str_main')])
               }
             }
@@ -184,65 +228,67 @@ export struct ShowCloudBackupHistoryPage {
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
 
-        Row({ space: 6 }) {
-          SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
-            .fontSize(20)
+        Row({ space: LengthMetrics.vp(6).value }) {
+          SymbolGlyph($r('sys.symbol.arrowshape_down_to_line_fill'))
+            .fontSize(LengthMetrics.vp(20).value)
             .fontColor([$r('app.color.str_main')])
             .onClick(() => {
               this.showRestoreConfirmDialog(record);
             })
 
-          SymbolGlyph($r('sys.symbol.trash'))
-            .fontSize(20)
-            .fontColor([$r('sys.color.ohos_id_color_warning')])
-            .onClick(() => {
-              this.showDeleteConfirmDialog(record);
-            })
+          if (isCurrentDevice) {
+            SymbolGlyph($r('sys.symbol.trash'))
+              .fontSize(LengthMetrics.vp(20).value)
+              .fontColor([$r('sys.color.ohos_id_color_warning')])
+              .onClick(() => {
+                this.showDeleteConfirmDialog(record);
+              })
+          }
         }
         .alignItems(VerticalAlign.Center)
       }
       .width('100%')
-      .padding(12)
+      .padding($r('sys.float.padding_level2'))
       .alignItems(VerticalAlign.Center)
 
       Row() {
         SymbolGlyph($r('sys.symbol.icloud'))
-          .fontSize(12)
+          .fontSize(LengthMetrics.vp(12).value)
           .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
         Text(record.deviceName)
           .fontSize($r('sys.float.ohos_id_text_size_caption'))
           .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-          .margin({ left: 4 })
+          .margin({ left: LengthMetrics.vp(4).value })
 
-        Text('·')
+          Text('·')
           .fontSize($r('sys.float.ohos_id_text_size_caption'))
           .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-          .margin({ left: 4, right: 4 })
+          .margin({ left: LengthMetrics.vp(4).value, right: LengthMetrics.vp(4).value })
 
         if (record.location === 2) {
           SymbolGlyph($r('sys.symbol.arrow_down_circle'))
-            .fontSize(12)
+            .fontSize(LengthMetrics.vp(12).value)
             .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
           Text($r('app.string.cloud_sync_status_cloud_only'))
             .fontSize($r('sys.float.ohos_id_text_size_caption'))
             .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-            .margin({ left: 2 })
+            .margin({ left: LengthMetrics.vp(2).value })
         } else {
           SymbolGlyph($r('sys.symbol.checkmark_circle'))
-            .fontSize(12)
+            .fontSize(LengthMetrics.vp(12).value)
             .fontColor([$r('app.color.str_main')])
           Text($r('app.string.cloud_sync_status_synced'))
             .fontSize($r('sys.float.ohos_id_text_size_caption'))
             .fontColor($r('app.color.str_main'))
-            .margin({ left: 2 })
+            .margin({ left: LengthMetrics.vp(2).value })
         }
       }
-      .padding({ left: 68, bottom: 10 })
+      .padding({ left: LengthMetrics.vp(68).value, bottom: LengthMetrics.vp(10).value })
       .width('100%')
     }
     .width('100%')
     .backgroundColor($r('app.color.item_bg'))
-    .borderRadius(12)
+    .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
     .shadow({ radius: 10, color: $r('app.color.shadow'), offsetX: 10, offsetY: 10 })
   }
 
