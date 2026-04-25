@@ -1023,6 +1023,38 @@
     {
       "name": "setting_feedback",
       "value": "Suggest & Feedback"
+    },
+    {
+      "name": "huawei_account_login",
+      "value": "Log in with Huawei ID"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "Tap to log in"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "Log out"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "Log out"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "Are you sure you want to log out?"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "Logged in successfully"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "Login failed"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "Not logged in"
     }
   ]
 }

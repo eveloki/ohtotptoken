@@ -1023,6 +1023,38 @@
     {
       "name": "setting_feedback",
       "value": "建議與回饋"
+    },
+    {
+      "name": "huawei_account_login",
+      "value": "登入華為帳號"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "點擊登入"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "確定要登出嗎？"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "登入成功"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "登入失敗"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "未登入"
     }
   ]
 }

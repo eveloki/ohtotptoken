@@ -1,19 +1,22 @@
 import { AppStorageV2 } from '@kit.ArkUI';
-import { TopNavigationView } from '../components/TopNavigationView';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 import { CloudBackupRecord } from '../utils/CloudBackupCrypto';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
+import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../utils/CommonConstants';
 
 @Entry
 @Preview
 @ComponentV2
 export struct ShowCloudBackupHistoryPage {
   pageInfos: NavPathStack | null = null;
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local backupRecords: CloudBackupRecord[] = [];
   @Local isLoading: boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private backupManager: CloudBackupManager = CloudBackupManager.getInstance();
+  private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     this.loadBackupHistory();
@@ -28,14 +31,8 @@ export struct ShowCloudBackupHistoryPage {
   }
 
   build() {
-    NavDestination() {
+    HdsNavDestination() {
       Column() {
-        TopNavigationView({
-          title: $r('app.string.cloud_backup_history_title'),
-          onBackClick: () => {
-            this.pageInfos?.pop('');
-          }
-        })
         RelativeContainer() {
           Stack() {
             if (this.isLoading) {
@@ -65,7 +62,10 @@ export struct ShowCloudBackupHistoryPage {
                 .justifyContent(FlexAlign.Center)
                 .alignItems(HorizontalAlign.Center)
               } else {
-                List({ space: 10 }) {
+                List({ space: 10, scroller: this.scroller }) {
+                  ListItem()
+                    .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
                   ForEach(this.backupRecords, (record: CloudBackupRecord) => {
                     ListItem() {
                       this.BackupRecordItem(record)
@@ -96,17 +96,46 @@ export struct ShowCloudBackupHistoryPage {
       }
       .width('100%')
       .height('100%')
-      .padding({ top: 16 })
       .backgroundColor($r('app.color.window_background'))
     }
-    .hideTitleBar(true, true)
+    .bindToScrollable([this.scroller])
+    .titleMode(HdsNavDestinationTitleMode.MODAL)
+    .titleBar({
+      style: {
+        originalStyle: {
+          contentStyle: {
+            titleStyle: {
+              mainTitleColor: $r('sys.color.font_primary'),
+              subTitleColor: $r('sys.color.font_secondary')
+            }
+          },
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectStyle: {
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: this.scrollEffectType
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      },
+      content: {
+        title: {
+          mainTitle: $r('app.string.cloud_backup_history_title'),
+        },
+      }
+    })
     .onReady((context: NavDestinationContext) => {
       this.pageInfos = context.pathStack;
     })
-    .onBackPressed(() => {
-      this.pageInfos?.pop('');
-      return true;
-    });
   }
 
   @Builder

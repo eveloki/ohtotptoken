@@ -36,9 +36,7 @@ import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
 import { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
 import { ShowCodePage } from './ShowCodePage';
-import { PrivacyPage } from './PrivacyPage';
-import { AgreementPage } from './AgreementPage';
-import { FeedbackPage } from './FeedbackPage';
+import { WebPage, WebPageParams } from './WebPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
@@ -57,6 +55,7 @@ import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { CommonConstants } from '../utils/CommonConstants';
+import { HuaweiAccountManager, HuaweiUserInfo } from '../utils/HuaweiAccountManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -113,6 +112,8 @@ struct Index {
   @Local isAgreementSheetVisible: boolean = false;
   @Local isAboutSheetVisible: boolean = false;
   @Local isFeedbackSheetVisible: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
+  @Local huaweiUser: HuaweiUserInfo | null = null;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
@@ -185,6 +186,12 @@ struct Index {
   private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
+    HuaweiAccountManager.getInstance().setContext(this.appCtx);
+    AppStorage.setOrCreate('huawei_is_logged_in', false);
+    AppStorage.setOrCreate('huawei_user', null);
+    HuaweiAccountManager.getInstance().restoreLoginState().then(() => {
+      this.syncHuaweiAccountState();
+    });
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
@@ -442,6 +449,48 @@ struct Index {
     showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
   }
 
+  private syncHuaweiAccountState(): void {
+    this.isHuaweiLoggedIn = AppStorage.get<boolean>('huawei_is_logged_in') ?? false;
+    this.huaweiUser = AppStorage.get<HuaweiUserInfo>('huawei_user') ?? null;
+  }
+
+  private async triggerHuaweiLogin(): Promise<void> {
+    const result = await HuaweiAccountManager.getInstance().loginWithHuaweiID();
+    this.syncHuaweiAccountState();
+    if (result) {
+      showSnackBar($r('app.string.huawei_account_login_success'), SnackBarNotifyType.SUCCESS);
+    } else {
+      showSnackBar($r('app.string.huawei_account_login_failed'), SnackBarNotifyType.ERROR);
+    }
+  }
+
+  private showLogoutConfirmDialog(): void {
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.huawei_account_logout_confirm_title'),
+      message: $r('app.string.huawei_account_logout_confirm_msg'),
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.dialog_btn_confirm'),
+          action: () => {
+            HuaweiAccountManager.getInstance().logout().then(() => {
+              this.syncHuaweiAccountState();
+            });
+          }
+        },
+        {
+          value: $r('app.string.dialog_btn_cancel'),
+          action: () => {}
+        },
+      ],
+      cancel: () => {},
+    });
+  }
+
   private openAddTokenMenu(): void {
     const uiContext = this.getUIContext();
     const promptAction = uiContext.getPromptAction();
@@ -656,6 +705,76 @@ struct Index {
           .width('100%')
           .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
       }
+
+      // 华为账号登录卡片
+      ListItem() {
+        Row({ space: 16 }) {
+          if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.avatarUri) {
+            Image(this.huaweiUser.avatarUri)
+              .width(56)
+              .height(56)
+              .borderRadius(28)
+              .backgroundColor($r('app.color.item_bg'))
+          } else {
+            Stack() {
+              Column()
+                .width(56)
+                .height(56)
+                .borderRadius(28)
+                .backgroundColor($r('app.color.item_bg'))
+              SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+                .fontSize(32)
+                .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
+            }
+            .width(56)
+            .height(56)
+          }
+
+          Column({ space: 4 }) {
+            Text(this.isHuaweiLoggedIn && this.huaweiUser ?
+              this.huaweiUser.nickname : $r('app.string.huawei_account_login'))
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('sys.color.ohos_id_color_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+            Text(this.isHuaweiLoggedIn ?
+              'Huawei ID' :
+              $r('app.string.huawei_account_login_desc'))
+              .fontSize(14)
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .maxLines(1)
+          }
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
+
+          if (this.isHuaweiLoggedIn) {
+            Button($r('app.string.huawei_account_logout'))
+              .fontSize(12)
+              .height(32)
+              .type(ButtonType.Normal)
+              .borderRadius(16)
+              .onClick(() => {
+                this.showLogoutConfirmDialog();
+              })
+          }
+        }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 16, bottom: 16 })
+        .alignItems(VerticalAlign.Center)
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+        .onClick(() => {
+          if (!this.isHuaweiLoggedIn) {
+            this.triggerHuaweiLogin();
+          }
+        })
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 备份与迁移入口
       ListItem() {
@@ -972,17 +1091,13 @@ struct Index {
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
-      ShowCloudSyncDetailsPage()
+      ShowCloudSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
-      ShowCloudBackupHistoryPage()
+      ShowCloudBackupHistoryPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
     }
   }
 

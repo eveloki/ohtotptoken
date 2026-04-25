@@ -3,8 +3,7 @@ import { SettingItem } from '../../components/SettingItem';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { throttle } from '../../utils/UiUtils';
 import { ROUTE_NAMES } from '../../utils/AppPreference';
-import { PrivacyPage } from '../PrivacyPage';
-import { AgreementPage } from '../AgreementPage';
+import { WebPage, WebPageParams } from '../WebPage';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
 
@@ -17,10 +16,8 @@ export struct AgreementSheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.scrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.scrollEffectType })
+    if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams })
     }
   }
 
@@ -36,7 +33,9 @@ export struct AgreementSheet {
               SettingItem({ title: "" }) {
                 SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                   .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage, null);
+                    const privacyUrl = AppStorage.get("AppPrivacyManageInfoUrl") as string;
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                      new WebPageParams(privacyUrl, $r('app.string.privacy_statement')));
                   }, 1000))
 
                 SubItemDivider()
@@ -46,7 +45,9 @@ export struct AgreementSheet {
                   text: $r('app.string.user_agreement')
                 })
                   .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage, null);
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                      new WebPageParams('https://yylx.duan.red/user-agreement-zh-cn.html',
+                        $r('app.string.user_agreement')));
                   }, 1000))
 
               }

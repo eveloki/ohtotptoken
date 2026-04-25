@@ -1023,6 +1023,38 @@
     {
       "name": "setting_feedback",
       "value": "建议与反馈"
+    },
+    {
+      "name": "huawei_account_login",
+      "value": "登录华为账号"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "点击登录"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "退出登录"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "退出登录"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "确定要退出登录吗？"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "登录成功"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "登录失败"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "未登录"
     }
   ]
 }

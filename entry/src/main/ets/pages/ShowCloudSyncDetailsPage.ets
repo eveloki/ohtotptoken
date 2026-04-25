@@ -13,26 +13,7 @@
  * limitations under the License.
  */
 
-/**
- * 华为云备份详情页面
- *
- * 显示云备份相关状态信息和提供操作入口：
- * - 备份状态：显示是否启用云备份
- * - 华为账号：显示登录状态
- * - 最后备份时间：显示上次备份时间
- * - 已备份令牌数量：显示已备份的令牌数量
- * - 加密方式：显示是否使用主密码加密
- * - 网络要求：显示仅在 WiFi 下备份
- * - 手动备份：触发立即备份到云端
- * - 备份历史：查看、恢复、删除历史备份
- * - 清空云端备份：删除所有云端备份
- * - 设备信息：显示设备名称和设备ID
- *
- * @module ShowCloudSyncDetailsPage
- */
-
 import { AppStorageV2 } from '@kit.ArkUI';
-import { TopNavigationView } from '../components/TopNavigationView';
 import { SettingItem } from '../components/SettingItem';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import { AppPreference, SettingValue, PREF_KEYS, ROUTE_NAMES } from '../utils/AppPreference';
@@ -42,33 +23,23 @@ import { SubItemDivider } from '../components/SubItemDivider';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
+import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { CommonConstants } from '../utils/CommonConstants';
 
-/**
- * 华为云备份详情页面组件
- */
 @Entry
 @Preview
 @ComponentV2
 export struct ShowCloudSyncDetailsPage {
-  /** 导航栈 */
   pageInfos: NavPathStack | null = null;
-  /** 云同步是否启用 */
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local cloudSyncEnabled: SettingValue = false;
-  /** 是否已设置主密码 */
   @Local masterKeySet: boolean = false;
-  /** 最后同步时间 */
   @Local lastSyncTime: string = '';
-  /** 令牌数量 */
   @Local tokenCount: number = 0;
-  /** 是否正在加载/同步 */
   @Local Is_loaded: boolean = false;
-  /** 窗口信息 */
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  private scroller: Scroller = new Scroller();
 
-  /**
-   * 页面即将显示时调用
-   * 初始化页面状态数据
-   */
   aboutToAppear(): void {
     this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE);
     this.masterKeySet = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
@@ -79,14 +50,8 @@ export struct ShowCloudSyncDetailsPage {
   }
 
   build() {
-    NavDestination() {
+    HdsNavDestination() {
       Column() {
-        TopNavigationView({
-          title: $r('app.string.data_huawei_cloud_sync_details'),
-          onBackClick: () => {
-            this.pageInfos?.pop('');
-          }
-        })
         RelativeContainer() {
           Stack() {
             if (this.Is_loaded) {
@@ -103,7 +68,10 @@ export struct ShowCloudSyncDetailsPage {
               .backgroundColor('#40000000')
               .justifyContent(FlexAlign.Center)
             } else {
-              List({ space: 10 }) {
+              List({ space: 10, scroller: this.scroller }) {
+                ListItem()
+                  .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
                 ListItem() {
                   SettingItem({ title: $r('app.string.cloud_sync_status') }) {
                     Row() {
@@ -143,7 +111,7 @@ export struct ShowCloudSyncDetailsPage {
                 ListItem() {
                   SettingItem({ title: $r('app.string.cloud_sync_last_time') }) {
                     Row() {
-                      Text((this.lastSyncTime != null && this.lastSyncTime != "")  ? this.lastSyncTime : $r('app.string.cloud_sync_never'))
+                      Text((this.lastSyncTime != null && this.lastSyncTime != "") ? this.lastSyncTime : $r('app.string.cloud_sync_never'))
                         .fontSize($r('sys.float.ohos_id_text_size_body2'))
                         .fontColor($r('sys.color.ohos_id_color_text_primary'))
                         .fontWeight(FontWeight.Medium)
@@ -284,25 +252,48 @@ export struct ShowCloudSyncDetailsPage {
       }
       .width('100%')
       .height('100%')
-      .padding({ top: 16 })
       .backgroundColor($r('app.color.window_background'))
     }
-    .hideTitleBar(true, true)
+    .bindToScrollable([this.scroller])
+    .titleMode(HdsNavDestinationTitleMode.MODAL)
+    .titleBar({
+      style: {
+        originalStyle: {
+          contentStyle: {
+            titleStyle: {
+              mainTitleColor: $r('sys.color.font_primary'),
+              subTitleColor: $r('sys.color.font_secondary')
+            }
+          },
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectStyle: {
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: this.scrollEffectType
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      },
+      content: {
+        title: {
+          mainTitle: $r('app.string.data_huawei_cloud_sync_details'),
+        },
+      }
+    })
     .onReady((context: NavDestinationContext) => {
       this.pageInfos = context.pathStack;
     })
-    .onBackPressed(() => {
-      this.pageInfos?.pop('');
-      return true;
-    });
   }
 
-  /**
-   * 显示清空云存储确认对话框
-   * 
-   * 如果云同步已启用，则提示用户先禁用云同步
-   * 否则显示确认对话框，用户确认后执行清空操作
-   */
   private showClearCloudStorageDialog(): void {
     if (this.cloudSyncEnabled) {
       showSnackBar($r('app.string.cloud_sync_clear_storage_disabled_msg'), SnackBarNotifyType.WARNING);
@@ -332,11 +323,6 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
-  /**
-   * 触发云端备份
-   * 调用 CloudBackupManager.backupToCloud() 备份令牌数据到云端
-   * 备份完成后更新最后同步时间
-   */
   private triggerCloudSync(): void {
     CloudBackupManager.getInstance().backupToCloud().then(success => {
       this.Is_loaded = false;
@@ -346,11 +332,6 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
-  /**
-   * 触发清空云存储
-   * 调用 CloudBackupManager.clearCloudStorage() 删除所有云端备份
-   * 清空完成后重置最后同步时间并显示成功提示
-   */
   private triggerClearCloudStorage(): void {
     this.Is_loaded = true;
     CloudBackupManager.getInstance().clearCloudStorage().then(() => {

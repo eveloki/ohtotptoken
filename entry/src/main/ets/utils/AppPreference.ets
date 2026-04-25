@@ -296,12 +296,8 @@ export enum ROUTE_NAMES {
   ShowCloudBackupHistoryPage = 'ShowCloudBackupHistoryPage',
   /** 展示验证码页面 */
   ShowCodePage = 'ShowCodePage',
-  /** 隐私政策页面 */
-  PrivacyPage = 'PrivacyPage',
-  /** 用户协议页面 */
-  AgreementPage = 'AgreementPage',
-  /** 问题反馈页面 */
-  FeedbackPage = 'FeedbackPage',
+  /** 通用Web页面 */
+  WebPage = 'WebPage',
   /** App锁定页面 */
   AppLockPage= 'pages/AppLockPage',
   /** App首页 */

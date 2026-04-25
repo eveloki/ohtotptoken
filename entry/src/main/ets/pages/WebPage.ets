@@ -1,21 +1,30 @@
-import { AppStorageV2 } from '@kit.ArkUI';
 import { webview } from '@kit.ArkWeb';
 import { CommonConstants } from '../utils/CommonConstants';
-import { AppWindowInfo } from '../entryability/EntryAbility';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+
+@ObservedV2
+export class WebPageParams {
+  url: string = '';
+  title: ResourceStr = '';
+
+  constructor(url: string, title: ResourceStr) {
+    this.url = url;
+    this.title = title;
+  }
+}
 
 @Entry
 @ComponentV2
-export struct AgreementPage {
+export struct WebPage {
   pageInfos: NavPathStack | null = null;
   @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  @Param pageParams: WebPageParams = new WebPageParams('', '');
   @Local webViewController: webview.WebviewController = new webview.WebviewController();
-  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   build() {
     HdsNavDestination() {
       Column() {
-        Web({ controller: this.webViewController, src: 'https://yylx.duan.red/user-agreement-zh-cn.html'})
+        Web({ controller: this.webViewController, src: this.pageParams.url })
           .darkMode(WebDarkMode.Auto)
           .domStorageAccess(true)
           .zoomAccess(true)
@@ -25,13 +34,13 @@ export struct AgreementPage {
           .javaScriptAccess(true)
           .width(CommonConstants.FULL_PERCENT)
       }
-      .width('100%')
-      .height('100%')
+      .width(CommonConstants.FULL_PERCENT)
+      .height(CommonConstants.FULL_PERCENT)
       .backgroundColor($r('app.color.window_background'))
     }
     .titleMode(HdsNavDestinationTitleMode.MODAL)
     .titleBar({
-      enableComponentSafeArea: true, // Web内容会溢出到titlebar，临时启用组件安全区
+      enableComponentSafeArea: true,
       style: {
         originalStyle: {
           contentStyle: {
@@ -56,7 +65,7 @@ export struct AgreementPage {
       },
       content: {
         title: {
-          mainTitle: $r('app.string.user_agreement'),
+          mainTitle: this.pageParams.title,
         },
       }
     })

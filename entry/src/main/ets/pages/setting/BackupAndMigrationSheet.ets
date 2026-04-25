@@ -212,9 +212,9 @@ export struct BackupAndMigrationSheet {
   @Builder
   navDestinationBuilder(name: string, param: Object) {
     if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
-      ShowCloudSyncDetailsPage()
+      ShowCloudSyncDetailsPage({ scrollEffectType: this.scrollEffectStyle })
     } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
-      ShowCloudBackupHistoryPage()
+      ShowCloudBackupHistoryPage({ scrollEffectType: this.scrollEffectStyle })
     }
   }
 

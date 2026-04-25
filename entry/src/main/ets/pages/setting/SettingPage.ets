@@ -24,9 +24,8 @@ import { MasterKeyPage } from '../MasterKeyPage';
 import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
 import { AppearancePage } from '../AppearancePage';
 import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
-import { PrivacyPage } from '../PrivacyPage';
-import { AgreementPage } from '../AgreementPage';
-import { FeedbackPage } from '../FeedbackPage';
+import { WebPage, WebPageParams } from '../WebPage';
+import { EXTERNAL_URLS } from '../../utils/AppPreference';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 
 @Preview
@@ -260,12 +259,8 @@ export struct SettingPage {
       AppearancePage({scrollEffectType: this.scrollEffectType})
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({scrollEffectType: this.scrollEffectType})
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.scrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.scrollEffectType })
-    } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.scrollEffectType })
+    } else if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams })
     }
   }
 
@@ -549,7 +544,9 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage,null);
+                    const privacyUrl = AppStorage.get("AppPrivacyManageInfoUrl") as string;
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                      new WebPageParams(privacyUrl, $r('app.string.privacy_statement')));
                 }, 1000))
 
               SubItemDivider()
@@ -559,7 +556,9 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                    new WebPageParams('https://yylx.duan.red/user-agreement-zh-cn.html',
+                      $r('app.string.user_agreement')));
                 }, 1000))
 
             }
