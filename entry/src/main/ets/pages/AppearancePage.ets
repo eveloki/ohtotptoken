@@ -501,6 +501,9 @@ export struct AppearancePage {
             titleStyle: {
               mainTitleColor: $r('sys.color.font_primary'),
               subTitleColor: $r('sys.color.font_secondary')
+            },
+            backIconStyle: {
+              iconColor: $r('sys.color.icon_primary')
             }
           },
           backgroundStyle: {

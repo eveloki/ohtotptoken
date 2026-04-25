@@ -1055,6 +1055,10 @@
     {
       "name": "huawei_account_not_logged_in",
       "value": "未登录"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "紧急反馈"
     }
   ]
 }
