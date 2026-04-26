@@ -50,7 +50,7 @@ export struct ShowCloudBackupHistoryPage {
             if (this.isLoading) {
               Column() {
                 LoadingProgress()
-                  .color(Color.White)
+                  .color($r('sys.color.font_primary'))
                   .width(LengthMetrics.vp(80).value).height(LengthMetrics.vp(80).value)
               }
               .width('100%')
@@ -58,84 +58,88 @@ export struct ShowCloudBackupHistoryPage {
               .backgroundColor('#40000000')
               .justifyContent(FlexAlign.Center)
             }
-            Column() {
-              if (this.backupRecords.length === 0 && !this.isLoading) {
-                Column() {
-                  SymbolGlyph($r('sys.symbol.rectangle_split_3x1'))
-                    .fontSize(LengthMetrics.vp(48).value)
-                    .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
-                  Text($r('app.string.cloud_backup_history_empty'))
-                    .fontSize($r('sys.float.ohos_id_text_size_body1'))
+            else
+            {
+              Column() {
+                if (this.backupRecords.length === 0 && !this.isLoading) {
+                  Column() {
+                    SymbolGlyph($r('sys.symbol.rectangle_split_3x1'))
+                      .fontSize(LengthMetrics.vp(48).value)
+                      .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
+                    Text($r('app.string.cloud_backup_history_empty'))
+                      .fontSize($r('sys.float.ohos_id_text_size_body1'))
+                      .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                      .margin({ top: $r('sys.float.padding_level2') })
+                  }
+                  .width('100%')
+                  .layoutWeight(1)
+                  .justifyContent(FlexAlign.Center)
+                  .alignItems(HorizontalAlign.Center)
+                } else {
+                  List({ space: LengthMetrics.vp(10).value, scroller: this.scroller }) {
+                    ListItem()
+                      .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+
+                    if (this.getDeviceRecords().length > 0) {
+                      ListItem() {
+                        Row() {
+                          Text($r('app.string.cloud_backup_this_device'))
+                            .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
+                            .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                            .fontWeight(FontWeight.Medium)
+                        }
+                        .width('100%')
+                        .padding({ left: $r('sys.float.padding_level8'), top: LengthMetrics.vp(4).value, bottom: LengthMetrics.vp(2).value })
+                      }
+
+                      ForEach(this.getDeviceRecords(), (record: CloudBackupRecord) => {
+                        ListItem() {
+                          this.BackupRecordItem(record, true)
+                        }
+                      }, (record: CloudBackupRecord) => record.id)
+                    }
+
+                    if (this.getOtherDeviceRecords().length > 0) {
+                      ListItem() {
+                        Row() {
+                          Text($r('app.string.cloud_backup_other_devices'))
+                            .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
+                            .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                            .fontWeight(FontWeight.Medium)
+                        }
+                        .width('100%')
+                        .padding({ left: $r('sys.float.padding_level8'), top: $r('sys.float.padding_level2'), bottom: LengthMetrics.vp(2).value })
+                      }
+
+                      ForEach(this.getOtherDeviceRecords(), (record: CloudBackupRecord) => {
+                        ListItem() {
+                          this.BackupRecordItem(record, false)
+                        }
+                      }, (record: CloudBackupRecord) => record.id)
+                    }
+                  }
+                  .chainAnimation(true)
+                  .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+                  .scrollBar(BarState.Off)
+                  .backgroundColor($r('app.color.window_background'))
+                  .width('100%')
+                  .layoutWeight(1)
+                  .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8'), bottom: $r('sys.float.padding_level8') })
+                }
+
+                Row() {
+                  Text($r('app.string.cloud_backup_history_max_hint'))
+                    .fontSize($r('sys.float.ohos_id_text_size_caption'))
                     .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-                    .margin({ top: $r('sys.float.padding_level2') })
                 }
                 .width('100%')
-                .layoutWeight(1)
                 .justifyContent(FlexAlign.Center)
-                .alignItems(HorizontalAlign.Center)
-              } else {
-                List({ space: LengthMetrics.vp(10).value, scroller: this.scroller }) {
-                  ListItem()
-                    .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
-
-                  if (this.getDeviceRecords().length > 0) {
-                    ListItem() {
-                      Row() {
-                        Text($r('app.string.cloud_backup_this_device'))
-                          .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
-                          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-                          .fontWeight(FontWeight.Medium)
-                      }
-                      .width('100%')
-                      .padding({ left: $r('sys.float.padding_level8'), top: LengthMetrics.vp(4).value, bottom: LengthMetrics.vp(2).value })
-                    }
-
-                    ForEach(this.getDeviceRecords(), (record: CloudBackupRecord) => {
-                      ListItem() {
-                        this.BackupRecordItem(record, true)
-                      }
-                    }, (record: CloudBackupRecord) => record.id)
-                  }
-
-                  if (this.getOtherDeviceRecords().length > 0) {
-                    ListItem() {
-                      Row() {
-                        Text($r('app.string.cloud_backup_other_devices'))
-                          .fontSize($r('sys.float.ohos_id_text_size_sub_title2'))
-                          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
-                          .fontWeight(FontWeight.Medium)
-                      }
-                      .width('100%')
-                      .padding({ left: $r('sys.float.padding_level8'), top: $r('sys.float.padding_level2'), bottom: LengthMetrics.vp(2).value })
-                    }
-
-                    ForEach(this.getOtherDeviceRecords(), (record: CloudBackupRecord) => {
-                      ListItem() {
-                        this.BackupRecordItem(record, false)
-                      }
-                    }, (record: CloudBackupRecord) => record.id)
-                  }
-                }
-                .chainAnimation(true)
-                .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-                .scrollBar(BarState.Off)
-                .backgroundColor($r('app.color.window_background'))
-                .width('100%')
-                .layoutWeight(1)
-                .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8'), bottom: $r('sys.float.padding_level8') })
-              }
-
-              Row() {
-                Text($r('app.string.cloud_backup_history_max_hint'))
-                  .fontSize($r('sys.float.ohos_id_text_size_caption'))
-                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                .padding({ top: $r('sys.float.padding_level2'), bottom: $r('sys.float.padding_level5') })
               }
               .width('100%')
-              .justifyContent(FlexAlign.Center)
-              .padding({ top: $r('sys.float.padding_level2'), bottom: $r('sys.float.padding_level5') })
+              .height('100%')
             }
-            .width('100%')
-            .height('100%')
+
           }
         }
       }
