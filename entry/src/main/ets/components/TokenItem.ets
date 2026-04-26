@@ -43,6 +43,7 @@ export struct TokenItem {
   private dialog_qrcode?: CustomDialogController;
 
   private token_steps: number = 0;
+  private onTimestampChangedHandler: (timestamp: number, force: boolean) => void = () => {};
 
   @Computed
   get is_dark_mode() {
@@ -112,12 +113,13 @@ export struct TokenItem {
   }
 
   aboutToAppear(): void {
-    getContext(this).eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
+    this.onTimestampChangedHandler = (timestamp: number, force: boolean): void => this.onTimestampChanged(timestamp, force);
+    getContext(this).eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
     this.updateToken();
   }
 
   aboutToDisappear(): void {
-    getContext(this).eventHub.off(EVENT_NAMES.TIMESTAMP_CHANGED);
+    getContext(this).eventHub.off(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
   }
 
   onTimestampChanged(timestamp: number, force: boolean): void {
