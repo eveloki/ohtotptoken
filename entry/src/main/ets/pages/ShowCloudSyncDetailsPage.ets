@@ -495,13 +495,13 @@ export struct ShowCloudSyncDetailsPage {
         showSnackBar($r('app.string.cloud_sync_started'), SnackBarNotifyType.SUCCESS);
       }).catch((err: BusinessError) => {
         this.Is_loaded = false;
-        console.error(`FileSync start failed: ${err.code} ${err.message}`);
+        hilog.error(DOMAIN, TAG, `FileSync start failed: ${err.code} ${err.message}`);
         showSnackBar($r('app.string.cloud_sync_start_failed'), SnackBarNotifyType.WARNING);
       });
     } catch (err) {
       this.Is_loaded = false;
       let e = err as BusinessError;
-      console.error(`FileSync start exception: ${e.code} ${e.message}`);
+      hilog.error(DOMAIN, TAG,`FileSync start exception: ${e.code} ${e.message}`);
       showSnackBar($r('app.string.cloud_sync_start_failed'), SnackBarNotifyType.WARNING);
     }
   }

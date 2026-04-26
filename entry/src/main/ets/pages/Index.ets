@@ -791,7 +791,7 @@ struct Index {
         .role(this.isHuaweiLoggedIn ? ButtonRole.ERROR : ButtonRole.NORMAL)
         .buttonStyle(this.isHuaweiLoggedIn ? ButtonStyleMode.NORMAL : ButtonStyleMode.EMPHASIZED)
         .width('100%')
-        .margin({ bottom: $r('sys.float.padding_level5') })
+        .margin({ bottom: $r('sys.float.padding_level24') })
         .onClick(() => {
           if (this.isHuaweiLoggedIn) {
             this.showLogoutConfirmDialog();
