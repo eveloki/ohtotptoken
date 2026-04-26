@@ -42,7 +42,7 @@ export struct ShowCloudSyncDetailsPage {
   @Local cloudSyncEnabled: SettingValue = false;
   @Local lastSyncTime: string = '';
   @Local tokenCount: number = 0;
-  @Local Is_loaded: boolean = false;
+  @Local Is_loaded: boolean = true;
   @Local isHuaweiLoggedIn: boolean = false;
   @Local huaweiNickname: string = '';
   @Local syncState: number = -1;
@@ -78,6 +78,7 @@ export struct ShowCloudSyncDetailsPage {
     if (this.cloudSyncEnabled) {
       this.triggerInitialSync();
     }
+    this.Is_loaded=false;
   }
 
   aboutToDisappear(): void {
@@ -105,7 +106,7 @@ export struct ShowCloudSyncDetailsPage {
             if (this.Is_loaded) {
                Column() {
                  LoadingProgress()
-                   .color(Color.White)
+                   .color($r('sys.color.font_primary'))
                     .width(LengthMetrics.vp(80).value).height(LengthMetrics.vp(80).value)
                   Text(this.loadingText)
                     .fontSize($r('sys.float.ohos_id_text_size_body1'))
