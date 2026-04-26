@@ -469,14 +469,6 @@
       "value": "Display the next token below the current token to enhance usability."
     },
     {
-      "name": "setting_holding_hand_awareness",
-      "value": "Adaptive Grip Sense"
-    },
-    {
-      "name": "setting_holding_hand_awareness_des",
-      "value": "Moves the action bar left, center, or right based on left-hand, both-hand, or right-hand grip. Disabled by default."
-    },
-    {
       "name": "swap_host_user",
       "value": "Swap Displayed Hostname & Username"
     },
@@ -1231,6 +1223,22 @@
     {
       "name": "cloud_sync_clear_all_confirm_msg",
       "value": "This will permanently delete ALL backup data from ALL devices from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_backup_login_required",
+      "value": "Log in with Huawei ID to use cloud backup"
+    },
+    {
+      "name": "huawei_account_logout_cloud_backup_msg",
+      "value": "After logging out, cloud backup will be disabled and local backup records will be cleared. Cloud data will not be affected."
+    },
+    {
+      "name": "cloud_sync_loading_history",
+      "value": "Syncing backup history..."
+    },
+    {
+      "name": "cloud_sync_device_id_hint",
+      "value": "The device name and ID are based on the system-generated device identifier, which may change after factory reset or reinstalling all apps from the same developer. If the ID changes, backups from this device will be displayed under \"Other Devices\"."
     }
   ]
 }

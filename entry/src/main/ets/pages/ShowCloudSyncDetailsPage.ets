@@ -63,6 +63,9 @@ export struct ShowCloudSyncDetailsPage {
     this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE);
     this.lastSyncTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string ?? '';
     this.syncHuaweiAccountState();
+    if (!this.isHuaweiLoggedIn) {
+      return;
+    }
     TokenStore.getInstance().getTokens().then(tokens => {
       this.tokenCount = tokens.length;
     });
@@ -70,7 +73,10 @@ export struct ShowCloudSyncDetailsPage {
       this.fileSync.on('progress', this.syncProgressCallback);
     } catch (err) {
       let e = err as BusinessError;
-      console.error(`FileSync on progress failed: ${e.code} ${e.message}`);
+      hilog.error(DOMAIN, TAG, `FileSync on progress failed: ${e.code} ${e.message}`);
+    }
+    if (this.cloudSyncEnabled) {
+      this.triggerInitialSync();
     }
   }
 
@@ -126,7 +132,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
                   }
                 }
                 .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -170,7 +176,7 @@ export struct ShowCloudSyncDetailsPage {
                           .fontWeight(FontWeight.Medium)
                           .textAlign(TextAlign.Start)
                       }
-                      .padding($r('sys.float.padding_level2'))
+                      .padding($r('sys.float.padding_level8'))
                     }
                   }
                 }
@@ -185,7 +191,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
                   }
                 }
                 .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -199,7 +205,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
                   }
                 }
                 .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -217,7 +223,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
                   }
                 }
                 .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -235,7 +241,7 @@ export struct ShowCloudSyncDetailsPage {
                           .fontWeight(FontWeight.Medium)
                           .textAlign(TextAlign.Start)
                       }
-                      .padding($r('sys.float.padding_level2'))
+                      .padding($r('sys.float.padding_level8'))
                     }
                   }
                 }
@@ -257,7 +263,7 @@ export struct ShowCloudSyncDetailsPage {
                           .fontWeight(FontWeight.Medium)
                           .textAlign(TextAlign.Start)
                       }
-                      .padding($r('sys.float.padding_level2'))
+                      .padding($r('sys.float.padding_level8'))
                     }
                   }
                 }
@@ -273,7 +279,7 @@ export struct ShowCloudSyncDetailsPage {
                           .fontWeight(FontWeight.Medium)
                           .textAlign(TextAlign.Start)
                       }
-                      .padding($r('sys.float.padding_level2'))
+                      .padding($r('sys.float.padding_level8'))
                     }
                   }
                   .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -343,7 +349,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
 
                     SubItemDivider()
 
@@ -354,7 +360,7 @@ export struct ShowCloudSyncDetailsPage {
                         .fontWeight(FontWeight.Medium)
                         .textAlign(TextAlign.Start)
                     }
-                    .padding($r('sys.float.padding_level2'))
+                    .padding($r('sys.float.padding_level8'))
                   }
                 }
                 .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
@@ -481,6 +487,9 @@ export struct ShowCloudSyncDetailsPage {
   }
 
   private triggerFileSync(): void {
+    if (!this.isHuaweiLoggedIn) {
+      return;
+    }
     const now = Date.now();
     if (now - this.lastSyncTriggerTime < this.SYNC_COOLDOWN_MS) {
       showSnackBar($r('app.string.cloud_sync_cooldown'), SnackBarNotifyType.WARNING);
@@ -507,8 +516,7 @@ export struct ShowCloudSyncDetailsPage {
   }
 
   private showClearCloudStorageDialog(): void {
-    if (this.cloudSyncEnabled) {
-      showSnackBar($r('app.string.cloud_sync_clear_storage_disabled_msg'), SnackBarNotifyType.WARNING);
+    if (!this.isHuaweiLoggedIn) {
       return;
     }
     try {
@@ -569,6 +577,10 @@ export struct ShowCloudSyncDetailsPage {
   }
 
   private triggerCloudSync(): void {
+    if (!this.isHuaweiLoggedIn) {
+      this.Is_loaded = false;
+      return;
+    }
     CloudBackupManager.getInstance().backupToCloud().then(success => {
       this.Is_loaded = false;
       if (success) {
@@ -609,4 +621,23 @@ export struct ShowCloudSyncDetailsPage {
       hilog.error(DOMAIN, TAG, `Failed to startAbility. Code: ${err.code}, message: ${err.message}`);
   });
 }
+
+  private triggerInitialSync(): void {
+    CloudBackupManager.getInstance().init().then(() => {
+      return CloudBackupManager.getInstance().listBackupHistory();
+    }).then((records) => {
+      if (records.length === 0) {
+        hilog.info(DOMAIN, TAG, 'triggerInitialSync: no local records, triggering FileSync');
+        this.loadingText = $r('app.string.cloud_sync_loading_history');
+        this.Is_loaded = true;
+        this.fileSync.start().then(() => {
+          this.Is_loaded = false;
+          hilog.info(DOMAIN, TAG, 'triggerInitialSync: FileSync completed');
+        }).catch((err: BusinessError) => {
+          this.Is_loaded = false;
+          hilog.error(DOMAIN, TAG, `triggerInitialSync: FileSync failed: ${err.code} ${err.message}`);
+        });
+      }
+    });
+  }
 }

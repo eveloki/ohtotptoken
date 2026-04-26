@@ -473,14 +473,6 @@
       "value": "在当前令牌下方展示下一个令牌，提高易用性。"
     },
     {
-      "name": "setting_holding_hand_awareness",
-      "value": "启用智感握姿"
-    },
-    {
-      "name": "setting_holding_hand_awareness_des",
-      "value": "根据左手、双手或右手握持状态，自动将操作栏移动到左侧、中间或右侧。默认关闭。"
-    },
-    {
       "name": "swap_host_user",
       "value": "交换主机名与用户名"
     },
@@ -1231,6 +1223,22 @@
     {
       "name": "cloud_sync_clear_all_confirm_msg",
       "value": "此操作将从华为云永久删除所有设备的所有备份数据，此操作不可撤销。确定要继续吗？"
+    },
+    {
+      "name": "cloud_backup_login_required",
+      "value": "登录华为账号后即可使用云备份"
+    },
+    {
+      "name": "huawei_account_logout_cloud_backup_msg",
+      "value": "退出登录后将关闭云备份并清除本设备备份记录，云端数据不受影响。"
+    },
+    {
+      "name": "cloud_sync_loading_history",
+      "value": "正在同步备份记录..."
+    },
+    {
+      "name": "cloud_sync_device_id_hint",
+      "value": "设备名称和标识基于系统生成的设备标识符，恢复出厂设置或卸载同开发者所有应用后重新安装时可能会发生变化。标识变化后，本设备的备份将显示在\"其他设备\"分组中。"
     }
   ]
 }

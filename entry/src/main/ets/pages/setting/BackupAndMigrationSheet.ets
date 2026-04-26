@@ -30,6 +30,7 @@ export struct BackupAndMigrationSheet {
 
   @Local versionCode?: number;
   @Local cloudBackupEnabled: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
   private sheetScroller: Scroller = new Scroller();
 
   //备份时是否为导出模式
@@ -41,6 +42,7 @@ export struct BackupAndMigrationSheet {
     let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
     this.versionCode = bundleInfo?.versionCode;
     this.cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    this.isHuaweiLoggedIn = HuaweiAccountManager.getInstance().userLogin;
   }
 
   //region 加密导入导出
@@ -272,7 +274,10 @@ export struct BackupAndMigrationSheet {
                   icon: $r('sys.symbol.icloud'),
                   title: $r('app.string.data_rdb_cloud_sync'),
                   isOn: this.cloudBackupEnabled as boolean,
-                  description: $r('app.string.data_rdb_cloud_sync_des'),
+                  disable: !this.isHuaweiLoggedIn,
+                  description: this.isHuaweiLoggedIn
+                    ? $r('app.string.data_rdb_cloud_sync_des')
+                    : $r('app.string.cloud_backup_login_required'),
                   onChange: (IsOn: boolean) => {
                     if (IsOn) {
                       if (!HuaweiAccountManager.getInstance().userLogin) {
@@ -291,9 +296,15 @@ export struct BackupAndMigrationSheet {
 
                 SubItemButton({
                   symbol: $r('sys.symbol.icloud'),
-                  text: $r('app.string.data_huawei_cloud_sync_details')
+                  text: $r('app.string.data_huawei_cloud_sync_details'),
+                  description: this.isHuaweiLoggedIn ? '' : $r('app.string.cloud_backup_login_required'),
+                  descriptionColor: $r('sys.color.ohos_id_color_warning'),
                 })
                   .onClick(throttle((event) => {
+                    if (!this.isHuaweiLoggedIn) {
+                      this.showHuaweiAccountRequiredDialog();
+                      return;
+                    }
                     this.pageInfos.pushPathByName(ROUTE_NAMES.ShowCloudSyncDetailsPage, null);
                   }, 1000))
               }

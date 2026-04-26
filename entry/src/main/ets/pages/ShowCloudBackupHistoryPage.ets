@@ -134,7 +134,15 @@ export struct ShowCloudBackupHistoryPage {
                 }
                 .width('100%')
                 .justifyContent(FlexAlign.Center)
-                .padding({ top: $r('sys.float.padding_level2'), bottom: $r('sys.float.padding_level5') })
+                .padding({ bottom: $r('sys.float.padding_level2') })
+
+                Row() {
+                  Text($r('app.string.cloud_sync_device_id_hint'))
+                    .fontSize($r('sys.float.ohos_id_text_size_caption'))
+                    .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                }
+                .width('100%')
+                .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8'), bottom: $r('sys.float.padding_level8') })
               }
               .width('100%')
               .height('100%')
@@ -156,6 +164,9 @@ export struct ShowCloudBackupHistoryPage {
             titleStyle: {
               mainTitleColor: $r('sys.color.font_primary'),
               subTitleColor: $r('sys.color.font_secondary')
+            },
+            backIconStyle: {
+              iconColor: $r('sys.color.icon_primary')
             }
           },
           backgroundStyle: {
@@ -252,7 +263,7 @@ export struct ShowCloudBackupHistoryPage {
         .alignItems(VerticalAlign.Center)
       }
       .width('100%')
-      .padding($r('sys.float.padding_level2'))
+      .padding($r('sys.float.padding_level8'))
       .alignItems(VerticalAlign.Center)
 
       Row() {

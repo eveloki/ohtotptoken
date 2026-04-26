@@ -473,14 +473,6 @@
       "value": "在目前令牌下方展示下一個令牌，提高易用性。"
     },
     {
-      "name": "setting_holding_hand_awareness",
-      "value": "啟用智感握姿"
-    },
-    {
-      "name": "setting_holding_hand_awareness_des",
-      "value": "根據左手、雙手或右手握持狀態，自動將操作欄移動到左側、中間或右側。預設關閉。"
-    },
-    {
       "name": "swap_host_user",
       "value": "交換主機名稱與使用者名稱"
     },
@@ -1231,6 +1223,22 @@
     {
       "name": "cloud_sync_clear_all_confirm_msg",
       "value": "此操作將從華為雲永久刪除所有裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
+    },
+    {
+      "name": "cloud_backup_login_required",
+      "value": "登入華為帳號後即可使用雲備份"
+    },
+    {
+      "name": "huawei_account_logout_cloud_backup_msg",
+      "value": "登出後將關閉雲備份並清除本裝置備份記錄，雲端資料不受影響。"
+    },
+    {
+      "name": "cloud_sync_loading_history",
+      "value": "正在同步備份記錄..."
+    },
+    {
+      "name": "cloud_sync_device_id_hint",
+      "value": "裝置名稱和識別基於系統產生的裝置識別碼，恢復原廠設定或解除安裝同開發者所有應用後重新安裝時可能會發生變化。識別變化後，本裝置的備份將顯示在「其他裝置」分組中。"
     }
   ]
 }

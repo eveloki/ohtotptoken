@@ -178,6 +178,11 @@ export class CloudBackupManager {
       return false;
     }
 
+    if (!HuaweiAccountManager.getInstance().userLogin) {
+      hilog.warn(DOMAIN, TAG, 'clearCloudStorage: Huawei account not logged in, aborting');
+      return false;
+    }
+
     hilog.info(DOMAIN, TAG, 'clearCloudStorage: clearing');
 
     try {
@@ -198,6 +203,11 @@ export class CloudBackupManager {
     await this.init();
     if (!this.context || !this.cloudDir) {
       hilog.error(DOMAIN, TAG, 'clearDeviceCloudStorage: not initialized');
+      return false;
+    }
+
+    if (!HuaweiAccountManager.getInstance().userLogin) {
+      hilog.warn(DOMAIN, TAG, 'clearDeviceCloudStorage: Huawei account not logged in, aborting');
       return false;
     }
 

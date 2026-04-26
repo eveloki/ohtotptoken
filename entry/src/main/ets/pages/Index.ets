@@ -478,9 +478,13 @@ struct Index {
   }
 
   private showLogoutConfirmDialog(): void {
+    const cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    const msg = cloudBackupEnabled
+      ? $r('app.string.huawei_account_logout_cloud_backup_msg')
+      : $r('app.string.huawei_account_logout_confirm_msg');
     this.getUIContext().showAlertDialog({
       title: $r('app.string.huawei_account_logout_confirm_title'),
-      message: $r('app.string.huawei_account_logout_confirm_msg'),
+      message: msg,
       autoCancel: true,
       alignment: DialogAlignment.Bottom,
       gridCount: 4,
@@ -493,6 +497,8 @@ struct Index {
             HuaweiAccountManager.getInstance().logout().then(() => {
               this.syncHuaweiAccountState();
               this.isAccountSheetVisible = false;
+              AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+              AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
             });
           }
         },
@@ -516,6 +522,8 @@ struct Index {
         if (!err) {
           HuaweiAccountManager.getInstance().logout().then(() => {
             this.syncHuaweiAccountState();
+            AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+            AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
           });
         }
       });

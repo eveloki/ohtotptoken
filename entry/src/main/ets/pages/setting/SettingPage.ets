@@ -432,20 +432,6 @@ export struct SettingPage {
 
               SubItemDivider()
 
-              SubItemToggle({
-                icon: $r('sys.symbol.hand_draw'),
-                title: $r('app.string.setting_holding_hand_awareness'),
-                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean,
-                description: $r('app.string.setting_holding_hand_awareness_des'),
-                onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE, IsOn);
-                  this.token_preference.app_appearance_holding_hand_enable = IsOn;
-                  this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
-                }
-              })
-
-              SubItemDivider()
-
               if (this.debug_mode_is_on) {
                 SubItemToggle({
                   icon: $r('sys.symbol.gearshape'),
