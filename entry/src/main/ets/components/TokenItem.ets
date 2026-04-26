@@ -18,7 +18,6 @@ let tkStore = TokenStore.getInstance();
 
 @Preview
 @ComponentV2
-@Reusable
 export struct TokenItem {
   @Require @Param Config: TokenConfig = new TokenConfig();
   @Event Update: (conf: TokenConfig) => void = () => {};
@@ -114,18 +113,6 @@ export struct TokenItem {
 
   aboutToAppear(): void {
     getContext(this).eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
-    this.updateToken();
-  }
-
-  aboutToReuse(params: Record<string, Object>): void {
-    // Config is auto-synced by @Require @Param — no need to reassign
-    // Reset all @Local state to defaults for the new token
-    this.TokenNumber = '000000';
-    this.TokenNumberNext = '000000';
-    this.TokenCounter = '0';
-    this.TokenLeftPeriod = 0;
-    this.btn_hotp_clicked = 0;
-    this.TokenHide = current_token_hide_map[this.Config.TokenUUID] ?? true;
     this.updateToken();
   }
 

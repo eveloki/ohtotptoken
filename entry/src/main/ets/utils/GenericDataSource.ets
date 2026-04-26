@@ -1,5 +1,3 @@
-import { IDataSource, DataChangeListener } from '@kit.ArkUI';
-
 export class GenericDataSource<T> implements IDataSource {
   private listeners: DataChangeListener[] = [];
   private dataArray: T[] = [];
@@ -56,22 +54,32 @@ export class GenericDataSource<T> implements IDataSource {
 
   // --- Internal notification methods ---
   private notifyDataReload(): void {
-    this.listeners.forEach(l => l.onDataReloaded());
+    this.listeners.forEach((l: DataChangeListener): void => {
+      l.onDataReloaded();
+    });
   }
 
   private notifyDataAdd(index: number): void {
-    this.listeners.forEach(l => l.onDataAdd(index));
+    this.listeners.forEach((l: DataChangeListener): void => {
+      l.onDataAdd(index);
+    });
   }
 
   private notifyDataDelete(index: number): void {
-    this.listeners.forEach(l => l.onDataDelete(index));
+    this.listeners.forEach((l: DataChangeListener): void => {
+      l.onDataDelete(index);
+    });
   }
 
   private notifyDataChange(index: number): void {
-    this.listeners.forEach(l => l.onDataChange(index));
+    this.listeners.forEach((l: DataChangeListener): void => {
+      l.onDataChange(index);
+    });
   }
 
   private notifyDataMove(from: number, to: number): void {
-    this.listeners.forEach(l => l.onDataMove(from, to));
+    this.listeners.forEach((l: DataChangeListener): void => {
+      l.onDataMove(from, to);
+    });
   }
 }
