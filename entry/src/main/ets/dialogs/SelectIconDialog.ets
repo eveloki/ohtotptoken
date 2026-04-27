@@ -1,7 +1,11 @@
 import { TokenIcon } from "../components/TokenIcon";
+import { CropModel, CropView } from "../components/ImageCropView";
+import { getImageDimensions, savePixelMapToFile, copyFileToDir } from "../utils/PhotoPickerUtils";
 import { showSelectFilePicker } from "../utils/FileUtils";
 import { AegisIconPack, TokenIconPacks } from "../utils/TokenUtils";
-import { fileIo } from "@kit.CoreFileKit";
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const MAX_ICON_SIZE = 256;
 
 @Preview
 @CustomDialog
@@ -16,6 +20,9 @@ export struct SelectIconDialog {
   @State icon_matched_with_issuer: string[] = [''];
   @State default_icon_pack_visible: boolean = true;
   @State aegis_icon_pack_visible: boolean[] = [];
+  @State showCropCover: boolean = false;
+  @State cropModel: CropModel = new CropModel();
+  @State pendingCropUri: string = '';
 
   private default_icon_data: MyDataSource = new MyDataSource();
   private user_icon_data: MyDataSource = new MyDataSource();
@@ -130,6 +137,13 @@ export struct SelectIconDialog {
     .margin({ left: 10 })
   }
 
+  /**
+   * 自定义图标添加按钮
+   * 流程: DocumentViewPicker选择文件 -> getImageDimensions获取尺寸
+   * - 尺寸 > 128x128: 通过bindContentCover弹出裁剪界面(CropView)，裁剪后保存
+   * - 尺寸 <= 128x128: 直接复制到用户图标目录
+   * - 无法获取尺寸(SVG等): 降级直接复制
+   */
   @Builder
   ItemIconAddButton() {
     ListItem() {
@@ -143,17 +157,88 @@ export struct SelectIconDialog {
       .shadow({ radius: 10, color: Color.Gray })
       .width(40)
       .height(40)
-      .onClick(() => {
-        showSelectFilePicker(1, ["PNG|.png", "JPEG|.jpg", "SVG|.svg"]).then((uris) => {
-          fileIo.open(uris[0]).then((file) => {
-            TokenIconPacks.user_added_icon_packs.addIcon(file);
-            this.user_icon_data.pushData(TokenIconPacks.user_added_icon_packs.latest_icon_path);
-          });
-
-        });
+      .onClick(async () => {
+        try {
+          const uris = await showSelectFilePicker(1, ['png', 'jpg', 'jpeg', 'svg', 'webp']);
+          if (uris.length === 0) {
+            return;
+          }
+          const uri = uris[0];
+          const isSvg = uri.toLowerCase().endsWith('.svg');
+          if (isSvg) {
+            const destPath = await copyFileToDir(uri, TokenIconPacks.user_added_icon_packs.user_icon_path);
+            TokenIconPacks.user_added_icon_packs.addIconByPath(destPath);
+            this.user_icon_data.pushData(destPath);
+            return;
+          }
+          const dims = await getImageDimensions(uri);
+          if (dims === null) {
+            hilog.warn(0, 'SelectIconDialog', 'Cannot get image dimensions, copying directly');
+            const destPath = await copyFileToDir(uri, TokenIconPacks.user_added_icon_packs.user_icon_path);
+            TokenIconPacks.user_added_icon_packs.addIconByPath(destPath);
+            this.user_icon_data.pushData(destPath);
+            return;
+          }
+          if (dims.width > MAX_ICON_SIZE || dims.height > MAX_ICON_SIZE) {
+            this.pendingCropUri = uri;
+            this.cropModel = new CropModel();
+            this.cropModel.setImage(uri).setFrameWidth(1000).setFrameRatio(1);
+            this.showCropCover = true;
+          } else {
+            const destPath = await copyFileToDir(uri, TokenIconPacks.user_added_icon_packs.user_icon_path);
+            TokenIconPacks.user_added_icon_packs.addIconByPath(destPath);
+            this.user_icon_data.pushData(destPath);
+          }
+        } catch (e) {
+          hilog.error(0, 'SelectIconDialog', 'Add icon error: ' + JSON.stringify(e));
+        }
       })
     }
     .margin({ left: 10 })
+  }
+
+  /**
+   * 图片裁剪全屏覆盖层
+   * 使用CropView显示图片+圆形取景框，用户通过拖动/缩放调整裁剪区域
+   * 确认后: cropModel.crop()裁剪PixelMap -> savePixelMapToFile()保存PNG到用户图标目录
+   */
+  @Builder
+  CropCoverBuilder() {
+    Column() {
+      CropView({ model: this.cropModel })
+        .layoutWeight(1)
+        .width('100%')
+
+      Row() {
+        Button($r('app.string.dialog_btn_cancel'))
+          .fontColor(Color.White)
+          .backgroundColor(Color.Transparent)
+          .layoutWeight(1)
+          .onClick(() => {
+            this.showCropCover = false;
+          })
+        Button($r('app.string.dialog_btn_confirm'))
+          .fontColor(Color.White)
+          .backgroundColor(Color.Transparent)
+          .layoutWeight(1)
+          .onClick(async () => {
+            try {
+              const pm: PixelMap = await this.cropModel.crop();
+              const destPath = await savePixelMapToFile(pm, TokenIconPacks.user_added_icon_packs.user_icon_path);
+              TokenIconPacks.user_added_icon_packs.addIconByPath(destPath);
+              this.user_icon_data.pushData(destPath);
+              this.showCropCover = false;
+            } catch (e) {
+              hilog.error(0, 'SelectIconDialog', 'Crop error: ' + JSON.stringify(e));
+            }
+          })
+      }
+      .width('100%')
+      .padding({ left: 20, right: 20, bottom: 30 })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Color.Black)
   }
 
   build() {
@@ -225,6 +310,12 @@ export struct SelectIconDialog {
     }
     .padding(10)
     .width('100%')
+    .bindContentCover(this.showCropCover, this.CropCoverBuilder(), {
+      modalTransition: ModalTransition.DEFAULT,
+      onDisappear: () => {
+        this.showCropCover = false;
+      }
+    })
   }
 }
 
@@ -244,7 +335,7 @@ class BasicDataSource implements IDataSource {
   // 该方法为框架侧调用，为LazyForEach组件向其数据源处添加listener监听
   registerDataChangeListener(listener: DataChangeListener): void {
     if (this.listeners.indexOf(listener) < 0) {
-      console.info('add listener');
+      hilog.info(0, 'SelectIconDialog', 'add listener');
       this.listeners.push(listener);
     }
   }
@@ -253,7 +344,7 @@ class BasicDataSource implements IDataSource {
   unregisterDataChangeListener(listener: DataChangeListener): void {
     const pos = this.listeners.indexOf(listener);
     if (pos >= 0) {
-      console.info('remove listener');
+      hilog.info(0, 'SelectIconDialog', 'remove listener');
       this.listeners.splice(pos, 1);
     }
   }

@@ -41,8 +41,12 @@
       "value": "Forti Token"
     },
     {
-      "name": "tab_setting",
-      "value": "Setting"
+      "name": "tab_me",
+      "value": "Me"
+    },
+    {
+      "name": "button_settings",
+      "value": "Settings"
     },
     {
       "name": "alert_remove_confirm_msg",
@@ -253,6 +257,10 @@
       "value": "Add Token"
     },
     {
+      "name": "app_ua_search_token",
+      "value": "Search Token"
+    },
+    {
       "name": "drop_file_import_data",
       "value": "Drop File This Import Data"
     },
@@ -305,6 +313,14 @@
       "value": "Display the next token below the current token to enhance usability."
     },
     {
+      "name": "setting_holding_hand_awareness",
+      "value": "Adaptive Grip Sense"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "Moves the action bar left, center, or right based on left-hand, both-hand, or right-hand grip. Disabled by default."
+    },
+    {
       "name": "swap_host_user",
       "value": "Swap Displayed Hostname & Username"
     },
@@ -354,7 +370,7 @@
     },
     {
       "name": "app_guide_msg",
-      "value": "Click the + below to add a token"
+      "value": "Click the + in the top right to add a token"
     },
     {
       "name": "setting_add_icon_pack",
@@ -795,6 +811,74 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "Sync tokens from other devices"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "Survey Feedback"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub Feedback"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "Suggest & Feedback"
+    },
+    {
+      "name": "app_biometric_login",
+      "value": "Biometric Login"
+    },
+    {
+      "name": "dialog_icon_select_custom",
+      "value": "Custom"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "Title Bar Blur Type"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "Control the type of title bar blur effect"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "Disabled"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "Common Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "Gradual Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "Gradient Blur"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "Immersive Gradient Blur"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "Bottom Tabs Type"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "Control the display type of bottom tab bar"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "Flatten"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "Suspension"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "Urgent Feedback"
     }
   ]
 }

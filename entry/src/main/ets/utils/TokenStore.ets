@@ -3,6 +3,7 @@ import { TokenConfig } from "./TokenConfig";
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
 import { asset } from '@kit.AssetStoreKit';
+import { EVENT_NAMES } from "./AppPreference";
 
 export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
@@ -18,7 +19,7 @@ export class TokenStore {
   }
 
   private async emitTokenChanged(): Promise<void> {
-    this.appCtx?.eventHub.emit('onTokenChanged');
+    this.appCtx?.eventHub.emit(EVENT_NAMES.TOKEN_CHANGED);
   }
 
   public static getInstance(): TokenStore {

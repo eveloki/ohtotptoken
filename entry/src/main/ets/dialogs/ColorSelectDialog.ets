@@ -1,4 +1,4 @@
-import { AppPreference } from "../utils/AppPreference";
+import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
 import { colorHex, hexColor, mixRgba, scaleRgba, setRgba } from "../utils/ColorUtils";
 
 @Preview
@@ -104,7 +104,7 @@ export struct ColorSelectDialog {
             this.debug_y_pct = y_pct;
             this.debug_scaled_color = scaled_color;
           })
-        if (AppPreference.getPreference('app_debug_mode_on')) {
+        if (AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON)) {
           Column() {
             Text(`x_pct: ${this.debug_x_pct}`)
             Text(`y_pct: ${this.debug_y_pct}`)

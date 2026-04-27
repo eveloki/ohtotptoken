@@ -1,7 +1,7 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -10,11 +10,15 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent,
   writeFileContentCheckHashEqual } from '../utils/FileUtils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { throttle } from '../utils/UiUtils';
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
-
+interface RecoveryKeyParams {
+  recoverySecretKey: string;
+  recoverySecretKeyShow: string;
+}
 @Entry
 @ComponentV2
-struct MasterKeyPage {
+export struct MasterKeyPage {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local isBegin: boolean = false;//是否开始设置主密码
   @Local recoverySecretKey: string = "";//恢复密钥
@@ -22,10 +26,11 @@ struct MasterKeyPage {
   @Local masterKey: string = "";//用户设置的主密码
   @Local masterKeyErr: boolean= false;//用户设置的主密码错误
   @Local is_loaded: boolean = false;
-  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
+  @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
   TOAST_BOTTOM: number = 135;
   tkStore = TokenStore.getInstance();
 
+  pageInfos: NavPathStack | null = null;
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   // 构建上下文
   private renderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
@@ -35,7 +40,7 @@ struct MasterKeyPage {
 
   // 页面销毁时释放动画资源
   aboutToDisappear(): void {
-    console.info('aboutToDisappear');
+    hilog.info(0, 'MasterKeyPage', 'aboutToDisappear');
     lottie.destroy();
   }
 
@@ -53,31 +58,33 @@ struct MasterKeyPage {
           this.recoverySecretKeyShow=this.formatBase32(this.recoverySecretKey);
           AppPreference.setPreference('app_use_master_key_set',true)
           this.is_loaded=false;
-          this.appCtx?.eventHub.emit('onMasterKeyPageBack');
-          router.pushUrl({ url: 'pages/RecoveryKeyRecordPage',params: {
+          this.appCtx?.eventHub.emit(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
+
+          const params: RecoveryKeyParams = {
             recoverySecretKey: this.recoverySecretKey,
-            recoverySecretKeyShow:this.recoverySecretKeyShow
-          } });//为了触发密码保险箱保存 必须要触发路由跳转
+            recoverySecretKeyShow: this.recoverySecretKeyShow
+          };
+          this.pageInfos?.pushPathByName(ROUTE_NAMES.RecoveryKeyRecordPage,params);
         })
       }
       else
       {
-        this.getUIContext().getPromptAction().showToast({ message: $r('app.string.restore_master_key_password_too_short_msg'), bottom: this.TOAST_BOTTOM })
+        showSnackBar($r('app.string.restore_master_key_password_too_short_msg'), SnackBarNotifyType.WARNING);
       }
     }
   }
   confirmRecoveryKey(){
     //this.tkStore.CheckRecoverySecretKey(this.recoverySecretKey).then((b)=>{
-    //  this.getUIContext().getPromptAction().showToast({ message: b?"恢复密钥OK":"恢复密钥Err", bottom: this.TOAST_BOTTOM })
+    //  showSnackBar(b ? "恢复密钥OK" : "恢复密钥Err", SnackBarNotifyType.INFO)
     //})
     //this.appCtx?.eventHub.emit('onMasterKeyPageBack');
-    router.back();
+    this.pageInfos?.pop('');
   }
   exportRecoveryKey(){
     showSaveFilePicker([`totp_recovery_key.text`], ['Text|.text']).then((uris) => {
       if (uris[0] !== undefined && uris[0] !== '') {
         writeFileContentCheckHashEqual(uris[0], this.recoverySecretKey).then(()=>{
-          this.getUIContext().getPromptAction().showToast({ message: "OK", bottom: this.TOAST_BOTTOM })
+          showSnackBar('OK', SnackBarNotifyType.SUCCESS);
         });
       }
     });
@@ -106,6 +113,7 @@ struct MasterKeyPage {
 }
 
   build() {
+    NavDestination() {
     Scroll() {
       if (this.is_loaded) {
         Column() {
@@ -127,7 +135,7 @@ struct MasterKeyPage {
           TopNavigationView({
             title: $r('app.string.restore_master_key_set'),
             onBackClick: () => {
-              router.back();
+              this.pageInfos?.pop('');
             }
           })
           Column() {
@@ -261,10 +269,19 @@ struct MasterKeyPage {
         }
         .width('100%')
         .height('100%')
-        .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
-        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+        .padding({ top: 16 })
+        .backgroundColor($r('app.color.window_background'))
       }
     }
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 
   loadAnimation() {
@@ -275,7 +292,7 @@ struct MasterKeyPage {
       autoplay: false,
       name: this.animateName,
       contentMode: 'Contain',
-      path: "pages/common/no-limit.json",
+      path: "lottie/OTPVerification.json",
     })
     // 因为动画是异步加载，所以对animateItem的操作需要放在动画加载完成回调里操作
     this.animateItem.addEventListener('DOMLoaded', (args: Object): void => {

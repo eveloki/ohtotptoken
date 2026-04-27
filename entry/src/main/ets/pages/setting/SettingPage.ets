@@ -1,31 +1,43 @@
-import { TokenConfig } from '../utils/TokenConfig';
+import { TokenConfig } from '../../utils/TokenConfig';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { bundleManager, common, ConfigurationConstant } from '@kit.AbilityKit';
-import { convertToken2URI, generateFileNameWithDate } from '../utils/TokenUtils'
-import promptAction from '@ohos.promptAction'
-import { SubItemToggle } from '../components/SubItemToggle'
-import { AppStorageV2, curves, router } from '@kit.ArkUI';
-import { AppPreference, SettingColorMode, SettingValue, TokenPreference } from '../utils/AppPreference';
-import { SubItemButton } from '../components/SubItemButton';
-import { SettingItem } from '../components/SettingItem';
+import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUtils'
+import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
+import { SubItemToggle } from '../../components/SubItemToggle'
+import { AppStorageV2, curves } from '@kit.ArkUI';
+import { AppPreference, SettingColorMode, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../../utils/AppPreference';
+import { SubItemButton } from '../../components/SubItemButton';
+import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
-import { PermissionManager } from '../utils/PermissionManager';
-import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../utils/TokenBackup';
-import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../utils/FileUtils';
-import { throttle,startBrowsableAbility } from '../utils/UiUtils';
-import { SubItemDivider } from '../components/SubItemDivider';
-import { SubItemSelect } from '../components/SubItemSelect';
+import { PermissionManager } from '../../utils/PermissionManager';
+import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
+import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/TokenBackup';
+import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../../utils/FileUtils';
+import { throttle } from '../../utils/UiUtils';
+import { SubItemDivider } from '../../components/SubItemDivider';
+import { SubItemSelect } from '../../components/SubItemSelect';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { SubItemIconManager } from '../components/SubItemIconManager';
-import { AppWindowInfo } from '../entryability/EntryAbility';
+import { SubItemIconManager } from '../../components/SubItemIconManager';
+import { AppWindowInfo } from '../../entryability/EntryAbility';
+import { MasterKeyPage } from '../MasterKeyPage';
+import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
+import { AppearancePage } from '../AppearancePage';
+import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
+import { PrivacyPage } from '../PrivacyPage';
+import { AgreementPage } from '../AgreementPage';
+import { FeedbackPage } from '../FeedbackPage';
+import { ScrollEffectType } from '@kit.UIDesignKit';
 
 @Preview
 @ComponentV2
 export struct SettingPage {
+  pageInfos: NavPathStack = new NavPathStack();
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param appBottomAvoidHeight: number = 0;
   @Require @Param appTopAvoidHeight: number = 0;
+  @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  @Param listScroller: Scroller = new Scroller();
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
   @Local versionName?: string;
@@ -33,10 +45,10 @@ export struct SettingPage {
   @Local RdbSyncEnable: SettingValue = false;
   @Local RdbCloudSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
-  @Local is_master_key_enable: boolean = AppPreference.getPreference('app_use_master_key') as boolean;
-  @Local is_master_key_set: boolean = AppPreference.getPreference('app_use_master_key_set') as boolean;
+  @Local is_master_key_enable: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
+  @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
 
-  @Local debug_mode_is_on: boolean = AppPreference.getPreference('app_debug_mode_on') as boolean;
+  @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
@@ -54,10 +66,10 @@ export struct SettingPage {
     this.versionCode = bundleInfo?.versionCode;
     this.versionName = 'Version:' + bundleInfo?.versionName;
     this.appName = bundleInfo?.name;
-    this.RdbSyncEnable = AppPreference.getPreference('app_db_rds_sync_enable');
-    this.RdbCloudSyncEnable = AppPreference.getPreference('app_db_rds_cloud_sync_enable');
+    this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
+    this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     //订阅权限变更
-    this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
     this.str_about_app =
       "Github: SolidFaker/ohtotptoken\n" +
       "E-mail: enbinli@outlook.com\n" +
@@ -71,8 +83,8 @@ export struct SettingPage {
       "Github: ss23/fortitoken-mobile-registration\n" +
       "Github: iamhyc/Aigis\n" +
       "Github: andOTP/andOTP - Icons";
-    this.appCtx.eventHub.on('onMasterKeyPageBack',()=>{
-      this.is_master_key_set = AppPreference.getPreference('app_use_master_key_set') as boolean;
+    this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
+      this.is_master_key_set = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
     })
   }
 
@@ -82,8 +94,8 @@ export struct SettingPage {
       //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
       this.RdbCloudSyncEnable = false;
-      AppPreference.setPreference('app_db_rds_sync_enable', false);
-      AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -96,11 +108,11 @@ export struct SettingPage {
           showSaveFilePicker([`totp_backup_${generateFileNameWithDate()}.bak`], ['BAK|.bak']).then((uris) => {
             const backup: TokenBackup = new TokenBackup(this.versionCode ?? 0, this.Tokens);
             if (uris[0] !== undefined && uris[0] !== '') {
-              saveBackupToFile(uris[0], backup, true, password).then(() => {
-                promptAction.showToast({ message: $r('app.string.toast_backup_success') });
-              }).catch((reason: BusinessError) => {
-                promptAction.showToast({ message: reason.message });
-              });
+                  saveBackupToFile(uris[0], backup, true, password).then(() => {
+                    showSnackBar($r('app.string.toast_backup_success'), SnackBarNotifyType.SUCCESS);
+                  }).catch((reason: BusinessError) => {
+                    showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+                  });
             }
           });
         } else { // 加密导入
@@ -113,8 +125,8 @@ export struct SettingPage {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'SettingPage', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -159,16 +171,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -199,9 +211,9 @@ export struct SettingPage {
                 const backup: TokenBackup = new TokenBackup(this.versionCode, this.Tokens);
                 if (uris[0] !== undefined && uris[0] !== '') {
                   saveBackupToFile(uris[0], backup).then(() => {
-                    promptAction.showToast({ message: $r('app.string.toast_backup_success') });
+                    showSnackBar($r('app.string.toast_backup_success'), SnackBarNotifyType.SUCCESS);
                   }).catch((reason: BusinessError) => {
-                    promptAction.showToast({ message: reason.message });
+                    showSnackBar(reason.message, SnackBarNotifyType.ERROR);
                   });
                 }
               });
@@ -217,16 +229,16 @@ export struct SettingPage {
             value: $r('app.string.setting_backup_cancel'),
             enabled: true,
             action: () => {
-              console.info('Callback when button3 is clicked')
+              hilog.info(0, 'SettingPage', 'Callback when button3 is clicked')
             }
           },
         ],
         cancel: () => {
-          console.info('Closed callbacks')
+          hilog.info(0, 'SettingPage', 'Closed callbacks')
         },
         onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-          console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-          console.log("dialog onWillDismiss")
+          hilog.info(0, 'SettingPage', "reason=" + JSON.stringify(dismissDialogAction.reason))
+          hilog.info(0, 'SettingPage', "dialog onWillDismiss")
           if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
             dismissDialogAction.dismiss()
           }
@@ -256,10 +268,30 @@ export struct SettingPage {
   // 在自定义组件即将析构销毁时将dialogController置空
   aboutToDisappear() {
     this.password_input_dialog = null // 将dialogController置空
-    this.appCtx.eventHub.off('DATASYNCPermissionsUpdate', this.updateDATASYNCPermissions);
+    this.appCtx.eventHub.off(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
+  }
+
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.MasterKeyPage) {
+      MasterKeyPage()
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
+      RecoveryKeyRecordPage()
+    } else if (name === ROUTE_NAMES.AppearancePage) {
+      AppearancePage({scrollEffectType: this.scrollEffectType})
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+      ShowDataSyncDetailsPage({scrollEffectType: this.scrollEffectType})
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
+      PrivacyPage({ scrollEffectType: this.scrollEffectType })
+    } else if (name === ROUTE_NAMES.AgreementPage) {
+      AgreementPage({ scrollEffectType: this.scrollEffectType })
+    } else if (name === ROUTE_NAMES.FeedbackPage) {
+      FeedbackPage({ scrollEffectType: this.scrollEffectType })
+    }
   }
 
   build() {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.is_loaded) {
         Column() {
@@ -272,15 +304,13 @@ export struct SettingPage {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#40000000')
         .justifyContent(FlexAlign.Center)
       } else {
-        List({ space: 10 }) {
+        List({ space: 10, scroller: this.listScroller }) {
           ListItemGroup() {
             ListItem() {
 
             }
-            .height(50 + this.appTopAvoidHeight)
           }
 
           ListItem() {
@@ -323,13 +353,13 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.staroflife_rectangle'),
                 title: $r('app.string.restore_master_key'),
-                isOn: AppPreference.getPreference('app_use_master_key') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean,
                 description: $r('app.string.restore_master_key_msg'),
                 onChange: (IsOn: boolean) => {
                   this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                     this.is_master_key_enable = IsOn;
                   })
-                  AppPreference.setPreference('app_use_master_key', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.USE_MASTER_KEY, IsOn);
                 }
               })
               if (this.is_master_key_enable) {
@@ -341,7 +371,7 @@ export struct SettingPage {
                   descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
                 })
                   .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/MasterKeyPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage,null);
                   }, 1000))
               }
 
@@ -350,16 +380,16 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'),
-                isOn: AppPreference.getPreference('app_safety_privacy_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_privacy_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_privacy_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE, IsOn);
                   try {
                     this.window.WindowClass?.setWindowPrivacyMode(IsOn).catch((err: BusinessError) => {
-                      console.error(`Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
+                      hilog.error(err.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${err.code}, message: ${err.message}`);
                     });
                   } catch (exception) {
-                    console.error(`Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
+                    hilog.error(exception.code, 'SettingPage', `Failed to set the window to privacy mode. Cause code: ${exception.code}, message: ${exception.message}`);
                   }
                 }
               })
@@ -369,7 +399,7 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.key_shield'),
                 title: $r('app.string.setting_safety_lock'),
-                isOn: AppPreference.getPreference('app_safety_lock_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_lock_des'),
                 onChange: (IsOn: boolean) => {
                   if (IsOn) {
@@ -377,11 +407,11 @@ export struct SettingPage {
                       userAuth.getAvailableStatus(userAuth.UserAuthType.PIN, userAuth.AuthTrustLevel.ATL1);
                     } catch (err) {
                       const error = err as BusinessError;
-                      promptAction.showToast({ message: error.message });
+                      showSnackBar(error.message, SnackBarNotifyType.ERROR);
                       return;
                     }
                   }
-                  AppPreference.setPreference('app_safety_lock_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_LOCK_ENABLE, IsOn);
                 }
               })
 
@@ -390,10 +420,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.eye_slash'),
                 title: $r('app.string.setting_hide_token'),
-                isOn: AppPreference.getPreference('app_safety_hide_token_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean,
                 description: $r('app.string.setting_safety_hide_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_hide_token_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE, IsOn);
                   this.token_preference.app_safety_hide_token_enable = IsOn;
                 }
               })
@@ -403,10 +433,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.blur_bar'),
                 title: $r('app.string.setting_background_blur'),
-                isOn: AppPreference.getPreference('app_safety_background_blur_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean,
                 description: $r('app.string.setting_background_blur_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_background_blur_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE, IsOn);
                 }
               })
             }
@@ -418,11 +448,25 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.chevron_up_2_circle'),
                 title: $r('app.string.show_next_token'),
-                isOn: AppPreference.getPreference('app_appearance_show_next_token_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean,
                 description: $r('app.string.show_next_token_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_appearance_show_next_token_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE, IsOn);
                   this.token_preference.app_appearance_show_next_token_enable = IsOn;
+                }
+              })
+
+              SubItemDivider()
+
+              SubItemToggle({
+                icon: $r('sys.symbol.hand_draw'),
+                title: $r('app.string.setting_holding_hand_awareness'),
+                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean,
+                description: $r('app.string.setting_holding_hand_awareness_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE, IsOn);
+                  this.token_preference.app_appearance_holding_hand_enable = IsOn;
+                  this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
                 }
               })
 
@@ -432,13 +476,13 @@ export struct SettingPage {
                 SubItemToggle({
                   icon: $r('sys.symbol.gearshape'),
                   title: $r('app.string.debug_mode'),
-                  isOn: AppPreference.getPreference('app_debug_mode_on') as boolean,
+                  isOn: AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean,
                   description: $r('app.string.debug_mode_des'),
                   onChange: (IsOn: boolean) => {
                     this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
                       this.debug_mode_is_on = IsOn;
                     })
-                    AppPreference.setPreference('app_debug_mode_on', IsOn);
+                    AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, IsOn);
                   }
                 })
 
@@ -448,10 +492,10 @@ export struct SettingPage {
               SubItemToggle({
                 icon: $r('sys.symbol.face'),
                 title: $r('app.string.auto_unlock'),
-                isOn: AppPreference.getPreference('app_safety_auto_unlock_enable') as boolean,
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE) as boolean,
                 description: $r('app.string.auto_unlock_des'),
                 onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference('app_safety_auto_unlock_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, IsOn);
                 }
               })
 
@@ -463,10 +507,10 @@ export struct SettingPage {
                 values: [$r('app.string.setting_color_mode_system'), $r('app.string.setting_color_mode_dark'),
                   $r('app.string.setting_color_mode_light'),],
                 description: $r('app.string.setting_color_mode_desc'),
-                selected: AppPreference.getPreference('app_appearance_color_mode') as number ??
+                selected: AppPreference.getPreference(PREF_KEYS.APPEARANCE_COLOR_MODE) as number ??
                 SettingColorMode.System,
                 onChange: (index: number) => {
-                  AppPreference.setPreference('app_appearance_color_mode', index);
+                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_COLOR_MODE, index);
                   const color_map: Map<SettingColorMode, ConfigurationConstant.ColorMode> = new Map([
                     [SettingColorMode.System, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET],
                     [SettingColorMode.Dark, ConfigurationConstant.ColorMode.COLOR_MODE_DARK],
@@ -487,7 +531,7 @@ export struct SettingPage {
                 text: $r('app.string.customize_appearance')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AppearancePage' });
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AppearancePage,null);
                 }, 1000))
             }
           }
@@ -505,7 +549,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, IsOn);
                 }
               })
 
@@ -522,7 +566,7 @@ export struct SettingPage {
                     PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
                   }
                   this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setPreference('app_db_rds_cloud_sync_enable', IsOn);
+                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
                 }
               })
                 .visibility(Visibility.None)
@@ -535,7 +579,7 @@ export struct SettingPage {
                 text: $r('app.string.data_rdb_sync_details')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/ShowDataSyncDetailsPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage,null);
                 }, 1000))
             }
           }
@@ -545,7 +589,7 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    router.pushUrl({ url: 'pages/PrivacyPage' });
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage,null);
                 }, 1000))
 
               SubItemDivider()
@@ -555,15 +599,7 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  router.pushUrl({ url: 'pages/AgreementPage' });
-                }, 1000))
-
-              SubItemDivider()
-
-              SubItemButton({ symbol: $r("sys.symbol.questionmark_circle"), text: $r('app.string.app_issue_feedback') })
-                .onClick(throttle((event) => {
-                  const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
-                  startBrowsableAbility(context,'https://github.com/SolidFaker/ohtotptoken/issues');
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
                 }, 1000))
 
             }
@@ -585,11 +621,11 @@ export struct SettingPage {
                 this.debug_mode_counter = 0;
               }, 2000);
               if (this.debug_mode_counter > 7) {
-                this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-                  this.debug_mode_is_on = true;
-                  AppPreference.setPreference('app_debug_mode_on', true);
-                  promptAction.showToast({ message: "DEBUG MODE ON" });
-                })
+                  this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
+                    this.debug_mode_is_on = true;
+                    AppPreference.setPreference(PREF_KEYS.DEBUG_MODE_ON, true);
+                    showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
+                  })
 
               }
               this.debug_mode_counter++;
@@ -626,15 +662,18 @@ export struct SettingPage {
             ListItem() {
               Row()
                 .width('100%')
-                .height(this.appBottomAvoidHeight)
+                .height(this.appBottomAvoidHeight + 60)
             }
           }
         }
         .chainAnimation(true)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
-        .backgroundColor($r('app.color.window_background'))
       }
     }
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
   }
 }

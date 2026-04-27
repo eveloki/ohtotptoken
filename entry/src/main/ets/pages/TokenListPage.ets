@@ -3,15 +3,13 @@ import { FortiConfigDialog } from "../dialogs/FortiConfigDialog";
 import { TOTPConfigDialog } from "../dialogs/OTPConfigDialog";
 import { QRCodeDialog } from "../dialogs/QRCodeDialog";
 import { SteamConfigDialog } from "../dialogs/SteamConfigDialog";
-import { AppPreference, SettingValue, TokenPreference } from "../utils/AppPreference";
+import { AppPreference, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from "../utils/AppPreference";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
-import { convertToken2URI, ScanBarCode } from "../utils/TokenUtils";
+import { convertToken2URI } from "../utils/TokenUtils";
 import { AppStorageV2, curves, window } from "@kit.ArkUI";
-import { url } from "@kit.ArkTS";
-import { decodeProtobuf } from "../utils/GoogleAuthUtils";
-import { URIConfigDialog } from "../dialogs/URIConfigDialog";
 import { AppWindowInfo } from "../entryability/EntryAbility";
+import { CommonConstants } from "../utils/CommonConstants";
 
 let tkStore = TokenStore.getInstance();
 
@@ -23,6 +21,7 @@ export struct TokenListPage {
   @Require @Param appTopAvoidHeight: number = 0;
   @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
+  @Param listScroller: Scroller = new Scroller();
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
@@ -32,19 +31,11 @@ export struct TokenListPage {
   @Local token_copy_guide_popup: boolean = false;
 
   @Local token_list_search_result: TokenConfig[] = [];
-  @Local token_list_search_start: boolean = false;
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
-  @Local token_list_touch_down_pos: number = 0;
-  @Local token_list_touch_move_pos: number = 0;
   @Local token_list_search_str: string = '';
-  @Local id_list: string[] = ['search_bar'];
+  @Local id_list: string[] = ['search_bar', 'search_blur_anchor'];
 
-  @Local btn_token_add_clicked: number = 0;
-
-  private plus_btn_height: number = 70;
-
-  private dialog_uri_config?: CustomDialogController;
   private dialog_totp_config?: CustomDialogController;
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
@@ -64,14 +55,41 @@ export struct TokenListPage {
 
   aboutToAppear(): void {
     // 如果已经点击了我知道了则永远不提示了
-    if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
+    if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    getContext(this).eventHub.on('startQuickScan', () => { this.start_quick_scan() });
+    getContext(this).eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
+  }
+
+  private toggleTokenSearchByTitleBar(): void {
+    const nextVisible = !this.token_list_search_visible;
+    this.window.uiContext?.animateTo({ duration: 250, curve: curves.springMotion() }, () => {
+      this.token_list_search_visible = nextVisible;
+      if (!this.token_list_search_visible) {
+        this.token_list_search_str = '';
+        this.token_list_search_enable = false;
+      }
+    })
+    if (nextVisible) {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[0])
+      }, 180)
+    } else {
+      setTimeout(() => {
+        focusControl.requestFocus(this.id_list[1])
+      }, 100)
+    }
   }
 
   build() {
-    Stack({ alignContent: Alignment.BottomEnd }) {
+    Stack({ alignContent: Alignment.Bottom }) {
+      Button('')
+        .id(this.id_list[1])
+        .focusable(true)
+        .width(1)
+        .height(1)
+        .opacity(0)
+        .position({ x: 0, y: 0 })
       if (this.Tokens.length === 0) {
         Row() {
           Text(this.token_list_search_enable ? $r('app.string.app_token_list_search_msg') :
@@ -86,19 +104,14 @@ export struct TokenListPage {
 
       }
       Column() {
-        List({ space: this.token_preference.app_appearance_item_space, initialIndex: 0 }) {
+        List({ space: this.token_preference.app_appearance_item_space, initialIndex: 0, scroller: this.listScroller }) {
           ListItemGroup() {
             ListItem() {
               Column() {
-                if (this.TabBarVisible) {
-                  Row()
-                    .height(50 + this.appTopAvoidHeight)
-                    .width('100%')
-                } else {
-                  Row()
-                    .height(this.appTopAvoidHeight)
-                    .width('100%')
-                }
+                Row()
+                  .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight)
+                  .width('100%')
+                
                 Stack({ alignContent: Alignment.End }) {
                   TextInput({
                     placeholder: $r('app.string.token_search_placeholder'),
@@ -112,23 +125,24 @@ export struct TokenListPage {
                     .onSubmit(() => {
                       this.filterCurrentTokens(this.token_list_search_str);
                     })
-                  SymbolGlyph(this.token_list_search_enable ? $r('sys.symbol.xmark') :
-                  $r('sys.symbol.magnifyingglass'))
+                  SymbolGlyph($r('sys.symbol.xmark'))
                     .fontSize(20)
                     .fontWeight(FontWeight.Medium)
                     .fontColor([$r('app.color.item_fg')])
                     .padding({ right: 10 })
                     .onClick(() => {
-                      if (this.token_list_search_enable) {
-                        this.token_list_search_str = '';
-                      }
-                      this.filterCurrentTokens(this.token_list_search_str);
+                      this.toggleTokenSearchByTitleBar();
                     })
                 }
-                .padding({ left: 10, right: 10, top: 10 })
+                .padding({ left: 10, right: 10, top: this.token_list_search_visible || this.token_list_search_enable ? 10 : 0 })
                 .width('100%')
-                .visibility(this.token_list_search_visible || this.token_list_search_enable ?
-                Visibility.Visible : Visibility.None)
+                .height(this.token_list_search_visible || this.token_list_search_enable ? 56 : 0)
+                .opacity(this.token_list_search_visible || this.token_list_search_enable ? 1 : 0)
+                .translate({
+                  x: 0,
+                  y: this.token_list_search_visible || this.token_list_search_enable ? 0 : -12
+                })
+                .clip(true)
               }
             }
           }
@@ -158,8 +172,8 @@ export struct TokenListPage {
                       .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
                       .toString(),
                     action: () => {
-                      if (AppPreference.getPreference('app_show_guide_tips') as boolean) {
-                        AppPreference.setPreference('app_show_guide_tips', false)
+                      if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
+                        AppPreference.setPreference(PREF_KEYS.SHOW_GUIDE_TIPS, false)
                       }
                       this.token_copy_guide_popup = false;
                     }
@@ -180,19 +194,6 @@ export struct TokenListPage {
                 },
               }
             })
-            .onTouch((event?: TouchEvent) => {
-              let isMoving = false;
-              if (event?.type === TouchType.Down) {
-                setTimeout(() => {
-                  if (!isMoving) this.token_list_search_start = false;
-                }, 200)
-              }
-              if (event?.type === TouchType.Move) {
-                isMoving = true;
-              } else {
-                this.token_list_search_start = true;
-              }
-            })
           }, (item: TokenConfig) => {
             return JSON.stringify(item)
           })
@@ -202,20 +203,13 @@ export struct TokenListPage {
                 setTimeout(() => tkStore.updateTokenRank(from, to), 500);
               }
             })
-          ListItemGroup() {
-            ListItem() {
-              if (this.TabBarVisible) {
-                Row()
-                  .width('100%')
-                  .height(this.appBottomAvoidHeight > this.plus_btn_height ? this.appBottomAvoidHeight : this.plus_btn_height)
-              } else {
-                Row()
-                  .width('100%')
-                  .height(this.appBottomAvoidHeight)
-              }
 
-            }
+          ListItem() {
+            Row()
+              .height(this.TabBarVisible ? (60 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .width('100%')
           }
+          .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
         .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
@@ -225,47 +219,6 @@ export struct TokenListPage {
         .chainAnimation(true)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .onTouch((event?: TouchEvent) => {
-          this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-            if (event?.type === TouchType.Down) {
-              this.token_list_touch_down_pos = event.touches[0].y;
-            }
-            if (event?.type === TouchType.Move) {
-              this.token_list_touch_move_pos = event.touches[0].y - this.token_list_touch_down_pos;
-              if (this.token_list_search_start) {
-                if (this.token_list_touch_move_pos > 200) {
-                  this.token_list_search_visible = true;
-                  focusControl.requestFocus(this.id_list[0])
-                } else if (this.token_list_touch_move_pos < -50) {
-                  this.token_list_search_visible = false;
-                }
-              } else {
-                this.token_list_search_visible = false;
-              }
-            }
-          })
-
-        })
-      }
-      if (this.TabBarVisible) {
-        Button({ type: ButtonType.Circle }) {
-          SymbolGlyph($r('sys.symbol.plus'))
-            .fontSize(40)
-            .fontWeight(FontWeight.Bold)
-            .fontColor([Color.White])
-            .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
-              this.btn_token_add_clicked)
-        }
-        .height(this.plus_btn_height)
-        .backgroundColor($r('app.color.token_number'))
-        .shadow({ radius: 10, color: $r('app.color.shadow') })
-        .margin({ bottom: 10, right: 10 })
-        .padding(10)
-        .bindMenu(this.TokenAddMenu(), { placement: Placement.BottomRight })
-        .onClick(() => {
-          this.btn_token_add_clicked += 1
-        })
-        .accessibilityText($r('app.string.app_ua_add_token'))
       }
     }
   }
@@ -380,78 +333,5 @@ export struct TokenListPage {
       }
     }
     .margin({ left: 10 })
-  }
-
-  @Builder
-  TokenAddMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.app_scan_code') })
-        .onClick(async () => {
-          this.start_quick_scan();
-        })
-        .accessibilityText($r('app.string.app_scan_code'))
-      MenuItem({ content: $r('app.string.tab_token_add_key') })
-        .onClick(() => {
-          this.dialog_totp_config = new CustomDialogController({
-            builder: TOTPConfigDialog({
-              confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
-            })
-          })
-          this.dialog_totp_config.open()
-        })
-        .accessibilityText($r('app.string.tab_token_add_key'))
-      MenuItem({ content: $r('app.string.tab_token_add_uri') })
-        .onClick(() => {
-          this.dialog_uri_config = new CustomDialogController({
-            builder: URIConfigDialog({
-              confirm: (tokens) => {
-                this.updateTokenConfigs(tokens);
-              }
-            })
-          })
-          this.dialog_uri_config.open()
-        })
-        .accessibilityText($r('app.string.tab_token_add_uri'))
-      MenuItem({ content: $r('app.string.tab_token_add_forti_key') })
-        .onClick(() => {
-          this.dialog_forti_config = new CustomDialogController({
-            builder: FortiConfigDialog({
-              confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
-            })
-          })
-          this.dialog_forti_config.open()
-        })
-        .accessibilityText($r('app.string.tab_token_add_forti_key'))
-      MenuItem({ content: $r('app.string.tab_token_add_stream_key') })
-        .onClick(() => {
-          this.dialog_steam_config = new CustomDialogController({
-            builder: SteamConfigDialog({
-              confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
-            })
-          })
-          this.dialog_steam_config.open()
-        })
-        .accessibilityText($r('app.string.tab_token_add_stream_key'))
-    }
-  }
-
-  start_quick_scan() {
-    ScanBarCode().then((code) => {
-      // google authenticator migration
-      if (code.startsWith('otpauth-migration://offline?data=')) {
-        const data = new url.URLParams(url.URL.parseURL(code).search).get("data");
-        decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
-          this.updateTokenConfigs(confs);
-        });
-      } else if (code.startsWith('otpauth://')) {
-        this.dialog_totp_config = new CustomDialogController({
-          builder: TOTPConfigDialog({
-            scan_code_original_Value: code, // 弹窗立刻扫码赋值
-            confirm: (new_conf) => {this.updateTokenConfig(JSON.parse(new_conf), true)}
-          })
-        })
-        this.dialog_totp_config.open()
-      }
-    });
   }
 }

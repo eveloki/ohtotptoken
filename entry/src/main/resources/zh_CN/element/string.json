@@ -41,7 +41,11 @@
       "value": "Steam令牌"
     },
     {
-      "name": "tab_setting",
+      "name": "tab_me",
+      "value": "我的"
+    },
+    {
+      "name": "button_settings",
       "value": "设置"
     },
     {
@@ -205,6 +209,10 @@
       "value": "解锁"
     },
     {
+      "name": "app_biometric_login",
+      "value": "生物识别登录"
+    },
+    {
       "name": "distributed_data_sync",
       "value": "用于多设备自由流转."
     },
@@ -251,6 +259,10 @@
     {
       "name": "app_ua_add_token",
       "value": "添加密钥"
+    },
+    {
+      "name": "app_ua_search_token",
+      "value": "搜索密钥"
     },
     {
       "name": "drop_file_import_data",
@@ -305,6 +317,14 @@
       "value": "在当前令牌下方展示下一个令牌，提高易用性。"
     },
     {
+      "name": "setting_holding_hand_awareness",
+      "value": "启用智感握姿"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "根据左手、双手或右手握持状态，自动将操作栏移动到左侧、中间或右侧。默认关闭。"
+    },
+    {
       "name": "swap_host_user",
       "value": "交换主机名与用户名"
     },
@@ -354,7 +374,7 @@
     },
     {
       "name": "app_guide_msg",
-      "value": "点击下方+添加令牌"
+      "value": "点击右上角+添加令牌"
     },
     {
       "name": "setting_add_icon_pack",
@@ -383,6 +403,10 @@
     {
       "name": "dialog_icon_select_auto",
       "value": "自动"
+    },
+    {
+      "name": "dialog_icon_select_custom",
+      "value": "用户自定义"
     },
     {
       "name": "icon_alert_remove_confirm_msg",
@@ -795,6 +819,66 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "从其他设备同步令牌"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "顶部模糊类型"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "控制顶部模糊效果的类型。"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "关闭"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "通用模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "过渡模糊"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "渐变模糊"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "沉浸式渐变模糊"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "底部Tabs类型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "控制底部标签栏的显示类型"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "平铺"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "悬浮"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "问卷反馈"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub反馈"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "建议与反馈"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "紧急反馈"
     }
   ]
 }

@@ -1,24 +1,20 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { webview } from '@kit.ArkWeb';
 import { CommonConstants } from '../utils/CommonConstants';
-import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
+import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 
 @Entry
 @ComponentV2
-struct AgreementPage {
+export struct AgreementPage {
+  pageInfos: NavPathStack | null = null;
+  @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local webViewController: webview.WebviewController = new webview.WebviewController();
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   build() {
-    Column() {
-      TopNavigationView({
-        title: $r('app.string.user_agreement'),
-        onBackClick: () => {
-          router.back();
-        }
-      })
-      Stack() {
+    HdsNavDestination() {
+      Column() {
         Web({ controller: this.webViewController, src: 'https://yylx.duan.red/user-agreement-zh-cn.html'})
           .darkMode(WebDarkMode.Auto)
           .domStorageAccess(true)
@@ -29,11 +25,46 @@ struct AgreementPage {
           .javaScriptAccess(true)
           .width(CommonConstants.FULL_PERCENT)
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.window_background'))
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
-
+    .titleMode(HdsNavDestinationTitleMode.MODAL)
+    .titleBar({
+      enableComponentSafeArea: true, // Web内容会溢出到titlebar，临时启用组件安全区
+      style: {
+        originalStyle: {
+          contentStyle: {
+            titleStyle: {
+              mainTitleColor: $r('sys.color.font_primary'),
+              subTitleColor: $r('sys.color.font_secondary')
+            },
+            backIconStyle: {
+              iconColor: $r('sys.color.icon_primary')
+            }
+          },
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        scrollEffectStyle: {
+          backgroundStyle: {
+            maskExtraHeight: 0
+          }
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      },
+      content: {
+        title: {
+          mainTitle: $r('app.string.user_agreement'),
+        },
+      }
+    })
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
   }
 }

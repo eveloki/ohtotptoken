@@ -1,7 +1,7 @@
 import { bundleManager, common } from '@kit.AbilityKit';
 import { distributedKVStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference } from './AppPreference';
+import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
 import { TokenConfig } from './TokenConfig';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -85,16 +85,16 @@ export class KvManager {
       this._kvStoreNoE = store[1];
       //订阅同步完成事件
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
-        console.info(`syncComplete ${data}`);
-        ctx.eventHub.emit('KVStoreSyncComplete');
+        hilog.info(0, 'KvManager', `syncComplete ${data}`);
+        ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
 
       this._kvStore.on('dataChange', distributedKVStore.SubscribeType.SUBSCRIBE_TYPE_LOCAL, (data: distributedKVStore.ChangeNotification) => {
-        console.info(`dataChange callback call data: ${data}`);
-        //ctx.eventHub.emit('KVStoreSyncComplete');
+        hilog.info(0, 'KvManager', `dataChange callback call data: ${data}`);
+        //ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
     }).catch((reason: BusinessError) => {
-      console.error(reason.message);
+      hilog.error(reason.code, 'KvManager', reason.message);
     });
   }
   /**
@@ -206,7 +206,7 @@ export class KvManager {
         });
       } catch (e) {
         let error = e as BusinessError;
-        console.error(`duplicated calls should be ok. code is ${error.code}, message is ${error.message}`);
+        hilog.error(error.code, 'KvManager', `duplicated calls should be ok. code is ${error.code}, message is ${error.message}`);
       }
     }
     return token_array;
@@ -216,10 +216,10 @@ export class KvManager {
     if (this._kvStore) {
      this._kvStore.put(key, value, (err) => {
           if (err != undefined) {
-            console.error(`Failed to put.code is ${err.code},message is ${err.message}`);
-            return;
-          }
-          console.info("Succeeded in putting");
+          hilog.error(err.code, 'KvManager', `Failed to put.code is ${err.code},message is ${err.message}`);
+           return;
+         }
+         hilog.info(0, 'KvManager', "Succeeded in putting");
      });
     }
   }
@@ -243,10 +243,10 @@ export class KvManager {
     if (this._kvStoreNoE) {
       this._kvStoreNoE.put(key, value, (err) => {
         if (err != undefined) {
-          console.error(`Failed to put.code is ${err.code},message is ${err.message}`);
+          hilog.error(err.code, 'KvManager', `Failed to put.code is ${err.code},message is ${err.message}`);
           return;
         }
-        console.info("Succeeded in putting");
+        hilog.info(0, 'KvManager', "Succeeded in putting");
       });
     }
   }
@@ -454,7 +454,7 @@ export class KvManager {
    */
   async queryEncryptTokenDataKey(): Promise<string> {
     let query: asset.AssetMap = new Map();
-    if (AppPreference.getPreference('app_use_master_key') as boolean) {//区分启用主密钥和不适用主密钥场景下的name 防止用户反复切换功能开关造成的数据丢失
+    if (AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean) {//区分启用主密钥和不适用主密钥场景下的name 防止用户反复切换功能开关造成的数据丢失
       query.set(asset.Tag.ALIAS, stringToArray(this._tokenMasterKeyEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
     }
     else
@@ -477,7 +477,7 @@ export class KvManager {
       let err = error as BusinessError;
       hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
     }
-    if (AppPreference.getPreference("app_use_master_key"))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASk
+    if (AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASk
     {
       return "";
     }
@@ -653,7 +653,7 @@ export class KvManager {
   //#endregion
   //手动同步
   async DataSync(): Promise<void> {
-    if (AppPreference.getPreference('app_db_rds_sync_enable')) {
+    if (AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE)) {
       try {
         let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
         let dmInstance = distributedDeviceManager.createDeviceManager(bundleInfo?.name);
@@ -685,7 +685,7 @@ export class KvManager {
         }
       } catch (err) {
         let e: BusinessError = err as BusinessError;
-        console.error('getAvailableDeviceListSync errCode:' + e.code + ', errMessage:' + e.message);
+        hilog.error(e.code, 'KvManager', 'getAvailableDeviceListSync errCode:' + e.code + ', errMessage:' + e.message);
       }
 
     }

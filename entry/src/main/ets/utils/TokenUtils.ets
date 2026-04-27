@@ -4,15 +4,17 @@ import { common } from '@kit.AbilityKit';
 import { otpType, TokenConfig } from './TokenConfig';
 import { scanBarcode, scanCore } from '@kit.ScanKit';
 import { pasteboard } from '@kit.BasicServicesKit';
-import { promptAction } from '@kit.ArkUI';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { readFileContent } from './FileUtils';
 import { fileIo } from '@kit.CoreFileKit';
-import { AppPreference } from './AppPreference';
+import { AppPreference, PREF_KEYS } from './AppPreference';
+import { showSnackBar, SnackBarNotifyType } from './HdsSnackBarUtils';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const RFC4648_HEX = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+let appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
 export type Base32Variant = 'RFC3548' | 'RFC4648' | 'RFC4648-HEX' | 'Crockford';
 
@@ -59,8 +61,7 @@ export async function ScanBarCode(): Promise<string> {
         enableMultiMode: true,
         enableAlbum: true
       };
-      let context = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-      return scanBarcode.startScanForResult(context, options).then((result: scanBarcode.ScanResult) => {
+      return scanBarcode.startScanForResult(appCtx, options).then((result: scanBarcode.ScanResult) => {
         return result.originalValue;
       });
     }
@@ -234,7 +235,7 @@ export function copyText(text: string, msg: string = '') {
   const systemPasteboard = pasteboard.getSystemPasteboard();
   systemPasteboard.setData(pasteboardData);
   if (msg !== undefined && msg !== '') {
-    promptAction.showToast({ message: msg });
+    showSnackBar(msg, SnackBarNotifyType.INFO);
   }
 }
 
@@ -291,10 +292,21 @@ export class OTPDefaultIconPack {
 }
 
 export class UserAddedIconPack {
-  public name: string = "User Added";
+  public name: string = appCtx.resourceManager.getStringSync($r('app.string.dialog_icon_select_custom').id);
   public user_icon_path: string = '';
   public icon_path: string[] = [];
   public latest_icon_path: string = '';
+  /**
+   * 记录需要圆角显示的位图图标路径（裁剪后的PNG、直接复制的小位图等）
+   * SVG 矢量图标不加入此集合，因为它们有自身形状不适合强制圆角
+   * UI 层通过此集合判断是否添加 borderRadius
+   */
+  public raster_icons: Set<string> = new Set();
+
+  private isRasterFile(path: string): boolean {
+    const lower = path.toLowerCase();
+    return !lower.endsWith('.svg');
+  }
 
   public initIconPack(path: string): void {
     this.user_icon_path = path;
@@ -303,7 +315,11 @@ export class UserAddedIconPack {
     }
     fs.listFile(path).then((files) => {
       files.forEach((file) => {
-        this.icon_path.push("file://" + this.user_icon_path + "/" + file);
+        const fullPath = "file://" + this.user_icon_path + "/" + file;
+        this.icon_path.push(fullPath);
+        if (this.isRasterFile(file)) {
+          this.raster_icons.add(fullPath);
+        }
       })
     });
   }
@@ -311,11 +327,30 @@ export class UserAddedIconPack {
   public addIcon(file: fileIo.File): void {
     this.latest_icon_path = "file://" + this.user_icon_path + "/" + file.name;
     this.icon_path.push(this.latest_icon_path);
+    if (this.isRasterFile(file.name)) {
+      this.raster_icons.add(this.latest_icon_path);
+    }
     fs.copyFileSync(file.fd, this.user_icon_path + "/" + file.name);
+  }
+
+  /**
+   * 通过路径添加已复制的图标（用于裁剪后的图标和直接复制的小图标）
+   * 与 addIcon(fileIo.File) 不同，此方法跳过文件复制，直接注册路径
+   * @param iconPath 已存在于用户图标目录的文件路径（file://前缀）
+   */
+  public addIconByPath(iconPath: string): void {
+    this.latest_icon_path = iconPath;
+    if (this.icon_path.findIndex(_ => _ === iconPath) < 0) {
+      this.icon_path.push(iconPath);
+    }
+    if (this.isRasterFile(iconPath)) {
+      this.raster_icons.add(iconPath);
+    }
   }
 
   public removeIcon(path: string): void {
     this.icon_path = this.icon_path.filter(_ => _ !== path);
+    this.raster_icons.delete(path);
     fs.unlink(path.slice(7));
   }
 
@@ -326,7 +361,7 @@ export class TokenIconPacks {
   public static default_icon_pack: OTPDefaultIconPack = new OTPDefaultIconPack();
   public static aegis_icon_packs: AegisIconPack[] = [];
   public static user_added_icon_packs: UserAddedIconPack = new UserAddedIconPack();
-  public static selected_icon_pack: number = AppPreference.getPreference('app_appearance_icon_pack_selected') as number ?? 0;
+  public static selected_icon_pack: number = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED) as number ?? 0;
 
   public static async addUserIconPack(path: string): Promise<void> {
     TokenIconPacks.user_added_icon_packs.initIconPack(path);
@@ -336,7 +371,7 @@ export class TokenIconPacks {
     const icon_path_json = path + "/pack.json";
     if (!fileIo.accessSync(icon_path_json)) {
       // Display invalid icon pack directories
-      // promptAction.showToast({ message: $r('app.string.toast_icon_pack_invalid') });
+      // showSnackBar($r('app.string.toast_icon_pack_invalid'), SnackBarNotifyType.WARNING);
       // return Promise.reject(new Error("invalid aegis icon pack"));
       let pack: AegisIconPack = new AegisIconPack();
       pack.invalid = true;
@@ -345,7 +380,7 @@ export class TokenIconPacks {
       return;
     }
     if (TokenIconPacks.aegis_icon_packs.filter(pack => pack.on_device_path === path).length > 0) {
-      promptAction.showToast({ message: $r('app.string.toast_icon_pack_already_installed') });
+      showSnackBar($r('app.string.toast_icon_pack_already_installed'), SnackBarNotifyType.WARNING);
       return;
     }
     return readFileContent(icon_path_json).then((val) => {

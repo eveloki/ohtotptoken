@@ -1,5 +1,6 @@
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 /**
  * 节流 在规定的时间内，只执行一次
  *
@@ -29,9 +30,9 @@ export function startBrowsableAbility(context: common.UIAbilityContext,url:strin
   };
   context.startAbility(want)
     .then(() => {
-      console.error('Start browsableAbility successfully.');
+      hilog.info(0, 'UiUtils', 'Start browsableAbility successfully.');
     })
     .catch((err: BusinessError) => {
-      console.error(`Failed to startAbility. Code: ${err.code}, message: ${err.message}`);
+      hilog.error(err.code, 'UiUtils', `Failed to startAbility. Code: ${err.code}, message: ${err.message}`);
     });
 }

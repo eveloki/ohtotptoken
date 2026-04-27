@@ -3,7 +3,7 @@ import { otpType, TokenConfig } from '../utils/TokenConfig';
 import { convertToken2URI, copyText, generateOTP } from '../utils/TokenUtils';
 import { TokenIcon } from './TokenIcon';
 import { SteamUtils } from '../utils/SteamUtils';
-import { AppPreference, TokenPreference } from '../utils/AppPreference';
+import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from '../utils/AppPreference';
 import { AppStorageV2, SymbolGlyphModifier } from '@kit.ArkUI';
 import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
 import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
@@ -112,7 +112,7 @@ export struct TokenItem {
   }
 
   aboutToAppear(): void {
-    getContext(this).eventHub.on('onTimestampChanged', (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
+    getContext(this).eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
     this.updateToken();
   }
 
@@ -178,7 +178,7 @@ export struct TokenItem {
 
       Blank()
 
-      if (AppPreference.getPreference('app_debug_mode_on')) {
+      if (AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON)) {
         Text(this.Config.RankScore.toString())
           .textAlign(TextAlign.Center)
           .textOverflow({ overflow: TextOverflow.MARQUEE })

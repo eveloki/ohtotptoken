@@ -1,7 +1,7 @@
-import { AppStorageV2, router } from '@kit.ArkUI';
+import { AppStorageV2 } from '@kit.ArkUI';
 import { TopNavigationView } from '../components/TopNavigationView';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppPreference } from '../utils/AppPreference';
+import { AppPreference, PREF_KEYS } from '../utils/AppPreference';
 import { common } from '@kit.AbilityKit';
 import { TokenStore } from '../utils/TokenStore';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -9,11 +9,12 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { throttle } from '../utils/UiUtils';
 import { showSelectFilePicker, readFileContentAndCheckSize } from '../utils/FileUtils';
 import { fileIo as fs } from "@kit.CoreFileKit";
-
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 
 @Entry
 @ComponentV2
-struct RestoreDataPage {
+export struct RestoreDataPage {
+  pageInfos: NavPathStack | null = null;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local isEnabledKDF: boolean = false;//是否启用主密钥 todo 这里还需要补充输入朱密码的UI场景
   @Local isBegin: boolean = false;//是否开始恢复
@@ -31,7 +32,7 @@ struct RestoreDataPage {
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
   aboutToAppear(): void {
     this.isBegin = false;
-    this.isEnabledKDF=AppPreference.getPreference("app_use_master_key") as boolean;
+    this.isEnabledKDF=AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
   }
   restoreData() {
     this.isBegin = true;
@@ -102,7 +103,7 @@ struct RestoreDataPage {
       this.isBegin = false;
       this.progress = 0;
       this.isRestoreSuccess=false;
-      //this.getUIContext().getPromptAction().showToast({ message: $r('app.string.restore_data_ok_msg'), bottom: this.TOAST_BOTTOM })
+      //showSnackBar($r('app.string.restore_data_ok_msg'), SnackBarNotifyType.SUCCESS)
       this.getUIContext().showAlertDialog(
         {
           title: $r(title),
@@ -138,19 +139,20 @@ struct RestoreDataPage {
         this.recoveryKey=text;
         this.recoveryKeyShow=text;
         if (text=="") {
-          this.getUIContext().getPromptAction().showToast({ message: "invalid Recovery Key file", bottom: this.TOAST_BOTTOM })
+          showSnackBar('invalid Recovery Key file', SnackBarNotifyType.ERROR);
         }
       });
     });
   }
 
   build() {
+    NavDestination() {
     Column() {
       TopNavigationView({
         title: $r('app.string.restore_data'),
         onBackClick: () => {
-          router.back();
-        }
+            this.pageInfos?.pop('');
+          }
       })
       Column() {
         Column() {
@@ -299,7 +301,15 @@ struct RestoreDataPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
-    .padding({ top: this.window.AvoidTopHeight, bottom: this.window.AvoidBottomHeight })
+    .backgroundColor($r('app.color.window_background'))
+    }
+    .hideTitleBar(true, true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    })
+    .onBackPressed(() => {
+      this.pageInfos?.pop('');
+      return true;
+    });
   }
 }

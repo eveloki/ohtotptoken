@@ -1,7 +1,7 @@
 import { ConfigurationConstant } from "@kit.AbilityKit";
 import { TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
-import { TokenPreference } from "../utils/AppPreference";
+import { TokenPreference, EVENT_NAMES } from "../utils/AppPreference";
 import { AppStorageV2 } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 
@@ -21,6 +21,11 @@ export struct TokenIcon {
   @Computed
   get is_dark_mode() {
     return this.window.ColorMode == ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+  }
+
+  @Computed
+  get iconRadius(): number {
+    return TokenIconPacks.user_added_icon_packs.raster_icons.has(this.icon_path) ? 20 : 0;
   }
 
   @Monitor("issuer")
@@ -74,7 +79,7 @@ export struct TokenIcon {
 
   aboutToAppear(): void {
     this.refreshIcon(this.issuer);
-    getContext(this).eventHub.on('onIconPackChanged', () => this.onIconPackChanged());
+    getContext(this).eventHub.on(EVENT_NAMES.ICON_PACK_CHANGED, () => this.onIconPackChanged());
   }
 
   stringToColor(str: string): string {
@@ -127,11 +132,13 @@ export struct TokenIcon {
             .width(this.token_preference.app_appearance_logo_size)
             .fillColor(this.token_preference.app_appearance_logo_dark_filter_color)
             .objectFit(ImageFit.Contain)
+            .borderRadius(this.iconRadius)
         } else {
           Image(this.icon)
             .height(this.token_preference.app_appearance_logo_size)
             .width(this.token_preference.app_appearance_logo_size)
             .objectFit(ImageFit.Contain)
+            .borderRadius(this.iconRadius)
         }
       }
     }

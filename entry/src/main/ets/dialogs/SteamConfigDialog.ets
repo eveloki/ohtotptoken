@@ -5,6 +5,7 @@ import { TokenIcon } from '../components/TokenIcon';
 import { readFileContent, showSelectFilePicker } from '../utils/FileUtils';
 import { maFile } from '../utils/SteamUtils';
 import { SelectIconDialog } from './SelectIconDialog';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Preview
 @CustomDialog
@@ -37,18 +38,18 @@ export struct SteamConfigDialog {
     try {
       otp_url = url.URL.parseURL(uri)
     } catch (error) {
-      console.error('Invalid OTPAuth URL:', error);
+      hilog.error(0, 'SteamConfigDialog', 'Invalid OTPAuth URL:', error);
       return;
     }
 
     if (otp_url.protocol !== 'otpauth:') {
-      console.error('Invalid protocol');
+      hilog.error(0, 'SteamConfigDialog', 'Invalid protocol');
       return;
     }
 
     const type = otp_url.host;
     if (type.toLowerCase() !== 'totp') {
-      console.error('Invalid type');
+      hilog.error(0, 'SteamConfigDialog', 'Invalid type');
       return;
     }
     const pathParts = otp_url.pathname.slice(1).split('/');

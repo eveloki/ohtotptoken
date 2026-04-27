@@ -1,26 +1,19 @@
-import { AppStorageV2 } from '@kit.ArkUI';
 import { webview } from '@kit.ArkWeb';
 import { CommonConstants } from '../utils/CommonConstants';
-import { AppWindowInfo } from '../entryability/EntryAbility';
+import { EXTERNAL_URLS } from '../utils/AppPreference';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 
 @Entry
 @ComponentV2
-export struct PrivacyPage {
+export struct FeedbackPage {
   pageInfos: NavPathStack | null = null;
   @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local webViewController: webview.WebviewController = new webview.WebviewController();
-  @Local AppPrivacyManageInfoUrl: string = '';
-  @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
-
-  aboutToAppear(): void {
-     this.AppPrivacyManageInfoUrl = AppStorage.get("AppPrivacyManageInfoUrl") as string;
-  }
 
   build() {
     HdsNavDestination() {
       Column() {
-        Web({ controller: this.webViewController, src: this.AppPrivacyManageInfoUrl})
+        Web({ controller: this.webViewController, src: EXTERNAL_URLS.FEEDBACK_SURVEY })
           .darkMode(WebDarkMode.Auto)
           .domStorageAccess(true)
           .zoomAccess(true)
@@ -30,8 +23,8 @@ export struct PrivacyPage {
           .javaScriptAccess(true)
           .width(CommonConstants.FULL_PERCENT)
       }
-      .width(CommonConstants.FULL_PERCENT)
-      .height(CommonConstants.FULL_PERCENT)
+      .width('100%')
+      .height('100%')
       .backgroundColor($r('app.color.window_background'))
     }
     .titleMode(HdsNavDestinationTitleMode.MODAL)
@@ -64,7 +57,7 @@ export struct PrivacyPage {
       },
       content: {
         title: {
-          mainTitle: $r('app.string.privacy_statement'),
+          mainTitle: $r('app.string.feedback_survey'),
         },
       }
     })

@@ -41,7 +41,11 @@
       "value": "Steam Token"
     },
     {
-      "name": "tab_setting",
+      "name": "tab_me",
+      "value": "Me"
+    },
+    {
+      "name": "button_settings",
       "value": "Settings"
     },
     {
@@ -205,6 +209,10 @@
       "value": "Unlock"
     },
     {
+      "name": "app_biometric_login",
+      "value": "Biometric Login"
+    },
+    {
       "name": "distributed_data_sync",
       "value": "For seamless transfer across multiple devices."
     },
@@ -250,7 +258,11 @@
     },
     {
       "name": "app_ua_add_token",
-      "value": "Add Secret"
+      "value": "Add Token"
+    },
+    {
+      "name": "app_ua_search_token",
+      "value": "Search Token"
     },
     {
       "name": "drop_file_import_data",
@@ -305,6 +317,14 @@
       "value": "Display the next token below the current one for easier use."
     },
     {
+      "name": "setting_holding_hand_awareness",
+      "value": "Enable Adaptive Grip Sense"
+    },
+    {
+      "name": "setting_holding_hand_awareness_des",
+      "value": "Automatically move the action bar to the left, center, or right for left-hand, both-hand, or right-hand grip. Off by default."
+    },
+    {
       "name": "swap_host_user",
       "value": "Swap Issuer & Username"
     },
@@ -354,7 +374,7 @@
     },
     {
       "name": "app_guide_msg",
-      "value": "Tap + below to add a token"
+      "value": "Tap + in the top right to add a token"
     },
     {
       "name": "setting_add_icon_pack",
@@ -383,6 +403,10 @@
     {
       "name": "dialog_icon_select_auto",
       "value": "Auto"
+    },
+    {
+      "name": "dialog_icon_select_custom",
+      "value": "Custom"
     },
     {
       "name": "icon_alert_remove_confirm_msg",
@@ -795,6 +819,66 @@
     {
       "name": "app_wearable_guide_msg",
       "value": "Sync tokens from other devices"
+    },
+    {
+      "name": "setting_top_effect_type",
+      "value": "Title Bar Blur Type"
+    },
+    {
+      "name": "setting_top_effect_type_desc",
+      "value": "Control the type of title bar blur effect"
+    },
+    {
+      "name": "setting_top_effect_type_disable",
+      "value": "Disabled"
+    },
+    {
+      "name": "setting_top_effect_type_common_blur",
+      "value": "Common Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradual_blur",
+      "value": "Gradual Blur"
+    },
+    {
+      "name": "setting_top_effect_type_gradient_blur",
+      "value": "Gradient Blur"
+    },
+    {
+      "name": "setting_top_effect_type_immersive_gradient_blur",
+      "value": "Immersive Gradient Blur"
+    },
+    {
+      "name": "setting_bottom_tabs_type",
+      "value": "Bottom Tabs Type"
+    },
+    {
+      "name": "setting_bottom_tabs_type_desc",
+      "value": "Control the display type of bottom tab bar"
+    },
+    {
+      "name": "setting_bottom_tabs_type_flatten",
+      "value": "Flatten"
+    },
+    {
+      "name": "setting_bottom_tabs_type_suspension",
+      "value": "Suspension"
+    },
+    {
+      "name": "feedback_survey",
+      "value": "Survey Feedback"
+    },
+    {
+      "name": "feedback_github",
+      "value": "GitHub Feedback"
+    },
+    {
+      "name": "setting_feedback",
+      "value": "Suggest & Feedback"
+    },
+    {
+      "name": "feedback_urgent",
+      "value": "Urgent Feedback"
     }
   ]
 }

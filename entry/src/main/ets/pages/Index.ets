@@ -1,11 +1,18 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { otpType, TokenConfig } from '../utils/TokenConfig';
-import { SettingPage } from '../pages/SettingPage'
-import { util } from '@kit.ArkTS';
+import { TokenConfig } from '../utils/TokenConfig';
+import { SettingPage } from '../pages/setting/SettingPage'
+import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
+import { SecuritySheet } from '../pages/setting/SecuritySheet'
+import { AppearanceSheet } from '../pages/setting/AppearanceSheet'
+import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
+import { AgreementSheet } from '../pages/setting/AgreementSheet'
+import { AboutSheet } from '../pages/setting/AboutSheet'
+import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
+import { util, url } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
-import promptAction from '@ohos.promptAction'
-import { AppPreference } from '../utils/AppPreference';
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
+import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
 import { privacyManager } from '@kit.StoreKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
@@ -16,17 +23,72 @@ import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
+import { RestoreDataPage } from './RestoreDataPage';
+import { MasterKeyPage } from './MasterKeyPage';
+import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
+import { AppearancePage } from './AppearancePage';
+import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCodePage } from './ShowCodePage';
+import { PrivacyPage } from './PrivacyPage';
+import { AgreementPage } from './AgreementPage';
+import { FeedbackPage } from './FeedbackPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppStorageV2, ArcButton, ArcList, ArcListItem, router, window } from '@kit.ArkUI';
+import { AppLockOverlay } from './AppLockOverlay';
+import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
+  ScrollEffectType, HdsListItemCard,
+  PrefixIcon,
+  IconSize,
+  SuffixArrow,
+  hdsMaterial} from '@kit.UIDesignKit';
 import { ArcTokenListPage } from './ArcTokenListPage';
-import { testProtobufToJson } from '../utils/GoogleAuthUtils';
+import { LengthMetrics } from '@kit.ArkUI';
+import { decodeProtobuf } from '../utils/GoogleAuthUtils';
+import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
+import { URIConfigDialog } from '../dialogs/URIConfigDialog';
+import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
+import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
+import { ScanBarCode } from '../utils/TokenUtils';
+import { CommonConstants } from '../utils/CommonConstants';
 
 const TAG = 'PrivacySubscribe';
 
 let tkStore = TokenStore.getInstance();
+
+@Builder
+function TokenAddMenuBuilder(host: Index) {
+  Menu() {
+    MenuItem({ content: $r('app.string.app_scan_code') })
+      .onClick(() => {
+        host.start_quick_scan();
+      })
+      .accessibilityText($r('app.string.app_scan_code'))
+    MenuItem({ content: $r('app.string.tab_token_add_key') })
+      .onClick(() => {
+        host.openTotpAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_key'))
+    MenuItem({ content: $r('app.string.tab_token_add_uri') })
+      .onClick(() => {
+        host.openUriAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_uri'))
+    MenuItem({ content: $r('app.string.tab_token_add_forti_key') })
+      .onClick(() => {
+        host.openFortiAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_forti_key'))
+    MenuItem({ content: $r('app.string.tab_token_add_stream_key') })
+      .onClick(() => {
+        host.openSteamAddDialog();
+      })
+      .accessibilityText($r('app.string.tab_token_add_stream_key'))
+  }
+}
 
 @Entry
 @ComponentV2
@@ -37,7 +99,34 @@ struct Index {
   @Local background_blur_flag: Boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
-  CurrentTokensCount: number = 0;
+  @Local tokenListScroller: Scroller = new Scroller();
+  @Local arcTokenListScroller: Scroller = new Scroller();
+  @Local settingEntryScroller: Scroller = new Scroller();
+  @Local isSettingSheetVisible: boolean = false;
+  @Local isBackupSheetVisible: boolean = false;
+  @Local isSafetySheetVisible: boolean = false;
+  @Local isAppearanceSheetVisible: boolean = false;
+  @Local isDataSyncSheetVisible: boolean = false;
+  @Local isAgreementSheetVisible: boolean = false;
+  @Local isAboutSheetVisible: boolean = false;
+  @Local isFeedbackSheetVisible: boolean = false;
+  @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+  @Local CurrentTokensCount: number = 0;
+  @Local scrollEffectVersion: number = 0;
+  @Local isAppLockOverlayVisible: boolean = false;
+  pageInfos: NavPathStack = new NavPathStack();
+
+  /**
+   * 获取当前的滚动效果类型
+   * 根据用户设置的顶部效果类型映射到对应的ScrollEffectType
+   */
+  @Computed
+  get currentScrollEffectType(): ScrollEffectType {
+    // 依赖scrollEffectVersion以触发重新计算
+    const _ = this.scrollEffectVersion;
+    const topEffectType = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE) as SettingTopEffectType;
+    return SCROLL_EFFECT_TYPE_MAP.get(topEffectType) ?? ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  }
 
   private appIsInit = false;
   private appIsShow = false;
@@ -68,8 +157,8 @@ struct Index {
       curve: Curve.EaseInOut, // 动画曲线
     }),
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       this.DropFilesDialogIsOpen=false;
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
@@ -86,6 +175,11 @@ struct Index {
   })
 
   private backup_select_uri: string = '';
+  private readonly addTokenMenuTargetId: string = 'app_ua_add_token';
+  private dialog_uri_config?: CustomDialogController;
+  private dialog_totp_config?: CustomDialogController;
+  private dialog_forti_config?: CustomDialogController;
+  private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
@@ -97,7 +191,12 @@ struct Index {
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
 
     tkStore.initTokenStore().then(() => {
-      if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('onTokenChanged', () => this.onTokenChanged());
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
+      // 订阅顶部模糊效果类型变更事件
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
+        // 触发UI重新渲染，更新滚动效果类型
+        this.scrollEffectVersion++;
+      });
       tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.CurrentTokensCount = tokens.length;
@@ -105,11 +204,9 @@ struct Index {
         // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
-        AppPreference.setPreference("app_db_kv_archive_is_running",false)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
       });
     });
-
-    // create icon pack dir
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -121,42 +218,46 @@ struct Index {
     });
 
     // save certification for forti token
-    let cer_path = getContext(this).filesDir + "/fmt.ks"
+    let cer_path = this.appCtx.filesDir + "/fmt.ks"
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
       if (!exist) {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
-          let arr = getContext(this).resourceManager.getRawFileContentSync('ftm.ks')
+          let arr = this.appCtx.resourceManager.getRawFileContentSync('ftm.ks')
           fs.write(cer_file.fd, arr.buffer).then((cnt) => {
-            console.log('store fmt.ks to cache dir')
+            hilog.info(0, 'Index', 'store fmt.ks to cache dir')
           })
             .catch((err:BusinessError) => {
-              console.error(`${err.message}`)
+              hilog.error(err.code, 'Index', `${err.message}`)
             })
         })
       }
     })
-
+    DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
     // 订阅KV数据库同步完成事件
-    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('KVStoreSyncComplete',() => {
-      AppPreference.setPreference('app_db_kv_sync_time', Date().toString());
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
+      AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
     })
 
     //订阅RDB数据库同步完成事件
-    if (getContext(this).eventHub!= undefined) getContext(this).eventHub.on('RDBStoreSyncComplete',() => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE,() => {
       //todo 接收同步完成后刷新数据
     })
 
     //订阅权限变更 主页面不需要取消订阅 没有意义
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('DATASYNCPermissionsUpdate', (isAccess: boolean) => {
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
       if (!isAccess) {
         //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setPreference('app_db_rds_sync_enable', false);
-        AppPreference.setPreference('app_db_rds_cloud_sync_enable', false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
       }
     })
 
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on('onFileDrop', (uri: string) => {
+    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_QUICK_SCAN, () => {
+      this.start_quick_scan();
+    });
+
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
       this.backup_select_uri = uri;
       if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
         this.password_input_dialog?.open();
@@ -196,8 +297,8 @@ struct Index {
     cancel: () => {},
     autoCancel: true,
     onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
-      console.info("reason=" + JSON.stringify(dismissDialogAction.reason))
-      console.log("dialog onWillDismiss")
+      hilog.info(0, 'Index', "reason=" + JSON.stringify(dismissDialogAction.reason))
+      hilog.info(0, 'Index', "dialog onWillDismiss")
       if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
         dismissDialogAction.dismiss()
       }
@@ -211,7 +312,6 @@ struct Index {
     customStyle: false,
     cornerRadius: 10,
   })
-  //endregion
 
   refreshIconPack(): void {
     TokenIconPacks.addUserIconPack(this.user_icon_dir);
@@ -224,8 +324,8 @@ struct Index {
 
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    if (getContext(this).eventHub != undefined) {
-      getContext(this).eventHub.emit('onTimestampChanged', timestamp, false);
+    if (this.appCtx.eventHub != undefined) {
+      this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
     }
   }
 
@@ -234,7 +334,7 @@ struct Index {
     setTimeout(() => {
       tkStore.RestoreByKVCheckAsync().then((n:number)=>{
         if (this.CurrentTokens.length == 0 && n>0) {
-          router.pushUrl({ url: 'pages/RestoreDataPage' });
+          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
         }
       }).catch((err:BusinessError)=>{
         hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
@@ -247,10 +347,10 @@ struct Index {
     this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
     //备份还原场景检测是否有备份数据
-    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference("app_db_kv_archive_is_running")) {
+    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING)) {
       //todo需要申请锁屏后读取权限 需要实现后台任务备份
       try {
-        AppPreference.setPreference("app_db_kv_archive_is_running",true)
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,true)
         //申请锁屏后访问加密文件的权限
         let acquireStatus = screenLockFileManager.acquireAccess();
         if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
@@ -260,32 +360,39 @@ struct Index {
             //tkStore.RestoreByKVAsync();
             //更新存档时间
             if (n > 0) {
-              AppPreference.setPreference('app_db_kv_archive_time', Date().toString());
+              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
             }
           }).catch((err:BusinessError) => {
             hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
           }).finally(() => {
-            AppPreference.setPreference("app_db_kv_archive_is_running",false);
+            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
           });
         }
         else
         {
-          AppPreference.setPreference("app_db_kv_archive_is_running",false);
+          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
         }
       } catch (err) {
         let message = (err as BusinessError).message;
         hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference("app_db_kv_archive_is_running",false);
+        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
       }
 
     }
   }
 
   onPageShow(): void {
-    router.clear();
     this.appIsShow = true;
+    const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
+    if (!needShowLock) {
+      this.pageInfos.clear();
+    }
+    if (needShowLock && AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      this.isAppLockOverlayVisible = true;
+    }
+    AppStorage.setOrCreate('app_lock_need_show', false);
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('onTimestampChanged', timestamp, true);
+    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
     //页面打开的时候刷新token
     tkStore.LoadTokenByDataBase().then(() => {
       // 接收同步完成后刷新数据
@@ -295,18 +402,18 @@ struct Index {
       });
     });
 
-    let context = getContext(this) as common.UIAbilityContext;
+    let context = this.appCtx as common.UIAbilityContext;
     let windowStage = context.windowStage;
     windowStage.on("windowStageEvent", (data) => {
       this.background_blur_flag = (
-        AppPreference.getPreference('app_safety_background_blur_enable') as boolean &&
+        AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
         data === window.WindowStageEventType.PAUSED
       );
     })
 
-    if (AppPreference.getPreference('app_want_quick_scan')) {
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit('startQuickScan');
-      AppPreference.setPreference('app_want_quick_scan', false);
+    if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);
+      AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, false);
     }
   }
 
@@ -317,7 +424,7 @@ struct Index {
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
     await tkStore.updateToken(conf);
     if (toast) {
-      promptAction.showToast({ message: $r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName) })
+      showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
     }
   }
 
@@ -328,7 +435,84 @@ struct Index {
       }
       await this.updateTokenConfig(tokens[i], false);
     }
-    promptAction.showToast({ message: $r('app.string.toast_multi_token_update', tokens.length) })
+    showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+  }
+
+  private openAddTokenMenu(): void {
+    const uiContext = this.getUIContext();
+    const promptAction = uiContext.getPromptAction();
+    const contentNode = new ComponentContent(uiContext, wrapBuilder(TokenAddMenuBuilder), this);
+    try {
+      promptAction.openMenu(contentNode, { id: this.addTokenMenuTargetId }, {});
+    } catch (error) {
+      const err = error as BusinessError;
+      hilog.error(err.code, 'Index', `openAddTokenMenu failed: ${err.message}`);
+    }
+  }
+
+  start_quick_scan() {
+    ScanBarCode().then((code) => {
+      if (code.startsWith('otpauth-migration://offline?data=')) {
+        const data = new url.URLParams(url.URL.parseURL(code).search).get('data');
+        decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
+          this.updateTokenConfigs(confs);
+        });
+      } else if (code.startsWith('otpauth://')) {
+        this.dialog_totp_config = new CustomDialogController({
+          builder: TOTPConfigDialog({
+            scan_code_original_Value: code,
+            confirm: (new_conf) => {
+              this.updateTokenConfig(JSON.parse(new_conf), true)
+            }
+          })
+        })
+        this.dialog_totp_config.open()
+      }
+    });
+  }
+
+  openTotpAddDialog(): void {
+    this.dialog_totp_config = new CustomDialogController({
+      builder: TOTPConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_totp_config.open()
+  }
+
+  openUriAddDialog(): void {
+    this.dialog_uri_config = new CustomDialogController({
+      builder: URIConfigDialog({
+        confirm: (tokens) => {
+          this.updateTokenConfigs(tokens);
+        }
+      })
+    })
+    this.dialog_uri_config.open()
+  }
+
+  openFortiAddDialog(): void {
+    this.dialog_forti_config = new CustomDialogController({
+      builder: FortiConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_forti_config.open()
+  }
+
+  openSteamAddDialog(): void {
+    this.dialog_steam_config = new CustomDialogController({
+      builder: SteamConfigDialog({
+        confirm: (new_conf) => {
+          this.updateTokenConfig(JSON.parse(new_conf), true)
+        }
+      })
+    })
+    this.dialog_steam_config.open()
   }
 
   // 准备接入标准化隐私托管
@@ -374,36 +558,447 @@ struct Index {
   }
 
   @Builder
-  tabBar(text: ResourceStr | string, id: number) {
-    Column(){
-      Blank()
-        .width('100%')
-        .height(this.window.AvoidTopHeight)
-      Text(text)
-        .fontWeight(this.tab_bar_index === id ? 500 : 400)
-        .fontColor(this.tab_bar_index === id ? $r('app.color.token_number') : $r('app.color.str_main'))
+  SettingSheetBuilder() {
+  SettingPage({
+      Tokens: this.CurrentTokens,
+      appBottomAvoidHeight: this.window.AvoidBottomHeight,
+      appTopAvoidHeight: 0,
+      scrollEffectType: ScrollEffectType.IMMERSIVE_GRADIENT_BLUR,
+      listScroller: this.settingEntryScroller,
+      backupReload: async (conf) => {
+        await this.updateTokenConfigs(conf);
+        tkStore.sortTokens();
+      }
+    })
+      .height('100%')
+  }
+
+  @Builder
+  BackupAndMigrationSheetBuilder() {
+    BackupAndMigrationSheet({
+      Tokens: this.CurrentTokens,
+      scrollEffectStyle: this.currentScrollEffectType,
+      backupReload: async (conf) => {
+        await this.updateTokenConfigs(conf);
+        tkStore.sortTokens();
+      }
+    })
+      .height('100%')
+  }
+
+  @Builder
+  SecuritySheetBuilder() {
+    SecuritySheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  AppearanceSheetBuilder() {
+    AppearanceSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  DataSyncSheetBuilder() {
+    DataSyncSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  AgreementSheetBuilder() {
+    AgreementSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  AboutSheetBuilder() {
+    AboutSheet({
+      scrollEffectStyle: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  FeedbackSheetBuilder() {
+    FeedbackSheet({
+      scrollEffectType: this.currentScrollEffectType,
+    })
+      .height('100%')
+  }
+
+  @Builder
+  AppLockOverlayBuilder() {
+    AppLockOverlay({
+      onUnlock: () => {
+        this.isAppLockOverlayVisible = false;
+      }
+    })
+  }
+
+  @Builder
+  SettingEntryCardBuilder() {
+    List({ space: 10, scroller: this.settingEntryScroller }) {
+      // 顶部占位空间，用于触发渐变模糊效果
+      ListItem() {
+        Column()
+          .width('100%')
+          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
+      }
+
+      // 备份与迁移入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.save')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_backup')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isBackupSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 安全性入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.staroflife_rectangle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_safety')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isSafetySheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 外观与功能入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.chevron_up_2_circle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.app_appearance')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAppearanceSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isAppearanceSheetVisible, this.AppearanceSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 数据同步入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.link')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.data_sync')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isDataSyncSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isDataSyncSheetVisible, this.DataSyncSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 协议与声明入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.person_shield')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_agreement_statement')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAgreementSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 建议与反馈入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.envelope')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_feedback')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isFeedbackSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+
+      // 关于入口
+      ListItem() {
+        Column() {
+          HdsListItemCard({
+            cardPrefixMargin: $r('sys.float.padding_level2'),
+            cardSuffixMargin: $r('sys.float.padding_level2'),
+            cardBackgroundColor: $r('app.color.item_bg'),
+            cardHeight: CommonConstants.SETTING_OPTION_CARD_HEIGHT,
+            prefixItem: new PrefixIcon({
+              iconSize: IconSize.SYSTEM_ICON,
+              iconValue: {
+                symbol: $r('sys.symbol.info_circle')
+              }
+            }),
+            textItem: {
+              primaryText: {
+                text: $r('app.string.setting_about')
+              }
+            },
+            suffixItem: new SuffixArrow({}),
+            onClick: () => {
+              this.isAboutSheetVisible = true;
+            }
+          })
+            .bindSheet($$this.isAboutSheetVisible, this.AboutSheetBuilder(), {
+              detents: [SheetSize.LARGE],
+              preferType: SheetType.BOTTOM,
+              dragBar: true,
+            })
+        }
+        .padding({
+          top: $r('sys.float.padding_level2'),
+          bottom: $r('sys.float.padding_level2'),
+        })
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
+    }
+    .chainAnimation(true)
+    .width('100%')
+    .height('100%')
+    .scrollBar(BarState.Off)
+    .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+    .backgroundColor($r('app.color.window_background'))
+  }
+
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.RestoreDataPage) {
+      RestoreDataPage()
+    } else if (name === ROUTE_NAMES.MasterKeyPage) {
+      MasterKeyPage()
+    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
+      RecoveryKeyRecordPage()
+    } else if (name === ROUTE_NAMES.AppearancePage) {
+      AppearancePage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
+      ShowDataSyncDetailsPage( {scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowCodePage) {
+      ShowCodePage()
+    } else if (name === ROUTE_NAMES.PrivacyPage) {
+      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.AgreementPage) {
+      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.FeedbackPage) {
+      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
     }
   }
 
   build() {
+    Navigation(this.pageInfos) {
     Stack() {
       if (this.token_loading) {
         Column() {
           LoadingProgress()
             .color(Color.White)
-            .width(80).height(80)
-          Text('Loading..')
-            .fontSize(16)
-            .fontColor(Color.White)
-        }
-        .width('100%')
-        .height('100%')
-        .backgroundColor('#40000000')
-        .justifyContent(FlexAlign.Center)
-      } else if (
-        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
-          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
-      ) {
+          .width(80).height(80)
+        Text('Loading..')
+          .fontSize(16)
+          .fontColor(Color.White)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor('#40000000')
+      .justifyContent(FlexAlign.Center)
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
+    ) {
+      HdsNavigation() {
         ArcTokenListPage({
           Tokens: this.CurrentTokens,
           TabBarVisible: false,
@@ -412,12 +1007,60 @@ struct Index {
           appWindowSize: this.window.Size,
           updateTokenConfig: this.updateTokenConfig,
           updateTokenConfigs: this.updateTokenConfigs,
+          listScroller: this.arcTokenListScroller,
         })
-      } else if (
-        (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
-          this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
-          this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
-      ) {
+      }
+      .bindToScrollable([this.arcTokenListScroller])
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
+      .titleBar({
+        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.currentScrollEffectType,
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.EntryAbility_label')
+          },
+          menu: {
+            value: [
+              {
+                content: {
+                  label: $r('app.string.app_ua_search_token'),
+                  icon: $r('sys.symbol.magnifyingglass'),
+                  isEnabled: true,
+                  action: () => {
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
+                  }
+                }
+              }
+            ]
+          }
+        }
+      })
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
+        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
+    ) {
+      HdsNavigation() {
         Column() {
           TokenListPage({
             Tokens: this.CurrentTokens,
@@ -427,15 +1070,75 @@ struct Index {
             appWindowSize: this.window.Size,
             updateTokenConfig: this.updateTokenConfig,
             updateTokenConfigs: this.updateTokenConfigs,
+            listScroller: this.tokenListScroller,
           })
         }
         .backgroundColor($r('app.color.window_background'))
 
-      } else {
+      }
+      .bindToScrollable([this.tokenListScroller])
+      .titleMode(HdsNavigationTitleMode.MINI)
+      .hideBackButton(true) // 设置mini类型隐藏后退按钮
+      .titleBar({
+        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+        style: {
+          originalStyle: {
+            contentStyle: {
+              titleStyle: {
+                mainTitleColor: $r('sys.color.font_primary'),
+              },
+              menuStyle: {
+                iconColor: $r('sys.color.icon_primary')
+              },
+            }
+          },
+          scrollEffectOpts: {
+            enableScrollEffect: true,
+            scrollEffectType: this.currentScrollEffectType // 渐变模糊
+          },
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        },
+        content: {
+          title: {
+            mainTitle: $r('app.string.EntryAbility_label')
+          },
+          menu: {
+            value: [
+              {
+                content: {
+                  label: $r('app.string.app_ua_search_token'),
+                  icon: $r('sys.symbol.magnifyingglass'),
+                  isEnabled: true,
+                  action: () => {
+                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
+                  }
+                }
+              },
+              {
+                content: {
+                  label: $r('app.string.app_ua_add_token'),
+                  icon: $r('sys.symbol.plus'),
+                  isEnabled: true,
+                  componentId: this.addTokenMenuTargetId,
+                  action: () => {
+                    this.openAddTokenMenu();
+                  }
+                }
+              }
+            ]
+          }
+        }
+      })
 
-        Column() {
-          Tabs({ index: this.tab_bar_index }) {
-            TabContent() {
+    } else {
+
+      Column() {
+        HdsTabs({ index: this.tab_bar_index }) {
+          TabContent() {
+            HdsNavigation() {
               TokenListPage({
                 Tokens: this.CurrentTokens,
                 TabBarVisible: true,
@@ -444,40 +1147,156 @@ struct Index {
                 appWindowSize: this.window.Size,
                 updateTokenConfig: this.updateTokenConfig,
                 updateTokenConfigs: this.updateTokenConfigs,
+                listScroller: this.tokenListScroller,
               })
             }
-            .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_token'), 0))
-            .tabIndex(0)
-
-            TabContent() {
-              SettingPage({
-                Tokens: this.CurrentTokens,
-                appBottomAvoidHeight: this.window.AvoidBottomHeight,
-                appTopAvoidHeight: this.window.AvoidTopHeight,
-                backupReload: async (conf) => {
-                  await this.updateTokenConfigs(conf);
-                  tkStore.sortTokens();
+            .bindToScrollable([this.tokenListScroller])
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
+            .titleBar({
+              avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+              style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  }
+                },
+                scrollEffectOpts: {
+                  enableScrollEffect: true,
+                  scrollEffectType: this.currentScrollEffectType // 渐变模糊
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
                 }
-              })
-                .height('100%')
-            }
-            .backgroundColor($r('app.color.window_background'))
-            .tabBar(this.tabBar($r('app.string.tab_setting'), 1))
-            .tabIndex(1)
+              },
+              content: {
+                title: {
+                  mainTitle: $r('app.string.EntryAbility_label'),
+                },
+                menu: {
+                  value: [
+                    {
+                      content: {
+                        label: $r('app.string.app_ua_search_token'),
+                        icon: $r('sys.symbol.magnifyingglass'),
+                        isEnabled: true,
+                        action: () => {
+                          if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
+                        }
+                      }
+                    },
+                    {
+                      content: {
+                        label: $r('app.string.app_ua_add_token'),
+                        icon: $r('sys.symbol.plus'),
+                        isEnabled: true,
+                        componentId: this.addTokenMenuTargetId,
+                        action: () => {
+                          this.openAddTokenMenu();
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            })
           }
-          .barBackgroundColor($r('app.color.tab_bar_bg'))
           .backgroundColor($r('app.color.window_background'))
-          .layoutWeight(1)
-          .barOverlap(true)
-          .barBackgroundColor(Color.Transparent)
-          .barBackgroundBlurStyle(BlurStyle.Thin)
-          .barHeight(50 + this.window.AvoidTopHeight)
-          .barMode(BarMode.Fixed)
-          .onChange((index) => {
-            this.tab_bar_index = index;
-          })
+          .tabBar(BottomTabBarStyle.of(
+            {
+              normal: new SymbolGlyphModifier($r('sys.symbol.key_fill')),
+              selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
+            },
+            $r('app.string.tab_token'))
+            .verticalAlign(VerticalAlign.Center)
+          )
+          .tabIndex(0)
+
+          TabContent() {
+            HdsNavigation() {
+              this.SettingEntryCardBuilder()
+            }
+            .bindToScrollable([this.settingEntryScroller])
+            .titleMode(HdsNavigationTitleMode.MINI)
+            .hideBackButton(true) // 设置mini类型隐藏后退按钮
+            .titleBar({
+              avoidLayoutSafeArea: true, // 状态栏安全区沉浸
+              style: {
+                originalStyle: {
+                  contentStyle: {
+                    titleStyle: {
+                      mainTitleColor: $r('sys.color.font_primary'),
+                    },
+                    menuStyle: {
+                      iconColor: $r('sys.color.icon_primary')
+                    },
+                  },
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
+                scrollEffectStyle: {
+                  backgroundStyle: {
+                    maskExtraHeight: 0
+                  }
+                },
+                scrollEffectOpts: {
+                  enableScrollEffect: true,
+                  scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
+                },
+                systemMaterialEffect: {
+                  materialType: hdsMaterial.MaterialType.ADAPTIVE,
+                  materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+                }
+              },
+              content: {
+                title: {
+                  mainTitle: $r('app.string.tab_me')
+                },
+                menu: {
+                  value: []
+                }
+              }
+            })
+          }
+          .backgroundColor($r('app.color.window_background'))
+          .tabBar(BottomTabBarStyle.of(
+            {
+              normal: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
+              selected: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
+            },
+            $r('app.string.tab_me'))
+            .verticalAlign(VerticalAlign.Center)
+          )
+          .tabIndex(1)
         }
+        .barBackgroundColor($r('app.color.tab_bar_bg'))
+        .backgroundColor($r('app.color.window_background'))
+        .layoutWeight(1)
+        .barOverlap(true)
+        .barBackgroundColor(Color.Transparent)
+        .barBackgroundBlurStyle(BlurStyle.Regular)
+        .barPosition(BarPosition.End)
+        .barFloatingStyle({
+          barBottomMargin: 28,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        })
+        .vertical(false)
+        .barMode(BarMode.Fixed)
+        .animationDuration(300)
+        .onChange((index) => {
+          this.tab_bar_index = index;
+        })
+      }
       }
     }
     .width('100%')
@@ -501,6 +1320,14 @@ struct Index {
       colorMode: ThemeColorMode.SYSTEM,
       adaptiveColor: AdaptiveColor.DEFAULT
     })
+    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .navDestination(this.navDestinationBuilder)
+    .bindContentCover($$this.isAppLockOverlayVisible, this.AppLockOverlayBuilder(), {
+      modalTransition: ModalTransition.NONE,
+      onWillDismiss: (dismissContentCoverAction: DismissContentCoverAction) => {
+      },
+    })
   }
-
 }

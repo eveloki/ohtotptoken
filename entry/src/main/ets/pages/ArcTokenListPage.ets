@@ -1,12 +1,9 @@
-import { FortiConfigDialog } from "../dialogs/FortiConfigDialog";
-import { TOTPConfigDialog } from "../dialogs/OTPConfigDialog";
 import { QRCodeDialog } from "../dialogs/QRCodeDialog";
-import { SteamConfigDialog } from "../dialogs/SteamConfigDialog";
 import { AppPreference, TokenPreference } from "../utils/AppPreference";
 import { otpType, TokenConfig } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI } from "../utils/TokenUtils";
-import { AppStorageV2, ArcList, ArcListItem, ArcListAttribute, ArcListItemAttribute, curves, window,
+import { AppStorageV2, ArcList, ArcListItem, window,
   ArcButton,
   ArcButtonOptions,
   ArcButtonStyleMode,
@@ -26,6 +23,7 @@ export struct ArcTokenListPage {
   @Require @Param appTopAvoidHeight: number = 0;
   @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
+  @Param listScroller: Scroller = new Scroller();
   @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
@@ -76,7 +74,7 @@ export struct ArcTokenListPage {
 
         ArcButton({ options: this.bottomOptions })
       }
-      ArcList({ initialIndex: 0 }) {
+      ArcList({ initialIndex: 0, scroller: this.listScroller }) {
         ForEach(this.Tokens,
           (token: TokenConfig, index: number) => {
             ArcListItem() {

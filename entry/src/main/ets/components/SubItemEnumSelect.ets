@@ -1,40 +1,41 @@
+import {EnumSelectOption} from '../utils/AppPreference';
 
 /**
- * 基础选择组件
- * 提供下拉选择功能，适用于选项与索引一一对应的场景
+ * 增强版选择组件，支持枚举值映射
+ * 解决enum index与UI index不对等的问题
  *
  * @example
  * ```typescript
- * SubItemSelect({
- *   title: '颜色模式',
- *   values: ['跟随系统', '深色模式', '浅色模式'],
- *   selected: 0,
- *   onChange: (index: number) => {
- *     console.log('选择了索引:', index);
+ * SubItemEnumSelect({
+ *   title: '选择效果',
+ *   options: [
+ *     { label: '通用模糊', value: 1 },
+ *     { label: '过渡模糊', value: 2 },
+ *   ],
+ *   selected: 1,
+ *   onChange: (value: number) => {
+ *     console.log('选择了:', value);
  *   }
  * })
  * ```
- *
- * @remarks
- * 如果选项与枚举值不对应（如跳过某些值），建议使用SubItemEnumSelect组件
  */
 @Preview
 @ComponentV2
-export struct SubItemSelect {
-  /** 选择变化时的回调函数，参数为选中的索引 */
+export struct SubItemEnumSelect {
+  /** 选择变化时的回调函数，参数为选中的枚举值 */
   @Require @Param onChange: (selected: number) => void = () => {};
   /** 标题文本，支持字符串或资源引用 */
   @Require @Param title: string | Resource = '';
-  /** 选项文本数组，支持字符串或资源引用 */
-  @Require @Param values: string[] | Resource[] = [];
-  /** 当前选中的索引 */
-  @Require @Param selected: number = 0;
+  /** 选项数组，包含label和value */
+  @Require @Param options: EnumSelectOption[] = [];
+  /** 当前选中的枚举值 */
+  @Require @Param selected: number;
   /** 是否禁用选择 */
   @Param disable: boolean = false;
   /** 图标资源 */
   @Param icon: Resource | undefined = undefined;
   /** 描述文本，支持字符串或资源引用 */
-  @Param description: string  | Resource = '';
+  @Param description: string | Resource = '';
 
   build() {
     Column() {
@@ -47,6 +48,7 @@ export struct SubItemSelect {
                 .fontWeight(FontWeight.Medium)
                 .fontColor([$r('app.color.str_main')])
             }
+
             Text(this.title)
               .fontSize($r('sys.float.ohos_id_text_size_body1'))
               .fontColor($r('sys.color.ohos_id_color_text_primary'))
@@ -58,6 +60,7 @@ export struct SubItemSelect {
           }
           .width('100%')
           .alignItems(VerticalAlign.Center)
+
           if (this.description != '') {
             Text(this.description)
               .fontSize($r('sys.float.ohos_id_text_size_body2'))
@@ -73,12 +76,17 @@ export struct SubItemSelect {
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
 
-        Select(this.values.map((val: string | Resource) => {return { value: val as string } as SelectOption }))
+        Select(this.options.map((option: EnumSelectOption) => {
+          return { value: option.label as string } as SelectOption;
+        }))
           .enabled(!this.disable)
-          .value(this.values[this.selected])
-          .selected(this.selected)
-          .onSelect((index) => {
-            this.onChange(index);
+          .value(this.options.find((opt: EnumSelectOption) => opt.value === this.selected)?.label as string ?? '')
+          .selected(this.options.findIndex((opt: EnumSelectOption) => opt.value === this.selected))
+          .onSelect((index: number) => {
+            const selectedValue = this.options[index]?.value;
+            if (selectedValue !== undefined) {
+              this.onChange(selectedValue);
+            }
           })
       }
       .width('100%')
