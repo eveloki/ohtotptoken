@@ -24,6 +24,7 @@ import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { CloudBackupManager } from '../utils/CloudBackupManager';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
@@ -32,10 +33,10 @@ import { MasterKeyPage } from './MasterKeyPage';
 import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
 import { AppearancePage } from './AppearancePage';
 import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
+import { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
 import { ShowCodePage } from './ShowCodePage';
-import { PrivacyPage } from './PrivacyPage';
-import { AgreementPage } from './AgreementPage';
-import { FeedbackPage } from './FeedbackPage';
+import { WebPage, WebPageParams } from './WebPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
@@ -54,6 +55,7 @@ import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { CommonConstants } from '../utils/CommonConstants';
+import { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -110,6 +112,9 @@ struct Index {
   @Local isAgreementSheetVisible: boolean = false;
   @Local isAboutSheetVisible: boolean = false;
   @Local isFeedbackSheetVisible: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
+  @Local huaweiUser: HuaweiUserInfo | null = null;
+  @Local isAccountSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
@@ -182,31 +187,35 @@ struct Index {
   private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
-    PermissionManager.getInstance().verifyPermissionsAndPushEvent();
-    bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
-      AppStorage.setOrCreate("BundleInfo", bundleInfo);
+    const accountInitPromise = HuaweiAccountManager.getInstance().init().then(() => {
+      this.syncHuaweiAccountState();
     });
-    //配置预定义好的来自华为官方的个人隐私条款链接
-    AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
-      'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
-
-    tkStore.initTokenStore().then(() => {
+    const tokenStoreInitPromise = tkStore.initTokenStore().then(() => {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
-      // 订阅顶部模糊效果类型变更事件
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
-        // 触发UI重新渲染，更新滚动效果类型
         this.scrollEffectVersion++;
       });
-      tkStore.getTokens().then((tokens) => {
+      return tkStore.getTokens().then((tokens) => {
         this.CurrentTokens = tokens;
         this.CurrentTokensCount = tokens.length;
         this.token_loading = false;
-        // DEBUG MODE
         this.restoreByKVCheck();
         this.appIsInit = true;
         AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
       });
     });
+
+    Promise.all([accountInitPromise, tokenStoreInitPromise]).then(() => {
+      CloudBackupManager.getInstance().checkAndAutoBackup();
+    });
+
+    this.subscribeDistributedAccountLogout();
+    PermissionManager.getInstance().verifyPermissionsAndPushEvent();
+    bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
+      AppStorage.setOrCreate("BundleInfo", bundleInfo);
+    });
+    AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
+      'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -438,6 +447,89 @@ struct Index {
     showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
   }
 
+  private syncHuaweiAccountState(): void {
+    this.isHuaweiLoggedIn = HuaweiAccountManager.getInstance().userLogin;
+    this.huaweiUser = HuaweiAccountManager.getInstance().userAccount;
+  }
+
+  private async triggerHuaweiLogin(): Promise<void> {
+    try {
+      const result = await HuaweiAccountManager.getInstance().login(this.getUIContext());
+      this.syncHuaweiAccountState();
+      this.isAccountSheetVisible = true;
+    } catch (error) {
+      this.syncHuaweiAccountState();
+      const loginError = error as HuaweiAccountLoginError;
+      if (HuaweiAccountManager.isUserCancel(loginError.code)) {
+        return;
+      }
+      const errorMsg = HuaweiAccountManager.getLoginErrorResource(loginError.code);
+      if (errorMsg) {
+        showSnackBar(errorMsg, SnackBarNotifyType.ERROR);
+      }
+    }
+  }
+
+  private confirmHuaweiLogin(): void {
+    HuaweiAccountManager.getInstance().selectHuaweiAccountToLogin();
+    this.syncHuaweiAccountState();
+    this.isAccountSheetVisible = false;
+    showSnackBar($r('app.string.huawei_account_login_success'), SnackBarNotifyType.SUCCESS);
+  }
+
+  private showLogoutConfirmDialog(): void {
+    const cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    const msg = cloudBackupEnabled
+      ? $r('app.string.huawei_account_logout_cloud_backup_msg')
+      : $r('app.string.huawei_account_logout_confirm_msg');
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.huawei_account_logout_confirm_title'),
+      message: msg,
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.dialog_btn_confirm'),
+          action: () => {
+            HuaweiAccountManager.getInstance().logout().then(() => {
+              this.syncHuaweiAccountState();
+              this.isAccountSheetVisible = false;
+              AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+              AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+            });
+          }
+        },
+        {
+          value: $r('app.string.dialog_btn_cancel'),
+          action: () => {}
+        },
+      ],
+      cancel: () => {},
+    });
+  }
+
+  private subscribeDistributedAccountLogout(): void {
+    const subscribeInfo: CommonEventManager.CommonEventSubscribeInfo = {
+      events: [
+        CommonEventManager.Support.COMMON_EVENT_DISTRIBUTED_ACCOUNT_LOGOUT,
+      ],
+    };
+    CommonEventManager.createSubscriber(subscribeInfo).then((subscriber) => {
+      CommonEventManager.subscribe(subscriber, (err) => {
+        if (!err) {
+          HuaweiAccountManager.getInstance().logout().then(() => {
+            this.syncHuaweiAccountState();
+            AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+            AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+          });
+        }
+      });
+    });
+  }
+
   private openAddTokenMenu(): void {
     const uiContext = this.getUIContext();
     const promptAction = uiContext.getPromptAction();
@@ -644,6 +736,84 @@ struct Index {
   }
 
   @Builder
+  AccountSheetBuilder() {
+    Column() {
+      Column() {
+        SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+          .fontSize($r('sys.float.Display_L'))
+          .fontColor([$r('sys.color.icon_emphasize')])
+          .aspectRatio(1)
+
+        Text(this.isHuaweiLoggedIn ?
+          $r('app.string.huawei_account_current') :
+          $r('app.string.huawei_account_select_title'))
+          .fontSize($r('sys.float.Title_M'))
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('sys.color.font_primary'))
+          .margin({ top: $r('sys.float.padding_level10') })
+
+        if (this.huaweiUser) {
+          if (this.huaweiUser.avatarUri !== '') {
+            Image(this.huaweiUser.avatarUri)
+              .draggable(false)
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .margin({ top: 40 })
+          } else if (this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize($r('sys.float.Title_M'))
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
+              .margin({ top: 40 })
+          }
+
+          Text(this.huaweiUser.nickname)
+            .margin({ top: $r('sys.float.padding_level12') })
+            .fontSize($r('sys.float.Body_L'))
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('sys.color.font_primary'))
+        }
+      }
+      .margin({ top: $r('sys.float.padding_level16') })
+
+      Blank();
+
+      Button(this.isHuaweiLoggedIn ?
+        $r('app.string.huawei_account_logout') :
+        $r('app.string.huawei_account_select_to_login'))
+        .type(ButtonType.Capsule)
+        .fontSize($r('sys.float.Body_L'))
+        .role(this.isHuaweiLoggedIn ? ButtonRole.ERROR : ButtonRole.NORMAL)
+        .buttonStyle(this.isHuaweiLoggedIn ? ButtonStyleMode.NORMAL : ButtonStyleMode.EMPHASIZED)
+        .width('100%')
+        .margin({ bottom: $r('sys.float.padding_level24') })
+        .onClick(() => {
+          if (this.isHuaweiLoggedIn) {
+            this.showLogoutConfirmDialog();
+          } else {
+            this.confirmHuaweiLogin();
+          }
+        })
+    }
+    .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
   SettingEntryCardBuilder() {
     List({ space: 10, scroller: this.settingEntryScroller }) {
       // 顶部占位空间，用于触发渐变模糊效果
@@ -652,6 +822,80 @@ struct Index {
           .width('100%')
           .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
       }
+
+      // 华为账号登录卡片
+      ListItem() {
+        Row({ space: 16 }) {
+          if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.avatarUri !== '') {
+            Image(this.huaweiUser.avatarUri)
+              .draggable(false)
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+          } else if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize(20)
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
+          } else {
+            SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+              .fontSize(48)
+              .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
+          }
+
+          Column({ space: 4 }) {
+            Text(this.isHuaweiLoggedIn && this.huaweiUser ?
+              this.huaweiUser.nickname : $r('app.string.huawei_account_login'))
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('sys.color.ohos_id_color_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+            Text(this.isHuaweiLoggedIn ?
+              $r('app.string.huawei_account_current') :
+              $r('app.string.huawei_account_login_desc'))
+              .fontSize(14)
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .maxLines(1)
+          }
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
+        }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 16, bottom: 16 })
+        .alignItems(VerticalAlign.Center)
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+        .onClick(() => {
+          if (!this.isHuaweiLoggedIn) {
+            this.triggerHuaweiLogin();
+          } else {
+            this.isAccountSheetVisible = true;
+          }
+        })
+        .bindSheet($$this.isAccountSheetVisible, this.AccountSheetBuilder(), {
+          detents: [SheetSize.MEDIUM],
+          preferType: SheetType.BOTTOM,
+          dragBar: true,
+        })
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 备份与迁移入口
       ListItem() {
@@ -966,15 +1210,15 @@ struct Index {
     } else if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
-      ShowDataSyncDetailsPage( {scrollEffectType: this.currentScrollEffectType })
+      ShowDataSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
+      ShowCloudSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
+      ShowCloudBackupHistoryPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
     }
   }
 

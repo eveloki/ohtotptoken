@@ -16,6 +16,10 @@
       {
         "name": "appgallery_privacy_link_user_agreement",
         "value": 'https://yylx.duan.red/user-agreement-zh-cn.html' // 必须是https网址
+      },
+      {
+      "name": "client_id",
+      "value": "112342101" // 将上一步获取到的Client ID赋值给value，请注意不要使用其他方式设置value值
       }
     ],
     "deviceTypes": [
@@ -62,7 +66,8 @@
           ],
           "when": "inuse"
         }
-      }
+      },
+
     ],
     "deliveryWithInstall": true,
     "installationFree": false,

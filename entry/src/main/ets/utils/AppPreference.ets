@@ -69,6 +69,8 @@ export enum PREF_KEYS {
   DB_RDS_SYNC_ENABLE = 'app_db_rds_sync_enable',
   /** RDB云端同步开关 */
   DB_RDS_CLOUD_SYNC_ENABLE = 'app_db_rds_cloud_sync_enable',
+  /** 云端同步最后时间 */
+  CLOUD_SYNC_LAST_TIME = 'app_cloud_sync_last_time',
   /** KV数据库同步时间 */
   DB_KV_SYNC_TIME = 'app_db_kv_sync_time',
   /** KV数据库归档时间 */
@@ -141,6 +143,8 @@ export enum PREF_KEYS {
   APPEARANCE_ITEM_MAX_WIDTH = 'app_appearance_item_max_width',
   /** 快速扫描URI */
   WANT_URI = 'app_want_uri',
+  /** 是否启用华为云备份 */
+  APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE="app_huawei_cloud_sync_enable",
 }
 
 /**
@@ -286,14 +290,14 @@ export enum ROUTE_NAMES {
   AppearancePage = 'AppearancePage',
   /** 数据同步详情页面 */
   ShowDataSyncDetailsPage = 'ShowDataSyncDetailsPage',
+  /** 华为云同步详情页面 */
+  ShowCloudSyncDetailsPage = 'ShowCloudSyncDetailsPage',
+  /** 云端备份历史页面 */
+  ShowCloudBackupHistoryPage = 'ShowCloudBackupHistoryPage',
   /** 展示验证码页面 */
   ShowCodePage = 'ShowCodePage',
-  /** 隐私政策页面 */
-  PrivacyPage = 'PrivacyPage',
-  /** 用户协议页面 */
-  AgreementPage = 'AgreementPage',
-  /** 问题反馈页面 */
-  FeedbackPage = 'FeedbackPage',
+  /** 通用Web页面 */
+  WebPage = 'WebPage',
   /** App锁定页面 */
   AppLockPage= 'pages/AppLockPage',
   /** App首页 */
@@ -318,7 +322,6 @@ export enum EXTERNAL_URLS {
 export class AppPreference {
   /** 偏好设置管理器实例 */
   private static prefMgr = PreferenceManager.getInstance();
-
   private static settings_default: Map<string, SettingValue> = new Map<string, SettingValue>([
     // 安全性-隐私模式设置
     [PREF_KEYS.SAFETY_PRIVACY_ENABLE, false],
@@ -332,14 +335,14 @@ export class AppPreference {
     [PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE, false],
     // 外观-显示下一个令牌
     [PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE, false],
-    // 外观-智感握姿
-    [PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE, false],
     // 外观-颜色模式
     [PREF_KEYS.APPEARANCE_COLOR_MODE, SettingColorMode.System],
     // 外观-图标包
     [PREF_KEYS.APPEARANCE_ICON_PACK_SELECTED, 0],
     // 数据库是否启用云同步
     [PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false],
+    // 云端同步最后时间
+    [PREF_KEYS.CLOUD_SYNC_LAST_TIME, ''],
     // 数据库是否启用跨设备流转
     [PREF_KEYS.DB_RDS_SYNC_ENABLE, false],
     // kv数据库同步时间
@@ -347,7 +350,7 @@ export class AppPreference {
     // kv数据库存档时间
     [PREF_KEYS.DB_KV_ARCHIVE_TIME, ''],
     // kv数据库存档正在进行
-    [PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,false],
+    [PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false],
     // 是否显示引导提示
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
     // 是否处于debug模式
@@ -355,11 +358,10 @@ export class AppPreference {
     // 是否使用主密码增强安全
     [PREF_KEYS.USE_MASTER_KEY, false],
     // 是否已经配置了主密码
-    [PREF_KEYS.USE_MASTER_KEY_SET, false]
+    [PREF_KEYS.USE_MASTER_KEY_SET, false],
+    // 快速扫描URI
+    [PREF_KEYS.WANT_URI, ''],
   ]);
-
-
-
   private static appearance_default: Map<string, SettingValue> = new Map<string, SettingValue>([
     // 外观-自定义
     [PREF_KEYS.APPEARANCE_SWAP_HOST_USER_ENABLE, false],
@@ -395,8 +397,8 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
+    [PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false],
   ]);
-
   private static settings: Map<string, SettingValue> = new Map<string, SettingValue>([
     ...Array.from(AppPreference.settings_default.entries()),
     ...Array.from(AppPreference.appearance_default.entries())
@@ -408,7 +410,16 @@ export class AppPreference {
    * @returns 设置值，如果不存在则返回空字符串
    */
   public static getPreference(key: string): SettingValue {
-    return AppPreference.settings.get(key) ?? '';
+    const cached = AppPreference.settings.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const persisted = AppPreference.prefMgr.getValueSync<SettingValue>(key);
+    if (persisted !== null) {
+      AppPreference.settings.set(key, persisted);
+      return persisted;
+    }
+    return '';
   }
 
   /**
@@ -443,40 +454,72 @@ export class AppPreference {
    */
   private static loadTokenAppearance(): void {
     let token_appearance: TokenPreference = AppStorageV2.connect(TokenPreference, () => new TokenPreference())!;
-    token_appearance.app_safety_hide_token_enable = AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean;
-    token_appearance.app_appearance_show_next_token_enable = AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean;
-    token_appearance.app_appearance_holding_hand_enable = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean;
-    token_appearance.app_appearance_swap_host_user_enable = AppPreference.getPreference(PREF_KEYS.APPEARANCE_SWAP_HOST_USER_ENABLE) as boolean;
-    token_appearance.app_appearance_logo_background = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND) as boolean;
-    token_appearance.app_appearance_item_height = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_HEIGHT) as number;
+    token_appearance.app_safety_hide_token_enable =
+      AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean;
+    token_appearance.app_appearance_show_next_token_enable =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean;
+    token_appearance.app_appearance_holding_hand_enable =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean;
+    token_appearance.app_appearance_swap_host_user_enable =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_SWAP_HOST_USER_ENABLE) as boolean;
+    token_appearance.app_appearance_logo_background =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND) as boolean;
+    token_appearance.app_appearance_item_height =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_HEIGHT) as number;
     token_appearance.app_appearance_item_space = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_SPACE) as number;
     token_appearance.app_appearance_logo_size = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_SIZE) as number;
-    token_appearance.app_appearance_logo_background_size = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_SIZE) as number;
-    token_appearance.app_appearance_logo_background_radius = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS) as number;
-    token_appearance.app_appearance_logo_background_color = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR) as number;
-    token_appearance.app_appearance_logo_dark_filter = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER) as boolean;
-    token_appearance.app_appearance_logo_dark_filter_color = AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER_COLOR) as number;
-    token_appearance.app_appearance_token_color = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR) as number;
-    token_appearance.app_appearance_token_next_color = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR) as number;
-    token_appearance.app_appearance_token_color_dark = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR_DARK) as number;
-    token_appearance.app_appearance_token_next_color_dark = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR_DARK) as number;
-    token_appearance.app_appearance_token_counter_light_color_start = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_START) as number;
-    token_appearance.app_appearance_token_counter_light_color_end = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_END) as number;
-    token_appearance.app_appearance_token_counter_dark_color_start = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_START) as number;
-    token_appearance.app_appearance_token_counter_dark_color_end = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_END) as number;
-    token_appearance.app_appearance_token_counter_next_color_enable = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_COLOR_ENABLE) as boolean;
-    token_appearance.app_appearance_token_counter_next_margin = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN) as number;
-    token_appearance.app_appearance_token_counter_next_light_color_start = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_START) as number;
-    token_appearance.app_appearance_token_counter_next_light_color_end = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_END) as number;
-    token_appearance.app_appearance_token_counter_next_dark_color_start = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_START) as number;
-    token_appearance.app_appearance_token_counter_next_dark_color_end = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_END) as number;
-    token_appearance.app_appearance_token_font_weight = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_WEIGHT) as FontWeight;
-    token_appearance.app_appearance_token_font_size = AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_SIZE) as number;
-    token_appearance.app_appearance_issuer_font_size = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_SIZE) as number;
-    token_appearance.app_appearance_issuer_font_weight = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_WEIGHT) as FontWeight;
-    token_appearance.app_appearance_user_name_font_size = AppPreference.getPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE) as number;
-    token_appearance.app_appearance_user_name_font_weight = AppPreference.getPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT) as FontWeight;
-    token_appearance.app_appearance_item_max_width = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH) as number;
+    token_appearance.app_appearance_logo_background_size =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_SIZE) as number;
+    token_appearance.app_appearance_logo_background_radius =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS) as number;
+    token_appearance.app_appearance_logo_background_color =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR) as number;
+    token_appearance.app_appearance_logo_dark_filter =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER) as boolean;
+    token_appearance.app_appearance_logo_dark_filter_color =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER_COLOR) as number;
+    token_appearance.app_appearance_token_color =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR) as number;
+    token_appearance.app_appearance_token_next_color =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR) as number;
+    token_appearance.app_appearance_token_color_dark =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COLOR_DARK) as number;
+    token_appearance.app_appearance_token_next_color_dark =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR_DARK) as number;
+    token_appearance.app_appearance_token_counter_light_color_start =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_START) as number;
+    token_appearance.app_appearance_token_counter_light_color_end =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_LIGHT_COLOR_END) as number;
+    token_appearance.app_appearance_token_counter_dark_color_start =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_START) as number;
+    token_appearance.app_appearance_token_counter_dark_color_end =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_DARK_COLOR_END) as number;
+    token_appearance.app_appearance_token_counter_next_color_enable =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_COLOR_ENABLE) as boolean;
+    token_appearance.app_appearance_token_counter_next_margin =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN) as number;
+    token_appearance.app_appearance_token_counter_next_light_color_start =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_START) as number;
+    token_appearance.app_appearance_token_counter_next_light_color_end =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_LIGHT_COLOR_END) as number;
+    token_appearance.app_appearance_token_counter_next_dark_color_start =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_START) as number;
+    token_appearance.app_appearance_token_counter_next_dark_color_end =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_DARK_COLOR_END) as number;
+    token_appearance.app_appearance_token_font_weight =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_WEIGHT) as FontWeight;
+    token_appearance.app_appearance_token_font_size =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_FONT_SIZE) as number;
+    token_appearance.app_appearance_issuer_font_size =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_SIZE) as number;
+    token_appearance.app_appearance_issuer_font_weight =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_ISSUER_FONT_WEIGHT) as FontWeight;
+    token_appearance.app_appearance_user_name_font_size =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE) as number;
+    token_appearance.app_appearance_user_name_font_weight =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT) as FontWeight;
+    token_appearance.app_appearance_item_max_width =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH) as number;
   }
 
   /**
@@ -492,8 +535,5 @@ export class AppPreference {
 
   public static saveSettings(): void {
     AppPreference.prefMgr.saveUserData();
-  }
-
-  private constructor() {
   }
 }

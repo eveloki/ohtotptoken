@@ -1,15 +1,15 @@
 {
   "src": [
     "pages/Index",
-    "pages/PrivacyPage",
-    "pages/AgreementPage",
     "pages/AppearancePage",
     "pages/AppLockPage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage",
+    "pages/ShowCloudSyncDetailsPage",
+    "pages/ShowCloudBackupHistoryPage",
     "pages/RestoreDataPage",
     "pages/MasterKeyPage",
     "pages/RecoveryKeyRecordPage",
-    "pages/FeedbackPage"
+    "pages/WebPage"
   ]
 }

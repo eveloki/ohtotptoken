@@ -3,7 +3,7 @@ import { SettingItem } from '../../components/SettingItem';
 import { common } from '@kit.AbilityKit';
 import { throttle, startBrowsableAbility } from '../../utils/UiUtils';
 import { ROUTE_NAMES, EXTERNAL_URLS } from '../../utils/AppPreference';
-import { FeedbackPage } from '../FeedbackPage';
+import { WebPage, WebPageParams } from '../WebPage';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
 import { SubItemDivider } from '../../components/SubItemDivider';
@@ -18,8 +18,8 @@ export struct FeedbackSheet {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.scrollEffectType })
+    if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams })
     }
   }
 
@@ -38,7 +38,8 @@ export struct FeedbackSheet {
                   text: $r('app.string.feedback_survey')
                 })
                   .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.FeedbackPage, null);
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                      new WebPageParams(EXTERNAL_URLS.FEEDBACK_SURVEY, $r('app.string.feedback_survey')));
                   }, 1000))
 
                 SubItemDivider()

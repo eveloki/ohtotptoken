@@ -230,15 +230,171 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "雲端同步"
+      "value": "華為雲端備份"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "資料將會透過華為雲同步至您華為帳號登入的其他裝置上。"
+      "value": "將應用資料備份至華為雲端，資料將安全存儲在華為雲端。"
     },
     {
       "name": "data_rdb_sync_details",
-      "value": "同步詳情"
+      "value": "跨裝置同步詳情"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "華為雲端備份詳情"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "備份狀態"
+    },
+    {
+      "name": "cloud_sync_status_hint",
+      "value": "備份資料儲存在華為雲空間中，不儲存於本應用的伺服器。同步需要一定時間，請耐心等待。請確保華為雲空間已開啟且空間充足，並已在「設定 > 雲空間 > 使用雲空間的應用」中開啟本應用的雲空間開關。"
+    },
+    {
+      "name": "cloud_sync_open_cloud_space",
+      "value": "開啟華為雲空間設定"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "上次備份時間"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "從未備份"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "雲端資料大小"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "已備份令牌數"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "資料加密"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "網路要求"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "僅Wi-Fi"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "華為帳號"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "未登入"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "計算中..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "已啟用"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "未啟用"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "清空雲端備份"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "清空雲端備份？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "此操作將永久刪除華為雲端上的所有備份資料，且無法恢復。確認要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "請先關閉雲端備份後再清空。"
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "雲端備份已清空"
+    },
+    {
+      "name": "cloud_sync_encryption_huawei_account",
+      "value": "華為帳號加密"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "未加密"
+    },
+    {
+      "name": "cloud_sync_require_huawei_account_title",
+      "value": "需要登入華為帳號"
+    },
+    {
+      "name": "cloud_sync_require_huawei_account_msg",
+      "value": "雲端備份需要華為帳號登入來加密您的資料以確保安全。請先登入華為帳號。"
+    },
+    {
+      "name": "cloud_sync_require_master_key_set",
+      "value": "去設定"
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "備份歷史"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "查看、恢復或刪除雲端備份"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "暫無備份記錄"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "最多保留5份備份，每天一份"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d 個令牌"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "恢復備份"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "確定恢復 %s 的備份？目前資料將被替換。"
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "備份恢復成功"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "備份恢復失敗"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "刪除備份"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "確定刪除 %s 的備份？此操作不可撤銷。"
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "備份刪除成功"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "備份刪除失敗"
     },
     {
       "name": "data_kv_sync_time",
@@ -250,7 +406,7 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "手動同步"
+      "value": "手動備份"
     },
     {
       "name": "data_dev_info",
@@ -315,14 +471,6 @@
     {
       "name": "show_next_token_des",
       "value": "在目前令牌下方展示下一個令牌，提高易用性。"
-    },
-    {
-      "name": "setting_holding_hand_awareness",
-      "value": "啟用智感握姿"
-    },
-    {
-      "name": "setting_holding_hand_awareness_des",
-      "value": "根據左手、雙手或右手握持狀態，自動將操作欄移動到左側、中間或右側。預設關閉。"
     },
     {
       "name": "swap_host_user",
@@ -877,8 +1025,220 @@
       "value": "建議與回饋"
     },
     {
+      "name": "huawei_account_login",
+      "value": "登入華為帳號"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "點擊登入"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "登出"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "確定要登出嗎？"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "登入成功"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "登入失敗"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "未登入"
+    },
+    {
       "name": "feedback_urgent",
       "value": "緊急反饋"
+    },
+    {
+      "name": "huawei_account_error_not_logged_in",
+      "value": "未登入華為帳號，請登入後重試"
+    },
+    {
+      "name": "huawei_account_error_network",
+      "value": "網路異常，請檢查網路後重試"
+    },
+    {
+      "name": "huawei_account_error_internal",
+      "value": "登入失敗，請重試"
+    },
+    {
+      "name": "huawei_account_error_user_cancel",
+      "value": "已取消授權"
+    },
+    {
+      "name": "huawei_account_error_system_service",
+      "value": "系統服務異常，請稍後重試"
+    },
+    {
+      "name": "huawei_account_current",
+      "value": "目前登入帳號"
+    },
+    {
+      "name": "huawei_account_select_title",
+      "value": "選擇帳號登入"
+    },
+    {
+      "name": "huawei_account_select_to_login",
+      "value": "使用已登入華為帳號"
+    },
+    {
+      "name": "cloud_sync_status_synced",
+      "value": "已同步"
+    },
+    {
+      "name": "cloud_sync_status_cloud_only",
+      "value": "僅雲端"
+    },
+    {
+      "name": "cloud_sync_trigger_sync",
+      "value": "觸發同步"
+    },
+    {
+      "name": "cloud_sync_sync_state",
+      "value": "同步狀態"
+    },
+    {
+      "name": "cloud_sync_sync_error",
+      "value": "錯誤"
+    },
+    {
+      "name": "cloud_sync_state_uploading",
+      "value": "上傳中"
+    },
+    {
+      "name": "cloud_sync_state_upload_failed",
+      "value": "上傳失敗"
+    },
+    {
+      "name": "cloud_sync_state_downloading",
+      "value": "下載中"
+    },
+    {
+      "name": "cloud_sync_state_download_failed",
+      "value": "下載失敗"
+    },
+    {
+      "name": "cloud_sync_state_completed",
+      "value": "已同步"
+    },
+    {
+      "name": "cloud_sync_state_stopped",
+      "value": "已停止"
+    },
+    {
+      "name": "cloud_sync_state_idle",
+      "value": "閒置"
+    },
+    {
+      "name": "cloud_sync_error_no_error",
+      "value": "無"
+    },
+    {
+      "name": "cloud_sync_error_network_unavailable",
+      "value": "網路不可用"
+    },
+    {
+      "name": "cloud_sync_error_wifi_unavailable",
+      "value": "Wi-Fi不可用"
+    },
+    {
+      "name": "cloud_sync_error_battery_low",
+      "value": "電量不足（<10%）"
+    },
+    {
+      "name": "cloud_sync_error_battery_warning",
+      "value": "電量警告（<15%）"
+    },
+    {
+      "name": "cloud_sync_error_cloud_full",
+      "value": "雲端空間不足"
+    },
+    {
+      "name": "cloud_sync_error_local_full",
+      "value": "本機空間不足"
+    },
+    {
+      "name": "cloud_sync_error_temperature_high",
+      "value": "裝置溫度過高"
+    },
+    {
+      "name": "cloud_sync_error_server_error",
+      "value": "伺服器不可用"
+    },
+    {
+      "name": "cloud_sync_start_failed",
+      "value": "同步啟動失敗"
+    },
+    {
+      "name": "cloud_sync_started",
+      "value": "同步已啟動"
+    },
+    {
+      "name": "cloud_sync_syncing",
+      "value": "同步中..."
+    },
+    {
+      "name": "cloud_sync_backing_up",
+      "value": "備份中..."
+    },
+    {
+      "name": "cloud_sync_clearing",
+      "value": "清理中..."
+    },
+    {
+      "name": "cloud_sync_cooldown",
+      "value": "請稍後再試同步"
+    },
+    {
+      "name": "cloud_backup_this_device",
+      "value": "本裝置"
+    },
+    {
+      "name": "cloud_backup_other_devices",
+      "value": "其他裝置"
+    },
+    {
+      "name": "cloud_sync_clear_device",
+      "value": "清空本裝置備份"
+    },
+    {
+      "name": "cloud_sync_clear_all",
+      "value": "清空所有備份"
+    },
+    {
+      "name": "cloud_sync_clear_device_confirm_msg",
+      "value": "此操作將從華為雲永久刪除本裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_all_confirm_msg",
+      "value": "此操作將從華為雲永久刪除所有裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
+    },
+    {
+      "name": "cloud_backup_login_required",
+      "value": "登入華為帳號後即可使用雲備份"
+    },
+    {
+      "name": "huawei_account_logout_cloud_backup_msg",
+      "value": "登出後將關閉雲備份並清除本裝置備份記錄，雲端資料不受影響。"
+    },
+    {
+      "name": "cloud_sync_loading_history",
+      "value": "正在同步備份記錄..."
+    },
+    {
+      "name": "cloud_sync_device_id_hint",
+      "value": "裝置名稱和識別基於系統產生的裝置識別碼，恢復原廠設定或解除安裝同開發者所有應用後重新安裝時可能會發生變化。識別變化後，本裝置的備份將顯示在「其他裝置」分組中。"
     }
   ]
 }

@@ -24,9 +24,8 @@ import { MasterKeyPage } from '../MasterKeyPage';
 import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
 import { AppearancePage } from '../AppearancePage';
 import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
-import { PrivacyPage } from '../PrivacyPage';
-import { AgreementPage } from '../AgreementPage';
-import { FeedbackPage } from '../FeedbackPage';
+import { WebPage, WebPageParams } from '../WebPage';
+import { EXTERNAL_URLS } from '../../utils/AppPreference';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 
 @Preview
@@ -43,7 +42,6 @@ export struct SettingPage {
   @Local versionName?: string;
   @Local appName?: string;
   @Local RdbSyncEnable: SettingValue = false;
-  @Local RdbCloudSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
   @Local is_master_key_enable: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
   @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
@@ -67,35 +65,15 @@ export struct SettingPage {
     this.versionName = 'Version:' + bundleInfo?.versionName;
     this.appName = bundleInfo?.name;
     this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
-    this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     //订阅权限变更
     this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
-    this.str_about_app =
-      "Github: SolidFaker/ohtotptoken\n" +
-      "E-mail: enbinli@outlook.com\n" +
-      "Contributors: @Solidfaker, @eveloki, @lsxuan12138, @TomStilson, @tomygin, @wulongshe\n" +
-      "Bundle Name: " + bundleInfo?.name + "\n" +
-      "Version: " + bundleInfo?.versionName + "\n" +
-      "Version Code: " + bundleInfo?.versionCode;
-    this.str_opensource_leg =
-      "Github: paolostivanin/libcotp\n" +
-      "Github: Netthaw/TOTP-MCU\n" +
-      "Github: ss23/fortitoken-mobile-registration\n" +
-      "Github: iamhyc/Aigis\n" +
-      "Github: andOTP/andOTP - Icons";
-    this.appCtx.eventHub.on(EVENT_NAMES.MASTER_KEY_PAGE_BACK,()=>{
-      this.is_master_key_set = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
-    })
   }
 
   //更新数据同步权限
   updateDATASYNCPermissions(isAccess: boolean) {
     if (!isAccess) {
-      //如果数据同步权限被关闭 则需要将两个同步都关闭
       this.RdbSyncEnable = false;
-      this.RdbCloudSyncEnable = false;
       AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
-      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -281,12 +259,8 @@ export struct SettingPage {
       AppearancePage({scrollEffectType: this.scrollEffectType})
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({scrollEffectType: this.scrollEffectType})
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.scrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.scrollEffectType })
-    } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.scrollEffectType })
+    } else if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams })
     }
   }
 
@@ -458,20 +432,6 @@ export struct SettingPage {
 
               SubItemDivider()
 
-              SubItemToggle({
-                icon: $r('sys.symbol.hand_draw'),
-                title: $r('app.string.setting_holding_hand_awareness'),
-                isOn: AppPreference.getPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE) as boolean,
-                description: $r('app.string.setting_holding_hand_awareness_des'),
-                onChange: (IsOn: boolean) => {
-                  AppPreference.setPreference(PREF_KEYS.APPEARANCE_HOLDING_HAND_ENABLE, IsOn);
-                  this.token_preference.app_appearance_holding_hand_enable = IsOn;
-                  this.appCtx.eventHub.emit(EVENT_NAMES.HOLDING_HAND_PREFERENCE_CHANGED, IsOn);
-                }
-              })
-
-              SubItemDivider()
-
               if (this.debug_mode_is_on) {
                 SubItemToggle({
                   icon: $r('sys.symbol.gearshape'),
@@ -555,25 +515,6 @@ export struct SettingPage {
 
               SubItemDivider()
 
-              SubItemToggle({
-                icon: $r('sys.symbol.icloud'),
-                title: $r('app.string.data_rdb_cloud_sync'),
-                isOn: this.RdbCloudSyncEnable as boolean,
-                description: $r('app.string.data_rdb_cloud_sync_des'),
-                disable: true,
-                onChange: (IsOn: boolean) => {
-                  if (IsOn) {
-                    PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
-                  }
-                  this.RdbCloudSyncEnable = IsOn;
-                  AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
-                }
-              })
-                .visibility(Visibility.None)
-
-              SubItemDivider()
-                .visibility(Visibility.None)
-
               SubItemButton({
                 symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                 text: $r('app.string.data_rdb_sync_details')
@@ -589,7 +530,9 @@ export struct SettingPage {
             SettingItem({ title: $r('app.string.setting_agreement_statement') }) {
               SubItemButton({ symbol: $r("sys.symbol.person_shield"), text: $r('app.string.privacy_statement') })
                 .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.PrivacyPage,null);
+                    const privacyUrl = AppStorage.get("AppPrivacyManageInfoUrl") as string;
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                      new WebPageParams(privacyUrl, $r('app.string.privacy_statement')));
                 }, 1000))
 
               SubItemDivider()
@@ -599,7 +542,9 @@ export struct SettingPage {
                 text: $r('app.string.user_agreement')
               })
                 .onClick(throttle((event) => {
-                  this.pageInfos.pushPathByName(ROUTE_NAMES.AgreementPage,null);
+                  this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
+                    new WebPageParams('https://yylx.duan.red/user-agreement-zh-cn.html',
+                      $r('app.string.user_agreement')));
                 }, 1000))
 
             }

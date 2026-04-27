@@ -4,6 +4,7 @@ import { bundleManager,common } from '@kit.AbilityKit';
 import { convertToken2URI, generateFileNameWithDate } from '../../utils/TokenUtils'
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemButton } from '../../components/SubItemButton';
+import { SubItemToggle } from '../../components/SubItemToggle';
 import { SettingItem } from '../../components/SettingItem';
 import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
 import { restoreFromBackup, saveBackupToFile, TokenBackup } from '../../utils/TokenBackup';
@@ -11,17 +12,25 @@ import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from '../.
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { LengthMetrics } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppPreference, SettingValue, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
+import { throttle } from '../../utils/UiUtils';
+import { ShowCloudSyncDetailsPage } from '../ShowCloudSyncDetailsPage';
+import { ShowCloudBackupHistoryPage } from '../ShowCloudBackupHistoryPage';
+import { HuaweiAccountManager } from '../../utils/HuaweiAccountManager';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
 
 @Preview
 @ComponentV2
 export struct BackupAndMigrationSheet {
+  pageInfos: NavPathStack = new NavPathStack();
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
 
   @Local versionCode?: number;
+  @Local cloudBackupEnabled: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
   private sheetScroller: Scroller = new Scroller();
 
   //备份时是否为导出模式
@@ -32,6 +41,8 @@ export struct BackupAndMigrationSheet {
   aboutToAppear(): void {
     let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
     this.versionCode = bundleInfo?.versionCode;
+    this.cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    this.isHuaweiLoggedIn = HuaweiAccountManager.getInstance().userLogin;
   }
 
   //region 加密导入导出
@@ -199,6 +210,15 @@ export struct BackupAndMigrationSheet {
     });
   }
 
+  @Builder
+  navDestinationBuilder(name: string, param: Object) {
+    if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
+      ShowCloudSyncDetailsPage({ scrollEffectType: this.scrollEffectStyle })
+    } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
+      ShowCloudBackupHistoryPage({ scrollEffectType: this.scrollEffectStyle })
+    }
+  }
+
   //endregion
   // 在自定义组件即将析构销毁时将dialogController置空
   aboutToDisappear() {
@@ -207,14 +227,12 @@ export struct BackupAndMigrationSheet {
 
   build() {
     Column() {
-      HdsNavigation() {
+      HdsNavigation(this.pageInfos) {
         Column({ space: LengthMetrics.vp(12).value }) {
           List({ scroller: this.sheetScroller, space: 10 }) {
-            // 顶部避让
             ListItem()
               .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-            // 选项内容
             ListItem() {
               SettingItem({ title: "" }) {
                 SubItemButton({
@@ -249,6 +267,49 @@ export struct BackupAndMigrationSheet {
               }
             }
             .padding({ left: 10, right: 10 })
+
+            ListItem() {
+              SettingItem({ title: "" }) {
+                SubItemToggle({
+                  icon: $r('sys.symbol.icloud'),
+                  title: $r('app.string.data_rdb_cloud_sync'),
+                  isOn: this.cloudBackupEnabled as boolean,
+                  disable: !this.isHuaweiLoggedIn,
+                  description: this.isHuaweiLoggedIn
+                    ? $r('app.string.data_rdb_cloud_sync_des')
+                    : $r('app.string.cloud_backup_login_required'),
+                  onChange: (IsOn: boolean) => {
+                    if (IsOn) {
+                      if (!HuaweiAccountManager.getInstance().userLogin) {
+                        this.cloudBackupEnabled = false;
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+                        this.showHuaweiAccountRequiredDialog();
+                        return;
+                      }
+                    }
+                    this.cloudBackupEnabled = IsOn;
+                    AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, IsOn);
+                  }
+                })
+
+                SubItemDivider()
+
+                SubItemButton({
+                  symbol: $r('sys.symbol.icloud'),
+                  text: $r('app.string.data_huawei_cloud_sync_details'),
+                  description: this.isHuaweiLoggedIn ? '' : $r('app.string.cloud_backup_login_required'),
+                  descriptionColor: $r('sys.color.ohos_id_color_warning'),
+                })
+                  .onClick(throttle((event) => {
+                    if (!this.isHuaweiLoggedIn) {
+                      this.showHuaweiAccountRequiredDialog();
+                      return;
+                    }
+                    this.pageInfos.pushPathByName(ROUTE_NAMES.ShowCloudSyncDetailsPage, null);
+                  }, 1000))
+              }
+            }
+            .padding({ left: 10, right: 10 })
           }
           .width('100%')
           .layoutWeight(1)
@@ -260,6 +321,11 @@ export struct BackupAndMigrationSheet {
         .height('100%')
         .backgroundColor($r('app.color.window_background'))
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.window_background'))
+      .mode(NavigationMode.Stack)
+      .navDestination(this.navDestinationBuilder)
       .bindToScrollable([this.sheetScroller])
       .titleMode(HdsNavigationTitleMode.MODAL)
       .titleBar({
@@ -302,5 +368,24 @@ export struct BackupAndMigrationSheet {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.window_background'))
+  }
+
+  private showHuaweiAccountRequiredDialog(): void {
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.cloud_sync_require_huawei_account_title'),
+      message: $r('app.string.cloud_sync_require_huawei_account_msg'),
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.dialog_btn_confirm'),
+          action: () => {}
+        },
+      ],
+      cancel: () => {},
+    });
   }
 }
