@@ -406,7 +406,11 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "手动备份"
+      "value": "立即备份"
+    },
+    {
+      "name": "data_sync_manual_des",
+      "value": "将当前所有令牌备份到华为云"
     },
     {
       "name": "data_dev_info",
@@ -1102,7 +1106,11 @@
     },
     {
       "name": "cloud_sync_trigger_sync",
-      "value": "触发同步"
+      "value": "从云端恢复"
+    },
+    {
+      "name": "cloud_sync_trigger_sync_des",
+      "value": "将云端最新的备份文件同步到本设备"
     },
     {
       "name": "cloud_sync_sync_state",
@@ -1239,6 +1247,10 @@
     {
       "name": "cloud_sync_device_id_hint",
       "value": "设备名称和标识基于系统生成的设备标识符，恢复出厂设置或卸载同开发者所有应用后重新安装时可能会发生变化。标识变化后，本设备的备份将显示在\"其他设备\"分组中。"
+    },
+    {
+      "name": "cloud_sync_operations",
+      "value": "操作"
     }
   ]
 }

@@ -1102,7 +1102,11 @@
     },
     {
       "name": "cloud_sync_trigger_sync",
-      "value": "觸發同步"
+      "value": "從雲端恢復"
+    },
+    {
+      "name": "cloud_sync_trigger_sync_des",
+      "value": "將雲端最新的備份檔案同步到本裝置"
     },
     {
       "name": "cloud_sync_sync_state",
@@ -1239,6 +1243,10 @@
     {
       "name": "cloud_sync_device_id_hint",
       "value": "裝置名稱和識別基於系統產生的裝置識別碼，恢復原廠設定或解除安裝同開發者所有應用後重新安裝時可能會發生變化。識別變化後，本裝置的備份將顯示在「其他裝置」分組中。"
+    },
+    {
+      "name": "cloud_sync_operations",
+      "value": "操作"
     }
   ]
 }

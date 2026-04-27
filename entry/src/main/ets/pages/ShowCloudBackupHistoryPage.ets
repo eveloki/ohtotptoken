@@ -7,6 +7,15 @@ import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../utils/CommonConstants';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { SyncTimeHelper } from '../utils/SyncTimeHelper';
+import { common } from '@kit.AbilityKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { taskpool } from '@kit.ArkTS';
+import { loadBackupHistoryRecords } from '../utils/CloudSyncTask';
+
+const TAG = 'ShowCloudBackupHistoryPage';
+const DOMAIN = 0xFF00;
 
 @Entry
 @Preview
@@ -18,26 +27,38 @@ export struct ShowCloudBackupHistoryPage {
   @Local isLoading: boolean = true;
   @Local currentDeviceId: string = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
   private backupManager: CloudBackupManager = CloudBackupManager.getInstance();
   private scroller: Scroller = new Scroller();
 
+  /** 页面生命周期：获取本设备 ID，加载备份历史列表 */
   aboutToAppear(): void {
     this.currentDeviceId = DeviceInfoHelper.getInstance().getDeviceId();
     this.loadBackupHistory();
   }
 
+  /**
+   * 通过 TaskPool 后台线程加载备份历史记录，避免逐文件 I/O 阻塞主线程。
+   * 后台线程执行目录遍历 + 文件读取 + header 解析，完成后回主线程更新 UI。
+   */
   private loadBackupHistory(): void {
     this.isLoading = true;
-    this.backupManager.listBackupHistory().then((records: CloudBackupRecord[]) => {
-      this.backupRecords = records;
+    const cloudDir: string = this.appCtx.cloudFileDir;
+    taskpool.execute(loadBackupHistoryRecords, cloudDir).then((result: Object) => {
+      this.backupRecords = result as CloudBackupRecord[];
       this.isLoading = false;
+    }).catch((err: BusinessError) => {
+      this.isLoading = false;
+      hilog.error(DOMAIN, TAG, `loadBackupHistory: taskpool failed: ${err.code} ${err.message}`);
     });
   }
 
+  /** 筛选当前设备的备份记录 */
   private getDeviceRecords(): CloudBackupRecord[] {
     return this.backupRecords.filter(r => r.deviceId === this.currentDeviceId);
   }
 
+  /** 筛选其他设备的备份记录 */
   private getOtherDeviceRecords(): CloudBackupRecord[] {
     return this.backupRecords.filter(r => r.deviceId !== this.currentDeviceId);
   }
@@ -55,7 +76,6 @@ export struct ShowCloudBackupHistoryPage {
               }
               .width('100%')
               .height('100%')
-              .backgroundColor('#40000000')
               .justifyContent(FlexAlign.Center)
             }
             else
@@ -198,6 +218,7 @@ export struct ShowCloudBackupHistoryPage {
     })
   }
 
+  /** 备份记录卡片：左侧图标+元数据（日期/令牌数/大小/加密标识），右侧操作按钮（恢复/删除） */
   @Builder
   BackupRecordItem(record: CloudBackupRecord, isCurrentDevice: boolean) {
     Column() {
@@ -307,6 +328,7 @@ export struct ShowCloudBackupHistoryPage {
     .shadow({ radius: 10, color: $r('app.color.shadow'), offsetX: 10, offsetY: 10 })
   }
 
+  /** 文件大小格式化：<1KB 显示字节，否则显示 KB */
   private formatSize(bytes: number): string {
     if (bytes < 1024) {
       return `${bytes} B`;
@@ -314,6 +336,7 @@ export struct ShowCloudBackupHistoryPage {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
 
+  /** 恢复确认弹窗：底部 AlertDialog，确认后调用 triggerRestore 解密并写入令牌 */
   private showRestoreConfirmDialog(record: CloudBackupRecord): void {
     this.getUIContext().showAlertDialog({
       title: $r('app.string.cloud_backup_restore_confirm_title'),
@@ -339,6 +362,7 @@ export struct ShowCloudBackupHistoryPage {
     });
   }
 
+  /** 删除确认弹窗：仅当前设备的备份可删除，底部 AlertDialog 二次确认 */
   private showDeleteConfirmDialog(record: CloudBackupRecord): void {
     this.getUIContext().showAlertDialog({
       title: $r('app.string.cloud_backup_delete_confirm_title'),
@@ -364,6 +388,7 @@ export struct ShowCloudBackupHistoryPage {
     });
   }
 
+  /** 触发恢复：调用 CloudBackupManager 解密备份文件并逐条 upsert 令牌到本地存储 */
   private triggerRestore(recordId: string): void {
     this.isLoading = true;
     this.backupManager.restoreFromBackupRecord(recordId).then((success: boolean) => {
@@ -376,6 +401,7 @@ export struct ShowCloudBackupHistoryPage {
     });
   }
 
+  /** 触发删除：调用 CloudBackupManager 删除云端文件 + 同步，成功后更新 lastSyncTime 并刷新列表 */
   private triggerDelete(recordId: string): void {
     this.isLoading = true;
     this.backupManager.deleteBackupRecord(recordId).then((success: boolean) => {
@@ -390,21 +416,21 @@ export struct ShowCloudBackupHistoryPage {
     });
   }
 
+  /**
+   * 删除备份记录后更新 lastSyncTime：
+   * 如果删除的是今天的备份，尝试用剩余今天记录的最新时间戳替换；
+   * 若今天无剩余记录，则设为昨天末尾时间戳。
+   */
   private updateLastSyncTimeAfterDelete(deletedRecordId: string): void {
-    const lastTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string;
-    if (!lastTime || lastTime.length < 10) {
-      return;
-    }
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${this.padZero(today.getMonth() + 1)}-${this.padZero(today.getDate())}`;
-    if (!lastTime.startsWith(todayStr)) {
+    const rawTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string;
+    const lastTs = SyncTimeHelper.parseStoredTimestamp(rawTime);
+    if (lastTs <= 0 || !SyncTimeHelper.isToday(lastTs)) {
       return;
     }
     let deletedIsToday = false;
     for (const record of this.backupRecords) {
       if (record.id === deletedRecordId) {
-        const recordDate = `${new Date(record.timestamp).getFullYear()}-${this.padZero(new Date(record.timestamp).getMonth() + 1)}-${this.padZero(new Date(record.timestamp).getDate())}`;
-        if (recordDate === todayStr) {
+        if (SyncTimeHelper.isToday(record.timestamp)) {
           deletedIsToday = true;
         }
         break;
@@ -413,27 +439,19 @@ export struct ShowCloudBackupHistoryPage {
     if (!deletedIsToday) {
       return;
     }
-    let latestRemaining: string = '';
+    let latestRemainingTs: number = 0;
     for (const record of this.backupRecords) {
       if (record.id === deletedRecordId) {
         continue;
       }
-      const recordDate = `${new Date(record.timestamp).getFullYear()}-${this.padZero(new Date(record.timestamp).getMonth() + 1)}-${this.padZero(new Date(record.timestamp).getDate())}`;
-      if (recordDate === todayStr) {
-        latestRemaining = record.date;
-        break;
+      if (SyncTimeHelper.isToday(record.timestamp) && record.timestamp > latestRemainingTs) {
+        latestRemainingTs = record.timestamp;
       }
     }
-    if (latestRemaining.length > 0) {
-      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, latestRemaining);
+    if (latestRemainingTs > 0) {
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${latestRemainingTs}`);
     } else {
-      const yesterday = new Date(today.getTime() - 86400000);
-      const yesterdayStr = `${yesterday.getFullYear()}-${this.padZero(yesterday.getMonth() + 1)}-${this.padZero(yesterday.getDate())} 23:59`;
-      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, yesterdayStr);
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${SyncTimeHelper.getYesterdayEndTs()}`);
     }
-  }
-
-  private padZero(n: number): string {
-    return n < 10 ? `0${n}` : `${n}`;
   }
 }

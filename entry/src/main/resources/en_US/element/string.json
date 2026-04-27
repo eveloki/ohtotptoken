@@ -406,7 +406,11 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "Manual Backup"
+      "value": "Backup Now"
+    },
+    {
+      "name": "data_sync_manual_des",
+      "value": "Upload all tokens to Huawei Cloud"
     },
     {
       "name": "data_dev_info",
@@ -1102,7 +1106,11 @@
     },
     {
       "name": "cloud_sync_trigger_sync",
-      "value": "Trigger Sync"
+      "value": "Sync from Cloud"
+    },
+    {
+      "name": "cloud_sync_trigger_sync_des",
+      "value": "Download the latest backup files from cloud to this device"
     },
     {
       "name": "cloud_sync_sync_state",
@@ -1239,6 +1247,10 @@
     {
       "name": "cloud_sync_device_id_hint",
       "value": "The device name and ID are based on the system-generated device identifier, which may change after factory reset or reinstalling all apps from the same developer. If the ID changes, backups from this device will be displayed under \"Other Devices\"."
+    },
+    {
+      "name": "cloud_sync_operations",
+      "value": "Operations"
     }
   ]
 }
