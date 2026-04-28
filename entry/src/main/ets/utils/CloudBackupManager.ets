@@ -23,6 +23,7 @@ import { common } from '@kit.AbilityKit';
 import { buffer } from '@kit.ArkTS';
 import { DeviceInfoHelper } from './DeviceInfoHelper';
 import { HuaweiAccountManager } from './HuaweiAccountManager';
+import { SyncTimeHelper } from './SyncTimeHelper';
 
 const TAG = 'CloudBackupManager';
 const DOMAIN = 0xFF00;
@@ -138,9 +139,7 @@ export class CloudBackupManager {
 
     await this.syncToCloud();
 
-    const d = new Date(now);
-    const dateStr = `${d.getFullYear()}-${this.padZero(d.getMonth() + 1)}-${this.padZero(d.getDate())} ${this.padZero(d.getHours())}:${this.padZero(d.getMinutes())}`;
-    AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, dateStr);
+    AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${now}`);
 
     hilog.info(DOMAIN, TAG, 'backupToCloud: completed successfully');
     return true;
@@ -190,7 +189,7 @@ export class CloudBackupManager {
       for (const record of records) {
         await this.deleteBackupFile(record.id);
       }
-      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
       hilog.info(DOMAIN, TAG, 'clearCloudStorage: completed');
       return true;
     } catch (e) {
@@ -220,7 +219,7 @@ export class CloudBackupManager {
       for (const record of deviceRecords) {
         await this.deleteBackupFile(record.id);
       }
-      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
       hilog.info(DOMAIN, TAG, `clearDeviceCloudStorage: completed, deleted ${deviceRecords.length}`);
       return true;
     } catch (e) {
@@ -250,13 +249,10 @@ export class CloudBackupManager {
     }
 
     const lastTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string;
-    if (lastTime && lastTime.length >= 10) {
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${this.padZero(today.getMonth() + 1)}-${this.padZero(today.getDate())}`;
-      if (lastTime.startsWith(todayStr)) {
-        hilog.info(DOMAIN, TAG, 'checkAndAutoBackup: already backed up today, skipping');
-        return;
-      }
+    const lastTs = SyncTimeHelper.parseStoredTimestamp(lastTime);
+    if (lastTs > 0 && SyncTimeHelper.isToday(lastTs)) {
+      hilog.info(DOMAIN, TAG, 'checkAndAutoBackup: already backed up today, skipping');
+      return;
     }
 
     hilog.info(DOMAIN, TAG, 'checkAndAutoBackup: starting auto backup');

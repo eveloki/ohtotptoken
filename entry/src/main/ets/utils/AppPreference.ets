@@ -342,7 +342,7 @@ export class AppPreference {
     // 数据库是否启用云同步
     [PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false],
     // 云端同步最后时间
-    [PREF_KEYS.CLOUD_SYNC_LAST_TIME, ''],
+    [PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0'],
     // 数据库是否启用跨设备流转
     [PREF_KEYS.DB_RDS_SYNC_ENABLE, false],
     // kv数据库同步时间

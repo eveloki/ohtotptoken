@@ -498,7 +498,7 @@ struct Index {
               this.syncHuaweiAccountState();
               this.isAccountSheetVisible = false;
               AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
-              AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+              AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
             });
           }
         },
@@ -523,7 +523,7 @@ struct Index {
           HuaweiAccountManager.getInstance().logout().then(() => {
             this.syncHuaweiAccountState();
             AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
-            AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+            AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
           });
         }
       });

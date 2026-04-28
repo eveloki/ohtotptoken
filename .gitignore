@@ -11,3 +11,4 @@
 **/.test
 /.appanalyzer
 /.bitfun
+/.playwright-mcp/
