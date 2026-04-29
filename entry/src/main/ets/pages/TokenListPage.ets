@@ -10,6 +10,7 @@ import { convertToken2URI } from "../utils/TokenUtils";
 import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 import { CommonConstants } from "../utils/CommonConstants";
+import { GenericDataSource } from "../utils/GenericDataSource";
 
 let tkStore = TokenStore.getInstance();
 
@@ -30,6 +31,13 @@ export struct TokenListPage {
 
   @Local token_copy_guide_popup: boolean = false;
 
+  @Local dataSource: GenericDataSource<TokenConfig> = new GenericDataSource([]);
+
+  @Monitor("Tokens")
+  onTokensChange(monitor: IMonitor): void {
+    this.dataSource.updateData(monitor.value()?.now as TokenConfig[]);
+  }
+
   @Local token_list_search_result: TokenConfig[] = [];
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
@@ -44,16 +52,20 @@ export struct TokenListPage {
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
       this.token_list_search_enable = false;
+      this.dataSource.updateData(this.Tokens);
       return;
     }
     this.token_list_search_enable = true;
     const lower_filter_word = filter_word.toLowerCase();
-    this.token_list_search_result = this.Tokens.filter((token) => {
+    const filtered = this.Tokens.filter((token) => {
       return token.TokenIssuer.toLowerCase().indexOf(lower_filter_word) >= 0 || token.TokenName.toLowerCase().indexOf(lower_filter_word) >= 0
-    })
+    });
+    this.token_list_search_result = filtered;
+    this.dataSource.updateData(filtered);
   }
 
   aboutToAppear(): void {
+    this.dataSource = new GenericDataSource(this.Tokens);
     // 如果已经点击了我知道了则永远不提示了
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
@@ -147,7 +159,7 @@ export struct TokenListPage {
             }
           }
 
-          ForEach(this.token_list_search_enable ? this.token_list_search_result : this.Tokens, (token: TokenConfig, index: number) => {
+          LazyForEach(this.dataSource, (token: TokenConfig) => {
             ListItem() {
               TokenItem({
                 Config: token,
@@ -155,7 +167,7 @@ export struct TokenListPage {
                   this.updateTokenConfig(conf_new, false);
                 }
               })
-                .bindPopup(this.token_copy_guide_popup && index === 0, {
+                .bindPopup(this.token_copy_guide_popup && token.TokenUUID === this.dataSource.getData(0)?.TokenUUID, {
                   placement: Placement.Left,
                   message: getContext(this)
                     .resourceManager
@@ -185,7 +197,7 @@ export struct TokenListPage {
             .swipeAction({
               start: {
                 builder: () => {
-                  this.TokenItemStart(token, index)
+                  this.TokenItemStart(token)
                 }
               },
               end: {
@@ -195,7 +207,7 @@ export struct TokenListPage {
               }
             })
           }, (item: TokenConfig) => {
-            return JSON.stringify(item)
+            return item.TokenUUID
           })
             .onMove((from, to) => {
               if (!this.token_list_search_enable) {
@@ -224,7 +236,7 @@ export struct TokenListPage {
   }
 
   @Builder
-  TokenItemStart(conf: TokenConfig, index: number) {
+  TokenItemStart(conf: TokenConfig) {
     Row({ space: 10 }) {
       Button({ type: ButtonType.Circle }) {
         Text() {
