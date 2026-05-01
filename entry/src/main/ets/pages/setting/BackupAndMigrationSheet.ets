@@ -295,7 +295,7 @@ export struct BackupAndMigrationSheet {
                 SubItemDivider()
 
                 SubItemButton({
-                  symbol: $r('sys.symbol.icloud'),
+                  symbol: $r('sys.symbol.info_circle'),
                   text: $r('app.string.data_huawei_cloud_sync_details'),
                   description: this.isHuaweiLoggedIn ? '' : $r('app.string.cloud_backup_login_required'),
                   descriptionColor: $r('sys.color.ohos_id_color_warning'),

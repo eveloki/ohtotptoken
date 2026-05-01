@@ -108,14 +108,14 @@ export struct ShowCloudSyncDetailsPage {
         RelativeContainer() {
           Stack() {
             if (this.Is_loaded) {
-               Column() {
-                 LoadingProgress()
-                   .color($r('sys.color.font_primary'))
-                    .width(LengthMetrics.vp(80).value).height(LengthMetrics.vp(80).value)
-                  Text(this.loadingText)
-                    .fontSize($r('sys.float.ohos_id_text_size_body1'))
-                   .fontColor($r('sys.color.font_primary'))
-               }
+              Column() {
+                LoadingProgress()
+                  .color($r('sys.color.font_primary'))
+                  .width(LengthMetrics.vp(80).value).height(LengthMetrics.vp(80).value)
+                Text(this.loadingText)
+                  .fontSize($r('sys.float.ohos_id_text_size_body1'))
+                  .fontColor($r('sys.color.font_primary'))
+              }
               .width('100%')
               .height('100%')
               .justifyContent(FlexAlign.Center)
@@ -160,7 +160,9 @@ export struct ShowCloudSyncDetailsPage {
                         .layoutWeight(1)
                       Text((this.lastSyncTime != null && this.lastSyncTime != "") ? this.lastSyncTime : $r('app.string.cloud_sync_never'))
                         .fontSize($r('sys.float.ohos_id_text_size_body2'))
-                        .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                        .fontColor((this.lastSyncTime != null && this.lastSyncTime != "") ?
+                          $r('sys.color.ohos_id_color_text_primary') :
+                          $r('sys.color.ohos_id_color_text_secondary'))
                         .fontWeight(FontWeight.Medium)
                     }
                     .width('100%')
