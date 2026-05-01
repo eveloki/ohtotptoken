@@ -2,7 +2,6 @@
   "src": [
     "pages/Index",
     "pages/AppearancePage",
-    "pages/AppLockPage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage",
     "pages/ShowCloudSyncDetailsPage",

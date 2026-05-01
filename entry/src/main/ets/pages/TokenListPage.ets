@@ -121,7 +121,7 @@ export struct TokenListPage {
             ListItem() {
               Column() {
                 Row()
-                  .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight)
+                  .height(this.TabBarVisible ? CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight : this.appTopAvoidHeight)
                   .width('100%')
                 
                 Stack({ alignContent: Alignment.End }) {
@@ -218,7 +218,7 @@ export struct TokenListPage {
 
           ListItem() {
             Row()
-              .height(this.TabBarVisible ? (60 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .height(this.TabBarVisible ? (80 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
               .width('100%')
           }
           .selectable(false)
