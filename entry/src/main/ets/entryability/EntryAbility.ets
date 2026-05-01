@@ -8,7 +8,7 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, PREF_KEYS } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 
@@ -88,7 +88,10 @@ export default class EntryAbility extends UIAbility {
 
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
-      windowStage.loadContent(ROUTE_NAMES.AppLockPage, (err) => {
+      if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+        AppStorage.setOrCreate('app_lock_need_show', true);
+      }
+      windowStage.loadContent('pages/Index', (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;

@@ -298,10 +298,8 @@ export enum ROUTE_NAMES {
   ShowCodePage = 'ShowCodePage',
   /** 通用Web页面 */
   WebPage = 'WebPage',
-  /** App锁定页面 */
-  AppLockPage= 'pages/AppLockPage',
   /** App首页 */
-  IndexPage= 'pages/Index',
+  IndexPage = 'pages/Index',
 }
 
 /**
