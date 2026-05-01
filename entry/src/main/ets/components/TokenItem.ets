@@ -12,6 +12,13 @@ import { QRCodeDialog } from '../dialogs/QRCodeDialog';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { TokenStore } from '../utils/TokenStore';
 import { ConfigurationConstant } from '@kit.AbilityKit';
+import {
+  HdsListItemCard,
+  PrefixCustomBuilder,
+  SuffixCustomBuilder,
+  TextOptions
+} from '@kit.UIDesignKit';
+import { TextModifier } from '@ohos.arkui.modifier';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 let tkStore = TokenStore.getInstance();
@@ -162,28 +169,14 @@ export struct TokenItem {
     }
   }
 
-  build() {
-    Row({ space: 10 }) {
-      TokenIcon({ issuer: this.Config.TokenIssuer, icon_path: this.Config.TokenIconPath })
-      Column() {
-        Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer)
-          .textOverflow({ overflow: TextOverflow.MARQUEE })
-          .maxLines(1)
-          .fontSize(this.token_preference.app_appearance_issuer_font_size)
-          .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
-          .fontColor($r('app.color.str_main'))
-        Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName)
-          .textOverflow({ overflow: TextOverflow.MARQUEE })
-          .maxLines(1)
-          .fontSize(this.token_preference.app_appearance_user_name_font_size)
-          .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
-          .fontColor($r('app.color.str_gray'))
-      }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
+  @Builder
+  TokenIconBuilder() {
+    TokenIcon({ issuer: this.Config.TokenIssuer, icon_path: this.Config.TokenIconPath })
+  }
 
-      Blank()
-
+  @Builder
+  TokenCodeBuilder() {
+    Column() {
       if (AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON)) {
         Text(this.Config.RankScore.toString())
           .textAlign(TextAlign.Center)
@@ -193,91 +186,110 @@ export struct TokenItem {
       }
 
       if (this.TokenHide && this.token_preference.app_safety_hide_token_enable) {
-        Stack() {
-          Text() {
-            Span("●●●●")
-          }
-          .fontColor(Color.Gray)
-          .fontSize(this.token_preference.app_appearance_token_font_size)
+        Text() {
+          Span("●●●●")
         }
-        .onClick(() => {
-          this.TokenHide = !this.TokenHide;
-          current_token_hide_map[this.Config.TokenUUID] = false;
-        })
-
+        .fontColor(Color.Gray)
+        .fontSize(this.token_preference.app_appearance_token_font_size)
       } else {
-        Column() {
-          Text(this.TokenNumber)
-            .textAlign(TextAlign.End)
-            .textOverflow({ overflow: TextOverflow.MARQUEE })
-            .maxLines(1)
-            .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP ?
-              this.token_color_expiring : this.token_color_normal)
-            .fontSize(this.token_preference.app_appearance_token_font_size)
-            .fontWeight(this.token_preference.app_appearance_token_font_weight)
-            .gesture(
-              LongPressGesture()
-                .onAction(() => {
-                  copyText(this.TokenNumber, `token ${this.TokenNumber} `+ this.getUIContext().getHostContext()?.resourceManager.getStringSync($r('app.string.token_copied').id));
-                })
-            )
-          if (this.Config.TokenType == otpType.HOTP) {
-            Text(this.TokenCounter + (this.token_preference.app_appearance_show_next_token_enable ? ":" + this.TokenNumberNext : ""))
+        Row({ space: 4 }) {
+          Column() {
+            Text(this.TokenNumber)
               .textAlign(TextAlign.End)
               .textOverflow({ overflow: TextOverflow.MARQUEE })
               .maxLines(1)
-              .fontColor($r('app.color.str_gray'))
-              .fontSize(10)
-          } else if (this.token_preference.app_appearance_show_next_token_enable) {
-            Text(this.TokenNumberNext)
-              .textAlign(TextAlign.End)
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-              .maxLines(1)
-              .fontColor($r('app.color.str_gray'))
-              .fontSize(10)
+              .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP ?
+                this.token_color_expiring : this.token_color_normal)
+              .fontSize(this.token_preference.app_appearance_token_font_size)
+              .fontWeight(this.token_preference.app_appearance_token_font_weight)
+              .gesture(
+                LongPressGesture()
+                  .onAction(() => {
+                    copyText(this.TokenNumber, `token ${this.TokenNumber} `+ this.getUIContext().getHostContext()?.resourceManager.getStringSync($r('app.string.token_copied').id));
+                  })
+              )
+            if (this.Config.TokenType == otpType.HOTP) {
+              Text(this.TokenCounter + (this.token_preference.app_appearance_show_next_token_enable ? ":" + this.TokenNumberNext : ""))
+                .textAlign(TextAlign.End)
+                .textOverflow({ overflow: TextOverflow.MARQUEE })
+                .maxLines(1)
+                .fontColor($r('app.color.str_gray'))
+                .fontSize(10)
+            } else if (this.token_preference.app_appearance_show_next_token_enable) {
+              Text(this.TokenNumberNext)
+                .textAlign(TextAlign.End)
+                .textOverflow({ overflow: TextOverflow.MARQUEE })
+                .maxLines(1)
+                .fontColor($r('app.color.str_gray'))
+                .fontSize(10)
+            }
           }
-        }
-        .onClick(() => {
-          if (this.token_preference.app_safety_hide_token_enable) {
-            this.TokenHide = !this.TokenHide;
-            current_token_hide_map[this.Config.TokenUUID] = true;
-          }
-        })
 
-        if (this.Config.TokenType == otpType.HOTP) {
-          SymbolGlyph($r('sys.symbol.lock_filled_arrow_counterclockwise'))
-            .fontColor([this.hotp_next_btn_color])
-            .fontSize(40)
-            .fontWeight(FontWeight.Medium)
-            .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
-              this.btn_hotp_clicked)
-            .onClick(() => {
-              this.btn_hotp_clicked++;
-              this.Config.TokenCounter++;
-              this.Update(this.Config)
-              this.updateHOTPToken();
-            })
-        } else {
-          Stack() {
-            Text(this.TokenLeftPeriod.toString())
-            Progress({ value: this.TokenLeftPeriod, total: this.Config.TokenPeriod, type: ProgressType.Ring })
-              .style({ strokeWidth: 8 })
-              .width(40)
-              .height(40)
-              .color(this.TokenLeftPeriod <= this.token_color_change_threshold ?
-                this.token_progress_color_near_next :
-                this.token_progress_color_normal)
+          if (this.Config.TokenType == otpType.HOTP) {
+            SymbolGlyph($r('sys.symbol.lock_filled_arrow_counterclockwise'))
+              .fontColor([this.hotp_next_btn_color])
+              .fontSize(40)
+              .fontWeight(FontWeight.Medium)
+              .symbolEffect(new BounceSymbolEffect(EffectScope.WHOLE, EffectDirection.UP),
+                this.btn_hotp_clicked)
+              .onClick(() => {
+                this.btn_hotp_clicked++;
+                this.Config.TokenCounter++;
+                this.Update(this.Config)
+                this.updateHOTPToken();
+              })
+          } else {
+            Stack() {
+              Text(this.TokenLeftPeriod.toString())
+              Progress({ value: this.TokenLeftPeriod, total: this.Config.TokenPeriod, type: ProgressType.Ring })
+                .style({ strokeWidth: 8 })
+                .width(40)
+                .height(40)
+                .color(this.TokenLeftPeriod <= this.token_color_change_threshold ?
+                  this.token_progress_color_near_next :
+                  this.token_progress_color_normal)
+            }
           }
         }
       }
     }
-    .borderRadius(10)
-    .shadow({ radius: 10, color: $r('app.color.shadow'), offsetX: 10, offsetY: 10 })
-    .padding(10)
-    .justifyContent(FlexAlign.SpaceBetween)
-    .width('100%')
-    .height(this.token_preference.app_appearance_item_height)
-    .backgroundColor($r("app.color.item_bg"))
+    .alignItems(HorizontalAlign.End)
+  }
+
+  build() {
+    Column() {
+      HdsListItemCard({
+        prefixItem: new PrefixCustomBuilder((): void => { this.TokenIconBuilder() }),
+        textItem: {
+          primaryText: {
+            text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer,
+            modifier: new TextModifier()
+              .fontSize(this.token_preference.app_appearance_issuer_font_size)
+              .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
+              .fontColor($r('app.color.str_main'))
+          } as TextOptions,
+          secondaryText: {
+            text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName,
+            modifier: new TextModifier()
+              .fontSize(this.token_preference.app_appearance_user_name_font_size)
+              .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
+              .fontColor($r('app.color.str_gray'))
+          } as TextOptions
+        },
+        suffixItem: new SuffixCustomBuilder((): void => { this.TokenCodeBuilder() }),
+        cardHeight: this.token_preference.app_appearance_item_height,
+        cardBackgroundColor: $r('app.color.item_bg'),
+        onClick: () => {
+          if (this.TokenHide && this.token_preference.app_safety_hide_token_enable) {
+            this.TokenHide = !this.TokenHide;
+            current_token_hide_map[this.Config.TokenUUID] = false;
+          } else if (this.token_preference.app_safety_hide_token_enable) {
+            this.TokenHide = !this.TokenHide;
+            current_token_hide_map[this.Config.TokenUUID] = true;
+          }
+        }
+      })
+    }
     .bindContextMenu(this.TokenRightCtxMenu, ResponseType.RightClick, { enableArrow: true })
   }
 
