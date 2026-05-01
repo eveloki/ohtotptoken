@@ -8,6 +8,7 @@ import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
 import { AgreementSheet } from '../pages/setting/AgreementSheet'
 import { AboutSheet } from '../pages/setting/AboutSheet'
 import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
+import { TokenCardConfigPage } from './TokenCardConfigPage'
 import { util, url } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -266,6 +267,10 @@ struct Index {
       this.start_quick_scan();
     });
 
+    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
+      this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+    });
+
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
       this.backup_select_uri = uri;
       if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
@@ -393,7 +398,8 @@ struct Index {
   onPageShow(): void {
     this.appIsShow = true;
     const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
-    if (!needShowLock) {
+    const cardConfigFormId = AppStorage.get<string>('card_config_formId') ?? '';
+    if (!needShowLock && cardConfigFormId === '') {
       this.pageInfos.clear();
     }
     if (needShowLock && AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
@@ -423,6 +429,13 @@ struct Index {
     if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, false);
+    }
+
+    if (cardConfigFormId !== '') {
+      const allPaths = this.pageInfos.getAllPathName();
+      if (!allPaths.includes(ROUTE_NAMES.TokenCardConfigPage)) {
+        this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+      }
     }
   }
 
@@ -1219,6 +1232,8 @@ struct Index {
       ShowCodePage()
     } else if (name === ROUTE_NAMES.WebPage) {
       WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
+    } else if (name === ROUTE_NAMES.TokenCardConfigPage) {
+      TokenCardConfigPage()
     }
   }
 

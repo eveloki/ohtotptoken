@@ -124,6 +124,19 @@
           }
         ],
         "srcEntry": "./ets/BackupExtension/BackupExtension.ets",
+      },
+      {
+        "name": "EntryFormAbility",
+        "srcEntry": "./ets/entryformability/EntryFormAbility.ets",
+        "type": "form",
+        "description": "$string:EntryAbility_label",
+        "exported": true,
+        "metadata": [
+          {
+            "name": "ohos.extension.form",
+            "resource": "$profile:form_config"
+          }
+        ]
       }
     ]
   }

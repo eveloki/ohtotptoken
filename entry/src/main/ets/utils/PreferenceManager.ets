@@ -43,13 +43,11 @@ export class PreferenceManager {
 
   async setValue<T>(key: string, value: T): Promise<void> {
     if (this.preferences) {
-      this.preferences.put(key, JSON.stringify(value)).then(() => {
-        this.saveUserData();
-      })
+      await this.preferences.put(key, JSON.stringify(value));
+      this.saveUserData();
     } else {
-      this.initPreference(PREFERENCES_NAME).then(() => {
-        this.setValue<T>(key, value);
-      });
+      await this.initPreference(PREFERENCES_NAME);
+      await this.setValue<T>(key, value);
     }
   }
 
@@ -92,13 +90,11 @@ export class PreferenceManager {
 
   async deleteValue(key: string): Promise<void> {
     if (this.preferences) {
-      this.preferences.delete(key).then(() => {
-        this.saveUserData();
-      });
+      await this.preferences.delete(key);
+      this.saveUserData();
     } else {
-      this.initPreference(PREFERENCES_NAME).then(() => {
-        this.deleteValue(key);
-      });
+      await this.initPreference(PREFERENCES_NAME);
+      await this.deleteValue(key);
     }
   }
 

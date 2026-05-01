@@ -37,6 +37,14 @@
       "value": "#101010"
     },
     {
+      "name": "itemActivated",
+      "value": "#335291FF"
+    },
+    {
+      "name": "itemInactivated",
+      "value": "#333"
+    },
+    {
       "name": "icon_pack_bg",
       "value": "#FF484747"
     },
@@ -55,6 +63,42 @@
     {
       "name": "token_progress_next_color_end",
       "value": "#FFD71616"
+    },
+    {
+      "name": "button_blue",
+      "value": "#5291FF"
+    },
+    {
+      "name": "btn_text_blue",
+      "value": "#5291FF"
+    },
+    {
+      "name": "button_light_gray",
+      "value": "#0DFFFFFF"
+    },
+    {
+      "name": "white",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "gray",
+      "value": "#3A3A3A"
+    },
+    {
+      "name": "light_gray",
+      "value": "#2A2A2A"
+    },
+    {
+      "name": "card_item_bg",
+      "value": "#1AFFFFFF"
+    },
+    {
+      "name": "card_unselected_icon",
+      "value": "#33FFFFFF"
+    },
+    {
+      "name": "card_selected_icon",
+      "value": "#FF5291FF"
     }
   ]
 }

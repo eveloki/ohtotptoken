@@ -9,6 +9,7 @@
     "pages/RestoreDataPage",
     "pages/MasterKeyPage",
     "pages/RecoveryKeyRecordPage",
-    "pages/WebPage"
+    "pages/WebPage",
+    "pages/TokenCardConfigPage"
   ]
 }

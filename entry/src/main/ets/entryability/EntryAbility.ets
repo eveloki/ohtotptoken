@@ -8,9 +8,10 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode, PREF_KEYS } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, PREF_KEYS, EVENT_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { formInfo } from '@kit.FormKit';
 
 //单版本分布式键值数据库
 let rdbStore: relationalStore.RdbStore | null = null;
@@ -39,6 +40,52 @@ export default class EntryAbility extends UIAbility {
     win.Size = windowSize;
   };
 
+  private selectPage: string = '';
+
+  private handleCardAction(want: Want): void {
+    hilog.info(0x0000, 'EntryAbility', `handleCardAction parameters: ${JSON.stringify(want?.parameters)}`);
+
+    let formId = '';
+    let formName = '';
+    let isCardConfig = false;
+
+    const sysFormId = want.parameters?.[formInfo.FormParam.IDENTITY_KEY];
+    if (sysFormId) {
+      formId = String(sysFormId);
+      formName = String(want.parameters?.[formInfo.FormParam.NAME_KEY] ?? '');
+      hilog.info(0x0000, 'EntryAbility', `card router event, formId: ${formId}, formName: ${formName}`);
+    }
+
+    if (want?.parameters?.params !== undefined) {
+      try {
+        const outerParams: Record<string, string> = JSON.parse(String(want.parameters.params));
+        hilog.info(0x0000, 'EntryAbility', `card custom params: ${JSON.stringify(outerParams)}`);
+        let innerParams: Record<string, string> = outerParams;
+        if (outerParams['params']) {
+          try {
+            innerParams = JSON.parse(outerParams['params']);
+          } catch (_) {}
+        }
+        if (innerParams['action'] === 'card_config') {
+          isCardConfig = true;
+          if (!formId) formId = innerParams['formId'] ?? '';
+          if (!formName) formName = innerParams['formName'] ?? '';
+        }
+      } catch (e) {
+        hilog.error(0, 'EntryAbility', `parse card params error: ${(e as BusinessError).message}`);
+      }
+    }
+
+    if (isCardConfig || formId) {
+      AppStorage.setOrCreate('card_config_formId', formId);
+      AppStorage.setOrCreate('card_config_formName', formName);
+      hilog.info(0x0000, 'EntryAbility', `emit START_CARD_CONFIG, formId: ${formId}`);
+      if (this.context.eventHub) {
+        this.context.eventHub.emit(EVENT_NAMES.START_CARD_CONFIG);
+      }
+    }
+  }
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate("appContext", this.context);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
@@ -47,6 +94,7 @@ export default class EntryAbility extends UIAbility {
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
       AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
+    this.handleCardAction(want);
 
     // 初始化设备信息（根据华为文档，建议只调用一次）
     DeviceInfoHelper.getInstance().init();
@@ -141,6 +189,7 @@ export default class EntryAbility extends UIAbility {
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
       AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
+    this.handleCardAction(want);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {

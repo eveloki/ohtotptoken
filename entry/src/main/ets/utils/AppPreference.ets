@@ -24,6 +24,8 @@ export enum EVENT_NAMES {
   DATASYNC_PERMISSIONS_UPDATE = 'DATASYNCPermissionsUpdate',
   /** 开始快速扫描事件 */
   START_QUICK_SCAN = 'startQuickScan',
+  /** 卡片配置事件 */
+  START_CARD_CONFIG = 'onStartCardConfig',
   /** 切换Token搜索事件 */
   TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
   /** 主密钥页面返回事件 */
@@ -65,6 +67,7 @@ export enum PREF_KEYS {
   SAFETY_BACKGROUND_BLUR_ENABLE = 'app_safety_background_blur_enable',
   /** 快速扫描开关 */
   WANT_QUICK_SCAN = 'app_want_quick_scan',
+  WANT_CARD_CONFIG = 'app_want_card_config',
   /** RDB数据库同步开关 */
   DB_RDS_SYNC_ENABLE = 'app_db_rds_sync_enable',
   /** RDB云端同步开关 */
@@ -298,6 +301,8 @@ export enum ROUTE_NAMES {
   ShowCodePage = 'ShowCodePage',
   /** 通用Web页面 */
   WebPage = 'WebPage',
+  /** 卡片令牌配置页面 */
+  TokenCardConfigPage = 'TokenCardConfigPage',
   /** App首页 */
   IndexPage = 'pages/Index',
 }
