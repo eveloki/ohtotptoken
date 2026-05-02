@@ -224,8 +224,8 @@ export struct TokenListPage {
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       }
+      .alignItems(HorizontalAlign.Center)
     }
-    .alignItems(HorizontalAlign.Center)
   }
 
   showQRCodeDialog(conf: TokenConfig): void {
