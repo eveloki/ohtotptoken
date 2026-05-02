@@ -157,14 +157,14 @@ export default class EntryAbility extends UIAbility {
         const avoidAreaBottom = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
 
         // save window avoid area info
-        win.AvoidTopHeight = px2vp(avoidAreaBottom.topRect.height);
-        win.AvoidBottomHeight = px2vp(avoidAreaTop.bottomRect.height);
+        win.AvoidTopHeight = this.uiContext.px2vp(avoidAreaBottom.topRect.height);
+        win.AvoidBottomHeight = this.uiContext.px2vp(avoidAreaTop.bottomRect.height);
 
         windowClass.on('avoidAreaChange', (data) => {
           if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
-            win.AvoidBottomHeight = px2vp(data.area.bottomRect.height);
+            win.AvoidBottomHeight = this.uiContext!.px2vp(data.area.bottomRect.height);
           if (data.type === window.AvoidAreaType.TYPE_SYSTEM)
-            win.AvoidTopHeight = px2vp(data.area.topRect.height);
+            win.AvoidTopHeight = this.uiContext!.px2vp(data.area.topRect.height);
         });
 
         const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();

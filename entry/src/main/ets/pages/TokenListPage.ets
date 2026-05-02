@@ -70,7 +70,7 @@ export struct TokenListPage {
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    getContext(this).eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
+    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
   }
 
   private toggleTokenSearchByTitleBar(): void {
@@ -169,20 +169,16 @@ export struct TokenListPage {
               })
                 .bindPopup(this.token_copy_guide_popup && token.TokenUUID === this.dataSource.getData(0)?.TokenUUID, {
                   placement: Placement.Left,
-                  message: getContext(this)
-                    .resourceManager
-                    .getStringSync($r('app.string.token_copy_guide_popup'))
-                    .toString(),
+                  message: this.getUIContext().getHostContext()?.resourceManager
+                    .getStringSync($r('app.string.token_copy_guide_popup').id),
                   onStateChange: (e) => {
                     if (!e.isVisible) {
                       this.token_copy_guide_popup = false
                     }
                   },
                   primaryButton: {
-                    value: getContext(this)
-                      .resourceManager
-                      .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
-                      .toString(),
+                    value: this.getUIContext().getHostContext()?.resourceManager
+                      .getStringSync($r('app.string.token_copy_guide_popup_Confirm').id),
                     action: () => {
                       if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
                         AppPreference.setPreference(PREF_KEYS.SHOW_GUIDE_TIPS, false)
@@ -276,7 +272,7 @@ export struct TokenListPage {
       .backgroundColor(Color.Red)
       .padding(10)
       .onClick(async () => {
-        AlertDialog.show({
+        this.getUIContext().showAlertDialog({
           message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
           autoCancel: true,
           alignment: DialogAlignment.Center,

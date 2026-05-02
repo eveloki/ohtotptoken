@@ -88,7 +88,7 @@ export struct SubItemIconManager {
                   .width(100)
                   .fontColor($r('sys.color.interactive_active'))
                   .onClick(throttle((event) => {
-                    const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+                    const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
                     startBrowsableAbility(context,'https://github.com/aegis-icons/aegis-icons/releases/latest/download/aegis-icons.zip');
                   }, 1000))
                 Button('delta-icons', { buttonStyle: ButtonStyleMode.NORMAL, controlSize: ControlSize.SMALL })
@@ -98,7 +98,7 @@ export struct SubItemIconManager {
                   .width(100)
                   .fontColor($r('sys.color.interactive_active'))
                   .onClick(throttle((event) => {
-                    const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+                    const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
                     startBrowsableAbility(context,'https://github.com/Delta-Icons/aegis/releases/latest/download/delta-aegis-icons.zip');
                   }, 1000))
                 //Hyperlink('https://github.com/aegis-icons/aegis-icons/releases/latest/download/aegis-icons.zip', 'aegis-icons').color($r('sys.color.ohos_id_color_text_primary'))
@@ -190,7 +190,7 @@ export struct SubItemIconManager {
                   }
                   .width('10%')
                   .onClick(() => {
-                    AlertDialog.show({
+                    this.getUIContext().showAlertDialog({
                       message: $r('app.string.alert_icon_pack_remove_confirm_msg', icon_pack.name),
                       autoCancel: true,
                       alignment: DialogAlignment.Center,

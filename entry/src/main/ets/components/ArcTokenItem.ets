@@ -112,7 +112,7 @@ export struct ArcTokenItem {
   }
 
   aboutToAppear(): void {
-    getContext(this).eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
+    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
     this.updateToken();
   }
 
@@ -211,7 +211,7 @@ export struct ArcTokenItem {
             .gesture(
               LongPressGesture()
                 .onAction(() => {
-                  copyText(this.TokenNumber, `token ${this.TokenNumber} `+ getContext(this).resourceManager.getStringSync($r('app.string.token_copied')).toString());
+                  copyText(this.TokenNumber, `token ${this.TokenNumber} `+ this.getUIContext().getHostContext()?.resourceManager.getStringSync($r('app.string.token_copied').id));
                 })
             )
           if (this.Config.TokenType == otpType.HOTP) {
@@ -330,7 +330,7 @@ export struct ArcTokenItem {
         .accessibilityText($r('app.string.token_right_menu_edit'))
       MenuItem({ symbolStartIcon: this.menu_icon_trash, content: $r('app.string.token_right_menu_delete') })
         .onClick(() => {
-          AlertDialog.show({
+          this.getUIContext().showAlertDialog({
             message: $r('app.string.alert_remove_confirm_msg', this.Config.TokenName),
             autoCancel: true,
             alignment: DialogAlignment.Center,

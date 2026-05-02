@@ -4,9 +4,8 @@ import { TokenCardStore, CardConfig } from '../utils/TokenCardStore';
 import { formProvider, formBindingData } from '@kit.FormKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction } from '@kit.ArkUI';
-import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppStorageV2 } from '@kit.ArkUI';
+import { AppWindowInfo } from '../entryability/EntryAbility';
 
 @Entry
 @ComponentV2
@@ -154,7 +153,7 @@ export struct TokenCardConfigPage {
 
     if (!this.formId) {
       hilog.error(0, 'TokenCardConfig', 'formId is empty, cannot update card');
-      promptAction.showToast({ message: 'formId为空，无法更新卡片' });
+      this.getUIContext().getPromptAction().showToast({ message: 'formId为空，无法更新卡片' });
       this.pathStack.pop();
       return;
     }
@@ -165,11 +164,11 @@ export struct TokenCardConfigPage {
       const formBindingDataObj = formBindingData.createFormBindingData(formData);
       await formProvider.updateForm(this.formId, formBindingDataObj);
       hilog.info(0, 'TokenCardConfig', `updateForm success, formId: ${this.formId}`);
-      promptAction.showToast({ message: '卡片更新成功' });
+      this.getUIContext().getPromptAction().showToast({ message: '卡片更新成功' });
     } catch (err) {
       const errMsg = (err as BusinessError).message;
       hilog.error(0, 'TokenCardConfig', `updateForm error: ${errMsg}`);
-      promptAction.showToast({ message: `卡片更新失败: ${errMsg}` });
+      this.getUIContext().getPromptAction().showToast({ message: `卡片更新失败: ${errMsg}` });
     }
 
     this.pathStack.pop();

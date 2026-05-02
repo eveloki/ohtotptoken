@@ -79,7 +79,7 @@ export struct ArcTokenIcon {
 
   aboutToAppear(): void {
     this.refreshIcon(this.issuer);
-    getContext(this).eventHub.on(EVENT_NAMES.ICON_PACK_CHANGED, () => this.onIconPackChanged());
+    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.ICON_PACK_CHANGED, () => this.onIconPackChanged());
   }
 
   stringToColor(str: string): string {

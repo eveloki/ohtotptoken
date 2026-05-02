@@ -151,7 +151,7 @@ export struct ArcTokenListPage {
       .backgroundColor(Color.Red)
       .padding(10)
       .onClick(async () => {
-        AlertDialog.show({
+        this.getUIContext().showAlertDialog({
           message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
           autoCancel: true,
           alignment: DialogAlignment.Center,

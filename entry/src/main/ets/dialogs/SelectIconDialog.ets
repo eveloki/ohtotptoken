@@ -100,7 +100,7 @@ export struct SelectIconDialog {
         .margin({ left: 0, top: 0 })
         .visibility(removable ? Visibility.Visible : Visibility.Hidden)
         .onClick(() => {
-          AlertDialog.show({
+          this.getUIContext().showAlertDialog({
             message: $r('app.string.icon_alert_remove_confirm_msg'),
             autoCancel: true,
             alignment: DialogAlignment.Center,

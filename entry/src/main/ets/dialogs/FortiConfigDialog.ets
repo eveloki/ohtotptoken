@@ -47,9 +47,10 @@ export struct FortiConfigDialog {
     })
   });
 
-  private files_dir: string = getContext(this).filesDir;
+  private files_dir: string = '';
 
   aboutToAppear(): void {
+    this.files_dir = this.getUIContext().getHostContext()?.filesDir ?? '';
     if (this.conf_json != undefined && this.conf_json.length > 0) {
       this.conf = JSON.parse(this.conf_json!);
     } else {
@@ -204,7 +205,7 @@ export struct FortiConfigDialog {
               .fontColor([Color.Red])
               .margin({right: 10})
               .bindPopup(this.warn_dev_id_popup, {
-                message: getContext(this).resourceManager.getStringSync($r('app.string.warn_forti_dev_id_popup')).toString(),
+                message: this.getUIContext().getHostContext()?.resourceManager.getStringSync($r('app.string.warn_forti_dev_id_popup').id),
                 onStateChange: (e)=> {
                   if (!e.isVisible) {
                     this.warn_dev_id_popup = false

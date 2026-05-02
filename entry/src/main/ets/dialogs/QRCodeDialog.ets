@@ -12,9 +12,10 @@ export struct QRCodeDialog {
   @Prop content: string = '';
   @Prop winSize: window.Size;
   @State pixelMap: image.PixelMap | undefined = undefined
-  @State qrSize: number = px2vp(Math.min(this.winSize.width, this.winSize.height)) * 0.8;
+  @State qrSize: number = 0;
 
   aboutToAppear(): void {
+    this.qrSize = this.getUIContext().px2vp(Math.min(this.winSize.width, this.winSize.height)) * 0.8;
     this.createQRCode();
   }
 
