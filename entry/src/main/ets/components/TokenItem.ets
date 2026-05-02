@@ -15,10 +15,8 @@ import { ConfigurationConstant } from '@kit.AbilityKit';
 import {
   HdsListItemCard,
   PrefixCustomBuilder,
-  SuffixCustomBuilder,
-  TextOptions
+  SuffixCustomBuilder
 } from '@kit.UIDesignKit';
-import { TextModifier } from '@ohos.arkui.modifier';
 import { CommonConstants } from '../utils/CommonConstants';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
@@ -118,6 +116,25 @@ export struct TokenItem {
           offset: 1
         },
       ]);
+  }
+
+  @Builder
+  TextContentBuilder() {
+    Column() {
+      Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer)
+        .fontSize(this.token_preference.app_appearance_issuer_font_size)
+        .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
+        .fontColor($r('app.color.str_main'))
+        .textOverflow({ overflow: TextOverflow.MARQUEE })
+        .maxLines(1)
+      Text(this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName)
+        .fontSize(this.token_preference.app_appearance_user_name_font_size)
+        .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
+        .fontColor($r('app.color.str_gray'))
+        .textOverflow({ overflow: TextOverflow.MARQUEE })
+        .maxLines(1)
+    }
+    .alignItems(HorizontalAlign.Start)
   }
 
   aboutToAppear(): void {
@@ -264,24 +281,7 @@ export struct TokenItem {
       HdsListItemCard({
         prefixItem: new PrefixCustomBuilder((): void => { this.TokenIconBuilder() }),
         textItem: {
-          primaryText: {
-            text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer,
-            modifier: new TextModifier()
-              .fontSize(this.token_preference.app_appearance_issuer_font_size)
-              .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
-              .fontColor($r('app.color.str_main'))
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-              .maxLines(1)
-          } as TextOptions,
-          secondaryText: {
-            text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName,
-            modifier: new TextModifier()
-              .fontSize(this.token_preference.app_appearance_user_name_font_size)
-              .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
-              .fontColor($r('app.color.str_gray'))
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-              .maxLines(1)
-          } as TextOptions
+          customBuilder: (): void => { this.TextContentBuilder() }
         },
         suffixItem: new SuffixCustomBuilder((): void => { this.TokenCodeBuilder() }),
         cardHeight: this.token_preference.app_appearance_item_height,
