@@ -280,8 +280,8 @@ export class TokenPreference {
   @Trace app_appearance_user_name_font_size = 10;
   @Trace app_appearance_user_name_font_weight = 400;
   @Trace app_appearance_item_max_width = 800;
-  @Trace app_appearance_token_list_item_prefix_padding = 6;
-  @Trace app_appearance_token_list_item_suffix_padding = 6;
+  @Trace app_appearance_token_list_item_prefix_padding = 10;
+  @Trace app_appearance_token_list_item_suffix_padding = 10;
 }
 
 /**
@@ -404,8 +404,8 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE, 10],
     [PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT, 400],
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
-    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, 6],
-    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, 6],
+    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, 10],
+    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, 10],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
     [PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false],
