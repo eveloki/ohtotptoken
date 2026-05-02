@@ -261,7 +261,6 @@ export struct TokenItem {
     Column() {
       HdsListItemCard({
         prefixItem: new PrefixCustomBuilder((): void => { this.TokenIconBuilder() }),
-        cardPrefixMargin: CommonConstants.TOKEN_CARD_PREFIX_MARGIN,
         textItem: {
           primaryText: {
             text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer,
@@ -279,7 +278,6 @@ export struct TokenItem {
           } as TextOptions
         },
         suffixItem: new SuffixCustomBuilder((): void => { this.TokenCodeBuilder() }),
-        cardSuffixMargin: CommonConstants.TOKEN_CARD_SUFFIX_MARGIN,
         cardHeight: this.token_preference.app_appearance_item_height,
         cardBackgroundColor: $r('app.color.item_bg'),
         onClick: () => {
