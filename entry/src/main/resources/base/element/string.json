@@ -673,6 +673,14 @@
       "value": "The filter can improve visibility in dark mode, but may also lose some icon details."
     },
     {
+      "name": "chain_animation",
+      "value": "Chain Animation"
+    },
+    {
+      "name": "chain_animation_des",
+      "value": "Enable staggered enter animation for list items."
+    },
+    {
       "name": "token_item_slider",
       "value": "Size & Layout"
     },

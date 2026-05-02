@@ -1207,7 +1207,7 @@ struct Index {
         right: $r('sys.float.padding_level8'),
       })
     }
-    .chainAnimation(true)
+    .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)

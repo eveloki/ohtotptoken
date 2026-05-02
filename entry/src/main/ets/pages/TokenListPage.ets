@@ -219,7 +219,7 @@ export struct TokenListPage {
         .layoutWeight(1)
         .width('100%')
         .height('100%')
-        .chainAnimation(true)
+        .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       }

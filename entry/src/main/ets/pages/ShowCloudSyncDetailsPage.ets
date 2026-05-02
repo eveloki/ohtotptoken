@@ -317,7 +317,7 @@ export struct ShowCloudSyncDetailsPage {
                 ListItem()
                   .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
               }
-              .chainAnimation(true)
+              .chainAnimation(AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean)
               .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
               .scrollBar(BarState.Off)
               .backgroundColor($r('app.color.window_background'))

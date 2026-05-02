@@ -611,7 +611,7 @@ export struct SettingPage {
             }
           }
         }
-        .chainAnimation(true)
+        .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
       }

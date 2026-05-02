@@ -677,6 +677,14 @@
       "value": "濾鏡可以在深色模式時獲得更好的可視度，但也有可能丟失圖示細節。"
     },
     {
+      "name": "chain_animation",
+      "value": "鏈式聯動動效"
+    },
+    {
+      "name": "chain_animation_des",
+      "value": "開啟列表項的錯落入場動畫效果。"
+    },
+    {
       "name": "token_item_slider",
       "value": "尺寸與佈局"
     },
