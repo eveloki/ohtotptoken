@@ -38,6 +38,10 @@ export class CommonConstants {
   static readonly SPACE_8: number = 8;
   static readonly SPACE_12: number = 12;
   static readonly SPACE_16: number = 16;
+  // TokenItem spacing
+  static readonly TOKEN_LIST_ITEM_HORIZONTAL_PADDING: number = 10;
+  static readonly TOKEN_CARD_PREFIX_MARGIN: number = 8;
+  static readonly TOKEN_CARD_SUFFIX_MARGIN: number = 8;
   // MaxLines
   static readonly MAX_LINE_TWO: number = 2;
 

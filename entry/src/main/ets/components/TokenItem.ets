@@ -19,6 +19,7 @@ import {
   TextOptions
 } from '@kit.UIDesignKit';
 import { TextModifier } from '@ohos.arkui.modifier';
+import { CommonConstants } from '../utils/CommonConstants';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 let tkStore = TokenStore.getInstance();
@@ -260,6 +261,7 @@ export struct TokenItem {
     Column() {
       HdsListItemCard({
         prefixItem: new PrefixCustomBuilder((): void => { this.TokenIconBuilder() }),
+        cardPrefixMargin: CommonConstants.TOKEN_CARD_PREFIX_MARGIN,
         textItem: {
           primaryText: {
             text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenName : this.Config.TokenIssuer,
@@ -277,6 +279,7 @@ export struct TokenItem {
           } as TextOptions
         },
         suffixItem: new SuffixCustomBuilder((): void => { this.TokenCodeBuilder() }),
+        cardSuffixMargin: CommonConstants.TOKEN_CARD_SUFFIX_MARGIN,
         cardHeight: this.token_preference.app_appearance_item_height,
         cardBackgroundColor: $r('app.color.item_bg'),
         onClick: () => {

@@ -189,7 +189,7 @@ export struct TokenListPage {
                 })
 
             }
-            .padding({ left: 10, right: 10 })
+            .padding({ left: CommonConstants.TOKEN_LIST_ITEM_HORIZONTAL_PADDING, right: CommonConstants.TOKEN_LIST_ITEM_HORIZONTAL_PADDING })
             .swipeAction({
               end: {
                 builder: () => {
