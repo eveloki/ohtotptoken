@@ -209,6 +209,11 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
+    // 开启隐私窗口防止返回前台时系统缓存帧泄露令牌明文
+    if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      const win = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+      win.WindowClass?.setWindowPrivacyMode(true);
+    }
   }
 
   applySettings(windowClass: window.Window): void {

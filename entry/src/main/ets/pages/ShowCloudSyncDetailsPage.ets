@@ -566,11 +566,12 @@ export struct ShowCloudSyncDetailsPage {
 
   /** 跳转华为云空间系统设置页面（com.huawei.hmos.settings） */
   private startCloudSpaceSettings(): void {
-  let want: Want = {
-    bundleName: 'com.huawei.hmos.settings',
-    abilityName: 'com.huawei.hmos.settings.MainAbility',
-    //uri: 'cloudDrive'//hicloud://cloudDrive/getInfo?path=MainActivity
-  };
+    let want: Want = {
+      bundleName: 'com.huawei.hmos.settings',
+      abilityName: 'com.huawei.hmos.settings.MainAbility',
+      uri: 'cloud_space'
+    };
+
     this.appCtx.startAbility(want).then(() => {
       hilog.info(DOMAIN, TAG, 'Start cloud space settings ability successfully.');
   }).catch((err: BusinessError) => {
