@@ -215,7 +215,8 @@ export struct TokenListPage {
           .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
-        .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
+        .lanes(1)
+        .constraintSize({ maxWidth: this.token_preference.app_appearance_item_max_width })
         .layoutWeight(1)
         .width('100%')
         .height('100%')
@@ -224,6 +225,7 @@ export struct TokenListPage {
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       }
     }
+    .alignItems(HorizontalAlign.Center)
   }
 
   showQRCodeDialog(conf: TokenConfig): void {
