@@ -39,7 +39,6 @@ export class CommonConstants {
   static readonly SPACE_12: number = 12;
   static readonly SPACE_16: number = 16;
   // TokenItem spacing
-  static readonly TOKEN_LIST_ITEM_HORIZONTAL_PADDING: number = 10;
   // MaxLines
   static readonly MAX_LINE_TWO: number = 2;
 

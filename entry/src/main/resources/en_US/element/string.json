@@ -697,6 +697,10 @@
       "value": "Space"
     },
     {
+      "name": "token_list_item_horizontal_padding",
+      "value": "Horizontal Padding"
+    },
+    {
       "name": "appearance_reset_to_default",
       "value": "Reset to Default"
     },

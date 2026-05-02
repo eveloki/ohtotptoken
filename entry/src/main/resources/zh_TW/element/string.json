@@ -693,6 +693,10 @@
       "value": "間距"
     },
     {
+      "name": "token_list_item_horizontal_padding",
+      "value": "水平內邊距"
+    },
+    {
       "name": "appearance_reset_to_default",
       "value": "恢復預設"
     },

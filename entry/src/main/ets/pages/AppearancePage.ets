@@ -193,6 +193,13 @@ export struct AppearancePage {
                       max: Math.round(this.token_preference.app_appearance_logo_background_size / 2),
                       step: 1
                     },
+                    {
+                      name: $r('app.string.token_list_item_horizontal_padding'),
+                      default: this.token_preference.app_appearance_token_list_item_horizontal_padding,
+                      min: 0,
+                      max: 30,
+                      step: 1
+                    },
                   ],
                   description: $r('app.string.token_item_slider_desc'),
                   onChange: (index, value) => {
@@ -225,6 +232,11 @@ export struct AppearancePage {
                       case 5: {
                         AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS, value);
                         this.token_preference.app_appearance_logo_background_radius = value;
+                        break;
+                      }
+                      case 6: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_HORIZONTAL_PADDING, value);
+                        this.token_preference.app_appearance_token_list_item_horizontal_padding = value;
                         break;
                       }
                     }
