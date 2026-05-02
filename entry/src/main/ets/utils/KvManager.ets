@@ -454,14 +454,7 @@ export class KvManager {
    */
   async queryEncryptTokenDataKey(): Promise<string> {
     let query: asset.AssetMap = new Map();
-    if (AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean) {//区分启用主密钥和不适用主密钥场景下的name 防止用户反复切换功能开关造成的数据丢失
-      query.set(asset.Tag.ALIAS, stringToArray(this._tokenMasterKeyEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-    }
-    else
-    {
-      query.set(asset.Tag.ALIAS, stringToArray(this._tokenEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-    }
-
+    query.set(asset.Tag.ALIAS, stringToArray(this._tokenEncryptionSecretKeyName)); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
     query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
     try {
       let  res =await asset.query(query);
@@ -477,36 +470,29 @@ export class KvManager {
       let err = error as BusinessError;
       hilog.error(err.code,"DataSyncToNoEncryptDatabase",`Failed to query Asset. Code is ${err.code}, message is ${err.message}`);
     }
-    if (AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY))//如果启用了kdf则永远需要用户主动kdf然后设置密码到ASk
-    {
-      return "";
+    //动态生成一个AESKEy
+    let tokenData_alias=await this.getStringNoE(this._tokenEncryptionSecretKeyName);//恢复场景从未加密数据读取之前生成的密钥
+    if (tokenData_alias!=null) { //如果从未加密数据库里面找到了之前存的密钥
+      let attr: asset.AssetMap = new Map();
+      attr.set(asset.Tag.SECRET, base32Decode(tokenData_alias));
+      attr.set(asset.Tag.ALIAS,stringToArray(this._tokenEncryptionSecretKeyName));
+      attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+      await asset.add(attr);
+      return tokenData_alias??"";
     }
-    else //否则就动态生成一个AESKEy
+    else//否则生成一个aes128的key
     {
-      let tokenData_alias=await this.getStringNoE(this._tokenEncryptionSecretKeyName);//恢复场景从未加密数据读取之前生成的密钥
-      if (tokenData_alias!=null) { //如果从未加密数据库里面找到了之前存的密钥
-        let attr: asset.AssetMap = new Map();
-        attr.set(asset.Tag.SECRET, base32Decode(tokenData_alias));
-        attr.set(asset.Tag.ALIAS,stringToArray(this._tokenEncryptionSecretKeyName));
-        attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-        await asset.add(attr);
-        return tokenData_alias??"";
-      }
-      else//否则生成一个aes128的key
-      {
-        // 创建SymKeyGenerator实例。
-        let symKeyGenerator = cryptoFramework.createSymKeyGenerator('AES128');
-        // 使用密钥生成器随机生成对称密钥。
-        let promiseSymKey = symKeyGenerator.generateSymKey();
-        let key = await  promiseSymKey;
-        // 获取对称密钥的二进制数据，输出128位密钥。长度为16字节。
-        let encodedKey = key.getEncoded();
-        await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,encodedKey.data);
-        let secretStr: string = base32Encode(encodedKey.data);
-        this.setStringNoE(this._tokenEncryptionSecretKeyName,secretStr)
-        return secretStr;
-      }
-
+      // 创建SymKeyGenerator实例。
+      let symKeyGenerator = cryptoFramework.createSymKeyGenerator('AES128');
+      // 使用密钥生成器随机生成对称密钥。
+      let promiseSymKey = symKeyGenerator.generateSymKey();
+      let key = await  promiseSymKey;
+      // 获取对称密钥的二进制数据，输出128位密钥。长度为16字节。
+      let encodedKey = key.getEncoded();
+      await this.UpdateOrAddAssetStoreKit(this._tokenEncryptionSecretKeyName,encodedKey.data);
+      let secretStr: string = base32Encode(encodedKey.data);
+      this.setStringNoE(this._tokenEncryptionSecretKeyName,secretStr)
+      return secretStr;
     }
     return "";
   }

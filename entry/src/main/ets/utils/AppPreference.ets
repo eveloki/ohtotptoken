@@ -57,10 +57,6 @@ export enum PREF_KEYS {
   SAFETY_AUTO_UNLOCK_ENABLE = 'app_safety_auto_unlock_enable',
   /** 顶部模糊效果类型 */
   APPEARANCE_TOP_EFFECT_TYPE = 'app_appearance_top_effect_type',
-  /** 使用主密钥开关 */
-  USE_MASTER_KEY = 'app_use_master_key',
-  /** 主密钥已设置标志 */
-  USE_MASTER_KEY_SET = 'app_use_master_key_set',
   /** KV数据库归档运行中标志 */
   DB_KV_ARCHIVE_IS_RUNNING = 'app_db_kv_archive_is_running',
   /** 背景模糊开关 */
@@ -358,10 +354,6 @@ export class AppPreference {
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
     // 是否处于debug模式
     [PREF_KEYS.DEBUG_MODE_ON, false],
-    // 是否使用主密码增强安全
-    [PREF_KEYS.USE_MASTER_KEY, false],
-    // 是否已经配置了主密码
-    [PREF_KEYS.USE_MASTER_KEY_SET, false],
     // 快速扫描URI
     [PREF_KEYS.WANT_URI, ''],
   ]);

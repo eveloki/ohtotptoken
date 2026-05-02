@@ -29,9 +29,6 @@ import { CloudBackupManager } from '../utils/CloudBackupManager';
 // 申请锁屏下应用敏感数据访问权限
 import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
-import { RestoreDataPage } from './RestoreDataPage';
-import { MasterKeyPage } from './MasterKeyPage';
-import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
 import { AppearancePage } from './AppearancePage';
 import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
@@ -1217,13 +1214,7 @@ struct Index {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.RestoreDataPage) {
-      RestoreDataPage()
-    } else if (name === ROUTE_NAMES.MasterKeyPage) {
-      MasterKeyPage()
-    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
-      RecoveryKeyRecordPage()
-    } else if (name === ROUTE_NAMES.AppearancePage) {
+    if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })

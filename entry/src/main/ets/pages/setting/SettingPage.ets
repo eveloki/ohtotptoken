@@ -20,12 +20,9 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { SubItemIconManager } from '../../components/SubItemIconManager';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
-import { MasterKeyPage } from '../MasterKeyPage';
-import { RecoveryKeyRecordPage } from '../RecoveryKeyRecordPage';
 import { AppearancePage } from '../AppearancePage';
 import { ShowDataSyncDetailsPage } from '../ShowDataSyncDetailsPage';
 import { WebPage, WebPageParams } from '../WebPage';
-import { EXTERNAL_URLS } from '../../utils/AppPreference';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 
 @Preview
@@ -43,8 +40,6 @@ export struct SettingPage {
   @Local appName?: string;
   @Local RdbSyncEnable: SettingValue = false;
   @Local is_loaded: boolean = false;
-  @Local is_master_key_enable: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean;
-  @Local is_master_key_set: boolean = AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY_SET) as boolean;
 
   @Local debug_mode_is_on: boolean = AppPreference.getPreference(PREF_KEYS.DEBUG_MODE_ON) as boolean;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
@@ -251,11 +246,7 @@ export struct SettingPage {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.MasterKeyPage) {
-      MasterKeyPage()
-    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
-      RecoveryKeyRecordPage()
-    } else if (name === ROUTE_NAMES.AppearancePage) {
+    if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage({scrollEffectType: this.scrollEffectType})
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({scrollEffectType: this.scrollEffectType})
@@ -324,33 +315,6 @@ export struct SettingPage {
 
           ListItem() {
             SettingItem({ title: $r('app.string.setting_safety') }) {
-              SubItemToggle({
-                icon: $r('sys.symbol.staroflife_rectangle'),
-                title: $r('app.string.restore_master_key'),
-                isOn: AppPreference.getPreference(PREF_KEYS.USE_MASTER_KEY) as boolean,
-                description: $r('app.string.restore_master_key_msg'),
-                onChange: (IsOn: boolean) => {
-                  this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-                    this.is_master_key_enable = IsOn;
-                  })
-                  AppPreference.setPreference(PREF_KEYS.USE_MASTER_KEY, IsOn);
-                }
-              })
-              if (this.is_master_key_enable) {
-                SubItemDivider()
-                SubItemButton({
-                  symbol: $r('sys.symbol.key_shield'),
-                  text: $r('app.string.restore_master_key_set'),
-                  description:this.is_master_key_set?$r('app.string.restore_master_key_reset_desc'):$r('app.string.restore_master_key_no_set_desc'),
-                  descriptionColor:this.is_master_key_set?$r('sys.color.ohos_id_color_text_secondary'):$r('app.color.token_progress_next_color_end')
-                })
-                  .onClick(throttle((event) => {
-                    this.pageInfos.pushPathByName(ROUTE_NAMES.MasterKeyPage,null);
-                  }, 1000))
-              }
-
-              SubItemDivider()
-
               SubItemToggle({
                 icon: $r('sys.symbol.hand_raised_hexagon'),
                 title: $r('app.string.setting_safety_privacy'),
