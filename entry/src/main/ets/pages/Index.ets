@@ -1260,8 +1260,23 @@ struct Index {
       (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
         this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
     ) {
-      HdsNavigation() {
-        ArcTokenListPage({
+      ArcTokenListPage({
+        Tokens: this.CurrentTokens,
+        TabBarVisible: false,
+        appBottomAvoidHeight: this.window.AvoidBottomHeight,
+        appTopAvoidHeight: this.window.AvoidTopHeight,
+        appWindowSize: this.window.Size,
+        updateTokenConfig: this.updateTokenConfig,
+        updateTokenConfigs: this.updateTokenConfigs,
+        listScroller: this.arcTokenListScroller,
+      })
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
+        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
+    ) {
+      Column() {
+        TokenListPage({
           Tokens: this.CurrentTokens,
           TabBarVisible: false,
           appBottomAvoidHeight: this.window.AvoidBottomHeight,
@@ -1269,132 +1284,10 @@ struct Index {
           appWindowSize: this.window.Size,
           updateTokenConfig: this.updateTokenConfig,
           updateTokenConfigs: this.updateTokenConfigs,
-          listScroller: this.arcTokenListScroller,
+          listScroller: this.tokenListScroller,
         })
       }
-      .bindToScrollable([this.arcTokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MINI)
-      .hideBackButton(true) // 设置mini类型隐藏后退按钮
-      .titleBar({
-        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
-        style: {
-          originalStyle: {
-            contentStyle: {
-              titleStyle: {
-                mainTitleColor: $r('sys.color.font_primary'),
-              },
-              menuStyle: {
-                iconColor: $r('sys.color.icon_primary')
-              },
-            }
-          },
-          scrollEffectOpts: {
-            enableScrollEffect: true,
-            scrollEffectType: this.currentScrollEffectType,
-          },
-          systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-          }
-        },
-        content: {
-          title: {
-            mainTitle: $r('app.string.EntryAbility_label')
-          },
-          menu: {
-            value: [
-              {
-                content: {
-                  label: $r('app.string.app_ua_search_token'),
-                  icon: $r('sys.symbol.magnifyingglass'),
-                  isEnabled: true,
-                  action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
-                  }
-                }
-              }
-            ]
-          }
-        }
-      })
-    } else if (
-      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
-        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
-        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
-    ) {
-      HdsNavigation() {
-        Column() {
-          TokenListPage({
-            Tokens: this.CurrentTokens,
-            TabBarVisible: false,
-            appBottomAvoidHeight: this.window.AvoidBottomHeight,
-            appTopAvoidHeight: this.window.AvoidTopHeight,
-            appWindowSize: this.window.Size,
-            updateTokenConfig: this.updateTokenConfig,
-            updateTokenConfigs: this.updateTokenConfigs,
-            listScroller: this.tokenListScroller,
-          })
-        }
-        .backgroundColor($r('app.color.window_background'))
-
-      }
-      .bindToScrollable([this.tokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MINI)
-      .hideBackButton(true) // 设置mini类型隐藏后退按钮
-      .titleBar({
-        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
-        style: {
-          originalStyle: {
-            contentStyle: {
-              titleStyle: {
-                mainTitleColor: $r('sys.color.font_primary'),
-              },
-              menuStyle: {
-                iconColor: $r('sys.color.icon_primary')
-              },
-            }
-          },
-          scrollEffectOpts: {
-            enableScrollEffect: true,
-            scrollEffectType: this.currentScrollEffectType // 渐变模糊
-          },
-          systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-          }
-        },
-        content: {
-          title: {
-            mainTitle: $r('app.string.EntryAbility_label')
-          },
-          menu: {
-            value: [
-              {
-                content: {
-                  label: $r('app.string.app_ua_search_token'),
-                  icon: $r('sys.symbol.magnifyingglass'),
-                  isEnabled: true,
-                  action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
-                  }
-                }
-              },
-              {
-                content: {
-                  label: $r('app.string.app_ua_add_token'),
-                  icon: $r('sys.symbol.plus'),
-                  isEnabled: true,
-                  componentId: this.addTokenMenuTargetId,
-                  action: () => {
-                    this.openAddTokenMenu();
-                  }
-                }
-              }
-            ]
-          }
-        }
-      })
-
+      .backgroundColor($r('app.color.window_background'))
     } else {
 
       Column() {
