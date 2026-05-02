@@ -119,9 +119,18 @@ export struct SecuritySheet {
               SubItemToggle({
                 icon: $r('sys.symbol.eye'),
                 title: $r('app.string.setting_dlp_anti_peep'),
-                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean,
-                description: $r('app.string.setting_dlp_anti_peep_des'),
+                isOn: this.isDlpAntiPeepSupported && (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean),
+                disable: !this.isDlpAntiPeepSupported,
+                description: this.isDlpAntiPeepSupported ?
+                  $r('app.string.setting_dlp_anti_peep_des') :
+                  $r('app.string.setting_dlp_anti_peep_unsupported'),
+                descriptionColor: this.isDlpAntiPeepSupported ?
+                  $r('sys.color.ohos_id_color_text_secondary') :
+                  $r('sys.color.ohos_id_color_text_tertiary'),
                 onChange: (IsOn: boolean) => {
+                  if (!this.isDlpAntiPeepSupported) {
+                    return;
+                  }
                   AppPreference.setPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, IsOn);
                   if (IsOn) {
                     DlpAntiPeepManager.getInstance().start(

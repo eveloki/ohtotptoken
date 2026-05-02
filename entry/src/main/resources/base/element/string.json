@@ -1191,6 +1191,10 @@
     {
       "name": "setting_dlp_anti_peep_des",
       "value": "Auto-mask token content when peeping detected"
+    },
+    {
+      "name": "setting_dlp_anti_peep_unsupported",
+      "value": "Your device does not support anti-peep protection"
     }
   ]
 }
