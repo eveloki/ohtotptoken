@@ -697,8 +697,12 @@
       "value": "Space"
     },
     {
-      "name": "token_list_item_horizontal_padding",
-      "value": "Horizontal Padding"
+      "name": "token_list_item_prefix_padding",
+      "value": "Prefix Padding"
+    },
+    {
+      "name": "token_list_item_suffix_padding",
+      "value": "Suffix Padding"
     },
     {
       "name": "appearance_reset_to_default",

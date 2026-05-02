@@ -189,7 +189,6 @@ export struct TokenListPage {
                 })
 
             }
-            .padding({ left: this.token_preference.app_appearance_token_list_item_horizontal_padding, right: this.token_preference.app_appearance_token_list_item_horizontal_padding })
             .swipeAction({
               end: {
                 builder: () => {

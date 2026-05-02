@@ -173,6 +173,7 @@ export struct TokenItem {
   @Builder
   TokenIconBuilder() {
     TokenIcon({ issuer: this.Config.TokenIssuer, icon_path: this.Config.TokenIconPath })
+      .padding({ left: $r('sys.float.ohos_id_text_overlay_menu_button_padding_left'), right: $r('sys.float.ohos_id_text_overlay_menu_button_padding_right') })
   }
 
   @Builder
@@ -255,6 +256,7 @@ export struct TokenItem {
       }
     }
     .alignItems(HorizontalAlign.End)
+    .padding({ left: $r('sys.float.ohos_id_text_overlay_menu_button_padding_left'), right: $r('sys.float.ohos_id_text_overlay_menu_button_padding_right') })
   }
 
   build() {
@@ -268,6 +270,8 @@ export struct TokenItem {
               .fontSize(this.token_preference.app_appearance_issuer_font_size)
               .fontWeight(this.token_preference.app_appearance_issuer_font_weight)
               .fontColor($r('app.color.str_main'))
+              .textOverflow({ overflow: TextOverflow.MARQUEE })
+              .maxLines(1)
           } as TextOptions,
           secondaryText: {
             text: this.token_preference.app_appearance_swap_host_user_enable ? this.Config.TokenIssuer : this.Config.TokenName,
@@ -275,10 +279,14 @@ export struct TokenItem {
               .fontSize(this.token_preference.app_appearance_user_name_font_size)
               .fontWeight(this.token_preference.app_appearance_user_name_font_weight)
               .fontColor($r('app.color.str_gray'))
+              .textOverflow({ overflow: TextOverflow.MARQUEE })
+              .maxLines(1)
           } as TextOptions
         },
         suffixItem: new SuffixCustomBuilder((): void => { this.TokenCodeBuilder() }),
         cardHeight: this.token_preference.app_appearance_item_height,
+        cardPrefixMargin: this.token_preference.app_appearance_token_list_item_prefix_padding,
+        cardSuffixMargin: this.token_preference.app_appearance_token_list_item_suffix_padding,
         cardBackgroundColor: $r('app.color.item_bg'),
         onClick: () => {
           if (this.TokenHide && this.token_preference.app_safety_hide_token_enable) {

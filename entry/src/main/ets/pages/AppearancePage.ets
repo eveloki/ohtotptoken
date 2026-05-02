@@ -194,8 +194,15 @@ export struct AppearancePage {
                       step: 1
                     },
                     {
-                      name: $r('app.string.token_list_item_horizontal_padding'),
-                      default: this.token_preference.app_appearance_token_list_item_horizontal_padding,
+                      name: $r('app.string.token_list_item_prefix_padding'),
+                      default: this.token_preference.app_appearance_token_list_item_prefix_padding,
+                      min: 0,
+                      max: 30,
+                      step: 1
+                    },
+                    {
+                      name: $r('app.string.token_list_item_suffix_padding'),
+                      default: this.token_preference.app_appearance_token_list_item_suffix_padding,
                       min: 0,
                       max: 30,
                       step: 1
@@ -235,8 +242,13 @@ export struct AppearancePage {
                         break;
                       }
                       case 6: {
-                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_HORIZONTAL_PADDING, value);
-                        this.token_preference.app_appearance_token_list_item_horizontal_padding = value;
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, value);
+                        this.token_preference.app_appearance_token_list_item_prefix_padding = value;
+                        break;
+                      }
+                      case 7: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, value);
+                        this.token_preference.app_appearance_token_list_item_suffix_padding = value;
                         break;
                       }
                     }
