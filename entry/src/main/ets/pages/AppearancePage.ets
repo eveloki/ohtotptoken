@@ -54,7 +54,6 @@ export struct AppearancePage {
                   }
                 })
               }
-              .padding({ left: 10, right: 10 })
 
               ListItem() {
                 TokenItem({
@@ -63,7 +62,6 @@ export struct AppearancePage {
                   }
                 })
               }
-              .padding({ left: 10, right: 10 })
             }
 
             ListItemGroup() {
