@@ -2,14 +2,12 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../../utils/HdsSnackBarUtils';
 import { SubItemToggle } from '../../components/SubItemToggle'
 import { AppStorageV2, curves } from '@kit.ArkUI';
-import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES } from '../../utils/AppPreference';
-import { SubItemButton } from '../../components/SubItemButton';
+import { AppPreference, TokenPreference, PREF_KEYS } from '../../utils/AppPreference';
 import { SettingItem } from '../../components/SettingItem';
 import { userAuth } from '@kit.UserAuthenticationKit';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { common } from '@kit.AbilityKit';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
 
@@ -20,10 +18,6 @@ export struct SecuritySheet {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private sheetScroller: Scroller = new Scroller();
-  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  aboutToDisappear() {
-    this.appCtx.eventHub.off(EVENT_NAMES.MASTER_KEY_PAGE_BACK);
-  }
 
   build() {
     Column() {
