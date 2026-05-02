@@ -140,12 +140,6 @@ export enum PREF_KEYS {
   WANT_URI = 'app_want_uri',
   /** 是否启用华为云备份 */
   APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE="app_huawei_cloud_sync_enable",
-  /** 旧版主密钥已迁移标记 */
-  MASTER_KEY_MIGRATED = 'app_master_key_migrated',
-  /** 旧版主密钥开关（仅用于迁移检测） */
-  MASTER_KEY_ENABLED = 'app_use_master_key',
-  /** 旧版主密钥已设置标记（仅用于迁移检测） */
-  MASTER_KEY_SET = 'app_use_master_key_set',
 }
 
 /**

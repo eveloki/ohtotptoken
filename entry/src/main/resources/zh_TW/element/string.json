@@ -1139,14 +1139,6 @@
     {
       "name": "cloud_sync_operations",
       "value": "操作"
-    },
-    {
-      "name": "master_key_migration_title",
-      "value": "安全升級通知"
-    },
-    {
-      "name": "master_key_migration_msg",
-      "value": "主密碼加密功能已棄用，您的資料依然安全且可正常存取。為了更好的資料保護，建議登入華為帳號後開啟華為雲備份。"
     }
   ]
 }

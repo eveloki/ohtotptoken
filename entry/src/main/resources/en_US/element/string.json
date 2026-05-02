@@ -1143,14 +1143,6 @@
     {
       "name": "cloud_sync_operations",
       "value": "Operations"
-    },
-    {
-      "name": "master_key_migration_title",
-      "value": "Security Upgrade Notice"
-    },
-    {
-      "name": "master_key_migration_msg",
-      "value": "Master key encryption has been deprecated. Your data remains safe and accessible. For better data protection, we recommend enabling Huawei Cloud Backup after signing in with your Huawei account."
     }
   ]
 }

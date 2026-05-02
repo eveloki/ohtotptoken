@@ -202,7 +202,6 @@ struct Index {
 
     Promise.all([accountInitPromise, tokenStoreInitPromise]).then(() => {
       CloudBackupManager.getInstance().checkAndAutoBackup();
-      this.checkMasterKeyMigration();
     });
 
     this.subscribeDistributedAccountLogout();
@@ -331,33 +330,9 @@ struct Index {
     });
   }
 
-  private checkMasterKeyMigration(): void {
-    const useMasterKey: boolean = AppPreference.getPreference(PREF_KEYS.MASTER_KEY_ENABLED) as boolean;
-    if (!useMasterKey) {
-      return;
-    }
-    const migrated: boolean = AppPreference.getPreference(PREF_KEYS.MASTER_KEY_MIGRATED) as boolean;
-    if (migrated) {
-      return;
-    }
-    this.getUIContext().showAlertDialog({
-      title: $r('app.string.master_key_migration_title'),
-      message: $r('app.string.master_key_migration_msg'),
-      autoCancel: false,
-      alignment: DialogAlignment.Center,
-      offset: { dx: 0, dy: -20 },
-      gridCount: 3,
-      buttons: [
-        {
-          value: $r('app.string.dialog_btn_confirm'),
-          action: () => {
-            AppPreference.setPreference(PREF_KEYS.MASTER_KEY_ENABLED, false);
-            AppPreference.setPreference(PREF_KEYS.MASTER_KEY_SET, false);
-            AppPreference.setPreference(PREF_KEYS.MASTER_KEY_MIGRATED, true);
-          }
-        },
-      ],
-    });
+  onPageHide(): void {
+    this.appIsShow = false;
+    hilog.info(0, TAG, "onPageHide");
   }
 
   updateTimestamp(): void {
@@ -365,11 +340,6 @@ struct Index {
     if (this.appCtx.eventHub != undefined) {
       this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
     }
-  }
-
-  onPageHide(): void {
-    this.appIsShow = false;
-    hilog.info(0, TAG, "onPageHide");
   }
 
   onPageShow(): void {

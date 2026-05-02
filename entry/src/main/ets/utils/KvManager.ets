@@ -28,8 +28,12 @@ export class KvManager {
     return KvManager.instance;
   }
 
-  private async initKvStore(ctx: common.UIAbilityContext): Promise<distributedKVStore.SingleKVStore[]> {
-    //初始化键值数据库
+  /**
+   * 初始化KV存储（内部方法）.
+   * 接受通用Context类型，同时支持UIAbilityContext和BackupExtensionContext.
+   * BackupExtension运行在独立进程，需要通过该接口传入ExtensionContext完成初始化.
+   */
+  private async initKvStore(ctx: common.Context): Promise<distributedKVStore.SingleKVStore[]> {
     if (!this._kvMgr) {
       let bundleName = bundleManager.getBundleInfoForSelfSync(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).name;
       const kvManagerConfig: distributedKVStore.KVManagerConfig = {
@@ -38,28 +42,32 @@ export class KvManager {
       }
       this._kvMgr = distributedKVStore.createKVManager(kvManagerConfig);
     }
-    let dbs =[];
+    let dbs: distributedKVStore.SingleKVStore[] = [];
     const options: distributedKVStore.Options = {
       createIfMissing: true,
-      encrypt: true, //no加密
-      backup: false, //设置数据库文件是否备份
-      autoSync: true, //自动同步
-      kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
-      securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
+      encrypt: true,
+      backup: false,
+      autoSync: true,
+      kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,
+      securityLevel: distributedKVStore.SecurityLevel.S4,
     };
     const noEncryptoptions: distributedKVStore.Options = {
       createIfMissing: true,
-      encrypt: false, //no加密
-      backup: false, //设置数据库文件是否备份
-      autoSync: true, //自动同步
-      kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,//表示单版本数据库。 数据不分设备，设备之间修改相同的Key会覆盖。
-      securityLevel: distributedKVStore.SecurityLevel.S4, //表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。
+      encrypt: false,
+      backup: false,
+      autoSync: true,
+      kvStoreType: distributedKVStore.KVStoreType.SINGLE_VERSION,
+      securityLevel: distributedKVStore.SecurityLevel.S4,
     };
-    dbs[0]=await this._kvMgr.getKVStore('main_store', options);
-    dbs[1]=await this._kvMgr.getKVStore('main_store_noE', noEncryptoptions);
+    dbs[0] = await this._kvMgr.getKVStore('main_store', options);
+    dbs[1] = await this._kvMgr.getKVStore('main_store_noE', noEncryptoptions);
     return dbs;
   }
 
+  /**
+   * 主进程初始化KV管理器.
+   * 从AppStorage获取UIAbilityContext，初始化加密/非加密KV数据库并订阅同步事件.
+   */
   async initKvManager(): Promise<void> {
     let ctx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
     if (this._kvStore) {
@@ -68,19 +76,40 @@ export class KvManager {
     await this.initKvStore(ctx).then((store) => {
       this._kvStore = store[0];
       this._kvStoreNoE = store[1];
-      //订阅同步完成事件
       this._kvStore.on('syncComplete', (data: [string, number][]) => {
         hilog.info(0, 'KvManager', `syncComplete ${data}`);
         ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
-
       this._kvStore.on('dataChange', distributedKVStore.SubscribeType.SUBSCRIBE_TYPE_LOCAL, (data: distributedKVStore.ChangeNotification) => {
         hilog.info(0, 'KvManager', `dataChange callback call data: ${data}`);
-        //ctx.eventHub.emit(EVENT_NAMES.KV_STORE_SYNC_COMPLETE);
       });
     }).catch((reason: BusinessError) => {
       hilog.error(reason.code, 'KvManager', reason.message);
     });
+  }
+
+  /**
+   * BackupExtension进程初始化KV管理器.
+   * BackupExtension运行在独立进程中，单例为空，需要通过ExtensionContext重新初始化.
+   * 仅初始化KV存储，不订阅同步事件（Extension进程中无需订阅）.
+   * 初始化失败时抛出异常，确保调用方感知失败而非静默跳过.
+   *
+   * @param ctx - BackupExtensionContext，由BackupExtensionAbility的this.context获取
+   * @throws 初始化失败时抛出Error
+   */
+  async initKvManagerForBackup(ctx: common.Context): Promise<void> {
+    if (this._kvStore && this._kvStoreNoE) {
+      return;
+    }
+    try {
+      const store = await this.initKvStore(ctx);
+      this._kvStore = store[0];
+      this._kvStoreNoE = store[1];
+    } catch (reason) {
+      let e = reason as BusinessError;
+      hilog.error(e.code, 'KvManager', `initKvManagerForBackup failed: ${e.message}`);
+      throw new Error(`initKvManagerForBackup failed: ${e.message}`);
+    }
   }
   /**
    * 备份整个kv数据库到目标文件.
@@ -253,6 +282,89 @@ export class KvManager {
   async deleteValue(key: string): Promise<void> {
     if (this._kvStore) {
       await this._kvStore.delete(key);
+    }
+  }
+
+  /**
+   * 换机备份：将加密KV数据库所有条目直接拷贝到非加密KV数据库.
+   *
+   * 背景：加密KV数据库的密钥存储在设备TEE中，换机后新设备无法解密旧设备的加密KV文件。
+   * 方案：在BackupExtension.onBackup回调中调用此方法，将加密KV数据拷贝到非加密KV。
+   *       非加密KV数据库虽然encrypt=false，但其核心数据在HarmonyOS KV存储框架的
+   *       系统保护内存中处理，安全等级（S4）高于应用层JSON文件（files/目录）。
+   *       系统通过BackupExtension自动传输非加密KV数据库文件到新设备。
+   *
+   * 流程：onBackup → 清空非加密KV → 加密KV getEntries → 非加密KV putBatch → 系统传输
+   *
+   * 注意：先清空非加密KV再写入，避免旧备份残留数据导致已删除的token在新设备上复活.
+   * 操作失败时抛出Error，确保BackupExtension感知失败而非静默传输空数据.
+   */
+  async DataSyncToNoEncryptDatabase(): Promise<number> {
+    if (this._kvStore && this._kvStoreNoE) {
+      try {
+        await this.ClearNoEncryptDatabase();
+        const allEntries = await this._kvStore.getEntries('^');
+        if (allEntries && allEntries.length > 0) {
+          await this._kvStoreNoE.putBatch(allEntries);
+          return allEntries.length;
+        }
+        hilog.info(0, 'KvManager', 'DataSyncToNoEncryptDatabase: encrypted KV is empty, nothing to backup.');
+        return 0;
+      } catch (err) {
+        let e = err as BusinessError;
+        hilog.error(e.code, 'KvManager', `DataSyncToNoEncryptDatabase failed: ${e.message}`);
+        throw new Error(`DataSyncToNoEncryptDatabase failed: ${e.message}`);
+      }
+    }
+    throw new Error('DataSyncToNoEncryptDatabase failed: KV stores not initialized.');
+  }
+
+  /**
+   * 换机恢复：将非加密KV数据库所有条目直接拷贝回加密KV数据库.
+   *
+   * 背景：新设备通过系统换机克隆接收到旧设备的非加密KV数据库文件。
+   * 方案：在BackupExtension.onRestore回调中调用此方法，将非加密KV数据写回加密KV。
+   *       恢复完成后加密KV由新设备TEE管理加密密钥，数据安全得到保障。
+   *
+   * 流程：onRestore → 非加密KV getEntries → 加密KV putBatch → 新设备加密KV生效
+   */
+  async DataSyncToEncryptDatabase(): Promise<number> {
+    if (this._kvStore && this._kvStoreNoE) {
+      try {
+        const allEntries = await this._kvStoreNoE.getEntries('^');
+        if (allEntries && allEntries.length > 0) {
+          await this._kvStore.putBatch(allEntries);
+          return allEntries.length;
+        }
+        hilog.info(0, 'KvManager', 'DataSyncToEncryptDatabase: non-encrypted KV is empty, nothing to restore.');
+        return 0;
+      } catch (err) {
+        let e = err as BusinessError;
+        hilog.error(e.code, 'KvManager', `DataSyncToEncryptDatabase failed: ${e.message}`);
+        throw new Error(`DataSyncToEncryptDatabase failed: ${e.message}`);
+      }
+    }
+    throw new Error('DataSyncToEncryptDatabase failed: KV stores not initialized.');
+  }
+
+  /**
+   * 清空非加密KV数据库中的所有条目.
+   * 恢复完成后或备份完成后调用，清理非加密KV中的明文数据，减少数据暴露面.
+   * 使用deleteBatch批量删除，性能远优于逐条删除.
+   */
+  async ClearNoEncryptDatabase(): Promise<void> {
+    if (this._kvStoreNoE) {
+      try {
+        const allEntries = await this._kvStoreNoE.getEntries('^');
+        if (allEntries && allEntries.length > 0) {
+          const keys: string[] = allEntries.map((entry: distributedKVStore.Entry) => entry.key);
+          await this._kvStoreNoE.deleteBatch(keys);
+          hilog.info(0, 'KvManager', `ClearNoEncryptDatabase: cleared ${keys.length} entries.`);
+        }
+      } catch (err) {
+        let e = err as BusinessError;
+        hilog.error(e.code, 'KvManager', `ClearNoEncryptDatabase failed: ${e.message}`);
+      }
     }
   }
 

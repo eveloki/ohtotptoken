@@ -1143,14 +1143,6 @@
     {
       "name": "cloud_sync_operations",
       "value": "操作"
-    },
-    {
-      "name": "master_key_migration_title",
-      "value": "安全升级通知"
-    },
-    {
-      "name": "master_key_migration_msg",
-      "value": "主密码加密功能已弃用，您的数据依然安全且可正常访问。为了更好的数据保护，建议登录华为账号后开启华为云备份。"
     }
   ]
 }
