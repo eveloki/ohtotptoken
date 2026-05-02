@@ -53,6 +53,7 @@ import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { CommonConstants } from '../utils/CommonConstants';
 import { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
+import { DlpAntiPeepManager } from '../utils/DlpAntiPeepManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -386,6 +387,8 @@ struct Index {
 
   onPageShow(): void {
     this.appIsShow = true;
+    // 重置防窥蒙层标志，确保页面进入时能再次响应窥视事件
+    DlpAntiPeepManager.getInstance().resetMaskFlag();
     const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
     const cardConfigFormId = AppStorage.get<string>('card_config_formId') ?? '';
     if (!needShowLock && cardConfigFormId === '') {

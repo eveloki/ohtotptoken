@@ -74,6 +74,8 @@ export enum PREF_KEYS {
   APPEARANCE_ICON_PACK_SELECTED = 'app_appearance_icon_pack_selected',
   /** 隐藏Token开关 */
   SAFETY_HIDE_TOKEN_ENABLE = 'app_safety_hide_token_enable',
+  /** 防窥保护开关 */
+  SAFETY_DLP_ANTI_PEEP_ENABLE = 'app_safety_dlp_anti_peep_enable',
   /** 显示下一个Token开关 */
   APPEARANCE_SHOW_NEXT_TOKEN_ENABLE = 'app_appearance_show_next_token_enable',
   /** 握手感知开关 */
@@ -250,6 +252,7 @@ export const SCROLL_EFFECT_TYPE_MAP: Map<SettingTopEffectType, ScrollEffectType>
 @ObservedV2
 export class TokenPreference {
   @Trace app_safety_hide_token_enable = false;
+  @Trace app_safety_dlp_anti_peep_enable = false;
   @Trace app_appearance_show_next_token_enable = false;
   @Trace app_appearance_holding_hand_enable = false;
   @Trace app_appearance_swap_host_user_enable = false;
@@ -336,6 +339,8 @@ export class AppPreference {
     [PREF_KEYS.SAFETY_LOCK_ENABLE, false],
     // 安全性-隐藏令牌
     [PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE, false],
+    // 安全性-防窥保护
+    [PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, false],
     // 安全性-自动解锁
     [PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, false],
     // 安全性-后台模糊
@@ -461,6 +466,8 @@ export class AppPreference {
     let token_appearance: TokenPreference = AppStorageV2.connect(TokenPreference, () => new TokenPreference())!;
     token_appearance.app_safety_hide_token_enable =
       AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean;
+    token_appearance.app_safety_dlp_anti_peep_enable =
+      AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean;
     token_appearance.app_appearance_show_next_token_enable =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean;
     token_appearance.app_appearance_holding_hand_enable =

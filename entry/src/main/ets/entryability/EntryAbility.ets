@@ -11,6 +11,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference, SettingColorMode, PREF_KEYS, EVENT_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { DlpAntiPeepManager } from '../utils/DlpAntiPeepManager';
 import { formInfo } from '@kit.FormKit';
 
 //单版本分布式键值数据库
@@ -175,6 +176,11 @@ export default class EntryAbility extends UIAbility {
         windowClass.on('windowSizeChange', this.onWindowSizeChange);
         // apply app settings
         this.applySettings(windowClass);
+
+        // 初始化防窥保护
+        if (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE)) {
+          DlpAntiPeepManager.getInstance().start(windowClass, this.context);
+        }
 
         hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
       });

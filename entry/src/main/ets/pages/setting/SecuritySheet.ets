@@ -10,6 +10,8 @@ import { AppWindowInfo } from '../../entryability/EntryAbility';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../../utils/CommonConstants';
+import { DlpAntiPeepManager } from '../../utils/DlpAntiPeepManager';
+import { common } from '@kit.AbilityKit';
 
 @Preview
 @ComponentV2
@@ -17,6 +19,11 @@ export struct SecuritySheet {
   @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+  @Local isDlpAntiPeepSupported: boolean = true;
+  private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+  aboutToAppear(): void {
+    this.isDlpAntiPeepSupported = canIUse('SystemCapability.Security.DlpAntiPeep');
+  }
   private sheetScroller: Scroller = new Scroller();
 
   build() {
@@ -106,6 +113,26 @@ export struct SecuritySheet {
                   }
                 })
               }
+
+              SubItemDivider()
+
+              SubItemToggle({
+                icon: $r('sys.symbol.eye'),
+                title: $r('app.string.setting_dlp_anti_peep'),
+                isOn: AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean,
+                description: $r('app.string.setting_dlp_anti_peep_des'),
+                onChange: (IsOn: boolean) => {
+                  AppPreference.setPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, IsOn);
+                  if (IsOn) {
+                    DlpAntiPeepManager.getInstance().start(
+                      this.window.WindowClass!,
+                      this.appCtx
+                    );
+                  } else {
+                    DlpAntiPeepManager.getInstance().stop();
+                  }
+                }
+              })
             }
             .padding({ left: 10, right: 10 })
           }
