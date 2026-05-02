@@ -1305,6 +1305,7 @@ struct Index {
                 listScroller: this.tokenListScroller,
               })
             }
+            .mode(NavigationMode.Stack)
             .bindToScrollable([this.tokenListScroller])
             .titleMode(HdsNavigationTitleMode.MINI)
             .hideBackButton(true) // 设置mini类型隐藏后退按钮
@@ -1377,6 +1378,7 @@ struct Index {
             HdsNavigation() {
               this.SettingEntryCardBuilder()
             }
+            .mode(NavigationMode.Stack)
             .bindToScrollable([this.settingEntryScroller])
             .titleMode(HdsNavigationTitleMode.MINI)
             .hideBackButton(true) // 设置mini类型隐藏后退按钮
