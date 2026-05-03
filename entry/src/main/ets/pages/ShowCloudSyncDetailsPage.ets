@@ -34,6 +34,12 @@ import { SyncTimeHelper } from '../utils/SyncTimeHelper';
 const TAG = 'ShowCloudSyncDetailsPage';
 const DOMAIN = 0xFF00;
 
+enum ClearCloudType {
+  DEVICE,
+  DEVICE_NAME,
+  ALL,
+}
+
 @Entry
 @Preview
 @ComponentV2
@@ -470,7 +476,7 @@ export struct ShowCloudSyncDetailsPage {
     }
   }
 
-  /** 清空云端存储操作菜单：选择"仅清空本设备"或"清空所有设备"，二次确认后执行 */
+  /** 清空云端存储操作菜单：选择"仅清空本设备"/"清空同名设备旧备份"/"清空所有设备"，二次确认后执行 */
   private showClearCloudStorageDialog(): void {
     if (!this.isHuaweiLoggedIn) {
       return;
@@ -484,6 +490,10 @@ export struct ShowCloudSyncDetailsPage {
             color: $r('sys.color.ohos_id_color_warning'),
           },
           {
+            text: $r('app.string.cloud_sync_clear_device_name'),
+            color: $r('sys.color.ohos_id_color_warning'),
+          },
+          {
             text: $r('app.string.cloud_sync_clear_all'),
             color: $r('sys.color.ohos_id_color_warning'),
           },
@@ -493,9 +503,11 @@ export struct ShowCloudSyncDetailsPage {
           return;
         }
         if (data.index === 0) {
-          this.showClearConfirmDialog(false);
+          this.showClearConfirmDialog(ClearCloudType.DEVICE);
         } else if (data.index === 1) {
-          this.showClearConfirmDialog(true);
+          this.showClearConfirmDialog(ClearCloudType.DEVICE_NAME);
+        } else if (data.index === 2) {
+          this.showClearConfirmDialog(ClearCloudType.ALL);
         }
       });
     } catch (error) {
@@ -505,10 +517,12 @@ export struct ShowCloudSyncDetailsPage {
   }
 
   /** 清空确认弹窗：底部弹出 AlertDialog，确认后调用 triggerClearCloudStorage */
-  private showClearConfirmDialog(clearAll: boolean): void {
-    const msg = clearAll
+  private showClearConfirmDialog(clearType: ClearCloudType): void {
+    const msg = clearType === ClearCloudType.ALL
       ? $r('app.string.cloud_sync_clear_all_confirm_msg')
-      : $r('app.string.cloud_sync_clear_device_confirm_msg');
+      : clearType === ClearCloudType.DEVICE_NAME
+        ? $r('app.string.cloud_sync_clear_device_name_confirm_msg')
+        : $r('app.string.cloud_sync_clear_device_confirm_msg');
     this.getUIContext().showAlertDialog({
       title: $r('app.string.cloud_sync_clear_storage_confirm'),
       message: msg,
@@ -521,7 +535,7 @@ export struct ShowCloudSyncDetailsPage {
         {
           value: $r('app.string.dialog_btn_confirm'),
           action: () => {
-            this.triggerClearCloudStorage(clearAll);
+            this.triggerClearCloudStorage(clearType);
           }
         },
         {
@@ -548,18 +562,23 @@ export struct ShowCloudSyncDetailsPage {
     });
   }
 
-  /** 清空云端备份后更新 lastSyncTime 为昨天末尾，使 UI 显示过期时间 */
-  private triggerClearCloudStorage(clearAll: boolean): void {
+  /** 执行清空云端备份操作，根据类型选择对应的清理方法 */
+  private triggerClearCloudStorage(clearType: ClearCloudType): void {
     this.loadingText = $r('app.string.cloud_sync_clearing');
     this.Is_loaded = true;
-    const clearPromise = clearAll
-      ? CloudBackupManager.getInstance().clearCloudStorage()
-      : CloudBackupManager.getInstance().clearDeviceCloudStorage();
+    const mgr = CloudBackupManager.getInstance();
+    const clearPromise = clearType === ClearCloudType.ALL
+      ? mgr.clearCloudStorage()
+      : clearType === ClearCloudType.DEVICE_NAME
+        ? mgr.clearDeviceNameCloudStorage()
+        : mgr.clearDeviceCloudStorage();
     clearPromise.then(() => {
       this.Is_loaded = false;
-      const yesterdayTs = SyncTimeHelper.getYesterdayEndTs();
-      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${yesterdayTs}`);
-      this.lastSyncTime = SyncTimeHelper.formatTimestamp(yesterdayTs);
+      if (clearType !== ClearCloudType.DEVICE_NAME) {
+        const yesterdayTs = SyncTimeHelper.getYesterdayEndTs();
+        AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${yesterdayTs}`);
+        this.lastSyncTime = SyncTimeHelper.formatTimestamp(yesterdayTs);
+      }
       showSnackBar($r('app.string.cloud_sync_clear_storage_success'), SnackBarNotifyType.SUCCESS);
     });
   }

@@ -1113,12 +1113,20 @@
       "value": "Clear This Device's Backups"
     },
     {
+      "name": "cloud_sync_clear_device_name",
+      "value": "Clear Same-Name Device Backups"
+    },
+    {
       "name": "cloud_sync_clear_all",
       "value": "Clear All Backups"
     },
     {
       "name": "cloud_sync_clear_device_confirm_msg",
       "value": "This will permanently delete this device's backup data from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_device_name_confirm_msg",
+      "value": "This will permanently delete backups from devices with the same name but different IDs (e.g. leftovers after reinstall) from Huawei Cloud. This action cannot be undone. Are you sure?"
     },
     {
       "name": "cloud_sync_clear_all_confirm_msg",

@@ -1113,12 +1113,20 @@
       "value": "清空本设备备份"
     },
     {
+      "name": "cloud_sync_clear_device_name",
+      "value": "清空同名设备旧备份"
+    },
+    {
       "name": "cloud_sync_clear_all",
       "value": "清空所有备份"
     },
     {
       "name": "cloud_sync_clear_device_confirm_msg",
       "value": "此操作将从华为云永久删除本设备的所有备份数据，此操作不可撤销。确定要继续吗？"
+    },
+    {
+      "name": "cloud_sync_clear_device_name_confirm_msg",
+      "value": "此操作将从华为云永久删除同名设备（如卸载重装前遗留）的旧备份数据，此操作不可撤销。确定要继续吗？"
     },
     {
       "name": "cloud_sync_clear_all_confirm_msg",
