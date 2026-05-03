@@ -28,8 +28,6 @@ export enum EVENT_NAMES {
   START_CARD_CONFIG = 'onStartCardConfig',
   /** 切换Token搜索事件 */
   TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
-  /** 主密钥页面返回事件 */
-  MASTER_KEY_PAGE_BACK = 'onMasterKeyPageBack',
   /** 握手偏好设置变更事件 */
   HOLDING_HAND_PREFERENCE_CHANGED = 'holdingHandPreferenceChanged',
 }
@@ -57,8 +55,6 @@ export enum PREF_KEYS {
   SAFETY_AUTO_UNLOCK_ENABLE = 'app_safety_auto_unlock_enable',
   /** 顶部模糊效果类型 */
   APPEARANCE_TOP_EFFECT_TYPE = 'app_appearance_top_effect_type',
-  /** KV数据库归档运行中标志 */
-  DB_KV_ARCHIVE_IS_RUNNING = 'app_db_kv_archive_is_running',
   /** 背景模糊开关 */
   SAFETY_BACKGROUND_BLUR_ENABLE = 'app_safety_background_blur_enable',
   /** 快速扫描开关 */
@@ -279,12 +275,6 @@ export class TokenPreference {
  * 统一管理所有pushPathByName使用的路由名称
  */
 export enum ROUTE_NAMES {
-  /** 恢复数据页面 */
-  RestoreDataPage = 'RestoreDataPage',
-  /** 主密钥设置页面 */
-  MasterKeyPage = 'MasterKeyPage',
-  /** 恢复密钥记录页面 */
-  RecoveryKeyRecordPage = 'RecoveryKeyRecordPage',
   /** 外观自定义页面 */
   AppearancePage = 'AppearancePage',
   /** 数据同步详情页面 */
@@ -348,9 +338,6 @@ export class AppPreference {
     [PREF_KEYS.DB_KV_SYNC_TIME, ''],
     // kv数据库存档时间
     [PREF_KEYS.DB_KV_ARCHIVE_TIME, ''],
-    // kv数据库存档正在进行
-    [PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false],
-    // 是否显示引导提示
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
     // 是否处于debug模式
     [PREF_KEYS.DEBUG_MODE_ON, false],

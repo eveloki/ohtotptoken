@@ -341,10 +341,6 @@
       "value": "雲端備份需要華為帳號登入來加密您的資料以確保安全。請先登入華為帳號。"
     },
     {
-      "name": "cloud_sync_require_master_key_set",
-      "value": "去設定"
-    },
-    {
       "name": "cloud_backup_history_title",
       "value": "備份歷史"
     },
@@ -761,34 +757,6 @@
       "value": "切出APP時模糊界麵保護隱私。"
     },
     {
-      "name": "restore_data",
-      "value": "恢復資料"
-    },
-    {
-      "name": "restore_data_msg",
-      "value": "偵測到您正在進行備份恢復或資料遷移，是否需要立即恢復資料？"
-    },
-    {
-      "name": "restore_data_kdf_msg",
-      "value": "偵測到您正在進行備份恢復或資料遷移，且已啟用主密碼加密功能。請輸入您的主密碼以恢復資料。"
-    },
-    {
-      "name": "restore_data_kdf_err_msg",
-      "value": "主密碼輸入錯誤，資料恢復失敗。"
-    },
-    {
-      "name": "restore_data_ok_msg",
-      "value": "資料已成功恢復！请重新打开APP."
-    },
-    {
-      "name": "restore_data_cancel",
-      "value": "請耐心等待"
-    },
-    {
-      "name": "restore_data_restoring",
-      "value": "恢復中"
-    },
-    {
       "name": "token_right_menu_show_qrcode",
       "value": "二維碼"
     },
@@ -807,82 +775,6 @@
     {
       "name": "token_item_max_width",
       "value": "最大寬度"
-    },
-    {
-      "name": "restore_master_key",
-      "value": "主密碼安全增強"
-    },
-    {
-      "name": "restore_master_key_msg",
-      "value": "使用主密碼加密資料，提供更高層級的安全防護。"
-    },
-    {
-      "name": "restore_master_key_set",
-      "value": "設定主密碼"
-    },
-    {
-      "name": "restore_master_key_set_msg",
-      "value": "請設定主密碼：\n- 至少8個字元\n- 包含大小寫字母、數字及特殊符號\n- 避免連續相同字元\n- 請勿使用姓名、電話或生日等個人資訊\n\n請注意：系統不儲存您的主密碼。一旦遺失，將無法進行資料恢復或遷移，請妥善保存。"
-    },
-    {
-      "name": "restore_master_key_recovery_key_msg",
-      "value": "請立即記錄恢復金鑰：\n✎ 使用紙張等實體媒介保存\n✎ 此為遺失主密碼後唯一的恢復途徑"
-    },
-    {
-      "name": "restore_master_key_recovery_key_err_msg",
-      "value": "恢復金鑰錯誤，資料恢復失敗。"
-    },
-    {
-      "name": "restore_master_key_no_set_desc",
-      "value": "您沒有配置主密碼，點擊配置。"
-    },
-    {
-      "name": "restore_master_key_reset_desc",
-      "value": "您已經配置了主密碼，點擊重新配置。"
-    },
-    {
-      "name": "restore_master_key_password_too_short_msg",
-      "value": "密碼過短"
-    },
-    {
-      "name": "restore_recovery_key",
-      "value": "恢復金鑰"
-    },
-    {
-      "name": "restore_recovery_key_confirm",
-      "value": "確認已經記錄恢復密鑰"
-    },
-    {
-      "name": "restore_recovery_key_export",
-      "value": "導出恢復密鑰"
-    },
-    {
-      "name": "restore_master_key_err_msg",
-      "value": "主密碼錯誤，資料恢復失敗。"
-    },
-    {
-      "name": "restore_use_recovery_key",
-      "value": "忘記主密碼？使用恢復金鑰。"
-    },
-    {
-      "name": "restore_use_master_key",
-      "value": "使用主密碼恢復"
-    },
-    {
-      "name": "restore_input_recovery_key",
-      "value": "輸入恢復金鑰"
-    },
-    {
-      "name": "restore_input_master_key",
-      "value": "輸入主密碼"
-    },
-    {
-      "name": "restore_import_recovery_key",
-      "value": "匯入恢復金鑰檔案"
-    },
-    {
-      "name": "restore_record_recovery_key",
-      "value": "立即備份恢復金鑰"
     },
     {
       "name": "custom_color_logo_dark_filter_color",
@@ -1217,12 +1109,20 @@
       "value": "清空本裝置備份"
     },
     {
+      "name": "cloud_sync_clear_device_name",
+      "value": "清空同名裝置舊備份"
+    },
+    {
       "name": "cloud_sync_clear_all",
       "value": "清空所有備份"
     },
     {
       "name": "cloud_sync_clear_device_confirm_msg",
       "value": "此操作將從華為雲永久刪除本裝置的所有備份資料，此操作不可撤銷。確定要繼續嗎？"
+    },
+    {
+      "name": "cloud_sync_clear_device_name_confirm_msg",
+      "value": "此操作將從華為雲永久刪除同名裝置（如解除安裝重灌前遺留）的舊備份資料，此操作不可撤銷。確定要繼續嗎？"
     },
     {
       "name": "cloud_sync_clear_all_confirm_msg",
