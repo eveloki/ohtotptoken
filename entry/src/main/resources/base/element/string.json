@@ -1167,6 +1167,18 @@
     {
       "name": "cloud_sync_operations",
       "value": "Operations"
+    },
+    {
+      "name": "master_key_deprecation_title",
+      "value": "Security Upgrade Notice"
+    },
+    {
+      "name": "master_key_deprecation_message",
+      "value": "The Master Key feature has been replaced by Huawei Cloud Backup, which encrypts your data with your Huawei account credentials — no password to remember, no risk of losing it. Please go to Settings > Backup & Migration to enable cloud backup and keep your tokens safe across devices."
+    },
+    {
+      "name": "master_key_deprecation_acknowledge",
+      "value": "Got It"
     }
   ]
 }

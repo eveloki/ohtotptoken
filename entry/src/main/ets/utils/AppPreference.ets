@@ -146,7 +146,16 @@ export enum PREF_KEYS {
   WANT_URI = 'app_want_uri',
   /** 是否启用华为云备份 */
   APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE="app_huawei_cloud_sync_enable",
+  /** 主密码功能弃用告知已确认（一次性迁移标记） */
+  MASTER_KEY_DEPRECATION_ACKNOWLEDGED = 'app_master_key_deprecation_acknowledged',
 }
+
+/** 主密码旧偏好键名（已废弃，仅用于兼容性检测与清理） */
+const DEPRECATED_MASTER_KEY_PREFS: string[] = [
+  'app_use_master_key',
+  'app_use_master_key_set',
+  'app_master_key_migrated',
+];
 
 /**
  * 设置值的联合类型
@@ -348,6 +357,8 @@ export class AppPreference {
     // kv数据库存档时间
     [PREF_KEYS.DB_KV_ARCHIVE_TIME, ''],
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
+    // 主密码弃用告知已确认
+    [PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED, false],
     // 是否处于debug模式
     [PREF_KEYS.DEBUG_MODE_ON, false],
     // 快速扫描URI
@@ -535,5 +546,31 @@ export class AppPreference {
 
   public static saveSettings(): void {
     AppPreference.prefMgr.saveUserData();
+  }
+
+  /**
+   * 检测旧版主密码偏好是否存在（兼容性检测）
+   *
+   * 用户从未使用过主密码功能时，旧键不存在，返回 false；
+   * 升级后旧键仍残留在磁盘偏好文件中，返回 true。
+   */
+  static hasDeprecatedMasterKeyPrefs(): boolean {
+    for (const key of DEPRECATED_MASTER_KEY_PREFS) {
+      const val = AppPreference.prefMgr.getValueSync<boolean>(key);
+      if (val !== null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 清理旧版主密码偏好并标记弃用告知已确认
+   */
+  static cleanupDeprecatedMasterKeyPrefs(): void {
+    for (const key of DEPRECATED_MASTER_KEY_PREFS) {
+      AppPreference.prefMgr.deleteValue(key);
+    }
+    AppPreference.setPreference(PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED, true);
   }
 }

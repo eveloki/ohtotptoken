@@ -1167,6 +1167,18 @@
     {
       "name": "cloud_sync_operations",
       "value": "操作"
+    },
+    {
+      "name": "master_key_deprecation_title",
+      "value": "安全升级通知"
+    },
+    {
+      "name": "master_key_deprecation_message",
+      "value": "主密码功能已升级为华为云备份，通过您的华为账号凭据自动加密数据——无需记忆密码，也不必担心丢失。请前往 设置 > 备份与迁移 开启云备份，让您的令牌在多设备间安全无忧。"
+    },
+    {
+      "name": "master_key_deprecation_acknowledge",
+      "value": "我知道了"
     }
   ]
 }

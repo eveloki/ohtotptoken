@@ -330,6 +330,37 @@ struct Index {
     });
   }
 
+  /**
+   * 主密码兼容性检查.如果用户开启了弹窗告知用户废弃
+   *
+   */
+  private checkMasterKeyDeprecation(): void {
+    const acknowledged = AppPreference.getPreference(PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED) as boolean;
+    if (acknowledged || !AppPreference.hasDeprecatedMasterKeyPrefs()) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.master_key_deprecation_title'),
+      message: $r('app.string.master_key_deprecation_message'),
+      autoCancel: false,
+      alignment: DialogAlignment.Center,
+      gridCount: 4,
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.master_key_deprecation_acknowledge'),
+          action: () => {
+            AppPreference.cleanupDeprecatedMasterKeyPrefs();
+          }
+        },
+      ],
+    });
+  }
+
+  onDidBuild(): void {
+    this.checkMasterKeyDeprecation();
+  }
+
   onPageHide(): void {
     this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
