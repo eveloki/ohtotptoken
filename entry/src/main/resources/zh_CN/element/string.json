@@ -681,6 +681,14 @@
       "value": "滤镜可以在深色模式时获得更好的可视度，但也有可能丢失图标细节。"
     },
     {
+      "name": "chain_animation",
+      "value": "链式联动动效"
+    },
+    {
+      "name": "chain_animation_des",
+      "value": "开启列表项的错落入场动画效果。"
+    },
+    {
       "name": "token_item_slider",
       "value": "尺寸与布局"
     },
@@ -695,6 +703,14 @@
     {
       "name": "token_item_space",
       "value": "间距"
+    },
+    {
+      "name": "token_list_item_prefix_padding",
+      "value": "左侧边距"
+    },
+    {
+      "name": "token_list_item_suffix_padding",
+      "value": "右侧边距"
     },
     {
       "name": "appearance_reset_to_default",

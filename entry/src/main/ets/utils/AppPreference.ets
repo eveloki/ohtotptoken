@@ -144,6 +144,12 @@ export enum PREF_KEYS {
   APPEARANCE_USER_NAME_FONT_WEIGHT = 'app_appearance_user_name_font_weight',
   /** Token项目最大宽度 */
   APPEARANCE_ITEM_MAX_WIDTH = 'app_appearance_item_max_width',
+  /** Token列表项目左内边距（prefix） */
+  APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING = 'app_appearance_token_list_item_prefix_padding',
+  /** Token列表项目右内边距（suffix） */
+  APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING = 'app_appearance_token_list_item_suffix_padding',
+  /** 外观列表链式动画开关 */
+  APPEARANCE_CHAIN_ANIMATION_ENABLE = 'app_appearance_chain_animation_enable',
   /** 快速扫描URI */
   WANT_URI = 'app_want_uri',
   /** 是否启用华为云备份 */
@@ -276,6 +282,9 @@ export class TokenPreference {
   @Trace app_appearance_user_name_font_size = 10;
   @Trace app_appearance_user_name_font_weight = 400;
   @Trace app_appearance_item_max_width = 800;
+  @Trace app_appearance_token_list_item_prefix_padding = 10;
+  @Trace app_appearance_token_list_item_suffix_padding = 10;
+  @Trace app_appearance_chain_animation_enable = true;
 }
 
 /**
@@ -398,6 +407,9 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_USER_NAME_FONT_SIZE, 10],
     [PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT, 400],
     [PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH, 800],
+    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, 10],
+    [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, 10],
+    [PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE, true],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
     [PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false],
@@ -523,6 +535,12 @@ export class AppPreference {
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_USER_NAME_FONT_WEIGHT) as FontWeight;
     token_appearance.app_appearance_item_max_width =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_ITEM_MAX_WIDTH) as number;
+    token_appearance.app_appearance_token_list_item_prefix_padding =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING) as number;
+    token_appearance.app_appearance_token_list_item_suffix_padding =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING) as number;
+    token_appearance.app_appearance_chain_animation_enable =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean;
   }
 
   /**

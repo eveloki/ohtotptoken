@@ -189,16 +189,10 @@ export struct TokenListPage {
                 })
 
             }
-            .padding({ left: 10, right: 10 })
             .swipeAction({
-              start: {
-                builder: () => {
-                  this.TokenItemStart(token)
-                }
-              },
               end: {
                 builder: () => {
-                  this.TokenItemEnd(token)
+                  this.TokenItemSwipeEnd(token)
                 },
               }
             })
@@ -220,19 +214,31 @@ export struct TokenListPage {
           .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
-        .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
+        .lanes(1)
+        .constraintSize({ maxWidth: this.token_preference.app_appearance_item_max_width })
         .layoutWeight(1)
         .width('100%')
         .height('100%')
-        .chainAnimation(true)
+        .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       }
+      .alignItems(HorizontalAlign.Center)
     }
   }
 
+  showQRCodeDialog(conf: TokenConfig): void {
+    this.dialog_qrcode = new CustomDialogController({
+      builder: QRCodeDialog({
+        content: convertToken2URI(conf),
+        winSize: this.appWindowSize
+      })
+    });
+    this.dialog_qrcode.open();
+  }
+
   @Builder
-  TokenItemStart(conf: TokenConfig) {
+  TokenItemSwipeEnd(conf: TokenConfig) {
     Row({ space: 10 }) {
       Button({ type: ButtonType.Circle }) {
         Text() {
@@ -245,52 +251,7 @@ export struct TokenListPage {
       .backgroundColor(Color.Orange)
       .padding(10)
       .onClick(() => {
-        this.dialog_qrcode = new CustomDialogController({
-          builder: QRCodeDialog({
-            content: convertToken2URI(conf),
-            winSize: this.appWindowSize
-          })
-        });
-        this.dialog_qrcode.open();
-      })
-    }
-    .margin({ right: 10 })
-    .width(50)
-  }
-
-  @Builder
-  TokenItemEnd(conf: TokenConfig) {
-    Row({ space: 10 }) {
-      Button({ type: ButtonType.Circle }) {
-        Text() {
-          SymbolSpan($r('sys.symbol.trash_fill'))
-            .fontSize(30)
-            .fontWeight(FontWeight.Medium)
-            .fontColor([Color.White])
-        }
-      }
-      .backgroundColor(Color.Red)
-      .padding(10)
-      .onClick(async () => {
-        this.getUIContext().showAlertDialog({
-          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
-          autoCancel: true,
-          alignment: DialogAlignment.Center,
-          primaryButton: {
-            defaultFocus: false,
-            value: $r('app.string.dialog_btn_cancel'),
-            action: () => {
-              return
-            }
-          },
-          secondaryButton: {
-            value: $r('app.string.dialog_btn_confirm'),
-            fontColor: Color.Red,
-            action: async () => {
-              tkStore.deleteToken(conf.TokenUUID);
-            }
-          }
-        })
+        this.showQRCodeDialog(conf);
       })
 
       if (this.TabBarVisible) {
@@ -339,6 +300,38 @@ export struct TokenListPage {
           }
         })
       }
+
+      Button({ type: ButtonType.Circle }) {
+        Text() {
+          SymbolSpan($r('sys.symbol.trash_fill'))
+            .fontSize(30)
+            .fontWeight(FontWeight.Medium)
+            .fontColor([Color.White])
+        }
+      }
+      .backgroundColor(Color.Red)
+      .padding(10)
+      .onClick(async () => {
+        AlertDialog.show({
+          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
+          autoCancel: true,
+          alignment: DialogAlignment.Center,
+          primaryButton: {
+            defaultFocus: false,
+            value: $r('app.string.dialog_btn_cancel'),
+            action: () => {
+              return
+            }
+          },
+          secondaryButton: {
+            value: $r('app.string.dialog_btn_confirm'),
+            fontColor: Color.Red,
+            action: async () => {
+              tkStore.deleteToken(conf.TokenUUID);
+            }
+          }
+        })
+      })
     }
     .margin({ left: 10 })
   }

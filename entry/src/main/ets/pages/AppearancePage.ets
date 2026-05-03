@@ -54,7 +54,6 @@ export struct AppearancePage {
                   }
                 })
               }
-              .padding({ left: 10, right: 10 })
 
               ListItem() {
                 TokenItem({
@@ -63,7 +62,6 @@ export struct AppearancePage {
                   }
                 })
               }
-              .padding({ left: 10, right: 10 })
             }
 
             ListItemGroup() {
@@ -113,6 +111,19 @@ export struct AppearancePage {
                   onChange: (IsOn: boolean) => {
                     AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER, IsOn);
                     this.token_preference.app_appearance_logo_dark_filter = IsOn;
+                  }
+                })
+
+                SubItemDivider()
+
+                SubItemToggle({
+                  icon: $r('sys.symbol.rectangle_stack'),
+                  title: $r('app.string.chain_animation'),
+                  isOn: this.token_preference.app_appearance_chain_animation_enable,
+                  description: $r('app.string.chain_animation_des'),
+                  onChange: (IsOn: boolean) => {
+                    AppPreference.setPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE, IsOn);
+                    this.token_preference.app_appearance_chain_animation_enable = IsOn;
                   }
                 })
 
@@ -193,6 +204,20 @@ export struct AppearancePage {
                       max: Math.round(this.token_preference.app_appearance_logo_background_size / 2),
                       step: 1
                     },
+                    {
+                      name: $r('app.string.token_list_item_prefix_padding'),
+                      default: this.token_preference.app_appearance_token_list_item_prefix_padding,
+                      min: 0,
+                      max: 30,
+                      step: 1
+                    },
+                    {
+                      name: $r('app.string.token_list_item_suffix_padding'),
+                      default: this.token_preference.app_appearance_token_list_item_suffix_padding,
+                      min: 0,
+                      max: 30,
+                      step: 1
+                    },
                   ],
                   description: $r('app.string.token_item_slider_desc'),
                   onChange: (index, value) => {
@@ -225,6 +250,16 @@ export struct AppearancePage {
                       case 5: {
                         AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS, value);
                         this.token_preference.app_appearance_logo_background_radius = value;
+                        break;
+                      }
+                      case 6: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, value);
+                        this.token_preference.app_appearance_token_list_item_prefix_padding = value;
+                        break;
+                      }
+                      case 7: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, value);
+                        this.token_preference.app_appearance_token_list_item_suffix_padding = value;
                         break;
                       }
                     }
@@ -481,7 +516,7 @@ export struct AppearancePage {
               .height(this.window.AvoidBottomHeight + 56) // 56: navigation_height
           }
           .layoutWeight(1)
-          .chainAnimation(true)
+          .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
           .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
           .scrollBar(BarState.Off)
 
