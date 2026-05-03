@@ -11,7 +11,7 @@ import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { QRCodeDialog } from '../dialogs/QRCodeDialog';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { TokenStore } from '../utils/TokenStore';
-import { ConfigurationConstant } from '@kit.AbilityKit';
+import { ConfigurationConstant, common } from '@kit.AbilityKit';
 import {
   HdsListItemCard,
   PrefixCustomBuilder,
@@ -50,6 +50,8 @@ export struct TokenItem {
 
   private token_steps: number = 0;
   private onTimestampChangedHandler: (timestamp: number, force: boolean) => void = () => {};
+  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   @Computed
   get is_dark_mode() {
@@ -139,12 +141,13 @@ export struct TokenItem {
 
   aboutToAppear(): void {
     this.onTimestampChangedHandler = (timestamp: number, force: boolean): void => this.onTimestampChanged(timestamp, force);
-    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
+    // 使用 AppStorage 获取的 context 注册事件，避免 aboutToAppear 阶段调用 getUIContext()
+    this.appCtx.eventHub?.on(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
     this.updateToken();
   }
 
   aboutToDisappear(): void {
-    this.getUIContext().getHostContext()?.eventHub.off(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
+    this.appCtx.eventHub?.off(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
   }
 
   onTimestampChanged(timestamp: number, force: boolean): void {

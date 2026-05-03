@@ -15,6 +15,10 @@ export struct QRCodeDialog {
   @State qrSize: number = 0;
 
   aboutToAppear(): void {
+  }
+
+  // onDidBuild 在 build() 完成后调用，此时 getUIContext() 保证可用；qrSize 计算完毕后再生成二维码
+  onDidBuild(): void {
     this.qrSize = this.getUIContext().px2vp(Math.min(this.winSize.width, this.winSize.height)) * 0.8;
     this.createQRCode();
   }
