@@ -6,9 +6,6 @@
     "pages/ShowDataSyncDetailsPage",
     "pages/ShowCloudSyncDetailsPage",
     "pages/ShowCloudBackupHistoryPage",
-    "pages/RestoreDataPage",
-    "pages/MasterKeyPage",
-    "pages/RecoveryKeyRecordPage",
     "pages/WebPage",
     "pages/TokenCardConfigPage"
   ]

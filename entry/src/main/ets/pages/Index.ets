@@ -22,16 +22,12 @@ import { PermissionManager } from '../utils/PermissionManager';
 import { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
+import { restoreFromBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
 import { CloudBackupManager } from '../utils/CloudBackupManager';
 // 申请锁屏下应用敏感数据访问权限
-import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
-import { RestoreDataPage } from './RestoreDataPage';
-import { MasterKeyPage } from './MasterKeyPage';
-import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
 import { AppearancePage } from './AppearancePage';
 import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
 import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
@@ -200,9 +196,7 @@ struct Index {
         this.CurrentTokens = tokens;
         this.CurrentTokensCount = tokens.length;
         this.token_loading = false;
-        this.restoreByKVCheck();
         this.appIsInit = true;
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
       });
     });
 
@@ -336,62 +330,15 @@ struct Index {
     });
   }
 
+  onPageHide(): void {
+    this.appIsShow = false;
+    hilog.info(0, TAG, "onPageHide");
+  }
+
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub != undefined) {
       this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
-    }
-  }
-
-  restoreByKVCheck():void{
-    //冷启动优化
-    setTimeout(() => {
-      tkStore.RestoreByKVCheckAsync().then((n:number)=>{
-        if (this.CurrentTokens.length == 0 && n>0) {
-          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
-        }
-      }).catch((err:BusinessError)=>{
-        hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
-      })
-    }, 1000)
-
-  }
-
-  onPageHide(): void {
-    this.appIsShow = false;
-    hilog.info(0, TAG, "onPageHide");
-    //备份还原场景检测是否有备份数据
-    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING)) {
-      //todo需要申请锁屏后读取权限 需要实现后台任务备份
-      try {
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,true)
-        //申请锁屏后访问加密文件的权限
-        let acquireStatus = screenLockFileManager.acquireAccess();
-        if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
-          hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
-          //let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-          tkStore.BuckupToKVAsync().then((n)=>{
-            //tkStore.RestoreByKVAsync();
-            //更新存档时间
-            if (n > 0) {
-              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
-            }
-          }).catch((err:BusinessError) => {
-            hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
-          }).finally(() => {
-            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-          });
-        }
-        else
-        {
-          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-        }
-      } catch (err) {
-        let message = (err as BusinessError).message;
-        hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-      }
-
     }
   }
 
@@ -1217,13 +1164,7 @@ struct Index {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.RestoreDataPage) {
-      RestoreDataPage()
-    } else if (name === ROUTE_NAMES.MasterKeyPage) {
-      MasterKeyPage()
-    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
-      RecoveryKeyRecordPage()
-    } else if (name === ROUTE_NAMES.AppearancePage) {
+    if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
       ShowDataSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })

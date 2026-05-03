@@ -2,7 +2,6 @@ import { KvManager } from "./KvManager";
 import { TokenConfig } from "./TokenConfig";
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
-import { asset } from '@kit.AssetStoreKit';
 import { EVENT_NAMES } from "./AppPreference";
 
 export class TokenStore {
@@ -107,71 +106,26 @@ export class TokenStore {
   }
 
   /**
-   * 手动触发同步.
-   *
-   */
+    * 手动触发同步.
+    *
+    */
   async DataSync(): Promise<void> {
     await this.kvMgr.DataSync();
   }
   /**
-   * 备份整个kv数据库到目标文件.
-   *
-   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
-   */
+    * 备份整个kv数据库到目标文件.
+    *
+    * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+    */
   public BuckupToFile(backupFile:string): void {
     this.kvMgr.BuckupToFile(backupFile);
   }
   /**
-   * 从备份文件中还原整个数据库.
-   *
-   * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
-   */
+    * 从备份文件中还原整个数据库.
+    *
+    * @param { backupFile } 目标文件路径 需要保证目标路径是有权限的
+    */
   public RestoreByFile(backupFile:string): void {
     this.kvMgr.RestoreByFile(backupFile);
-  }
-
-
-  /**
-   * 备份整个kv加密数据库到非加密数据库
-   *
-   */
-  public async BuckupToKVAsync(): Promise<number>  {
-    return await this.kvMgr.DataSyncToNoEncryptDatabase();
-  }
-  /**
-   * 从非加密数据库KV还原到kv
-   *
-   */
-  public async RestoreByKVAsync(): Promise<number> {
-    //return await this.kvMgr.DataSyncToEncryptDatabase();
-    return await this.kvMgr.DataRecoveryByLocalFile();
-  }
-  /**
-   * 检查是否有还原数据可用 返回可用条数（还原场景专用）.
-   *
-   */
-  public async RestoreByKVCheckAsync(): Promise<number> {
-    return await this.kvMgr.DataSyncToEncryptDatabaseCheckNumber(this.token_prefix);
-  }
-  /**
-   * 设置主密码
-   *
-   */
-  public async SetMasterKeyAsync(masterKey:string): Promise<string>  {
-    return await this.kvMgr.EncryptionMasterKeyAndCreateRecoverySecretKey(masterKey);
-  }
-  /**
-   * 校验主密码（如果成功自动派生密钥）
-   *
-   */
-  public async CheckMasterKeySync(masterKey:string): Promise<boolean>  {
-    return await this.kvMgr.CheckMasterKey(masterKey);
-  }
-  /**
-   * 尝试使用恢复密钥还原主密码
-   *
-   */
-  public async CheckRecoverySecretKey(recoveryKey:string): Promise<boolean>  {
-    return await this.kvMgr.CheckRecoverySecretKey(recoveryKey);
   }
 }

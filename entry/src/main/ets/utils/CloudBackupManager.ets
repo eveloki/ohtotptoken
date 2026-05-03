@@ -31,6 +31,33 @@ const MAX_BACKUP_COUNT = 5;
 const BACKUP_FILE_PREFIX = 'otp_backup_';
 const BACKUP_FILE_EXT = '.enc';
 
+/**
+ * 云端备份管理器
+ *
+ * 负责令牌数据在华为云空间的备份、恢复、清理等操作。
+ *
+ * ## 备份文件命名规则
+ * `{BACKUP_FILE_PREFIX}{timestamp}{BACKUP_FILE_EXT}` → `otp_backup_{毫秒时间戳}.enc`
+ *
+ * ## 加密方案
+ * 使用 {@link CloudBackupCrypto} 对明文 JSON 进行对称加密，
+ * 密钥来源为华为账号 unionId，通过 `CloudBackupCryptoMode.AES256_GCM` 加密。
+ *
+ * ## 设备标识（ODID vs deviceName）
+ * - **ODID**（`deviceInfo.ODID`）：开发者匿名设备标识符，应用卸载重装后会变化。
+ * - **deviceName**（`deviceInfo.marketName`）：设备市场名称，卸载重装后不变。
+ *
+ * 基于上述差异，提供三种清理粒度：
+ * 1. `clearDeviceCloudStorage()` — 按 ODID 匹配，清理当前安装实例产生的备份
+ * 2. `clearDeviceNameCloudStorage()` — 按 deviceName 匹配且排除当前 ODID，清理卸载重装前遗留的旧备份
+ * 3. `clearCloudStorage()` — 清理全部备份
+ *
+ * ## 备份数量限制
+ * 每台设备（按 ODID 区分）最多保留 {@link MAX_BACKUP_COUNT} 份备份，
+ * 超出时自动删除最旧的一份。
+ *
+ * @module CloudBackupManager
+ */
 export class CloudBackupManager {
   private static instance: CloudBackupManager | null = null;
   private crypto: CloudBackupCrypto = CloudBackupCrypto.getInstance();
@@ -48,6 +75,7 @@ export class CloudBackupManager {
     return CloudBackupManager.instance;
   }
 
+  /** 初始化云备份管理器：获取 UIAbilityContext、确保云端目录存在。幂等，重复调用安全。 */
   async init(): Promise<void> {
     if (this.context) {
       return;
@@ -67,6 +95,7 @@ export class CloudBackupManager {
     }
   }
 
+  /** 确保云端备份目录存在，不存在则递归创建 */
   private async ensureCloudDirExists(): Promise<void> {
     try {
       const stat = await fs.stat(this.cloudDir);
@@ -82,6 +111,12 @@ export class CloudBackupManager {
     }
   }
 
+  /**
+   * 将令牌数据备份到华为云空间
+   *
+   * 流程：初始化 → 加密 → 写文件 → 清理超限旧备份 → 触发 FileSync 同步 → 记录时间戳
+   * @returns 是否成功
+   */
   async backupToCloud(): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -145,6 +180,12 @@ export class CloudBackupManager {
     return true;
   }
 
+  /**
+   * 从云端恢复最新的备份数据
+   *
+   * 解密后逐条调用 `TokenStore.updateToken` 写入本地 KV。
+   * @returns 是否成功
+   */
   async restoreFromCloud(): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -170,6 +211,7 @@ export class CloudBackupManager {
     return await this.restoreFromBackupRecord(latestRecord.id);
   }
 
+  /** 清理云端所有设备的全部备份数据 */
   async clearCloudStorage(): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -198,6 +240,7 @@ export class CloudBackupManager {
     }
   }
 
+  /** 清理云端当前 ODID 匹配的备份数据（仅当前安装实例产生的备份） */
   async clearDeviceCloudStorage(): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -228,6 +271,45 @@ export class CloudBackupManager {
     }
   }
 
+  /**
+   * 清理云端同名设备（deviceName）但不同 ODID 的备份
+   *
+   * 适用场景：应用卸载重装后 ODID 变化，旧的按 ODID 匹配无法找到卸载前产生的备份，
+   * 通过 deviceName 匹配可清理这些遗留备份，同时排除当前 ODID 的备份。
+   */
+  async clearDeviceNameCloudStorage(): Promise<boolean> {
+    await this.init();
+    if (!this.context || !this.cloudDir) {
+      hilog.error(DOMAIN, TAG, 'clearDeviceNameCloudStorage: not initialized');
+      return false;
+    }
+
+    if (!HuaweiAccountManager.getInstance().userLogin) {
+      hilog.warn(DOMAIN, TAG, 'clearDeviceNameCloudStorage: Huawei account not logged in, aborting');
+      return false;
+    }
+
+    const currentDeviceId = DeviceInfoHelper.getInstance().getDeviceId();
+    const currentDeviceName = DeviceInfoHelper.getInstance().getDeviceName();
+    hilog.info(DOMAIN, TAG, `clearDeviceNameCloudStorage: name=${currentDeviceName}, excluding odid=${currentDeviceId}`);
+
+    try {
+      const records = await this.listBackupRecords();
+      const staleRecords = records.filter((r: CloudBackupRecord) =>
+        r.deviceName === currentDeviceName && r.deviceId !== currentDeviceId
+      );
+      for (const record of staleRecords) {
+        await this.deleteBackupFile(record.id);
+      }
+      hilog.info(DOMAIN, TAG, `clearDeviceNameCloudStorage: completed, deleted ${staleRecords.length}`);
+      return true;
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, `clearDeviceNameCloudStorage: error=${JSON.stringify(e)}`);
+      return false;
+    }
+  }
+
+  /** 获取云端备份记录列表，按时间戳降序排列 */
   async listBackupHistory(): Promise<CloudBackupRecord[]> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -238,6 +320,7 @@ export class CloudBackupManager {
     return await this.listBackupRecords();
   }
 
+  /** 检查是否需要自动备份：每日最多一次，需满足云同步开关 + 华为账号登录 */
   async checkAndAutoBackup(): Promise<void> {
     const enabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
     if (!enabled) {
@@ -260,6 +343,12 @@ export class CloudBackupManager {
     hilog.info(DOMAIN, TAG, `checkAndAutoBackup: result=${success}`);
   }
 
+  /**
+   * 从指定备份记录恢复数据
+   *
+   * 若文件在云端（location=2）先缓存到本地，再读取、解密、解析、写入。
+   * @param recordId 备份文件名
+   */
   async restoreFromBackupRecord(recordId: string): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -313,6 +402,7 @@ export class CloudBackupManager {
     }
   }
 
+  /** 删除单条备份记录并触发 FileSync 同步 */
   async deleteBackupRecord(recordId: string): Promise<boolean> {
     await this.init();
     if (!this.context || !this.cloudDir) {
@@ -328,6 +418,7 @@ export class CloudBackupManager {
     return result;
   }
 
+  /** 删除指定备份文件（不同步） */
   private async deleteBackupFile(fileName: string): Promise<boolean> {
     const filePath = `${this.cloudDir}/${fileName}`;
     try {
@@ -340,6 +431,7 @@ export class CloudBackupManager {
     }
   }
 
+  /** 扫描云端目录，解析备份文件头部元信息，返回按时间戳降序排列的记录列表 */
   private async listBackupRecords(): Promise<CloudBackupRecord[]> {
     const records: CloudBackupRecord[] = [];
     try {
@@ -403,6 +495,7 @@ export class CloudBackupManager {
     return records;
   }
 
+  /** 读取文件全部内容为 UTF-8 字符串 */
   private async readFileContent(filePath: string): Promise<string> {
     const stat = await fs.stat(filePath);
     const file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
@@ -413,6 +506,7 @@ export class CloudBackupManager {
     return buffer.from(uint8Array).toString('utf-8');
   }
 
+  /** 触发 FileSync 将本地变更同步到云端 */
   private async syncToCloud(): Promise<void> {
     if (!this.fileSync) {
       this.fileSync = new cloudSync.FileSync();
@@ -426,6 +520,7 @@ export class CloudBackupManager {
     }
   }
 
+  /** 将云端文件缓存到本地（location=2 时文件仅存在云端，需先拉取） */
   private async cacheFile(filePath: string): Promise<void> {
     const uri = fileUri.getUriFromPath(filePath);
     const cache = new cloudSync.CloudFileCache();
