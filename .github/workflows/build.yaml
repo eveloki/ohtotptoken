@@ -1,7 +1,8 @@
 name: build
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
     paths-ignore:
@@ -24,6 +25,7 @@ on:
 jobs:
   build_ohos:
     name: Build for ohos
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -38,12 +40,15 @@ jobs:
         with:
           version: latest
           cache: true
-      - name: Install dependencies
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y curl libgl1-mesa-dev
         shell: bash
-      - run: hvigorw -v
+
+      - name: Verify hvigorw
+        run: hvigorw -v
 
       - name: Install project dependencies
         run: |
@@ -53,6 +58,13 @@ jobs:
         run: hvigorw clean assembleHap -p buildMode=release --config properties.ignoreSignHap=true
         shell: bash
 
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '"versionName"' AppScope/app.json5 | sed 's/.*"versionName"[^"]*"\([^"]*\)".*/\1/')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
       - name: Rename hap
         run: |
           HAP_FILE=$(find "${{ github.workspace }}/entry/build" -name "*.hap" -type f | head -n 1)
@@ -61,12 +73,21 @@ jobs:
             exit 1
           fi
           echo "Found hap: $HAP_FILE"
-          cp "$HAP_FILE" "${{ github.workspace }}/ohtotptoken_ohos_canary.hap"
+          cp "$HAP_FILE" "${{ github.workspace }}/ohtotptoken_${{ steps.version.outputs.version }}_unsigned.hap"
 
-      - name: Upload hap
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ohos_outputs
-          path: ${{ github.workspace }}/ohtotptoken_ohos_canary.hap
+          path: ${{ github.workspace }}/ohtotptoken_${{ steps.version.outputs.version }}_unsigned.hap
           if-no-files-found: error
           retention-days: 30
+
+      - name: Create Release
+        if: github.event_name != 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: ohtotptoken_${{ steps.version.outputs.version }}_unsigned.hap
+          generate_release_notes: true
