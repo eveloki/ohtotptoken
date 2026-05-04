@@ -112,36 +112,36 @@ export struct SecuritySheet {
                     AppPreference.setPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE, IsOn);
                   }
                 })
+
+                SubItemDivider()
+
+                SubItemToggle({
+                  icon: $r('sys.symbol.eye'),
+                  title: $r('app.string.setting_dlp_anti_peep'),
+                  isOn: this.isDlpAntiPeepSupported && (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean),
+                  disable: !this.isDlpAntiPeepSupported,
+                  description: this.isDlpAntiPeepSupported ?
+                    $r('app.string.setting_dlp_anti_peep_des') :
+                    $r('app.string.setting_dlp_anti_peep_unsupported'),
+                  descriptionColor: this.isDlpAntiPeepSupported ?
+                    $r('sys.color.ohos_id_color_text_secondary') :
+                    $r('sys.color.ohos_id_color_text_tertiary'),
+                  onChange: (IsOn: boolean) => {
+                    if (!this.isDlpAntiPeepSupported) {
+                      return;
+                    }
+                    AppPreference.setPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, IsOn);
+                    if (IsOn) {
+                      DlpAntiPeepManager.getInstance().start(
+                        this.window.WindowClass!,
+                        this.appCtx
+                      );
+                    } else {
+                      DlpAntiPeepManager.getInstance().stop();
+                    }
+                  }
+                })
               }
-
-              SubItemDivider()
-
-              SubItemToggle({
-                icon: $r('sys.symbol.eye'),
-                title: $r('app.string.setting_dlp_anti_peep'),
-                isOn: this.isDlpAntiPeepSupported && (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean),
-                disable: !this.isDlpAntiPeepSupported,
-                description: this.isDlpAntiPeepSupported ?
-                  $r('app.string.setting_dlp_anti_peep_des') :
-                  $r('app.string.setting_dlp_anti_peep_unsupported'),
-                descriptionColor: this.isDlpAntiPeepSupported ?
-                  $r('sys.color.ohos_id_color_text_secondary') :
-                  $r('sys.color.ohos_id_color_text_tertiary'),
-                onChange: (IsOn: boolean) => {
-                  if (!this.isDlpAntiPeepSupported) {
-                    return;
-                  }
-                  AppPreference.setPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, IsOn);
-                  if (IsOn) {
-                    DlpAntiPeepManager.getInstance().start(
-                      this.window.WindowClass!,
-                      this.appCtx
-                    );
-                  } else {
-                    DlpAntiPeepManager.getInstance().stop();
-                  }
-                }
-              })
             }
             .padding({ left: 10, right: 10 })
           }
