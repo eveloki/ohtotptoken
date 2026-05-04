@@ -8,6 +8,7 @@ import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { TokenIcon } from '../components/TokenIcon';
 import { SelectIconDialog } from './SelectIconDialog';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { common } from '@kit.AbilityKit';
 
 //"{\"d\":{\"__type\":\"SoftToken.MobileProvisionResponse\",\"__version\":\"\",\"__device_version\":\"\",\"__device_build\":\"\",\"mobile_id_hash\":\"\",\"seed\":\"\",\"token\":\"\",\"image_file\":\"\",\"pin_required\":\"\",\"pin_require_type\":\"\",\"pin_length\":0,\"counter\":0,\"encryption_key\":\"\",\"issuer\":\"\",\"result\":0,\"error\":{\"error_code\":40,\"error_message\":\"FTM token Activation Code is invalid\"}}}"
 class forti_server_resp_err {
@@ -47,10 +48,10 @@ export struct FortiConfigDialog {
     })
   });
 
-  private files_dir: string = '';
+  // 使用 AppStorage 获取 filesDir，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private files_dir: string = (AppStorage.get('appContext') as common.UIAbilityContext).filesDir;
 
   aboutToAppear(): void {
-    this.files_dir = this.getUIContext().getHostContext()?.filesDir ?? '';
     if (this.conf_json != undefined && this.conf_json.length > 0) {
       this.conf = JSON.parse(this.conf_json!);
     } else {

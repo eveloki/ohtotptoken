@@ -25,16 +25,25 @@ export struct AppearancePage {
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
-  private context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+  // 使用 AppStorage 获取 context，避免在字段初始化阶段调用 getUIContext()（此时 build() 尚未执行）
+  private context: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
   private scroller: Scroller = new Scroller();
+  private timestampIntervalId: number = -1;
 
   aboutToAppear(): void {
-    setInterval(() => {
+    this.timestampIntervalId = setInterval(() => {
       const timestamp = Math.floor(systemDateTime.getTime() / 1000);
       if (this.context.eventHub != undefined) {
         this.context.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
       }
     }, 1000);
+  }
+
+  // 清理 setInterval，防止页面弹出后计时器持续泄漏
+  aboutToDisappear(): void {
+    if (this.timestampIntervalId !== -1) {
+      clearInterval(this.timestampIntervalId);
+    }
   }
 
   build() {

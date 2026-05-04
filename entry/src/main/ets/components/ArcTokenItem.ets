@@ -10,7 +10,7 @@ import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { QRCodeDialog } from '../dialogs/QRCodeDialog';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { TokenStore } from '../utils/TokenStore';
-import { ConfigurationConstant } from '@kit.AbilityKit';
+import { ConfigurationConstant, common } from '@kit.AbilityKit';
 import { ArcTokenIcon } from './ArcTokenIcon';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
@@ -43,6 +43,9 @@ export struct ArcTokenItem {
   private dialog_qrcode?: CustomDialogController;
 
   private token_steps: number = 0;
+  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  private onTimestampChangedHandler: (timestamp: number, force: boolean) => void = () => {};
 
   @Computed
   get is_dark_mode() {
@@ -112,8 +115,14 @@ export struct ArcTokenItem {
   }
 
   aboutToAppear(): void {
-    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.TIMESTAMP_CHANGED, (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force));
+    this.onTimestampChangedHandler = (timestamp: number, force: boolean) => this.onTimestampChanged(timestamp, force);
+    this.appCtx.eventHub?.on(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
     this.updateToken();
+  }
+
+  // 清理事件监听，防止组件销毁后监听器泄漏
+  aboutToDisappear(): void {
+    this.appCtx.eventHub?.off(EVENT_NAMES.TIMESTAMP_CHANGED, this.onTimestampChangedHandler);
   }
 
   onTimestampChanged(timestamp: number, force: boolean): void {

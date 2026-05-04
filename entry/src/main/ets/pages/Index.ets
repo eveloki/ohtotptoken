@@ -135,6 +135,10 @@ struct Index {
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
   private DropFilesDialogIsOpen:boolean = false;
+  // 存储 setInterval ID 以便在 aboutToDisappear 中清理
+  private timestampIntervalId: number = -1;
+  // 防止 onPageShow 中重复注册 windowStageEvent 监听器
+  private windowStageEventListenerRegistered: boolean = false;
 
   private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   // 订阅者信息, 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
@@ -282,8 +286,8 @@ struct Index {
         }, 250)
     });
 
-    // periodically update timestamp for tokens
-    setInterval(() => {
+    // 存储 interval ID 以便 aboutToDisappear 清理
+    this.timestampIntervalId = setInterval(() => {
       if (this.appCtx != undefined && this.appIsShow)
         if (this.appCtx.eventHub != undefined)
            this.updateTimestamp();
@@ -330,6 +334,44 @@ struct Index {
     });
   }
 
+  /**
+   * 主密码兼容性检查.如果用户开启了弹窗告知用户废弃
+   *
+   */
+  private checkMasterKeyDeprecation(): void {
+    const acknowledged = AppPreference.getPreference(PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED) as boolean;
+    if (acknowledged || !AppPreference.hasDeprecatedMasterKeyPrefs()) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.master_key_deprecation_title'),
+      message: $r('app.string.master_key_deprecation_message'),
+      autoCancel: false,
+      alignment: DialogAlignment.Center,
+      gridCount: 4,
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.master_key_deprecation_acknowledge'),
+          action: () => {
+            AppPreference.cleanupDeprecatedMasterKeyPrefs();
+          }
+        },
+      ],
+    });
+  }
+
+  onDidBuild(): void {
+    this.checkMasterKeyDeprecation();
+  }
+
+  // 清理 setInterval，防止资源泄漏
+  aboutToDisappear(): void {
+    if (this.timestampIntervalId !== -1) {
+      clearInterval(this.timestampIntervalId);
+    }
+  }
+
   onPageHide(): void {
     this.appIsShow = false;
     hilog.info(0, TAG, "onPageHide");
@@ -366,12 +408,16 @@ struct Index {
 
     let context = this.appCtx as common.UIAbilityContext;
     let windowStage = context.windowStage;
-    windowStage.on("windowStageEvent", (data) => {
-      this.background_blur_flag = (
-        AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
-        data === window.WindowStageEventType.PAUSED
-      );
-    })
+    // 防止每次 onPageShow 重复注册 windowStageEvent 监听器
+    if (!this.windowStageEventListenerRegistered && windowStage) {
+      windowStage.on("windowStageEvent", (data) => {
+        this.background_blur_flag = (
+          AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
+          data === window.WindowStageEventType.PAUSED
+        );
+      })
+      this.windowStageEventListenerRegistered = true;
+    }
 
     if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);

@@ -1163,6 +1163,18 @@
     {
       "name": "cloud_sync_operations",
       "value": "操作"
+    },
+    {
+      "name": "master_key_deprecation_title",
+      "value": "安全升級通知"
+    },
+    {
+      "name": "master_key_deprecation_message",
+      "value": "主密碼功能已升級為華為雲備份，透過您的華為帳號憑證自動加密資料——無需記憶密碼，也不必擔心遺失。請前往 設定 > 備份與遷移 開啟雲端備份，讓您的令牌在多裝置間安全無憂。"
+    },
+    {
+      "name": "master_key_deprecation_acknowledge",
+      "value": "我知道了"
     }
   ]
 }

@@ -11,6 +11,7 @@ import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 import { CommonConstants } from "../utils/CommonConstants";
 import { GenericDataSource } from "../utils/GenericDataSource";
+import { common } from "@kit.AbilityKit";
 
 let tkStore = TokenStore.getInstance();
 
@@ -48,6 +49,9 @@ export struct TokenListPage {
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
+  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  private toggleSearchHandler: () => void = () => {};
 
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
@@ -66,11 +70,20 @@ export struct TokenListPage {
 
   aboutToAppear(): void {
     this.dataSource = new GenericDataSource(this.Tokens);
-    // 如果已经点击了我知道了则永远不提示了
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    this.getUIContext().getHostContext()?.eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
+  }
+
+  // onDidBuild 在 build() 完成后调用，此时 getUIContext() 保证可用
+  onDidBuild(): void {
+    this.toggleSearchHandler = () => { this.toggleTokenSearchByTitleBar() };
+    this.appCtx.eventHub?.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
+  }
+
+  // 清理事件监听，防止组件销毁后监听器泄漏
+  aboutToDisappear(): void {
+    this.appCtx.eventHub?.off(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
   }
 
   private toggleTokenSearchByTitleBar(): void {
