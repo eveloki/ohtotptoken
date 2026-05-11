@@ -68,6 +68,14 @@
         }
       },
 
+    {
+        "name": "ohos.permission.DLP_GET_HIDE_STATUS",
+        "reason": "$string:dlp_anti_peep_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
+      }
     ],
     "deliveryWithInstall": true,
     "installationFree": false,

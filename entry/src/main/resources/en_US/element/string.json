@@ -1179,6 +1179,22 @@
     {
       "name": "master_key_deprecation_acknowledge",
       "value": "Got It"
+    },
+    {
+      "name": "dlp_anti_peep_reason",
+      "value": "Used to detect screen peeping to protect your token privacy"
+    },
+    {
+      "name": "setting_dlp_anti_peep",
+      "value": "Anti-Peep Protection"
+    },
+    {
+      "name": "setting_dlp_anti_peep_des",
+      "value": "Auto-mask token content when peeping detected"
+    },
+    {
+      "name": "setting_dlp_anti_peep_unsupported",
+      "value": "Your device does not support anti-peep protection"
     }
   ]
 }

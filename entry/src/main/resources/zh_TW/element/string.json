@@ -1175,6 +1175,22 @@
     {
       "name": "master_key_deprecation_acknowledge",
       "value": "我知道了"
+    },
+    {
+      "name": "dlp_anti_peep_reason",
+      "value": "用于检测他人窥视屏幕以保护您的令牌隐私"
+    },
+    {
+      "name": "setting_dlp_anti_peep",
+      "value": "防窥保护"
+    },
+    {
+      "name": "setting_dlp_anti_peep_des",
+      "value": "检测到他人窥视时自动遮盖令牌内容"
+    },
+    {
+      "name": "setting_dlp_anti_peep_unsupported",
+      "value": "您的设备不支持防窥保护功能"
     }
   ]
 }
