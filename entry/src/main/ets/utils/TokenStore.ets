@@ -3,10 +3,33 @@ import { TokenConfig } from "./TokenConfig";
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
 import { EVENT_NAMES } from "./AppPreference";
+import { AssetSecretStore } from './AssetSecretStore';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 
+/**
+ * Token 数据存储管理器（单例）.
+ *
+ * TokenConfig 元数据（发行方、名称、算法等）存储在加密 KV 数据库，
+ * TokenSecret 同时存储在以下两处以兼顾安全与数据安全：
+ * - ASSET（TEE 硬件保护 + AES256-GCM）：首次写入时自动迁移，运行时优先从中读取
+ * - 加密 KV（软件加密 S4 级别）：作为备份/克隆场景的降级路径
+ *
+ * 上层代码通过 {@link TokenConfig.TokenSecret} 字段透明读写，
+ * 无需感知底层存储拆分。
+ *
+ * 数据流：
+ * - 写入: saveToken() → ASSET upsert Secret + KV 写入完整 TokenConfig
+ * - 读取: LoadTokenByDataBase() → KV 加载 → ASSET 批量回填 Secret（优先）
+ * - 删除: deleteToken() → ASSET 删除 Secret + KV 删除元数据
+ *
+ * 存量用户迁移: fillSecretsFromAsset() 自动检测 KV 中尚未在 ASSET
+ * 的旧 Secret，三重验证确认 ASSET 正常后写入（KV 保留不动，仅增加 ASSET 副本）。
+ */
 export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
   private rdbMgr: RdbManager = RdbManager.getInstance();
+  private assetStore: AssetSecretStore = AssetSecretStore.getInstance();
   private token_array: TokenConfig[] = [];
   private appCtx: common.UIAbilityContext | undefined = undefined;
   private init_done: boolean = false;
@@ -40,15 +63,90 @@ export class TokenStore {
   public async LoadTokenByDataBase(): Promise<void> {
      this.token_array = await this.kvMgr.getTokenArray(this.token_prefix)
      this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+     await this.fillSecretsFromAsset();
      this.sortTokens();
+  }
+
+  /**
+   * 从 ASSET 回填 Secret 到内存，并迁移旧版 KV 数据到 ASSET.
+   *
+   * 设计原则：ASSET 是首要来源，KV 是安全后裔（降级/克隆场景）。
+   * 迁移仅增加 ASSET 副本，不清除 KV 数据。
+   *
+   * 三种路径：
+   * 1. ASSET 已有 Secret → 直接使用（优先 TEE 保护版本）
+   * 2. ASSET 无 Secret 但 KV 有 → 旧版数据，执行迁移并回填
+   * 3. ASSET 和 KV 皆无 Secret → Secret 为空（如云端恢复尚未完成）
+   *
+   * 迁移三重防呆：
+   * - 第一重: upsertSecret 返回 true（ASSET add 调用未抛异常）
+   * - 第二重: querySecret 返回非 null（ASSET 确实能查回该条目）
+   * - 第三重: 查询结果与原始 Secret 内容一致（数据完整性校验）
+   * 三重全部通过后才将 ASSET 版本标记为优先来源。
+   * 任何一重失败则保留 KV 数据，下次加载重试。
+   */
+  private async fillSecretsFromAsset(): Promise<void> {
+    if (this.token_array.length === 0) {
+      return;
+    }
+
+    const uuids: string[] = [];
+    for (const t of this.token_array) {
+      uuids.push(t.TokenUUID);
+    }
+    const assetSecrets: Map<string, string> = await this.assetStore.batchQuerySecrets(uuids);
+
+    for (const token of this.token_array) {
+      const assetSecret = assetSecrets.get(token.TokenUUID);
+      if (assetSecret !== undefined && assetSecret !== null) {
+        token.TokenSecret = assetSecret;
+      } else if (token.TokenSecret.length > 0) {
+        if (this.assetStore.isSecretSizeValid(token.TokenSecret)) {
+          const originalSecret = token.TokenSecret;
+
+          // 第一重: ASSET add 调用成功
+          const upsertOk = await this.assetStore.upsertSecret(token.TokenUUID, originalSecret);
+          if (!upsertOk) {
+            continue;
+          }
+
+          // 第二重: ASSET 查询确认条目存在
+          const verifySecret = await this.assetStore.querySecret(token.TokenUUID);
+          if (verifySecret === null) {
+            hilog.error(0xFF00, 'TokenStore', `fillSecretsFromAsset: verify failed (not found) for ${token.TokenUUID}`);
+            continue;
+          }
+
+          // 第三重: 查询结果与原始 Secret 内容一致
+          if (verifySecret !== originalSecret) {
+            hilog.error(0xFF00, 'TokenStore', `fillSecretsFromAsset: verify failed (mismatch) for ${token.TokenUUID}`);
+            continue;
+          }
+
+          hilog.info(0xFF00, 'TokenStore', `fillSecretsFromAsset: migrated ${token.TokenUUID} to ASSET (triple verified)`);
+        }
+      }
+    }
   }
 
   public async getTokens(): Promise<TokenConfig[]> {
     return this.token_array;
   }
 
+  /**
+   * 按UUID查询单条 Token（KV + ASSET 组合读取）.
+   *
+   * 先从 KV 加载完整 TokenConfig，若已有 Secret 则直接返回（降级场景），
+   * 否则尝试从 ASSET 回填。ASSET 不可用时 KV 中的 Secret 作为安全后裔。
+   */
   public async queryToken(token_uuid: string): Promise<TokenConfig> {
     let token = await this.kvMgr.getValue<TokenConfig>(`${this.token_prefix}${token_uuid}`);
+    if (token && token.TokenSecret.length === 0) {
+      const secret = await this.assetStore.querySecret(token_uuid);
+      if (secret !== null) {
+        token.TokenSecret = secret;
+      }
+    }
     return token ?? new TokenConfig();
   }
 
@@ -57,7 +155,21 @@ export class TokenStore {
     this.emitTokenChanged();
   }
 
+  /**
+   * 持久化单条 Token（ASSET + KV 双写）.
+   *
+   * ASSET 写入失败时不回退 KV（KV 仍作为安全后裔），
+   * Secret 为空时同步清除 ASSET 条目。
+   * KV 始终写入完整 TokenConfig（含 Secret），确保备份/克隆场景数据完整。
+   */
   private async saveToken(token: TokenConfig): Promise<void> {
+    const secret = token.TokenSecret;
+    if (secret.length > 0 && this.assetStore.isSecretSizeValid(secret)) {
+      await this.assetStore.upsertSecret(token.TokenUUID, secret);
+    } else if (secret.length === 0) {
+      await this.assetStore.removeSecret(token.TokenUUID);
+    }
+    // KV 始终写入完整 TokenConfig（含 Secret），作为备份/克隆的数据后裔
     await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
   }
 
@@ -79,7 +191,7 @@ export class TokenStore {
   }
 
   public async updateToken(token: TokenConfig): Promise<void> {
-    let token_new = token;
+    const token_new = token;
     const token_uuids = this.token_array.map(t => t.TokenUUID);
     if (!token_uuids.includes(token_new.TokenUUID)) {
       token_new.RankScore = this.token_array.length;
@@ -102,6 +214,7 @@ export class TokenStore {
     }
     this.token_array = this.token_array.filter(t => t.TokenUUID !== token_uuid);
     await this.kvMgr.deleteValue(`${this.token_prefix}${token_uuid}`);
+    await this.assetStore.removeSecret(token_uuid);
     this.emitTokenChanged();
   }
 
