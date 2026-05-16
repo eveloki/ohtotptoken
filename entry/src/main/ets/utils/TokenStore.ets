@@ -7,6 +7,9 @@ import { AssetSecretStore } from './AssetSecretStore';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 
+const TAG = 'TokenStore';
+const DOMAIN = 0xFF00;
+
 /**
  * Token 数据存储管理器（单例）.
  *
@@ -25,6 +28,13 @@ import { BusinessError } from '@kit.BasicServicesKit';
  *
  * 存量用户迁移: fillSecretsFromAsset() 自动检测 KV 中尚未在 ASSET
  * 的旧 Secret，三重验证确认 ASSET 正常后写入（KV 保留不动，仅增加 ASSET 副本）。
+ *
+ * TODO: ASSET 迁移完全落地后，当 Secret 满足 isSecretSizeValid 条件时，
+ * KV 不再存储 TokenSecret（仅保留元数据），Secret 唯一存储于 ASSET。
+ * 届时 saveToken() 写入 KV 前需清空 TokenConfig.TokenSecret，
+ * fillSecretsFromAsset() 成为 Secret 的唯一读取来源。
+ * 超大 Secret（>900 字节）仍降级存储到 KV。
+ * 此变更需确保 BackupRestoreHelper / CloudBackupManager 等备份恢复路径兼容。
  */
 export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
@@ -113,17 +123,17 @@ export class TokenStore {
           // 第二重: ASSET 查询确认条目存在
           const verifySecret = await this.assetStore.querySecret(token.TokenUUID);
           if (verifySecret === null) {
-            hilog.error(0xFF00, 'TokenStore', `fillSecretsFromAsset: verify failed (not found) for ${token.TokenUUID}`);
+            hilog.error(DOMAIN, TAG, `fillSecretsFromAsset: verify failed (not found) for ${token.TokenUUID}`);
             continue;
           }
 
           // 第三重: 查询结果与原始 Secret 内容一致
           if (verifySecret !== originalSecret) {
-            hilog.error(0xFF00, 'TokenStore', `fillSecretsFromAsset: verify failed (mismatch) for ${token.TokenUUID}`);
+            hilog.error(DOMAIN, TAG, `fillSecretsFromAsset: verify failed (mismatch) for ${token.TokenUUID}`);
             continue;
           }
 
-          hilog.info(0xFF00, 'TokenStore', `fillSecretsFromAsset: migrated ${token.TokenUUID} to ASSET (triple verified)`);
+          hilog.info(DOMAIN, TAG, `fillSecretsFromAsset: migrated ${token.TokenUUID} to ASSET (triple verified)`);
         }
       }
     }
@@ -170,6 +180,8 @@ export class TokenStore {
       await this.assetStore.removeSecret(token.TokenUUID);
     }
     // KV 始终写入完整 TokenConfig（含 Secret），作为备份/克隆的数据后裔
+    // TODO: ASSET 迁移落地后，满足 isSecretSizeValid 时 KV 不再存储 Secret，
+    // 改为: token.TokenSecret = '' 后再写入 KV，Secret 唯一存于 ASSET
     await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
   }
 

@@ -7,7 +7,8 @@ const TAG = 'AssetSecretStore';
 const DOMAIN = 0xFF00;
 
 const ALIAS_PREFIX = 'opt_token_secret_';
-
+const ASSET_LABEL = 'opt_token_secret';
+const ASSET_NOT_FOUND = 24000002;
 const MAX_SECRET_BYTES = 900;
 
 function stringToUint8Array(str: string): Uint8Array {
@@ -32,6 +33,8 @@ function uint8ArrayToString(arr: Uint8Array): string {
  * - Accessibility.DEVICE_FIRST_UNLOCKED: 开机首次解锁后即可访问
  * - ConflictResolution.OVERWRITE: upsert 语义，写入时若已存在则覆盖
  * - Secret 大小限制: UTF-8 编码后 ≤ 900 字节（ASSET 单条上限 1KB，预留元数据空间）
+ * - DATA_LABEL_NORMAL_1: 写入时附加统一标签，供未来属性级批量查询使用
+ *   注意：存量 ASSET 条目无此标签，未来采用标签查询前需执行一次性 re-upsert 迁移
  */
 export class AssetSecretStore {
   private static instance: AssetSecretStore;
@@ -75,6 +78,7 @@ export class AssetSecretStore {
     const attr: asset.AssetMap = new Map();
     attr.set(asset.Tag.SECRET, stringToUint8Array(secret));
     attr.set(asset.Tag.ALIAS, this.buildAlias(tokenUUID));
+    attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToUint8Array(ASSET_LABEL));
     attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
     attr.set(asset.Tag.SYNC_TYPE, asset.SyncType.TRUSTED_DEVICE);
     attr.set(asset.Tag.CONFLICT_RESOLUTION, asset.ConflictResolution.OVERWRITE);
@@ -126,17 +130,27 @@ export class AssetSecretStore {
     try {
       await asset.remove(query);
       hilog.info(DOMAIN, TAG, `removeSecret: removed ${tokenUUID}`);
-    } catch (e) {
+     } catch (e) {
       const err = e as BusinessError;
-      hilog.error(DOMAIN, TAG, `removeSecret: failed for ${tokenUUID}, code=${err.code}, msg=${err.message}`);
+      if (err.code === ASSET_NOT_FOUND) {
+        hilog.info(DOMAIN, TAG, `removeSecret: already absent ${tokenUUID}`);
+      } else {
+        hilog.error(DOMAIN, TAG, `removeSecret: failed for ${tokenUUID}, code=${err.code}, msg=${err.message}`);
+      }
     }
   }
 
   /**
-   * 批量查询 ASSET 中的 Secret.
+   * 批量查询 ASSET 中的 Secret（逐条串行查询）.
    *
-   * 逐条查询（ASSET 不支持按 ALIAS 前缀批量查询），
-   * 单条查询失败不影响其他条目。
+   * 【限制说明】ASSET 按标签批量查询（DATA_LABEL_NORMAL_1 + RETURN_TYPE=ALL）
+   * 会返回错误码 24000017 "该子功能不支持"，即 ASSET API 虽然支持批量查询属性
+   * （RETURN_TYPE=ATTRIBUTES），但不支持批量查询关键资产明文（SECRET）。
+   * RETURN_LIMIT/RETURN_OFFSET 分页同样仅对属性查询有效。
+   * 这是 TEE 硬件解密的限制——无法批量解密多条 SECRET。（华为官方安全限制）
+   *
+   * 因此只能逐条通过 ALIAS 精确查询单条 SECRET（TEE 逐条解密）。
+   * 写入时仍保留 DATA_LABEL_NORMAL_1 标签，供未来可能的属性级批量查询使用。
    */
   async batchQuerySecrets(tokenUUIDs: string[]): Promise<Map<string, string>> {
     const result = new Map<string, string>();
