@@ -168,6 +168,7 @@ export class TokenStore {
   /**
    * 持久化单条 Token（ASSET + KV 双写）.
    *
+   * 仅在 Secret 发生变更时调用（如 updateToken）。
    * ASSET 写入失败时不回退 KV（KV 仍作为安全后裔），
    * Secret 为空时同步清除 ASSET 条目。
    * KV 始终写入完整 TokenConfig（含 Secret），确保备份/克隆场景数据完整。
@@ -185,18 +186,27 @@ export class TokenStore {
     await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
   }
 
+  /**
+   * 仅持久化到 KV（不涉及 ASSET）.
+   *
+   * 用于 RankScore 等非 Secret 字段变更场景，避免不必要的 TEE 硬件调用。
+   */
+  private async saveTokenKvOnly(token: TokenConfig): Promise<void> {
+    await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
+  }
+
   public async updateTokenRank(from: number, to: number): Promise<void> {
     this.token_array[from].RankScore = to;
-    await this.saveToken(this.token_array[from]);
+    await this.saveTokenKvOnly(this.token_array[from]);
     if (from > to) {
       for (let i = to; i < from; i++) {
         this.token_array[i].RankScore++;
-        await this.saveToken(this.token_array[i]);
+        await this.saveTokenKvOnly(this.token_array[i]);
       }
     } else {
       for (let i = from + 1; i <= to; i++) {
         this.token_array[i].RankScore--;
-        await this.saveToken(this.token_array[i]);
+        await this.saveTokenKvOnly(this.token_array[i]);
       }
     }
     this.sortTokens();
@@ -222,7 +232,7 @@ export class TokenStore {
     const token_index = token_uuids.findIndex(uuid => uuid === token_uuid);
     for (let i = token_index; i < this.token_array.length; i++) {
       this.token_array[i].RankScore--;
-      await this.saveToken(this.token_array[i]);
+      await this.saveTokenKvOnly(this.token_array[i]);
     }
     this.token_array = this.token_array.filter(t => t.TokenUUID !== token_uuid);
     await this.kvMgr.deleteValue(`${this.token_prefix}${token_uuid}`);
