@@ -135,7 +135,7 @@ export struct ShowDataSyncDetailsPage {
                 .padding({ left: 10, right: 10 })
 
               }
-              .chainAnimation(true)
+              .chainAnimation(AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean)
               .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
               .scrollBar(BarState.Off)
               .backgroundColor($r('app.color.window_background'))

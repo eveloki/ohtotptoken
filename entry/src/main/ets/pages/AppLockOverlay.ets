@@ -11,6 +11,10 @@ export struct AppLockOverlay {
   @Local appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
 
   aboutToAppear(): void {
+  }
+
+  // onDidBuild 在 build() 完成后调用，此时 blur 遮罩已渲染，再启动生物认证可避免未保护内容闪现
+  onDidBuild(): void {
     if (AppPreference.getPreference(PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE)) {
       this.triggerAuth();
     }

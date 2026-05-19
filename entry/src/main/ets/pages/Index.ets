@@ -8,6 +8,7 @@ import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
 import { AgreementSheet } from '../pages/setting/AgreementSheet'
 import { AboutSheet } from '../pages/setting/AboutSheet'
 import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
+import { TokenCardConfigPage } from './TokenCardConfigPage'
 import { util, url } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -21,21 +22,18 @@ import { PermissionManager } from '../utils/PermissionManager';
 import { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
 import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup,saveBackupToFile,TokenBackup } from '../utils/TokenBackup';
+import { restoreFromBackup } from '../utils/TokenBackup';
 import { TokenIconPacks } from '../utils/TokenUtils';
 import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { CloudBackupManager } from '../utils/CloudBackupManager';
 // 申请锁屏下应用敏感数据访问权限
-import { screenLockFileManager } from '@kit.AbilityKit';
 import { TokenListPage } from './TokenListPage';
-import { RestoreDataPage } from './RestoreDataPage';
-import { MasterKeyPage } from './MasterKeyPage';
-import { RecoveryKeyRecordPage } from './RecoveryKeyRecordPage';
 import { AppearancePage } from './AppearancePage';
 import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
+import { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
 import { ShowCodePage } from './ShowCodePage';
-import { PrivacyPage } from './PrivacyPage';
-import { AgreementPage } from './AgreementPage';
-import { FeedbackPage } from './FeedbackPage';
+import { WebPage, WebPageParams } from './WebPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
 import { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
@@ -54,6 +52,8 @@ import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
 import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { ScanBarCode } from '../utils/TokenUtils';
 import { CommonConstants } from '../utils/CommonConstants';
+import { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
+import { DlpAntiPeepManager } from '../utils/DlpAntiPeepManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -110,6 +110,9 @@ struct Index {
   @Local isAgreementSheetVisible: boolean = false;
   @Local isAboutSheetVisible: boolean = false;
   @Local isFeedbackSheetVisible: boolean = false;
+  @Local isHuaweiLoggedIn: boolean = false;
+  @Local huaweiUser: HuaweiUserInfo | null = null;
+  @Local isAccountSheetVisible: boolean = false;
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
@@ -133,6 +136,10 @@ struct Index {
   private icon_pack_dir = this.appCtx.filesDir + "/icon_packs";
   private user_icon_dir = this.appCtx.filesDir + "/user_icons";
   private DropFilesDialogIsOpen:boolean = false;
+  // 存储 setInterval ID 以便在 aboutToDisappear 中清理
+  private timestampIntervalId: number = -1;
+  // 防止 onPageShow 中重复注册 windowStageEvent 监听器
+  private windowStageEventListenerRegistered: boolean = false;
 
   private readonly eventId = 'usual.event.PRIVACY_STATE_CHANGED';
   // 订阅者信息, 用于保存创建成功的订阅者对象，后续使用其完成订阅及退订的动作
@@ -182,31 +189,33 @@ struct Index {
   private dialog_steam_config?: CustomDialogController;
 
   aboutToAppear(): void {
+    const accountInitPromise = HuaweiAccountManager.getInstance().init().then(() => {
+      this.syncHuaweiAccountState();
+    });
+    const tokenStoreInitPromise = tkStore.initTokenStore().then(() => {
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
+      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
+        this.scrollEffectVersion++;
+      });
+      return tkStore.getTokens().then((tokens) => {
+        this.CurrentTokens = tokens;
+        this.CurrentTokensCount = tokens.length;
+        this.token_loading = false;
+        this.appIsInit = true;
+      });
+    });
+
+    Promise.all([accountInitPromise, tokenStoreInitPromise]).then(() => {
+      CloudBackupManager.getInstance().checkAndAutoBackup();
+    });
+
+    this.subscribeDistributedAccountLogout();
     PermissionManager.getInstance().verifyPermissionsAndPushEvent();
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION).then((bundleInfo) => {
       AppStorage.setOrCreate("BundleInfo", bundleInfo);
     });
-    //配置预定义好的来自华为官方的个人隐私条款链接
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
-
-    tkStore.initTokenStore().then(() => {
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
-      // 订阅顶部模糊效果类型变更事件
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
-        // 触发UI重新渲染，更新滚动效果类型
-        this.scrollEffectVersion++;
-      });
-      tkStore.getTokens().then((tokens) => {
-        this.CurrentTokens = tokens;
-        this.CurrentTokensCount = tokens.length;
-        this.token_loading = false;
-        // DEBUG MODE
-        this.restoreByKVCheck();
-        this.appIsInit = true;
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false)
-      });
-    });
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -257,6 +266,10 @@ struct Index {
       this.start_quick_scan();
     });
 
+    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
+      this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+    });
+
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
       this.backup_select_uri = uri;
       if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
@@ -274,8 +287,8 @@ struct Index {
         }, 250)
     });
 
-    // periodically update timestamp for tokens
-    setInterval(() => {
+    // 存储 interval ID 以便 aboutToDisappear 清理
+    this.timestampIntervalId = setInterval(() => {
       if (this.appCtx != undefined && this.appIsShow)
         if (this.appCtx.eventHub != undefined)
            this.updateTimestamp();
@@ -322,6 +335,49 @@ struct Index {
     });
   }
 
+  /**
+   * 主密码兼容性检查.如果用户开启了弹窗告知用户废弃
+   *
+   */
+  private checkMasterKeyDeprecation(): void {
+    const acknowledged = AppPreference.getPreference(PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED) as boolean;
+    if (acknowledged || !AppPreference.hasDeprecatedMasterKeyPrefs()) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.master_key_deprecation_title'),
+      message: $r('app.string.master_key_deprecation_message'),
+      autoCancel: false,
+      alignment: DialogAlignment.Center,
+      gridCount: 4,
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.master_key_deprecation_acknowledge'),
+          action: () => {
+            AppPreference.cleanupDeprecatedMasterKeyPrefs();
+          }
+        },
+      ],
+    });
+  }
+
+  onDidBuild(): void {
+    this.checkMasterKeyDeprecation();
+  }
+
+  // 清理 setInterval，防止资源泄漏
+  aboutToDisappear(): void {
+    if (this.timestampIntervalId !== -1) {
+      clearInterval(this.timestampIntervalId);
+    }
+  }
+
+  onPageHide(): void {
+    this.appIsShow = false;
+    hilog.info(0, TAG, "onPageHide");
+  }
+
   updateTimestamp(): void {
     const timestamp = Math.floor(systemDateTime.getTime() / 1000);
     if (this.appCtx.eventHub != undefined) {
@@ -329,62 +385,13 @@ struct Index {
     }
   }
 
-  restoreByKVCheck():void{
-    //冷启动优化
-    setTimeout(() => {
-      tkStore.RestoreByKVCheckAsync().then((n:number)=>{
-        if (this.CurrentTokens.length == 0 && n>0) {
-          this.pageInfos.pushPathByName(ROUTE_NAMES.RestoreDataPage, null);
-        }
-      }).catch((err:BusinessError)=>{
-        hilog.error(err.code,"RestoreByKVCheckAsync",err.message)
-      })
-    }, 1000)
-
-  }
-
-  onPageHide(): void {
-    this.appIsShow = false;
-    hilog.info(0, TAG, "onPageHide");
-    //备份还原场景检测是否有备份数据
-    if (this.CurrentTokens.length > 0 && this.appIsInit && !AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING)) {
-      //todo需要申请锁屏后读取权限 需要实现后台任务备份
-      try {
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING,true)
-        //申请锁屏后访问加密文件的权限
-        let acquireStatus = screenLockFileManager.acquireAccess();
-        if (acquireStatus === screenLockFileManager.AccessStatus.ACCESS_GRANTED) {
-          hilog.info(0x0000, 'testTag', 'acquireAccess successfully.');
-          //let thisContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-          tkStore.BuckupToKVAsync().then((n)=>{
-            //tkStore.RestoreByKVAsync();
-            //更新存档时间
-            if (n > 0) {
-              AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME, Date().toString());
-            }
-          }).catch((err:BusinessError) => {
-            hilog.error(err.code,"BuckupToKVAsync",`${err.message}`)
-          }).finally(() => {
-            AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-          });
-        }
-        else
-        {
-          AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-        }
-      } catch (err) {
-        let message = (err as BusinessError).message;
-        hilog.error(0x0000, 'testTag', 'acquireAccess failed: %{public}s', message);
-        AppPreference.setPreference(PREF_KEYS.DB_KV_ARCHIVE_IS_RUNNING, false);
-      }
-
-    }
-  }
-
   onPageShow(): void {
     this.appIsShow = true;
+    // 重置防窥蒙层标志，确保页面进入时能再次响应窥视事件
+    DlpAntiPeepManager.getInstance().resetMaskFlag();
     const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
-    if (!needShowLock) {
+    const cardConfigFormId = AppStorage.get<string>('card_config_formId') ?? '';
+    if (!needShowLock && cardConfigFormId === '') {
       this.pageInfos.clear();
     }
     if (needShowLock && AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
@@ -404,16 +411,27 @@ struct Index {
 
     let context = this.appCtx as common.UIAbilityContext;
     let windowStage = context.windowStage;
-    windowStage.on("windowStageEvent", (data) => {
-      this.background_blur_flag = (
-        AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
-        data === window.WindowStageEventType.PAUSED
-      );
-    })
+    // 防止每次 onPageShow 重复注册 windowStageEvent 监听器
+    if (!this.windowStageEventListenerRegistered && windowStage) {
+      windowStage.on("windowStageEvent", (data) => {
+        this.background_blur_flag = (
+          AppPreference.getPreference(PREF_KEYS.SAFETY_BACKGROUND_BLUR_ENABLE) as boolean &&
+          data === window.WindowStageEventType.PAUSED
+        );
+      })
+      this.windowStageEventListenerRegistered = true;
+    }
 
     if (AppPreference.getPreference(PREF_KEYS.WANT_QUICK_SCAN)) {
       if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.START_QUICK_SCAN);
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, false);
+    }
+
+    if (cardConfigFormId !== '') {
+      const allPaths = this.pageInfos.getAllPathName();
+      if (!allPaths.includes(ROUTE_NAMES.TokenCardConfigPage)) {
+        this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+      }
     }
   }
 
@@ -436,6 +454,89 @@ struct Index {
       await this.updateTokenConfig(tokens[i], false);
     }
     showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+  }
+
+  private syncHuaweiAccountState(): void {
+    this.isHuaweiLoggedIn = HuaweiAccountManager.getInstance().userLogin;
+    this.huaweiUser = HuaweiAccountManager.getInstance().userAccount;
+  }
+
+  private async triggerHuaweiLogin(): Promise<void> {
+    try {
+      const result = await HuaweiAccountManager.getInstance().login(this.getUIContext());
+      this.syncHuaweiAccountState();
+      this.isAccountSheetVisible = true;
+    } catch (error) {
+      this.syncHuaweiAccountState();
+      const loginError = error as HuaweiAccountLoginError;
+      if (HuaweiAccountManager.isUserCancel(loginError.code)) {
+        return;
+      }
+      const errorMsg = HuaweiAccountManager.getLoginErrorResource(loginError.code);
+      if (errorMsg) {
+        showSnackBar(errorMsg, SnackBarNotifyType.ERROR);
+      }
+    }
+  }
+
+  private confirmHuaweiLogin(): void {
+    HuaweiAccountManager.getInstance().selectHuaweiAccountToLogin();
+    this.syncHuaweiAccountState();
+    this.isAccountSheetVisible = false;
+    showSnackBar($r('app.string.huawei_account_login_success'), SnackBarNotifyType.SUCCESS);
+  }
+
+  private showLogoutConfirmDialog(): void {
+    const cloudBackupEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
+    const msg = cloudBackupEnabled
+      ? $r('app.string.huawei_account_logout_cloud_backup_msg')
+      : $r('app.string.huawei_account_logout_confirm_msg');
+    this.getUIContext().showAlertDialog({
+      title: $r('app.string.huawei_account_logout_confirm_title'),
+      message: msg,
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      buttonDirection: DialogButtonDirection.HORIZONTAL,
+      buttons: [
+        {
+          value: $r('app.string.dialog_btn_confirm'),
+          action: () => {
+            HuaweiAccountManager.getInstance().logout().then(() => {
+              this.syncHuaweiAccountState();
+              this.isAccountSheetVisible = false;
+              AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+              AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
+            });
+          }
+        },
+        {
+          value: $r('app.string.dialog_btn_cancel'),
+          action: () => {}
+        },
+      ],
+      cancel: () => {},
+    });
+  }
+
+  private subscribeDistributedAccountLogout(): void {
+    const subscribeInfo: CommonEventManager.CommonEventSubscribeInfo = {
+      events: [
+        CommonEventManager.Support.COMMON_EVENT_DISTRIBUTED_ACCOUNT_LOGOUT,
+      ],
+    };
+    CommonEventManager.createSubscriber(subscribeInfo).then((subscriber) => {
+      CommonEventManager.subscribe(subscriber, (err) => {
+        if (!err) {
+          HuaweiAccountManager.getInstance().logout().then(() => {
+            this.syncHuaweiAccountState();
+            AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+            AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
+          });
+        }
+      });
+    });
   }
 
   private openAddTokenMenu(): void {
@@ -639,8 +740,89 @@ struct Index {
     AppLockOverlay({
       onUnlock: () => {
         this.isAppLockOverlayVisible = false;
+        // 认证通过后恢复隐私窗口设置到用户偏好
+        const privacyMode = AppPreference.getPreference(PREF_KEYS.SAFETY_PRIVACY_ENABLE) as boolean;
+        this.window.WindowClass?.setWindowPrivacyMode(privacyMode);
       }
     })
+  }
+
+  @Builder
+  AccountSheetBuilder() {
+    Column() {
+      Column() {
+        SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+          .fontSize($r('sys.float.Display_L'))
+          .fontColor([$r('sys.color.icon_emphasize')])
+          .aspectRatio(1)
+
+        Text(this.isHuaweiLoggedIn ?
+          $r('app.string.huawei_account_current') :
+          $r('app.string.huawei_account_select_title'))
+          .fontSize($r('sys.float.Title_M'))
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('sys.color.font_primary'))
+          .margin({ top: $r('sys.float.padding_level10') })
+
+        if (this.huaweiUser) {
+          if (this.huaweiUser.avatarUri !== '') {
+            Image(this.huaweiUser.avatarUri)
+              .draggable(false)
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .margin({ top: 40 })
+          } else if (this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(85)
+              .height(85)
+              .borderRadius(42.5)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize($r('sys.float.Title_M'))
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
+              .margin({ top: 40 })
+          }
+
+          Text(this.huaweiUser.nickname)
+            .margin({ top: $r('sys.float.padding_level12') })
+            .fontSize($r('sys.float.Body_L'))
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('sys.color.font_primary'))
+        }
+      }
+      .margin({ top: $r('sys.float.padding_level16') })
+
+      Blank();
+
+      Button(this.isHuaweiLoggedIn ?
+        $r('app.string.huawei_account_logout') :
+        $r('app.string.huawei_account_select_to_login'))
+        .type(ButtonType.Capsule)
+        .fontSize($r('sys.float.Body_L'))
+        .role(this.isHuaweiLoggedIn ? ButtonRole.ERROR : ButtonRole.NORMAL)
+        .buttonStyle(this.isHuaweiLoggedIn ? ButtonStyleMode.NORMAL : ButtonStyleMode.EMPHASIZED)
+        .width('100%')
+        .margin({ bottom: $r('sys.float.padding_level24') })
+        .onClick(() => {
+          if (this.isHuaweiLoggedIn) {
+            this.showLogoutConfirmDialog();
+          } else {
+            this.confirmHuaweiLogin();
+          }
+        })
+    }
+    .padding({ left: $r('sys.float.padding_level8'), right: $r('sys.float.padding_level8') })
+    .width('100%')
+    .height('100%')
   }
 
   @Builder
@@ -652,6 +834,80 @@ struct Index {
           .width('100%')
           .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
       }
+
+      // 华为账号登录卡片
+      ListItem() {
+        Row({ space: 16 }) {
+          if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.avatarUri !== '') {
+            Image(this.huaweiUser.avatarUri)
+              .draggable(false)
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+          } else if (this.isHuaweiLoggedIn && this.huaweiUser && this.huaweiUser.nickname !== '') {
+            Text(this.huaweiUser.nickname.length > 0 ?
+              this.huaweiUser.nickname.substring(this.huaweiUser.nickname.length - 1) : '')
+              .width(48)
+              .height(48)
+              .borderRadius(24)
+              .backgroundColor($r('sys.color.ohos_id_color_tertiary'))
+              .linearGradient({
+                colors: [
+                  [$r('sys.color.ohos_id_color_tertiary'), 0.0],
+                  [$r('sys.color.ohos_id_color_foreground_contrary'), 1.0]
+                ]
+              })
+              .fontColor($r('sys.color.font_on_primary'))
+              .fontSize(20)
+              .fontWeight(FontWeight.Bold)
+              .textAlign(TextAlign.Center)
+          } else {
+            SymbolGlyph($r('sys.symbol.person_crop_circle_fill_1'))
+              .fontSize(48)
+              .fontColor([$r('sys.color.ohos_id_color_text_secondary')])
+          }
+
+          Column({ space: 4 }) {
+            Text(this.isHuaweiLoggedIn && this.huaweiUser ?
+              this.huaweiUser.nickname : $r('app.string.huawei_account_login'))
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('sys.color.ohos_id_color_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+            Text(this.isHuaweiLoggedIn ?
+              $r('app.string.huawei_account_current') :
+              $r('app.string.huawei_account_login_desc'))
+              .fontSize(14)
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .maxLines(1)
+          }
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
+        }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 16, bottom: 16 })
+        .alignItems(VerticalAlign.Center)
+        .borderRadius($r('sys.float.ohos_id_menu_outer_border_radius'))
+        .backgroundColor($r('app.color.item_bg'))
+        .onClick(() => {
+          if (!this.isHuaweiLoggedIn) {
+            this.triggerHuaweiLogin();
+          } else {
+            this.isAccountSheetVisible = true;
+          }
+        })
+        .bindSheet($$this.isAccountSheetVisible, this.AccountSheetBuilder(), {
+          detents: [SheetSize.MEDIUM],
+          preferType: SheetType.BOTTOM,
+          dragBar: true,
+        })
+      }
+      .padding({
+        left: $r('sys.float.padding_level8'),
+        right: $r('sys.float.padding_level8'),
+      })
 
       // 备份与迁移入口
       ListItem() {
@@ -947,7 +1203,7 @@ struct Index {
         right: $r('sys.float.padding_level8'),
       })
     }
-    .chainAnimation(true)
+    .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
@@ -957,24 +1213,20 @@ struct Index {
 
   @Builder
   navDestinationBuilder(name: string, param: Object) {
-    if (name === ROUTE_NAMES.RestoreDataPage) {
-      RestoreDataPage()
-    } else if (name === ROUTE_NAMES.MasterKeyPage) {
-      MasterKeyPage()
-    } else if (name === ROUTE_NAMES.RecoveryKeyRecordPage) {
-      RecoveryKeyRecordPage()
-    } else if (name === ROUTE_NAMES.AppearancePage) {
+    if (name === ROUTE_NAMES.AppearancePage) {
       AppearancePage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowDataSyncDetailsPage) {
-      ShowDataSyncDetailsPage( {scrollEffectType: this.currentScrollEffectType })
+      ShowDataSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowCloudSyncDetailsPage) {
+      ShowCloudSyncDetailsPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
+      ShowCloudBackupHistoryPage({ scrollEffectType: this.currentScrollEffectType })
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
-    } else if (name === ROUTE_NAMES.PrivacyPage) {
-      PrivacyPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.AgreementPage) {
-      AgreementPage({ scrollEffectType: this.currentScrollEffectType })
-    } else if (name === ROUTE_NAMES.FeedbackPage) {
-      FeedbackPage({ scrollEffectType: this.currentScrollEffectType })
+    } else if (name === ROUTE_NAMES.WebPage) {
+      WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
+    } else if (name === ROUTE_NAMES.TokenCardConfigPage) {
+      TokenCardConfigPage()
     }
   }
 
@@ -998,8 +1250,23 @@ struct Index {
       (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD) &&
         this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_XS
     ) {
-      HdsNavigation() {
-        ArcTokenListPage({
+      ArcTokenListPage({
+        Tokens: this.CurrentTokens,
+        TabBarVisible: false,
+        appBottomAvoidHeight: this.window.AvoidBottomHeight,
+        appTopAvoidHeight: this.window.AvoidTopHeight,
+        appWindowSize: this.window.Size,
+        updateTokenConfig: this.updateTokenConfig,
+        updateTokenConfigs: this.updateTokenConfigs,
+        listScroller: this.arcTokenListScroller,
+      })
+    } else if (
+      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
+        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
+    ) {
+      Column() {
+        TokenListPage({
           Tokens: this.CurrentTokens,
           TabBarVisible: false,
           appBottomAvoidHeight: this.window.AvoidBottomHeight,
@@ -1007,132 +1274,10 @@ struct Index {
           appWindowSize: this.window.Size,
           updateTokenConfig: this.updateTokenConfig,
           updateTokenConfigs: this.updateTokenConfigs,
-          listScroller: this.arcTokenListScroller,
+          listScroller: this.tokenListScroller,
         })
       }
-      .bindToScrollable([this.arcTokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MINI)
-      .hideBackButton(true) // 设置mini类型隐藏后退按钮
-      .titleBar({
-        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
-        style: {
-          originalStyle: {
-            contentStyle: {
-              titleStyle: {
-                mainTitleColor: $r('sys.color.font_primary'),
-              },
-              menuStyle: {
-                iconColor: $r('sys.color.icon_primary')
-              },
-            }
-          },
-          scrollEffectOpts: {
-            enableScrollEffect: true,
-            scrollEffectType: this.currentScrollEffectType,
-          },
-          systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-          }
-        },
-        content: {
-          title: {
-            mainTitle: $r('app.string.EntryAbility_label')
-          },
-          menu: {
-            value: [
-              {
-                content: {
-                  label: $r('app.string.app_ua_search_token'),
-                  icon: $r('sys.symbol.magnifyingglass'),
-                  isEnabled: true,
-                  action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
-                  }
-                }
-              }
-            ]
-          }
-        }
-      })
-    } else if (
-      (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
-        this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
-        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
-    ) {
-      HdsNavigation() {
-        Column() {
-          TokenListPage({
-            Tokens: this.CurrentTokens,
-            TabBarVisible: false,
-            appBottomAvoidHeight: this.window.AvoidBottomHeight,
-            appTopAvoidHeight: this.window.AvoidTopHeight,
-            appWindowSize: this.window.Size,
-            updateTokenConfig: this.updateTokenConfig,
-            updateTokenConfigs: this.updateTokenConfigs,
-            listScroller: this.tokenListScroller,
-          })
-        }
-        .backgroundColor($r('app.color.window_background'))
-
-      }
-      .bindToScrollable([this.tokenListScroller])
-      .titleMode(HdsNavigationTitleMode.MINI)
-      .hideBackButton(true) // 设置mini类型隐藏后退按钮
-      .titleBar({
-        avoidLayoutSafeArea: true, // 状态栏安全区沉浸
-        style: {
-          originalStyle: {
-            contentStyle: {
-              titleStyle: {
-                mainTitleColor: $r('sys.color.font_primary'),
-              },
-              menuStyle: {
-                iconColor: $r('sys.color.icon_primary')
-              },
-            }
-          },
-          scrollEffectOpts: {
-            enableScrollEffect: true,
-            scrollEffectType: this.currentScrollEffectType // 渐变模糊
-          },
-          systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-          }
-        },
-        content: {
-          title: {
-            mainTitle: $r('app.string.EntryAbility_label')
-          },
-          menu: {
-            value: [
-              {
-                content: {
-                  label: $r('app.string.app_ua_search_token'),
-                  icon: $r('sys.symbol.magnifyingglass'),
-                  isEnabled: true,
-                  action: () => {
-                    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TOGGLE_TOKEN_SEARCH);
-                  }
-                }
-              },
-              {
-                content: {
-                  label: $r('app.string.app_ua_add_token'),
-                  icon: $r('sys.symbol.plus'),
-                  isEnabled: true,
-                  componentId: this.addTokenMenuTargetId,
-                  action: () => {
-                    this.openAddTokenMenu();
-                  }
-                }
-              }
-            ]
-          }
-        }
-      })
-
+      .backgroundColor($r('app.color.window_background'))
     } else {
 
       Column() {
@@ -1150,6 +1295,7 @@ struct Index {
                 listScroller: this.tokenListScroller,
               })
             }
+            .mode(NavigationMode.Stack)
             .bindToScrollable([this.tokenListScroller])
             .titleMode(HdsNavigationTitleMode.MINI)
             .hideBackButton(true) // 设置mini类型隐藏后退按钮
@@ -1222,6 +1368,7 @@ struct Index {
             HdsNavigation() {
               this.SettingEntryCardBuilder()
             }
+            .mode(NavigationMode.Stack)
             .bindToScrollable([this.settingEntryScroller])
             .titleMode(HdsNavigationTitleMode.MINI)
             .hideBackButton(true) // 设置mini类型隐藏后退按钮
@@ -1316,7 +1463,7 @@ struct Index {
       this.DropFilesDialogIsOpen = false;
       this.DropFilesDialogController?.close();
     })
-    .foregroundBlurStyle(this.background_blur_flag ? BlurStyle.Thin : BlurStyle.NONE, {
+    .foregroundBlurStyle((this.background_blur_flag || this.isAppLockOverlayVisible) ? BlurStyle.Thin : BlurStyle.NONE, {
       colorMode: ThemeColorMode.SYSTEM,
       adaptiveColor: AdaptiveColor.DEFAULT
     })

@@ -1,15 +1,12 @@
 {
   "src": [
     "pages/Index",
-    "pages/PrivacyPage",
-    "pages/AgreementPage",
     "pages/AppearancePage",
-    "pages/AppLockPage",
     "pages/ShowCodePage",
     "pages/ShowDataSyncDetailsPage",
-    "pages/RestoreDataPage",
-    "pages/MasterKeyPage",
-    "pages/RecoveryKeyRecordPage",
-    "pages/FeedbackPage"
+    "pages/ShowCloudSyncDetailsPage",
+    "pages/ShowCloudBackupHistoryPage",
+    "pages/WebPage",
+    "pages/TokenCardConfigPage"
   ]
 }

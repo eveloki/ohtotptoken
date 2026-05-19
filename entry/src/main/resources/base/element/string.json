@@ -226,15 +226,167 @@
     },
     {
       "name": "data_rdb_cloud_sync",
-      "value": "Huawei Cloud Application Data Sync."
+      "value": "Huawei Cloud Backup"
     },
     {
       "name": "data_rdb_cloud_sync_des",
-      "value": "Use Huawei Cloud Data sync"
+      "value": "Backup app data to Huawei Cloud. Data will be backed up to Huawei Cloud Drive."
     },
     {
       "name": "data_rdb_sync_details",
-      "value": "Sync Details"
+      "value": "Cross-device Sync Details"
+    },
+    {
+      "name": "data_huawei_cloud_sync_details",
+      "value": "Huawei Cloud Backup Details"
+    },
+    {
+      "name": "cloud_sync_status",
+      "value": "Backup Status"
+    },
+    {
+      "name": "cloud_sync_status_hint",
+      "value": "Backup data is stored in Huawei Cloud space, not on this app's servers. Syncing may take some time, please wait patiently. Please ensure Huawei Cloud is enabled and has sufficient storage. You also need to enable the cloud switch for this app in Settings > Cloud > Apps using cloud."
+    },
+    {
+      "name": "cloud_sync_open_cloud_space",
+      "value": "Open Huawei Cloud Settings"
+    },
+    {
+      "name": "cloud_sync_last_time",
+      "value": "Last Backup Time"
+    },
+    {
+      "name": "cloud_sync_never",
+      "value": "Never backed up"
+    },
+    {
+      "name": "cloud_sync_data_size",
+      "value": "Cloud Data Size"
+    },
+    {
+      "name": "cloud_sync_token_count",
+      "value": "Backed Up Tokens"
+    },
+    {
+      "name": "cloud_sync_encryption",
+      "value": "Data Encryption"
+    },
+    {
+      "name": "cloud_sync_network",
+      "value": "Network Requirement"
+    },
+    {
+      "name": "cloud_sync_wifi_only",
+      "value": "Wi-Fi Only"
+    },
+    {
+      "name": "cloud_sync_account",
+      "value": "Huawei Account"
+    },
+    {
+      "name": "cloud_sync_not_logged_in",
+      "value": "Not logged in"
+    },
+    {
+      "name": "cloud_sync_calculating",
+      "value": "Calculating..."
+    },
+    {
+      "name": "cloud_sync_enabled",
+      "value": "Enabled"
+    },
+    {
+      "name": "cloud_sync_disabled",
+      "value": "Disabled"
+    },
+    {
+      "name": "cloud_sync_clear_storage",
+      "value": "Clear Cloud Backup"
+    },
+    {
+      "name": "cloud_sync_clear_storage_confirm",
+      "value": "Clear Cloud Backup?"
+    },
+    {
+      "name": "cloud_sync_clear_storage_msg",
+      "value": "This will permanently delete all backup data from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_storage_disabled_msg",
+      "value": "Please disable cloud backup before clearing."
+    },
+    {
+      "name": "cloud_sync_clear_storage_success",
+      "value": "Cloud backup cleared"
+    },
+    {
+      "name": "cloud_sync_encryption_huawei_account",
+      "value": "Huawei Account Encryption"
+    },
+    {
+      "name": "cloud_sync_encryption_none",
+      "value": "Not Encrypted"
+    },
+    {
+      "name": "cloud_sync_require_huawei_account_title",
+      "value": "Huawei Account Required"
+    },
+    {
+      "name": "cloud_sync_require_huawei_account_msg",
+      "value": "Cloud backup requires Huawei account login to encrypt your data. Please log in with your Huawei account first."
+    },
+    {
+      "name": "cloud_backup_history_title",
+      "value": "Backup History"
+    },
+    {
+      "name": "cloud_backup_history_subtitle",
+      "value": "View, restore or delete cloud backups"
+    },
+    {
+      "name": "cloud_backup_history_empty",
+      "value": "No backup records"
+    },
+    {
+      "name": "cloud_backup_history_max_hint",
+      "value": "Up to 5 backup copies, one per day"
+    },
+    {
+      "name": "cloud_backup_record_tokens",
+      "value": "%d tokens"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_title",
+      "value": "Restore Backup"
+    },
+    {
+      "name": "cloud_backup_restore_confirm_msg",
+      "value": "Restore backup from %s? Current data will be replaced."
+    },
+    {
+      "name": "cloud_backup_restore_success",
+      "value": "Backup restored successfully"
+    },
+    {
+      "name": "cloud_backup_restore_failed",
+      "value": "Failed to restore backup"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_title",
+      "value": "Delete Backup"
+    },
+    {
+      "name": "cloud_backup_delete_confirm_msg",
+      "value": "Delete backup from %s? This cannot be undone."
+    },
+    {
+      "name": "cloud_backup_delete_success",
+      "value": "Backup deleted successfully"
+    },
+    {
+      "name": "cloud_backup_delete_failed",
+      "value": "Failed to delete backup"
     },
     {
       "name": "data_kv_sync_time",
@@ -246,7 +398,11 @@
     },
     {
       "name": "data_sync_manual",
-      "value": "Manual Sync"
+      "value": "Manual Backup"
+    },
+    {
+      "name": "data_sync_manual_des",
+      "value": "Upload all tokens to Huawei Cloud"
     },
     {
       "name": "data_dev_info",
@@ -311,14 +467,6 @@
     {
       "name": "show_next_token_des",
       "value": "Display the next token below the current token to enhance usability."
-    },
-    {
-      "name": "setting_holding_hand_awareness",
-      "value": "Adaptive Grip Sense"
-    },
-    {
-      "name": "setting_holding_hand_awareness_des",
-      "value": "Moves the action bar left, center, or right based on left-hand, both-hand, or right-hand grip. Disabled by default."
     },
     {
       "name": "swap_host_user",
@@ -521,6 +669,14 @@
       "value": "The filter can improve visibility in dark mode, but may also lose some icon details."
     },
     {
+      "name": "chain_animation",
+      "value": "Chain Animation"
+    },
+    {
+      "name": "chain_animation_des",
+      "value": "Enable staggered enter animation for list items."
+    },
+    {
       "name": "token_item_slider",
       "value": "Size & Layout"
     },
@@ -535,6 +691,14 @@
     {
       "name": "token_item_space",
       "value": "Space"
+    },
+    {
+      "name": "token_list_item_prefix_padding",
+      "value": "Prefix Padding"
+    },
+    {
+      "name": "token_list_item_suffix_padding",
+      "value": "Suffix Padding"
     },
     {
       "name": "appearance_reset_to_default",
@@ -605,34 +769,6 @@
       "value": "Blurs app screen when switching to background."
     },
     {
-      "name": "restore_data",
-      "value": "Restore Data"
-    },
-    {
-      "name": "restore_data_msg",
-      "value": "We detected a backup restoration or data migration in progress. Would you like to restore your data now?"
-    },
-    {
-      "name": "restore_data_kdf_msg",
-      "value": "We detected a backup restoration or data migration with master key encryption enabled. Please enter your master password to restore data."
-    },
-    {
-      "name": "restore_data_kdf_err_msg",
-      "value": "The master password is incorrect. Data restoration failed."
-    },
-    {
-      "name": "restore_data_ok_msg",
-      "value": "Your data has been successfully restored! Please Reopen App."
-    },
-    {
-      "name": "restore_data_cancel",
-      "value": "Please be patient and wait"
-    },
-    {
-      "name": "restore_data_restoring",
-      "value": "Restoring"
-    },
-    {
       "name": "token_right_menu_show_qrcode",
       "value": "QR Code"
     },
@@ -651,82 +787,6 @@
     {
       "name": "token_item_max_width",
       "value": "Max Width"
-    },
-    {
-      "name": "restore_master_key",
-      "value": "Master Password Security Enhancement"
-    },
-    {
-      "name": "restore_master_key_msg",
-      "value": "Encrypt your data with a master password for advanced protection"
-    },
-    {
-      "name": "restore_master_key_set",
-      "value": "Set Master Password"
-    },
-    {
-      "name": "restore_master_key_set_msg",
-      "value": "Set your master password with:\n- Minimum 8 characters\n- Uppercase/lowercase letters, numbers, and symbols\n- No consecutive identical characters\n- Avoid personal information (name, phone, birthday)\n\nNote: We do not store your master password. Loss will prevent data restoration or migration. Store it securely."
-    },
-    {
-      "name": "restore_master_key_recovery_key_msg",
-      "value": "Record your recovery key now:\n✎ Preserve on paper or physical medium\n✎ This is your only recovery method if master password is lost"
-    },
-    {
-      "name": "restore_master_key_recovery_key_err_msg",
-      "value": "Invalid recovery key, data restoration failed"
-    },
-    {
-      "name": "restore_master_key_no_set_desc",
-      "value": "You have not set the master key yet. Please click it and configure it"
-    },
-    {
-      "name": "restore_master_key_reset_desc",
-      "value": "You have already configured the master key, click it on reconfigure"
-    },
-    {
-      "name": "restore_master_key_password_too_short_msg",
-      "value": "Password too short"
-    },
-    {
-      "name": "restore_recovery_key",
-      "value": "Recovery key"
-    },
-    {
-      "name": "restore_recovery_key_confirm",
-      "value": "Confirm Record your recovery key"
-    },
-    {
-      "name": "restore_recovery_key_export",
-      "value": "Confirm Export your recovery key"
-    },
-    {
-      "name": "restore_master_key_err_msg",
-      "value": "Invalid Master key, data restoration failed"
-    },
-    {
-      "name": "restore_use_recovery_key",
-      "value": "Forgot master password? Use recovery key"
-    },
-    {
-      "name": "restore_use_master_key",
-      "value": "Restore with master password"
-    },
-    {
-      "name": "restore_input_recovery_key",
-      "value": "Enter recovery key"
-    },
-    {
-      "name": "restore_input_master_key",
-      "value": "Enter master password"
-    },
-    {
-      "name": "restore_import_recovery_key",
-      "value": "Import recovery key file"
-    },
-    {
-      "name": "restore_record_recovery_key",
-      "value": "Backup Recovery Key Now"
     },
     {
       "name": "custom_color_logo_dark_filter_color",
@@ -877,8 +937,264 @@
       "value": "Suspension"
     },
     {
+      "name": "huawei_account_login",
+      "value": "Log in with Huawei ID"
+    },
+    {
+      "name": "huawei_account_login_desc",
+      "value": "Tap to log in"
+    },
+    {
+      "name": "huawei_account_logout",
+      "value": "Log out"
+    },
+    {
+      "name": "huawei_account_logout_confirm_title",
+      "value": "Log out"
+    },
+    {
+      "name": "huawei_account_logout_confirm_msg",
+      "value": "Are you sure you want to log out?"
+    },
+    {
+      "name": "huawei_account_login_success",
+      "value": "Logged in successfully"
+    },
+    {
+      "name": "huawei_account_login_failed",
+      "value": "Login failed"
+    },
+    {
+      "name": "huawei_account_not_logged_in",
+      "value": "Not logged in"
+    },
+    {
       "name": "feedback_urgent",
       "value": "Urgent Feedback"
+    },
+    {
+      "name": "huawei_account_error_not_logged_in",
+      "value": "Not logged in to Huawei account. Please log in and retry."
+    },
+    {
+      "name": "huawei_account_error_network",
+      "value": "Network error. Please check your connection and retry."
+    },
+    {
+      "name": "huawei_account_error_internal",
+      "value": "Login failed. Please try again."
+    },
+    {
+      "name": "huawei_account_error_user_cancel",
+      "value": "Authorization cancelled."
+    },
+    {
+      "name": "huawei_account_error_system_service",
+      "value": "System service error. Please retry later."
+    },
+    {
+      "name": "huawei_account_current",
+      "value": "Current account"
+    },
+    {
+      "name": "huawei_account_select_title",
+      "value": "Select account to log in"
+    },
+    {
+      "name": "huawei_account_select_to_login",
+      "value": "Log in with this account"
+    },
+    {
+      "name": "cloud_sync_status_synced",
+      "value": "Synced"
+    },
+    {
+      "name": "cloud_sync_status_cloud_only",
+      "value": "Cloud only"
+    },
+    {
+      "name": "cloud_sync_trigger_sync",
+      "value": "Sync from Cloud"
+    },
+    {
+      "name": "cloud_sync_trigger_sync_des",
+      "value": "Download the latest backup files from cloud to this device"
+    },
+    {
+      "name": "cloud_sync_sync_state",
+      "value": "Sync State"
+    },
+    {
+      "name": "cloud_sync_sync_error",
+      "value": "Error"
+    },
+    {
+      "name": "cloud_sync_state_uploading",
+      "value": "Uploading"
+    },
+    {
+      "name": "cloud_sync_state_upload_failed",
+      "value": "Upload Failed"
+    },
+    {
+      "name": "cloud_sync_state_downloading",
+      "value": "Downloading"
+    },
+    {
+      "name": "cloud_sync_state_download_failed",
+      "value": "Download Failed"
+    },
+    {
+      "name": "cloud_sync_state_completed",
+      "value": "Synced"
+    },
+    {
+      "name": "cloud_sync_state_stopped",
+      "value": "Stopped"
+    },
+    {
+      "name": "cloud_sync_state_idle",
+      "value": "Idle"
+    },
+    {
+      "name": "cloud_sync_error_no_error",
+      "value": "None"
+    },
+    {
+      "name": "cloud_sync_error_network_unavailable",
+      "value": "Network unavailable"
+    },
+    {
+      "name": "cloud_sync_error_wifi_unavailable",
+      "value": "Wi-Fi unavailable"
+    },
+    {
+      "name": "cloud_sync_error_battery_low",
+      "value": "Battery low (<10%)"
+    },
+    {
+      "name": "cloud_sync_error_battery_warning",
+      "value": "Battery warning (<15%)"
+    },
+    {
+      "name": "cloud_sync_error_cloud_full",
+      "value": "Cloud storage full"
+    },
+    {
+      "name": "cloud_sync_error_local_full",
+      "value": "Local storage full"
+    },
+    {
+      "name": "cloud_sync_error_temperature_high",
+      "value": "Device overheated"
+    },
+    {
+      "name": "cloud_sync_error_server_error",
+      "value": "Server unavailable"
+    },
+    {
+      "name": "cloud_sync_start_failed",
+      "value": "Sync failed to start"
+    },
+    {
+      "name": "cloud_sync_started",
+      "value": "Sync started"
+    },
+    {
+      "name": "cloud_sync_syncing",
+      "value": "Syncing..."
+    },
+    {
+      "name": "cloud_sync_backing_up",
+      "value": "Backing up..."
+    },
+    {
+      "name": "cloud_sync_clearing",
+      "value": "Clearing..."
+    },
+    {
+      "name": "cloud_sync_cooldown",
+      "value": "Please wait before syncing again"
+    },
+    {
+      "name": "cloud_backup_this_device",
+      "value": "This Device"
+    },
+    {
+      "name": "cloud_backup_other_devices",
+      "value": "Other Devices"
+    },
+    {
+      "name": "cloud_sync_clear_device",
+      "value": "Clear This Device's Backups"
+    },
+    {
+      "name": "cloud_sync_clear_device_name",
+      "value": "Clear Same-Name Device Backups"
+    },
+    {
+      "name": "cloud_sync_clear_all",
+      "value": "Clear All Backups"
+    },
+    {
+      "name": "cloud_sync_clear_device_confirm_msg",
+      "value": "This will permanently delete this device's backup data from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_device_name_confirm_msg",
+      "value": "This will permanently delete backups from devices with the same name but different IDs (e.g. leftovers after reinstall) from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_sync_clear_all_confirm_msg",
+      "value": "This will permanently delete ALL backup data from ALL devices from Huawei Cloud. This action cannot be undone. Are you sure?"
+    },
+    {
+      "name": "cloud_backup_login_required",
+      "value": "Log in with Huawei ID to use cloud backup"
+    },
+    {
+      "name": "huawei_account_logout_cloud_backup_msg",
+      "value": "After logging out, cloud backup will be disabled and local backup records will be cleared. Cloud data will not be affected."
+    },
+    {
+      "name": "cloud_sync_loading_history",
+      "value": "Syncing backup history..."
+    },
+    {
+      "name": "cloud_sync_device_id_hint",
+      "value": "The device name and ID are based on the system-generated device identifier, which may change after factory reset or reinstalling all apps from the same developer. If the ID changes, backups from this device will be displayed under \"Other Devices\"."
+    },
+    {
+      "name": "cloud_sync_operations",
+      "value": "Operations"
+    },
+    {
+      "name": "master_key_deprecation_title",
+      "value": "Security Upgrade Notice"
+    },
+    {
+      "name": "master_key_deprecation_message",
+      "value": "The Master Key feature has been replaced by Huawei Cloud Backup, which encrypts your data with your Huawei account credentials — no password to remember, no risk of losing it. Please go to Settings > Backup & Migration to enable cloud backup and keep your tokens safe across devices."
+    },
+    {
+      "name": "master_key_deprecation_acknowledge",
+      "value": "Got It"
+    },
+    {
+      "name": "dlp_anti_peep_reason",
+      "value": "Used to detect screen peeping to protect your token privacy"
+    },
+    {
+      "name": "setting_dlp_anti_peep",
+      "value": "Anti-Peep Protection"
+    },
+    {
+      "name": "setting_dlp_anti_peep_des",
+      "value": "Auto-mask token content when peeping detected"
+    },
+    {
+      "name": "setting_dlp_anti_peep_unsupported",
+      "value": "Your device does not support anti-peep protection"
     }
   ]
 }

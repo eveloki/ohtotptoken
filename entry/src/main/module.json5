@@ -16,6 +16,10 @@
       {
         "name": "appgallery_privacy_link_user_agreement",
         "value": 'https://yylx.duan.red/user-agreement-zh-cn.html' // 必须是https网址
+      },
+      {
+      "name": "client_id",
+      "value": "112342101" // 将上一步获取到的Client ID赋值给value，请注意不要使用其他方式设置value值
       }
     ],
     "deviceTypes": [
@@ -60,6 +64,15 @@
           "abilities": [
             "EntryAbility"
           ],
+          "when": "inuse"
+        }
+      },
+
+    {
+        "name": "ohos.permission.DLP_GET_HIDE_STATUS",
+        "reason": "$string:dlp_anti_peep_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
           "when": "inuse"
         }
       }
@@ -119,6 +132,19 @@
           }
         ],
         "srcEntry": "./ets/BackupExtension/BackupExtension.ets",
+      },
+      {
+        "name": "EntryFormAbility",
+        "srcEntry": "./ets/entryformability/EntryFormAbility.ets",
+        "type": "form",
+        "description": "$string:EntryAbility_label",
+        "exported": true,
+        "metadata": [
+          {
+            "name": "ohos.extension.form",
+            "resource": "$profile:form_config"
+          }
+        ]
       }
     ]
   }

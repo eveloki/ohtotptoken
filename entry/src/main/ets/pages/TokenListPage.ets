@@ -10,6 +10,8 @@ import { convertToken2URI } from "../utils/TokenUtils";
 import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 import { CommonConstants } from "../utils/CommonConstants";
+import { GenericDataSource } from "../utils/GenericDataSource";
+import { common } from "@kit.AbilityKit";
 
 let tkStore = TokenStore.getInstance();
 
@@ -30,6 +32,13 @@ export struct TokenListPage {
 
   @Local token_copy_guide_popup: boolean = false;
 
+  @Local dataSource: GenericDataSource<TokenConfig> = new GenericDataSource([]);
+
+  @Monitor("Tokens")
+  onTokensChange(monitor: IMonitor): void {
+    this.dataSource.updateData(monitor.value()?.now as TokenConfig[]);
+  }
+
   @Local token_list_search_result: TokenConfig[] = [];
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
@@ -40,25 +49,41 @@ export struct TokenListPage {
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
+  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  private toggleSearchHandler: () => void = () => {};
 
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
       this.token_list_search_enable = false;
+      this.dataSource.updateData(this.Tokens);
       return;
     }
     this.token_list_search_enable = true;
     const lower_filter_word = filter_word.toLowerCase();
-    this.token_list_search_result = this.Tokens.filter((token) => {
+    const filtered = this.Tokens.filter((token) => {
       return token.TokenIssuer.toLowerCase().indexOf(lower_filter_word) >= 0 || token.TokenName.toLowerCase().indexOf(lower_filter_word) >= 0
-    })
+    });
+    this.token_list_search_result = filtered;
+    this.dataSource.updateData(filtered);
   }
 
   aboutToAppear(): void {
-    // 如果已经点击了我知道了则永远不提示了
+    this.dataSource = new GenericDataSource(this.Tokens);
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    getContext(this).eventHub.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, () => { this.toggleTokenSearchByTitleBar() });
+  }
+
+  // onDidBuild 在 build() 完成后调用，此时 getUIContext() 保证可用
+  onDidBuild(): void {
+    this.toggleSearchHandler = () => { this.toggleTokenSearchByTitleBar() };
+    this.appCtx.eventHub?.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
+  }
+
+  // 清理事件监听，防止组件销毁后监听器泄漏
+  aboutToDisappear(): void {
+    this.appCtx.eventHub?.off(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
   }
 
   private toggleTokenSearchByTitleBar(): void {
@@ -109,7 +134,7 @@ export struct TokenListPage {
             ListItem() {
               Column() {
                 Row()
-                  .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight)
+                  .height(this.TabBarVisible ? CommonConstants.AVOID_TOP_BASE_HEIGHT + this.appTopAvoidHeight : this.appTopAvoidHeight)
                   .width('100%')
                 
                 Stack({ alignContent: Alignment.End }) {
@@ -147,7 +172,7 @@ export struct TokenListPage {
             }
           }
 
-          ForEach(this.token_list_search_enable ? this.token_list_search_result : this.Tokens, (token: TokenConfig, index: number) => {
+          LazyForEach(this.dataSource, (token: TokenConfig) => {
             ListItem() {
               TokenItem({
                 Config: token,
@@ -155,22 +180,18 @@ export struct TokenListPage {
                   this.updateTokenConfig(conf_new, false);
                 }
               })
-                .bindPopup(this.token_copy_guide_popup && index === 0, {
+                .bindPopup(this.token_copy_guide_popup && token.TokenUUID === this.dataSource.getData(0)?.TokenUUID, {
                   placement: Placement.Left,
-                  message: getContext(this)
-                    .resourceManager
-                    .getStringSync($r('app.string.token_copy_guide_popup'))
-                    .toString(),
+                  message: this.getUIContext().getHostContext()?.resourceManager
+                    .getStringSync($r('app.string.token_copy_guide_popup').id),
                   onStateChange: (e) => {
                     if (!e.isVisible) {
                       this.token_copy_guide_popup = false
                     }
                   },
                   primaryButton: {
-                    value: getContext(this)
-                      .resourceManager
-                      .getStringSync($r('app.string.token_copy_guide_popup_Confirm'))
-                      .toString(),
+                    value: this.getUIContext().getHostContext()?.resourceManager
+                      .getStringSync($r('app.string.token_copy_guide_popup_Confirm').id),
                     action: () => {
                       if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
                         AppPreference.setPreference(PREF_KEYS.SHOW_GUIDE_TIPS, false)
@@ -181,21 +202,15 @@ export struct TokenListPage {
                 })
 
             }
-            .padding({ left: 10, right: 10 })
             .swipeAction({
-              start: {
-                builder: () => {
-                  this.TokenItemStart(token, index)
-                }
-              },
               end: {
                 builder: () => {
-                  this.TokenItemEnd(token)
+                  this.TokenItemSwipeEnd(token)
                 },
               }
             })
           }, (item: TokenConfig) => {
-            return JSON.stringify(item)
+            return item.TokenUUID
           })
             .onMove((from, to) => {
               if (!this.token_list_search_enable) {
@@ -206,25 +221,36 @@ export struct TokenListPage {
 
           ListItem() {
             Row()
-              .height(this.TabBarVisible ? (60 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
+              .height(this.TabBarVisible ? (80 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
               .width('100%')
           }
           .selectable(false)
         }
         .alignListItem(ListItemAlign.Center)
-        .lanes({minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width})
+        .lanes({ minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width })
         .layoutWeight(1)
         .width('100%')
         .height('100%')
-        .chainAnimation(true)
+        .chainAnimation(this.token_preference.app_appearance_chain_animation_enable)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       }
+      .alignItems(HorizontalAlign.Center)
     }
   }
 
+  showQRCodeDialog(conf: TokenConfig): void {
+    this.dialog_qrcode = new CustomDialogController({
+      builder: QRCodeDialog({
+        content: convertToken2URI(conf),
+        winSize: this.appWindowSize
+      })
+    });
+    this.dialog_qrcode.open();
+  }
+
   @Builder
-  TokenItemStart(conf: TokenConfig, index: number) {
+  TokenItemSwipeEnd(conf: TokenConfig) {
     Row({ space: 10 }) {
       Button({ type: ButtonType.Circle }) {
         Text() {
@@ -237,52 +263,7 @@ export struct TokenListPage {
       .backgroundColor(Color.Orange)
       .padding(10)
       .onClick(() => {
-        this.dialog_qrcode = new CustomDialogController({
-          builder: QRCodeDialog({
-            content: convertToken2URI(conf),
-            winSize: this.appWindowSize
-          })
-        });
-        this.dialog_qrcode.open();
-      })
-    }
-    .margin({ right: 10 })
-    .width(50)
-  }
-
-  @Builder
-  TokenItemEnd(conf: TokenConfig) {
-    Row({ space: 10 }) {
-      Button({ type: ButtonType.Circle }) {
-        Text() {
-          SymbolSpan($r('sys.symbol.trash_fill'))
-            .fontSize(30)
-            .fontWeight(FontWeight.Medium)
-            .fontColor([Color.White])
-        }
-      }
-      .backgroundColor(Color.Red)
-      .padding(10)
-      .onClick(async () => {
-        AlertDialog.show({
-          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
-          autoCancel: true,
-          alignment: DialogAlignment.Center,
-          primaryButton: {
-            defaultFocus: false,
-            value: $r('app.string.dialog_btn_cancel'),
-            action: () => {
-              return
-            }
-          },
-          secondaryButton: {
-            value: $r('app.string.dialog_btn_confirm'),
-            fontColor: Color.Red,
-            action: async () => {
-              tkStore.deleteToken(conf.TokenUUID);
-            }
-          }
-        })
+        this.showQRCodeDialog(conf);
       })
 
       if (this.TabBarVisible) {
@@ -331,6 +312,38 @@ export struct TokenListPage {
           }
         })
       }
+
+      Button({ type: ButtonType.Circle }) {
+        Text() {
+          SymbolSpan($r('sys.symbol.trash_fill'))
+            .fontSize(30)
+            .fontWeight(FontWeight.Medium)
+            .fontColor([Color.White])
+        }
+      }
+      .backgroundColor(Color.Red)
+      .padding(10)
+      .onClick(async () => {
+        AlertDialog.show({
+          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
+          autoCancel: true,
+          alignment: DialogAlignment.Center,
+          primaryButton: {
+            defaultFocus: false,
+            value: $r('app.string.dialog_btn_cancel'),
+            action: () => {
+              return
+            }
+          },
+          secondaryButton: {
+            value: $r('app.string.dialog_btn_confirm'),
+            fontColor: Color.Red,
+            action: async () => {
+              tkStore.deleteToken(conf.TokenUUID);
+            }
+          }
+        })
+      })
     }
     .margin({ left: 10 })
   }

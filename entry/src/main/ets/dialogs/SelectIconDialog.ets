@@ -1,4 +1,5 @@
 import { TokenIcon } from "../components/TokenIcon";
+import { AppPreference, PREF_KEYS } from "../utils/AppPreference";
 import { CropModel, CropView } from "../components/ImageCropView";
 import { getImageDimensions, savePixelMapToFile, copyFileToDir } from "../utils/PhotoPickerUtils";
 import { showSelectFilePicker } from "../utils/FileUtils";
@@ -100,7 +101,7 @@ export struct SelectIconDialog {
         .margin({ left: 0, top: 0 })
         .visibility(removable ? Visibility.Visible : Visibility.Hidden)
         .onClick(() => {
-          AlertDialog.show({
+          this.getUIContext().showAlertDialog({
             message: $r('app.string.icon_alert_remove_confirm_msg'),
             autoCancel: true,
             alignment: DialogAlignment.Center,
@@ -282,7 +283,7 @@ export struct SelectIconDialog {
       .lanes({ minLength: 50, maxLength: 50 })
       .width('100%')
       .height('100%')
-      .chainAnimation(true)
+      .chainAnimation(AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean)
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       .layoutWeight(1)

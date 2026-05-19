@@ -39,73 +39,74 @@ export struct AboutSheet {
     Column() {
       HdsNavigation() {
         List({ scroller: this.sheetScroller, space: 10 }) {
-        ListItem()
-          .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+          ListItem()
+            .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
 
-      ListItem() {
-        SettingItem({ title: "" }) {
-          Text(this.str_about_app)
-            .fontSize(10)
-            .fontColor($r('app.color.str_gray'))
-            .padding(10)
-        }
-      }
-      .padding({ left: 10, right: 10 })
-      .onClick(() => {
-        if (!this.debug_mode_is_on) {
-          setTimeout(() => {
-            this.debug_mode_counter = 0;
-          }, 2000);
-          if (this.debug_mode_counter > 7) {
-              this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
-                this.debug_mode_is_on = true;
-                AppPreference.setPreference('app_debug_mode_on', true);
-                showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
-              })
-
+          ListItem() {
+            SettingItem({ title: "" }) {
+              Text(this.str_about_app)
+                .fontSize(10)
+                .fontColor($r('app.color.str_gray'))
+                .padding(10)
+            }
           }
-          this.debug_mode_counter++;
-        }
-      })
+          .padding({ left: 10, right: 10 })
+          .onClick(() => {
+            if (!this.debug_mode_is_on) {
+              setTimeout(() => {
+                this.debug_mode_counter = 0;
+              }, 2000);
+              if (this.debug_mode_counter > 7) {
+                this.window.uiContext?.animateTo({ curve: curves.springMotion() }, () => {
+                  this.debug_mode_is_on = true;
+                  AppPreference.setPreference('app_debug_mode_on', true);
+                  showSnackBar('DEBUG MODE ON', SnackBarNotifyType.INFO);
+                })
 
-      ListItem() {
-        SettingItem({ title: "" }) {
-          Text(this.str_opensource_leg)
-            .fontSize(10)
-            .fontColor($r('app.color.str_gray'))
-            .padding(10)
-        }
-      }
-      .padding({ left: 10, right: 10 })
+              }
+              this.debug_mode_counter++;
+            }
+          })
 
-      ListItemGroup() {
-        ListItem() {
-          Row() {
-            Hyperlink('https://beian.miit.gov.cn/', '粤ICP备2020075515号-2A')
-              .height(10)
-              .padding({ left: 10 })
+          ListItem() {
+            SettingItem({ title: "" }) {
+              Text(this.str_opensource_leg)
+                .fontSize(10)
+                .fontColor($r('app.color.str_gray'))
+                .padding(10)
+            }
           }
-          .justifyContent(FlexAlign.Center)
-          .width('100%')
-        }
-        .padding({ left: 10, right: 10 })
-      }
+          .padding({ left: 10, right: 10 })
 
-      ListItemGroup() {
-        ListItem() {
-          Row()
-            .width('100%')
-            .height(60)
+          ListItemGroup() {
+            ListItem() {
+              Row() {
+                Hyperlink('https://beian.miit.gov.cn/', '粤ICP备2020075515号-2A')
+                  .height(10)
+                  .padding({ left: 10 })
+              }
+              .justifyContent(FlexAlign.Center)
+              .width('100%')
+            }
+            .padding({ left: 10, right: 10 })
+          }
+
+          ListItemGroup() {
+            ListItem() {
+              Row()
+                .width('100%')
+                .height(60)
+            }
+          }
         }
+        .width('100%')
+        .height('100%')
+        .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+        .backgroundColor($r('app.color.window_background'))
+        .layoutWeight(1)
       }
-    }
-    .width('100%')
-    .height('100%')
-      .scrollBar(BarState.Off)
-      .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
-      .backgroundColor($r('app.color.window_background'))
-      .layoutWeight(1)
-      }
+      .mode(NavigationMode.Stack)
       .bindToScrollable([this.sheetScroller])
       .titleMode(HdsNavigationTitleMode.MODAL)
       .titleBar({

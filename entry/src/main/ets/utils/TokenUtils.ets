@@ -292,16 +292,20 @@ export class OTPDefaultIconPack {
 }
 
 export class UserAddedIconPack {
-  public name: string = appCtx.resourceManager.getStringSync($r('app.string.dialog_icon_select_custom').id);
+  public name: string = '';
   public user_icon_path: string = '';
   public icon_path: string[] = [];
   public latest_icon_path: string = '';
-  /**
-   * 记录需要圆角显示的位图图标路径（裁剪后的PNG、直接复制的小位图等）
-   * SVG 矢量图标不加入此集合，因为它们有自身形状不适合强制圆角
-   * UI 层通过此集合判断是否添加 borderRadius
-   */
   public raster_icons: Set<string> = new Set();
+
+  private ensureName(): void {
+    if (this.name === '') {
+      const ctx = AppStorage.get<common.UIAbilityContext>('appContext');
+      if (ctx) {
+        this.name = ctx.resourceManager.getStringSync($r('app.string.dialog_icon_select_custom').id);
+      }
+    }
+  }
 
   private isRasterFile(path: string): boolean {
     const lower = path.toLowerCase();
@@ -309,6 +313,7 @@ export class UserAddedIconPack {
   }
 
   public initIconPack(path: string): void {
+    this.ensureName();
     this.user_icon_path = path;
     if (fs.accessSync(path) === false) {
       fs.mkdirSync(path);

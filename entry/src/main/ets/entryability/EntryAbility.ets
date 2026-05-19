@@ -8,8 +8,11 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { AppPreference, SettingColorMode, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
+import { AppPreference, SettingColorMode, PREF_KEYS, EVENT_NAMES } from '../utils/AppPreference';
 import { relationalStore  } from '@kit.ArkData';
+import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
+import { DlpAntiPeepManager } from '../utils/DlpAntiPeepManager';
+import { formInfo } from '@kit.FormKit';
 
 //单版本分布式键值数据库
 let rdbStore: relationalStore.RdbStore | null = null;
@@ -38,6 +41,52 @@ export default class EntryAbility extends UIAbility {
     win.Size = windowSize;
   };
 
+  private selectPage: string = '';
+
+  private handleCardAction(want: Want): void {
+    hilog.info(0x0000, 'EntryAbility', `handleCardAction parameters: ${JSON.stringify(want?.parameters)}`);
+
+    let formId = '';
+    let formName = '';
+    let isCardConfig = false;
+
+    const sysFormId = want.parameters?.[formInfo.FormParam.IDENTITY_KEY];
+    if (sysFormId) {
+      formId = String(sysFormId);
+      formName = String(want.parameters?.[formInfo.FormParam.NAME_KEY] ?? '');
+      hilog.info(0x0000, 'EntryAbility', `card router event, formId: ${formId}, formName: ${formName}`);
+    }
+
+    if (want?.parameters?.params !== undefined) {
+      try {
+        const outerParams: Record<string, string> = JSON.parse(String(want.parameters.params));
+        hilog.info(0x0000, 'EntryAbility', `card custom params: ${JSON.stringify(outerParams)}`);
+        let innerParams: Record<string, string> = outerParams;
+        if (outerParams['params']) {
+          try {
+            innerParams = JSON.parse(outerParams['params']);
+          } catch (_) {}
+        }
+        if (innerParams['action'] === 'card_config') {
+          isCardConfig = true;
+          if (!formId) formId = innerParams['formId'] ?? '';
+          if (!formName) formName = innerParams['formName'] ?? '';
+        }
+      } catch (e) {
+        hilog.error(0, 'EntryAbility', `parse card params error: ${(e as BusinessError).message}`);
+      }
+    }
+
+    if (isCardConfig || formId) {
+      AppStorage.setOrCreate('card_config_formId', formId);
+      AppStorage.setOrCreate('card_config_formName', formName);
+      hilog.info(0x0000, 'EntryAbility', `emit START_CARD_CONFIG, formId: ${formId}`);
+      if (this.context.eventHub) {
+        this.context.eventHub.emit(EVENT_NAMES.START_CARD_CONFIG);
+      }
+    }
+  }
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate("appContext", this.context);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
@@ -46,6 +95,10 @@ export default class EntryAbility extends UIAbility {
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
       AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
+    this.handleCardAction(want);
+
+    // 初始化设备信息（根据华为文档，建议只调用一次）
+    DeviceInfoHelper.getInstance().init();
 
     //监听前后台变化
     let applicationStateChangeCallback: ApplicationStateChangeCallback = {
@@ -84,7 +137,10 @@ export default class EntryAbility extends UIAbility {
 
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     AppPreference.loadSettings().then(() => {
-      windowStage.loadContent(ROUTE_NAMES.AppLockPage, (err) => {
+      if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+        AppStorage.setOrCreate('app_lock_need_show', true);
+      }
+      windowStage.loadContent('pages/Index', (err) => {
         if (err.code) {
           hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
           return;
@@ -102,14 +158,14 @@ export default class EntryAbility extends UIAbility {
         const avoidAreaBottom = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
 
         // save window avoid area info
-        win.AvoidTopHeight = px2vp(avoidAreaBottom.topRect.height);
-        win.AvoidBottomHeight = px2vp(avoidAreaTop.bottomRect.height);
+        win.AvoidTopHeight = this.uiContext.px2vp(avoidAreaBottom.topRect.height);
+        win.AvoidBottomHeight = this.uiContext.px2vp(avoidAreaTop.bottomRect.height);
 
         windowClass.on('avoidAreaChange', (data) => {
           if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
-            win.AvoidBottomHeight = px2vp(data.area.bottomRect.height);
+            win.AvoidBottomHeight = this.uiContext!.px2vp(data.area.bottomRect.height);
           if (data.type === window.AvoidAreaType.TYPE_SYSTEM)
-            win.AvoidTopHeight = px2vp(data.area.topRect.height);
+            win.AvoidTopHeight = this.uiContext!.px2vp(data.area.topRect.height);
         });
 
         const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
@@ -120,6 +176,11 @@ export default class EntryAbility extends UIAbility {
         windowClass.on('windowSizeChange', this.onWindowSizeChange);
         // apply app settings
         this.applySettings(windowClass);
+
+        // 初始化防窥保护
+        if (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE)) {
+          DlpAntiPeepManager.getInstance().start(windowClass, this.context);
+        }
 
         hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
       });
@@ -134,6 +195,7 @@ export default class EntryAbility extends UIAbility {
       AppPreference.setPreference(PREF_KEYS.WANT_QUICK_SCAN, true);
       AppPreference.setPreference(PREF_KEYS.WANT_URI, want.uri!);
     }
+    this.handleCardAction(want);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {
@@ -153,6 +215,11 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
+    // 开启隐私窗口防止返回前台时系统缓存帧泄露令牌明文
+    if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      const win = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
+      win.WindowClass?.setWindowPrivacyMode(true);
+    }
   }
 
   applySettings(windowClass: window.Window): void {

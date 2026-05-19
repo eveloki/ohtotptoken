@@ -1,0 +1,19 @@
+#!/bin/bash
+# Hvigor wrapper for ohtotptoken project
+# Uses globally installed @ohos/hvigor
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export HVIGOR_HOME="$HOME/.npm-global/lib/node_modules/@ohos/hvigor"
+export NODE_OPTIONS=""
+
+# Set npm registry for HarmonyOS packages
+export npm_config_registry="https://repo.harmonyos.com/npm/"
+
+# If JDK is available, add it to PATH
+if [ -d "/usr/lib/jvm/java-17-openjdk-amd64" ]; then
+    export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
+cd "$DIR"
+exec node "$HVIGOR_HOME/bin/hvigor.js" "$@"

@@ -87,6 +87,18 @@
     {
       "name": "light_gray",
       "value": "#F1F3F5"
+    },
+    {
+      "name": "card_item_bg",
+      "value": "#0F000000"
+    },
+    {
+      "name": "card_unselected_icon",
+      "value": "#33000000"
+    },
+    {
+      "name": "card_selected_icon",
+      "value": "#FF007DFF"
     }
   ]
 }

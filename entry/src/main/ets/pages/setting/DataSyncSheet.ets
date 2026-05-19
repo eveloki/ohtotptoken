@@ -18,23 +18,19 @@ export struct DataSyncSheet {
   pageInfos: NavPathStack = new NavPathStack();
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local RdbSyncEnable: SettingValue = false;
-  @Local RdbCloudSyncEnable: SettingValue = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   private sheetScroller: Scroller = new Scroller();
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
 
   aboutToAppear(): void {
     this.RdbSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE);
-    this.RdbCloudSyncEnable = AppPreference.getPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE);
     this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, this.updateDATASYNCPermissions);
   }
 
   updateDATASYNCPermissions(isAccess: boolean) {
     if (!isAccess) {
       this.RdbSyncEnable = false;
-      this.RdbCloudSyncEnable = false;
       AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
-      AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
     }
   }
 
@@ -75,25 +71,6 @@ export struct DataSyncSheet {
 
                 SubItemDivider()
 
-                SubItemToggle({
-                  icon: $r('sys.symbol.icloud'),
-                  title: $r('app.string.data_rdb_cloud_sync'),
-                  isOn: this.RdbCloudSyncEnable as boolean,
-                  description: $r('app.string.data_rdb_cloud_sync_des'),
-                  disable: true,
-                  onChange: (IsOn: boolean) => {
-                    if (IsOn) {
-                      PermissionManager.getInstance().reqPermissionsFromUser(this.appCtx);
-                    }
-                    this.RdbCloudSyncEnable = IsOn;
-                    AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, IsOn);
-                  }
-                })
-                  .visibility(Visibility.None)
-
-                SubItemDivider()
-                  .visibility(Visibility.None)
-
                 SubItemButton({
                   symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
                   text: $r('app.string.data_rdb_sync_details')
@@ -108,7 +85,7 @@ export struct DataSyncSheet {
           .width('100%')
           .height('100%')
           .scrollBar(BarState.Off)
-          .edgeEffect(EdgeEffect.Spring, {alwaysEnabled: true})
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
           .backgroundColor($r('app.color.window_background'))
           .layoutWeight(1)
         }

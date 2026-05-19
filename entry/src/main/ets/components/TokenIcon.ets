@@ -1,4 +1,4 @@
-import { ConfigurationConstant } from "@kit.AbilityKit";
+import { ConfigurationConstant, common } from "@kit.AbilityKit";
 import { TokenIconPacks } from "../utils/TokenUtils";
 import { fileIo } from "@kit.CoreFileKit";
 import { TokenPreference, EVENT_NAMES } from "../utils/AppPreference";
@@ -17,6 +17,10 @@ export struct TokenIcon {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
+
+  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
+  private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
+  private iconPackChangedHandler: () => void = () => {};
 
   @Computed
   get is_dark_mode() {
@@ -79,7 +83,13 @@ export struct TokenIcon {
 
   aboutToAppear(): void {
     this.refreshIcon(this.issuer);
-    getContext(this).eventHub.on(EVENT_NAMES.ICON_PACK_CHANGED, () => this.onIconPackChanged());
+    this.iconPackChangedHandler = () => this.onIconPackChanged();
+    this.appCtx.eventHub?.on(EVENT_NAMES.ICON_PACK_CHANGED, this.iconPackChangedHandler);
+  }
+
+  // 清理事件监听，防止组件销毁后监听器泄漏
+  aboutToDisappear(): void {
+    this.appCtx.eventHub?.off(EVENT_NAMES.ICON_PACK_CHANGED, this.iconPackChangedHandler);
   }
 
   stringToColor(str: string): string {

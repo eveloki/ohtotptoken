@@ -17,14 +17,26 @@
 - [x] 支持Steam令牌, [从Steam导入令牌](https://github.com/stratumauth/app/wiki/Importing-from-Steam)
 - [x] 支持Forti令牌
 - [x] 设置界面
-- [ ] 鸿蒙 Asset Store Kit
+- [x] 鸿蒙 Asset Store Kit（TEE 硬件级密钥保护）
+- [x] 华为云盘备份与恢复（端到端加密）
+- [x] 基于 BackupExtensionAbility 的换机迁移
+- [x] 防窥保护（DLP）
+- [x] 桌面卡片（TOTP & HOTP）
 
 ---
+<b>手机</b>
 <p float="left">
-  <img height="400px" alt="0" src="../screenshot/0.png" />
-  <img height="400px" alt="1" src="../screenshot/1.png" />
-  <img height="400px" alt="1" src="../screenshot/2.png" />
-  <img height="400px" alt="1" src="../screenshot/3.png" />
+  <img height="400px" alt="phone1" src="../screenshot/phone1.jpg" />
+  <img height="400px" alt="phone2" src="../screenshot/phone2.png" />
+  <img height="400px" alt="phone3" src="../screenshot/phone3.jpg" />
+  <img height="400px" alt="phone4" src="../screenshot/phone4.jpg" />
+</p>
+<b>PC</b>
+<p float="left">
+  <img height="300px" alt="pc1" src="../screenshot/pc1.jpg" />
+  <img height="300px" alt="pc2" src="../screenshot/pc2.jpg" />
+  <img height="300px" alt="pc3" src="../screenshot/pc3.png" />
+  <img height="300px" alt="pc4" src="../screenshot/pc4.png" />
 </p>
 
 ---
