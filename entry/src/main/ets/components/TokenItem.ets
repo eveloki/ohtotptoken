@@ -304,9 +304,7 @@ export struct TokenItem {
     }
     .bindContextMenu(this.TokenRightCtxMenu, ResponseType.LongPress, {
       preview: MenuPreviewMode.IMAGE,
-      previewAnimationOptions: {
-        scale: [0.95, 1.1]
-      }
+      hapticFeedbackMode: HapticFeedbackMode.AUTO
     })
     .bindContextMenu(this.TokenRightCtxMenu, ResponseType.RightClick, { enableArrow: true })
   }
