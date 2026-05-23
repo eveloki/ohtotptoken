@@ -302,7 +302,93 @@ export struct TokenItem {
         }
       })
     }
+    .bindContextMenu(this.TokenLongPressMenu, ResponseType.LongPress, {
+      preview: MenuPreviewMode.IMAGE,
+      previewAnimationOptions: {
+        scale: [0.95, 1.1]
+      }
+    })
     .bindContextMenu(this.TokenRightCtxMenu, ResponseType.RightClick, { enableArrow: true })
+  }
+
+  // 长按弹出的上下文菜单，3 项：二维码、编辑、删除
+  // 与左滑 SwipeAction 的 3 个按钮功能一致
+  @Builder
+  TokenLongPressMenu() {
+    Menu() {
+      MenuItem({ symbolStartIcon: this.menu_icon_qrcode, content: $r('app.string.token_right_menu_show_qrcode') })
+        .onClick(() => {
+          this.dialog_qrcode = new CustomDialogController({
+            builder: QRCodeDialog({
+              content: convertToken2URI(this.Config),
+              winSize: this.window.Size
+            })
+          });
+          this.dialog_qrcode.open();
+        })
+        .accessibilityText($r('app.string.token_right_menu_show_qrcode'))
+      MenuItem({ symbolStartIcon: this.menu_icon_edit, content: $r('app.string.token_right_menu_edit') })
+        .onClick(() => {
+          if (this.Config.TokenType === otpType.TOTP || this.Config.TokenType === otpType.HOTP ||
+            this.Config.TokenType === undefined) { // default
+            this.dialog_totp_config = new CustomDialogController({
+              builder: TOTPConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_totp_config.open()
+          } else if (this.Config.TokenType === otpType.Forti) { // forti
+            this.dialog_forti_config = new CustomDialogController({
+              builder: FortiConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_forti_config.open()
+          } else if (this.Config.TokenType === otpType.Steam) { // steam
+            this.dialog_steam_config = new CustomDialogController({
+              builder: SteamConfigDialog({
+                conf_json: JSON.stringify(this.Config),
+                confirm: (new_conf) => {
+                  this.Update(JSON.parse(new_conf))
+                }
+              })
+            })
+            this.dialog_steam_config.open()
+          }
+        })
+        .accessibilityText($r('app.string.token_right_menu_edit'))
+      MenuItem({ symbolStartIcon: this.menu_icon_trash, content: $r('app.string.token_right_menu_delete') })
+        .onClick(() => {
+          this.getUIContext().showAlertDialog({
+            message: $r('app.string.alert_remove_confirm_msg', this.Config.TokenName),
+            autoCancel: true,
+            alignment: DialogAlignment.Center,
+            primaryButton: {
+              defaultFocus: false,
+              value: $r('app.string.dialog_btn_cancel'),
+              action: () => {
+                return
+              }
+            },
+            secondaryButton: {
+              value: $r('app.string.dialog_btn_confirm'),
+              fontColor: Color.Red,
+              action: async () => {
+                tkStore.deleteToken(this.Config.TokenUUID);
+              }
+            }
+          })
+
+        })
+        .contentFontColor(Color.Red)
+        .accessibilityText($r('app.string.token_right_menu_delete'))
+    }
   }
 
   @Builder
