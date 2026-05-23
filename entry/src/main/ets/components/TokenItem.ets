@@ -304,7 +304,7 @@ export struct TokenItem {
       })
     }
     .gesture(
-      LongPressGesture({ duration: 200 })
+      LongPressGesture({ duration: this.token_preference.app_appearance_long_press_duration })
         .onAction(() => {
           this.isLongPressMenuShown = true;
         })

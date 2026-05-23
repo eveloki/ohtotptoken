@@ -677,6 +677,14 @@
       "value": "Enable staggered enter animation for list items."
     },
     {
+      "name": "appearance_long_press_duration",
+      "value": "Long-press menu trigger duration"
+    },
+    {
+      "name": "appearance_long_press_duration_des",
+      "value": "Controls the wait time before the long-press menu appears on token items, range 200-1000 ms."
+    },
+    {
       "name": "token_item_slider",
       "value": "Size & Layout"
     },
