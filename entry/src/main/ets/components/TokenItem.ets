@@ -37,6 +37,7 @@ export struct TokenItem {
   @Local TokenLeftPeriod: number = 0;
   @Local btn_hotp_clicked: number = 0;
   @Local TokenHide: boolean = current_token_hide_map[this.Config.TokenUUID] ?? true;
+  @Local isLongPressMenuShown: boolean = false;
 
   @Local menu_icon_trash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.trash')).fontSize('22vp').fontColor([Color.Red]);
   @Local menu_icon_qrcode: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.qrcode')).fontSize('22vp');
@@ -302,9 +303,18 @@ export struct TokenItem {
         }
       })
     }
-    .bindContextMenu(this.TokenRightCtxMenu, ResponseType.LongPress, {
+    .gesture(
+      LongPressGesture({ duration: 200 })
+        .onAction(() => {
+          this.isLongPressMenuShown = true;
+        })
+    )
+    .bindContextMenu(this.isLongPressMenuShown, this.TokenRightCtxMenu, {
       preview: MenuPreviewMode.IMAGE,
-      hapticFeedbackMode: HapticFeedbackMode.AUTO
+      hapticFeedbackMode: HapticFeedbackMode.AUTO,
+      onDisappear: () => {
+        this.isLongPressMenuShown = false;
+      }
     })
     .bindContextMenu(this.TokenRightCtxMenu, ResponseType.RightClick, { enableArrow: true })
   }
