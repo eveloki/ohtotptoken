@@ -30,6 +30,8 @@ export enum EVENT_NAMES {
   TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
   /** 握手偏好设置变更事件 */
   HOLDING_HAND_PREFERENCE_CHANGED = 'holdingHandPreferenceChanged',
+  /** 启动Token排序页面事件 */
+  START_TOKEN_SORT = 'onStartTokenSort',
 }
 
 /**
@@ -310,6 +312,8 @@ export enum ROUTE_NAMES {
   WebPage = 'WebPage',
   /** 卡片令牌配置页面 */
   TokenCardConfigPage = 'TokenCardConfigPage',
+  /** Token排序页面 */
+  TokenSortPage = 'TokenSortPage',
   /** App首页 */
   IndexPage = 'pages/Index',
 }

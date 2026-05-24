@@ -801,6 +801,14 @@
       "value": "Copy"
     },
     {
+      "name": "token_right_menu_sort",
+      "value": "Sort"
+    },
+    {
+      "name": "token_sort_page_title",
+      "value": "Sort"
+    },
+    {
       "name": "token_item_max_width",
       "value": "Max Width"
     },

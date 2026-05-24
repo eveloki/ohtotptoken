@@ -797,6 +797,14 @@
       "value": "複製"
     },
     {
+      "name": "token_right_menu_sort",
+      "value": "排序"
+    },
+    {
+      "name": "token_sort_page_title",
+      "value": "排序"
+    },
+    {
       "name": "token_item_max_width",
       "value": "最大寬度"
     },

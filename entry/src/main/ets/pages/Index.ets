@@ -9,6 +9,7 @@ import { AgreementSheet } from '../pages/setting/AgreementSheet'
 import { AboutSheet } from '../pages/setting/AboutSheet'
 import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
 import { TokenCardConfigPage } from './TokenCardConfigPage'
+import { TokenSortPage } from './TokenSortPage'
 import { util, url } from '@kit.ArkTS';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
@@ -267,6 +268,10 @@ struct Index {
 
     if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
       this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+    });
+
+    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_TOKEN_SORT, () => {
+      this.pageInfos.pushPathByName(ROUTE_NAMES.TokenSortPage, null);
     });
 
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
@@ -1224,6 +1229,8 @@ struct Index {
       WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
     } else if (name === ROUTE_NAMES.TokenCardConfigPage) {
       TokenCardConfigPage()
+    } else if (name === ROUTE_NAMES.TokenSortPage) {
+      TokenSortPage({ scrollEffectType: this.currentScrollEffectType })
     }
   }
 
