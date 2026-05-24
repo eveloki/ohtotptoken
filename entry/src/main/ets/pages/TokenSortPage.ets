@@ -67,10 +67,10 @@ export struct TokenSortPage {
           }, (item: TokenConfig) => {
             return item.TokenUUID
           })
+            .onMove((from: number, to: number) => {
+              setTimeout(() => tkStore.updateTokenRank(from, to), 500);
+            })
 
-          // 底部安全区域
-          ListItem()
-            .height(24)
         }
         .alignListItem(ListItemAlign.Center)
         .lanes({ minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width })
@@ -78,19 +78,7 @@ export struct TokenSortPage {
         .width('100%')
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .editMode(true)
-        .onItemDragStart((event: ItemDragInfo, itemIndex: number): CustomBuilder => {
-          // 返回空函数使用系统默认拖拽预览（最流畅）
-          return () => {};
-        })
-        .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean): void => {
-          if (isSuccess && itemIndex !== insertIndex) {
-            const moved = this.tokens.splice(itemIndex, 1)[0];
-            this.tokens.splice(insertIndex, 0, moved);
-            this.dataSource.updateData(this.tokens);
-            tkStore.updateTokenRank(itemIndex, insertIndex);
-          }
-        })
+        .contentEndOffset(this.window.AvoidBottomHeight)
       }
       .backgroundColor($r('app.color.window_background'))
       .width('100%')
