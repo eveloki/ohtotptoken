@@ -5,7 +5,7 @@ import {
   ApplicationStateChangeCallback,
   ConfigurationConstant,
 } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { hilog, hiTraceMeter } from '@kit.PerformanceAnalysisKit';
 import { AppStorageV2, window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference, SettingColorMode, PREF_KEYS, EVENT_NAMES } from '../utils/AppPreference';
@@ -128,62 +128,72 @@ export default class EntryAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
+  // [性能打点] onWindowStageCreate 整体耗时 + loadSettings/loadContent 子阶段耗时
   onWindowStageCreate(windowStage: window.WindowStage): void {
-    // Main window is created, set main page for this ability
+    // 异步打点：覆盖 onWindowStageCreate 入口到 loadContent 回调完成
+    hiTraceMeter.startTrace('H:onWindowStageCreate', 1);
     let win: AppWindowInfo = AppStorageV2.connect(AppWindowInfo, () => new AppWindowInfo())!;
 
     win.ColorMode = this.context.config.colorMode ?? -1;
     win.Context = this.context;
 
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
-    AppPreference.loadSettings().then(() => {
-      if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
-        AppStorage.setOrCreate('app_lock_need_show', true);
+
+    // 同步打点：getAllSync() 一次性加载全部偏好设置（替代原 35+ 次异步 I/O）
+    hiTraceMeter.startTrace('H:onWindowStageCreate.loadSettings', 1);
+    AppPreference.loadSettings();
+    hiTraceMeter.finishTrace('H:onWindowStageCreate.loadSettings', 1);
+
+    if (AppPreference.getPreference(PREF_KEYS.SAFETY_LOCK_ENABLE)) {
+      AppStorage.setOrCreate('app_lock_need_show', true);
+    }
+
+    // 异步打点：loadContent 触发 Index 页面构建，回调中完成窗口初始化
+    hiTraceMeter.startTrace('H:onWindowStageCreate.loadContent', 1);
+    windowStage.loadContent('pages/Index', (err) => {
+      hiTraceMeter.finishTrace('H:onWindowStageCreate.loadContent', 1);
+      if (err.code) {
+        hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
+        hiTraceMeter.finishTrace('H:onWindowStageCreate', 1);
+        return;
       }
-      windowStage.loadContent('pages/Index', (err) => {
-        if (err.code) {
-          hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
-          return;
-        }
 
-        let windowClass: window.Window = windowStage.getMainWindowSync();
-        this.uiContext = windowClass.getUIContext();
+      let windowClass: window.Window = windowStage.getMainWindowSync();
+      this.uiContext = windowClass.getUIContext();
 
-        win.uiContext = this.uiContext;
-        win.WindowClass = windowClass;
+      win.uiContext = this.uiContext;
+      win.WindowClass = windowClass;
 
-        windowClass.setWindowLayoutFullScreen(true)
+      windowClass.setWindowLayoutFullScreen(true)
 
-        const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-        const avoidAreaBottom = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      const avoidAreaTop = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+      const avoidAreaBottom = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
 
-        // save window avoid area info
-        win.AvoidTopHeight = this.uiContext.px2vp(avoidAreaBottom.topRect.height);
-        win.AvoidBottomHeight = this.uiContext.px2vp(avoidAreaTop.bottomRect.height);
+      win.AvoidTopHeight = this.uiContext.px2vp(avoidAreaBottom.topRect.height);
+      win.AvoidBottomHeight = this.uiContext.px2vp(avoidAreaTop.bottomRect.height);
 
-        windowClass.on('avoidAreaChange', (data) => {
-          if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
-            win.AvoidBottomHeight = this.uiContext!.px2vp(data.area.bottomRect.height);
-          if (data.type === window.AvoidAreaType.TYPE_SYSTEM)
-            win.AvoidTopHeight = this.uiContext!.px2vp(data.area.topRect.height);
-        });
-
-        const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
-        const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
-        win.Size = windowClass.getWindowProperties().windowRect;
-        win.WidthBreakpoint = widthBp;
-        win.HeightBreakpoint = heightBp;
-        windowClass.on('windowSizeChange', this.onWindowSizeChange);
-        // apply app settings
-        this.applySettings(windowClass);
-
-        // 初始化防窥保护
-        if (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE)) {
-          DlpAntiPeepManager.getInstance().start(windowClass, this.context);
-        }
-
-        hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
+      windowClass.on('avoidAreaChange', (data) => {
+        if (data.type === window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR)
+          win.AvoidBottomHeight = this.uiContext!.px2vp(data.area.bottomRect.height);
+        if (data.type === window.AvoidAreaType.TYPE_SYSTEM)
+          win.AvoidTopHeight = this.uiContext!.px2vp(data.area.topRect.height);
       });
+
+      const widthBp: WidthBreakpoint = this.uiContext.getWindowWidthBreakpoint();
+      const heightBp: HeightBreakpoint = this.uiContext.getWindowHeightBreakpoint();
+      win.Size = windowClass.getWindowProperties().windowRect;
+      win.WidthBreakpoint = widthBp;
+      win.HeightBreakpoint = heightBp;
+      windowClass.on('windowSizeChange', this.onWindowSizeChange);
+
+      this.applySettings(windowClass);
+
+      if (AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE)) {
+        DlpAntiPeepManager.getInstance().start(windowClass, this.context);
+      }
+
+      hiTraceMeter.finishTrace('H:onWindowStageCreate', 1);
+      hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
     });
   }
 

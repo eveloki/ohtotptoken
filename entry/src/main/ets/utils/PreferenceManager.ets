@@ -78,6 +78,13 @@ export class PreferenceManager {
     return JSON.parse(res as string) as T;
   }
 
+  getAllValues(): Record<string, preferences.ValueType> {
+    if (!this.preferences) {
+      return {} as Record<string, preferences.ValueType>;
+    }
+    return this.preferences.getAllSync() as Record<string, preferences.ValueType>;
+  }
+
   async hasValue(key: string): Promise<boolean> {
     if (this.preferences) {
       return this.preferences.has(key);
