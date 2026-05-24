@@ -67,7 +67,7 @@ export struct TokenSortPage {
         List({ space: this.token_preference.app_appearance_item_space, scroller: this.sortListScroller }) {
           // 顶部避让区域
           ListItem()
-            .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
+            .height(CommonConstants.AVOID_TOP_BASE_HEIGHT + this.window.AvoidTopHeight)
 
           LazyForEach(this.dataSource, (token: TokenConfig, index: number) => {
             ListItem() {
