@@ -139,8 +139,8 @@ export struct AppearancePage {
                 SubItemDivider()
 
                 SubItemSlider({
-                  icon: $r('sys.symbol.timer'),
-                  title: $r('app.string.appearance_long_press_duration'),
+                  icon: $r('sys.symbol.slider_horizontal_2'),
+                  title: $r('app.string.token_item_function_slider'),
                   items: [
                     {
                       name: $r('app.string.appearance_long_press_duration'),
@@ -149,20 +149,6 @@ export struct AppearancePage {
                       max: 1000,
                       step: 50
                     },
-                  ],
-                  description: $r('app.string.appearance_long_press_duration_des'),
-                  onChange: (index, value) => {
-                    AppPreference.setPreference(PREF_KEYS.APPEARANCE_LONG_PRESS_DURATION, value);
-                    this.token_preference.app_appearance_long_press_duration = value;
-                  }
-                })
-
-                SubItemDivider()
-
-                SubItemSlider({
-                  icon: $r('sys.symbol.slider_horizontal_2'),
-                  title: $r('app.string.token_item_function_slider'),
-                  items: [
                     {
                       name: $r('app.string.token_item_color_change_threshold'),
                       default: this.token_preference.app_appearance_token_counter_next_margin,
@@ -175,6 +161,11 @@ export struct AppearancePage {
                   onChange: (index, value) => {
                     switch (index) {
                       case 0: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_LONG_PRESS_DURATION, value);
+                        this.token_preference.app_appearance_long_press_duration = value;
+                        break;
+                      }
+                      case 1: {
                         AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN, value);
                         this.token_preference.app_appearance_token_counter_next_margin = value;
                         break;
