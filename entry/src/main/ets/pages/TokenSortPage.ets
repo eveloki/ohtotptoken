@@ -25,6 +25,7 @@ export struct TokenSortPage {
   @Local tokens: TokenConfig[] = [];
   @Local dataSource: GenericDataSource<TokenConfig> = new GenericDataSource([]);
   @Local dragToken: TokenConfig | undefined = undefined;
+  @Local sortListScroller: Scroller = new Scroller();
 
   // 使用 AppStorage 获取 context
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
@@ -63,7 +64,7 @@ export struct TokenSortPage {
   build() {
     HdsNavDestination() {
       Column() {
-        List({ space: this.token_preference.app_appearance_item_space }) {
+        List({ space: this.token_preference.app_appearance_item_space, scroller: this.sortListScroller }) {
           // 顶部避让区域
           ListItem()
             .height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
@@ -84,7 +85,7 @@ export struct TokenSortPage {
 
           // 底部安全区域
           ListItem()
-            .height(80 + this.window.AvoidBottomHeight)
+            .height(24)
         }
         .alignListItem(ListItemAlign.Center)
         .lanes({ minLength: 400, maxLength: this.token_preference.app_appearance_item_max_width })
@@ -92,6 +93,7 @@ export struct TokenSortPage {
         .width('100%')
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+        .editMode(true)
         .onItemDragStart((event: ItemDragInfo, itemIndex: number): CustomBuilder => {
           this.dragToken = this.tokens[itemIndex];
           return () => { this.DragPreviewBuilder(); };
@@ -109,7 +111,7 @@ export struct TokenSortPage {
       .width('100%')
       .height('100%')
     }
-    .titleMode(HdsNavDestinationTitleMode.MODAL)
+    .titleMode(HdsNavDestinationTitleMode.MINI)
     .titleBar({
       avoidLayoutSafeArea: true,
       style: {
@@ -147,5 +149,6 @@ export struct TokenSortPage {
         },
       }
     })
+    .bindToScrollable([this.sortListScroller])
   }
 }
