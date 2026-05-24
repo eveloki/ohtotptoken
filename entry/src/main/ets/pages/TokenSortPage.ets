@@ -24,6 +24,7 @@ export struct TokenSortPage {
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local tokens: TokenConfig[] = [];
   @Local dataSource: GenericDataSource<TokenConfig> = new GenericDataSource([]);
+  @Local dragToken: TokenConfig | undefined = undefined;
 
   // 使用 AppStorage 获取 context
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
@@ -42,6 +43,21 @@ export struct TokenSortPage {
   private async loadTokens(): Promise<void> {
     this.tokens = await tkStore.getTokens();
     this.dataSource.updateData(this.tokens);
+  }
+
+  @Builder
+  DragPreviewBuilder() {
+    if (this.dragToken) {
+      Column() {
+        TokenItem({
+          Config: this.dragToken,
+          sortMode: true,
+          Update: async (conf_new) => {
+            await tkStore.updateToken(conf_new);
+          }
+        })
+      }
+    }
   }
 
   build() {
@@ -76,15 +92,17 @@ export struct TokenSortPage {
         .width('100%')
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .editMode(true)
-        .onItemMove((from: number, to: number): boolean => {
-          if (from !== to) {
-            const moved = this.tokens.splice(from, 1)[0];
-            this.tokens.splice(to, 0, moved);
+        .onItemDragStart((event: ItemDragInfo, itemIndex: number): CustomBuilder => {
+          this.dragToken = this.tokens[itemIndex];
+          return () => { this.DragPreviewBuilder(); };
+        })
+        .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean): void => {
+          if (isSuccess && itemIndex !== insertIndex) {
+            const moved = this.tokens.splice(itemIndex, 1)[0];
+            this.tokens.splice(insertIndex, 0, moved);
             this.dataSource.updateData(this.tokens);
-            tkStore.updateTokenRank(from, to);
+            tkStore.updateTokenRank(itemIndex, insertIndex);
           }
-          return true;
         })
       }
       .backgroundColor($r('app.color.window_background'))
@@ -93,6 +111,7 @@ export struct TokenSortPage {
     }
     .titleMode(HdsNavDestinationTitleMode.MODAL)
     .titleBar({
+      avoidLayoutSafeArea: true,
       style: {
         originalStyle: {
           contentStyle: {
