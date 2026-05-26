@@ -215,7 +215,7 @@ struct Index {
     hiTraceMeter.startTrace('H:aboutToAppear.eventHub', 1);
     if (this.appCtx.eventHub != undefined) {
       this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE, () => {
-        AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
+        AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME,new Date().toISOString());
       });
       this.appCtx.eventHub.on(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE, () => {});
       this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
@@ -691,7 +691,7 @@ struct Index {
       }
       AppStorage.setOrCreate("AppPrivacyManageInfoUrl", privacyLinkInfoArray[0]["url"]);
     } catch (error) {
-      hilog.error(0, 'TAG', "GetAppPrivacyManageInfoPublic exception code: " + error.code + ", exception message: " + error.message);
+      hilog.error(error.code, 'TAG', "GetAppPrivacyManageInfoPublic exception code: " + error.code + ", exception message: " + error.message);
     }
 
     hilog.info(0, TAG, "subscribe");
@@ -704,7 +704,7 @@ struct Index {
       try {
         CommonEventManager.subscribe(this.subscriber, (err, data) => {
           if (err) {
-            hilog.error(0, TAG, `subscribe failed, code is ${err?.code}, message is ${err?.message}`);
+            hilog.error(err?.code, TAG, `subscribe failed, code is ${err?.code}, message is ${err?.message}`);
             return;
           }
 
@@ -715,7 +715,7 @@ struct Index {
           }
         });
       } catch (error) {
-        hilog.error(0, TAG, "init createSubscriber failed, exception code: " + error.code + ", exception message: " + error.message);
+        hilog.error(error.code , TAG, "init createSubscriber failed, exception code: " + error.code + ", exception message: " + error.message);
       }
     });
   }
