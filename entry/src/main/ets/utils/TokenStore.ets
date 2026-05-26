@@ -2,7 +2,7 @@ import { KvManager } from "./KvManager";
 import { TokenConfig } from "./TokenConfig";
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
-import { EVENT_NAMES } from "./AppPreference";
+import { EVENT_NAMES, PREF_KEYS, AppPreference } from "./AppPreference";
 import { AssetSecretStore } from './AssetSecretStore';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -80,6 +80,14 @@ export class TokenStore {
   /**
    * 从 ASSET 回填 Secret 到内存，并迁移旧版 KV 数据到 ASSET.
    *
+   * 一次性迁移：完成一次后持久化 {@link PREF_KEYS.ASSET_MIGRATION_DONE}=true，
+   * 后续调用直接返回（零 ASSET I/O），不再重复检查。
+   * 三种无需迁移/跳过场景：
+   * - 空 Token 列表（新用户）：直接设标记 true。
+   * - 标记已为 true：立即返回，KV 双写保证 Secret 始终可用。
+   * - Secret 超过 ASSET 字节上限（>900 字节 UTF-8）：视为不可迁移，
+   *   不设 migrationFailed（因非失败，乃设计降级），滞留 KV 单写。
+   *
    * 设计原则：ASSET 是首要来源，KV 是安全后裔（降级/克隆场景）。
    * 迁移仅增加 ASSET 副本，不清除 KV 数据。
    *
@@ -96,7 +104,12 @@ export class TokenStore {
    * 任何一重失败则保留 KV 数据，下次加载重试。
    */
   private async fillSecretsFromAsset(): Promise<void> {
+    if (AppPreference.getPreference(PREF_KEYS.ASSET_MIGRATION_DONE)) {
+      return;
+    }
+
     if (this.token_array.length === 0) {
+      AppPreference.setPreference(PREF_KEYS.ASSET_MIGRATION_DONE, true);
       return;
     }
 
@@ -106,6 +119,7 @@ export class TokenStore {
     }
     const assetSecrets: Map<string, string> = await this.assetStore.batchQuerySecrets(uuids);
 
+    let migrationFailed = false;
     for (const token of this.token_array) {
       const assetSecret = assetSecrets.get(token.TokenUUID);
       if (assetSecret !== undefined && assetSecret !== null) {
@@ -114,28 +128,33 @@ export class TokenStore {
         if (this.assetStore.isSecretSizeValid(token.TokenSecret)) {
           const originalSecret = token.TokenSecret;
 
-          // 第一重: ASSET add 调用成功
           const upsertOk = await this.assetStore.upsertSecret(token.TokenUUID, originalSecret);
           if (!upsertOk) {
+            migrationFailed = true;
             continue;
           }
 
-          // 第二重: ASSET 查询确认条目存在
           const verifySecret = await this.assetStore.querySecret(token.TokenUUID);
           if (verifySecret === null) {
             hilog.error(DOMAIN, TAG, `fillSecretsFromAsset: verify failed (not found) for ${token.TokenUUID}`);
+            migrationFailed = true;
             continue;
           }
 
-          // 第三重: 查询结果与原始 Secret 内容一致
           if (verifySecret !== originalSecret) {
             hilog.error(DOMAIN, TAG, `fillSecretsFromAsset: verify failed (mismatch) for ${token.TokenUUID}`);
+            migrationFailed = true;
             continue;
           }
 
           hilog.info(DOMAIN, TAG, `fillSecretsFromAsset: migrated ${token.TokenUUID} to ASSET (triple verified)`);
         }
       }
+    }
+
+    if (!migrationFailed) {
+      AppPreference.setPreference(PREF_KEYS.ASSET_MIGRATION_DONE, true);
+      hilog.info(DOMAIN, TAG, 'fillSecretsFromAsset: all tokens migrated, flag set');
     }
   }
 
@@ -230,6 +249,9 @@ export class TokenStore {
   public async deleteToken(token_uuid: string): Promise<void> {
     const token_uuids = this.token_array.map(t => t.TokenUUID);
     const token_index = token_uuids.findIndex(uuid => uuid === token_uuid);
+    if (token_index === -1) {
+      return;
+    }
     for (let i = token_index; i < this.token_array.length; i++) {
       this.token_array[i].RankScore--;
       await this.saveTokenKvOnly(this.token_array[i]);
