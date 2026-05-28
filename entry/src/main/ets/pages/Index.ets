@@ -504,11 +504,7 @@ struct Index {
   }
 
   async onTokenChanged(): Promise<void> {
-    if (this.CurrentTokens==undefined) {
-      console.warn("CurrentTokens undefined ");
-    }
     this.CurrentTokens = await tkStore.getTokens();
-    console.info("CurrentTokens update ");
   }
 
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
