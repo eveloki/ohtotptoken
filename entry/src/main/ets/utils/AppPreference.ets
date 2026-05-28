@@ -76,6 +76,8 @@ export enum PREF_KEYS {
   APPEARANCE_ICON_PACK_SELECTED = 'app_appearance_icon_pack_selected',
   /** 隐藏Token开关 */
   SAFETY_HIDE_TOKEN_ENABLE = 'app_safety_hide_token_enable',
+  /** 防窥保护开关 */
+  SAFETY_DLP_ANTI_PEEP_ENABLE = 'app_safety_dlp_anti_peep_enable',
   /** 显示下一个Token开关 */
   APPEARANCE_SHOW_NEXT_TOKEN_ENABLE = 'app_appearance_show_next_token_enable',
   /** 握手感知开关 */
@@ -152,6 +154,8 @@ export enum PREF_KEYS {
   APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE="app_huawei_cloud_sync_enable",
   /** 主密码功能弃用告知已确认（一次性迁移标记） */
   MASTER_KEY_DEPRECATION_ACKNOWLEDGED = 'app_master_key_deprecation_acknowledged',
+  /** ASSET Secret 迁移已完成（持久化标记，避免每次加载重复迁移） */
+  ASSET_MIGRATION_DONE = 'app_asset_migration_done',
 }
 
 /** 主密码旧偏好键名（已废弃，仅用于兼容性检测与清理） */
@@ -254,6 +258,7 @@ export const SCROLL_EFFECT_TYPE_MAP: Map<SettingTopEffectType, ScrollEffectType>
 @ObservedV2
 export class TokenPreference {
   @Trace app_safety_hide_token_enable = false;
+  @Trace app_safety_dlp_anti_peep_enable = false;
   @Trace app_appearance_show_next_token_enable = false;
   @Trace app_appearance_holding_hand_enable = false;
   @Trace app_appearance_swap_host_user_enable = false;
@@ -343,6 +348,8 @@ export class AppPreference {
     [PREF_KEYS.SAFETY_LOCK_ENABLE, false],
     // 安全性-隐藏令牌
     [PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE, false],
+    // 安全性-防窥保护
+    [PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE, false],
     // 安全性-自动解锁
     [PREF_KEYS.SAFETY_AUTO_UNLOCK_ENABLE, false],
     // 安全性-后台模糊
@@ -366,6 +373,8 @@ export class AppPreference {
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
     // 主密码弃用告知已确认
     [PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED, false],
+    // ASSET Secret 迁移已完成
+    [PREF_KEYS.ASSET_MIGRATION_DONE, false],
     // 是否处于debug模式
     [PREF_KEYS.DEBUG_MODE_ON, false],
     // 快速扫描URI
@@ -449,15 +458,19 @@ export class AppPreference {
    * 从持久化存储加载所有设置
    * @returns Promise对象，表示加载操作完成
    */
-  public static async loadSettings(): Promise<void> {
-    const promises = Array.from(AppPreference.settings.keys()).map(async (k) => {
-      await AppPreference.prefMgr.getValue<SettingValue>(k).then((val) => {
-        if (val !== undefined && val !== null) {
+   public static loadSettings(): void {
+    const allValues = AppPreference.prefMgr.getAllValues();
+    for (const k of AppPreference.settings.keys()) {
+      const raw = allValues[k];
+      if (raw !== undefined && raw !== null && raw !== '') {
+        try {
+          const val: SettingValue = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SettingValue;
           AppPreference.settings.set(k, val);
+        } catch (_) {
+          // 忽略解析失败的值，保留默认
         }
-      })
-    });
-    await Promise.all(promises);
+      }
+    }
     AppPreference.loadTokenAppearance();
   }
 
@@ -469,6 +482,8 @@ export class AppPreference {
     let token_appearance: TokenPreference = AppStorageV2.connect(TokenPreference, () => new TokenPreference())!;
     token_appearance.app_safety_hide_token_enable =
       AppPreference.getPreference(PREF_KEYS.SAFETY_HIDE_TOKEN_ENABLE) as boolean;
+    token_appearance.app_safety_dlp_anti_peep_enable =
+      AppPreference.getPreference(PREF_KEYS.SAFETY_DLP_ANTI_PEEP_ENABLE) as boolean;
     token_appearance.app_appearance_show_next_token_enable =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_SHOW_NEXT_TOKEN_ENABLE) as boolean;
     token_appearance.app_appearance_holding_hand_enable =

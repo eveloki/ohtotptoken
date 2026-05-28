@@ -1,42 +1,55 @@
 import { bundleManager,common } from '@kit.AbilityKit';
 import { TokenConfig } from '../utils/TokenConfig';
-import { SettingPage } from '../pages/setting/SettingPage'
-import { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
-import { SecuritySheet } from '../pages/setting/SecuritySheet'
-import { AppearanceSheet } from '../pages/setting/AppearanceSheet'
-import { DataSyncSheet } from '../pages/setting/DataSyncSheet'
-import { AgreementSheet } from '../pages/setting/AgreementSheet'
-import { AboutSheet } from '../pages/setting/AboutSheet'
-import { FeedbackSheet } from '../pages/setting/FeedbackSheet'
-import { TokenCardConfigPage } from './TokenCardConfigPage'
-import { TokenSortPage } from './TokenSortPage'
+// [冷启动优化] Setting 相关组件：仅在用户切换到"我的"Tab 或打开 Sheet 时才触发模块评估
+import lazy { SettingPage } from '../pages/setting/SettingPage'
+import lazy { BackupAndMigrationSheet } from '../pages/setting/BackupAndMigrationSheet'
+import lazy { SecuritySheet } from '../pages/setting/SecuritySheet'
+import lazy { AppearanceSheet } from '../pages/setting/AppearanceSheet'
+import lazy { DataSyncSheet } from '../pages/setting/DataSyncSheet'
+import lazy { AgreementSheet } from '../pages/setting/AgreementSheet'
+import lazy { AboutSheet } from '../pages/setting/AboutSheet'
+import lazy { FeedbackSheet } from '../pages/setting/FeedbackSheet'
+// [冷启动优化] NavDestination 子页面：仅在用户导航时触发评估
+import lazy { TokenCardConfigPage } from './TokenCardConfigPage'
+import lazy { TokenSortPage } from './TokenSortPage'
 import { util, url } from '@kit.ArkTS';
-import { fileIo as fs } from '@kit.CoreFileKit';
+// [冷启动优化] 文件 I/O 仅在 deferredInit 中使用
+import lazy { fileIo as fs } from '@kit.CoreFileKit';
 import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
 import { AppPreference, TokenPreference, SettingTopEffectType, SettingBottomTabsType, SCROLL_EFFECT_TYPE_MAP, EVENT_NAMES, PREF_KEYS,ROUTE_NAMES } from '../utils/AppPreference';
-import { privacyManager } from '@kit.StoreKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+// [冷启动优化] privacyManager 仅在 deferredInit 的 GetPrivacyManageInfo 中使用
+import lazy { privacyManager } from '@kit.StoreKit';
+import { hilog, hiTraceMeter } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
 import { TokenStore } from '../utils/TokenStore';
-import { PermissionManager } from '../utils/PermissionManager';
-import { DropFilesDialog } from '../dialogs/DropFilesDialog';
+// [冷启动优化] 权限检查仅在 deferredInit 中使用
+import lazy { PermissionManager } from '../utils/PermissionManager';
+// [冷启动优化] 拖拽弹框仅在 onDragEnter 时触发
+import lazy { DropFilesDialog } from '../dialogs/DropFilesDialog';
 import { uniformTypeDescriptor } from '@kit.ArkData';
-import { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup } from '../utils/TokenBackup';
-import { TokenIconPacks } from '../utils/TokenUtils';
-import { DeviceInfoHelper } from '../utils/DeviceInfoHelper';
-import { CloudBackupManager } from '../utils/CloudBackupManager';
-// 申请锁屏下应用敏感数据访问权限
+// [冷启动优化] 加密导入弹框仅在文件拖入 .bak 时触发
+import lazy { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
+// [冷启动优化] 备份恢复仅在文件拖入时触发
+import lazy { restoreFromBackup } from '../utils/TokenBackup';
+// [冷启动优化] TokenIconPacks 仅在 deferredInit 中使用，ScanBarCode 仅在扫码时使用
+import lazy { TokenIconPacks, ScanBarCode } from '../utils/TokenUtils';
+
+// [冷启动优化] 云备份管理器仅在 deferredInit 中使用
+import lazy { CloudBackupManager } from '../utils/CloudBackupManager';
 import { TokenListPage } from './TokenListPage';
-import { AppearancePage } from './AppearancePage';
-import { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
-import { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
-import { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
-import { ShowCodePage } from './ShowCodePage';
-import { WebPage, WebPageParams } from './WebPage';
+// [冷启动优化] 以下 NavDestination 页面仅在用户导航时触发评估
+import lazy { AppearancePage } from './AppearancePage';
+import lazy { ShowDataSyncDetailsPage } from './ShowDataSyncDetailsPage';
+import lazy { ShowCloudSyncDetailsPage } from './ShowCloudSyncDetailsPage';
+import lazy { ShowCloudBackupHistoryPage } from './ShowCloudBackupHistoryPage';
+import lazy { ShowCodePage } from './ShowCodePage';
+// [冷启动优化] WebPage 导入 @kit.ArkWeb (libwebview_napi.z.so ~10ms)，延迟到用户实际访问网页时
+import lazy { WebPage, WebPageParams } from './WebPage';
 import { AppWindowInfo } from '../entryability/EntryAbility';
-import { AppLockOverlay } from './AppLockOverlay';
+// [冷启动优化] AppLockOverlay 导入 @kit.CryptoArchitectureKit + @kit.UserAuthenticationKit，
+// bindContentCover 的 Builder 仅在 isAppLockOverlayVisible=true 时评估
+import lazy { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, ComponentContent, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   ScrollEffectType, HdsListItemCard,
@@ -44,16 +57,20 @@ import { HdsNavigation, HdsNavigationTitleMode, HdsTabs,
   IconSize,
   SuffixArrow,
   hdsMaterial} from '@kit.UIDesignKit';
-import { ArcTokenListPage } from './ArcTokenListPage';
+// [冷启动优化] ArcTokenListPage 仅在特定断点 (HEIGHT_MD + WIDTH_XS) 的设备上使用
+import lazy { ArcTokenListPage } from './ArcTokenListPage';
 import { LengthMetrics } from '@kit.ArkUI';
-import { decodeProtobuf } from '../utils/GoogleAuthUtils';
-import { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
-import { URIConfigDialog } from '../dialogs/URIConfigDialog';
-import { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
-import { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
-import { ScanBarCode } from '../utils/TokenUtils';
+// [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
+import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
+// [冷启动优化] 各添加 Token 弹框仅在用户点击添加时触发评估
+import lazy { TOTPConfigDialog } from '../dialogs/OTPConfigDialog';
+import lazy { URIConfigDialog } from '../dialogs/URIConfigDialog';
+import lazy { FortiConfigDialog } from '../dialogs/FortiConfigDialog';
+import lazy { SteamConfigDialog } from '../dialogs/SteamConfigDialog';
 import { CommonConstants } from '../utils/CommonConstants';
-import { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
+// [冷启动优化] 华为账号管理器仅在 deferredInit 中初始化
+import lazy { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from '../utils/HuaweiAccountManager';
+import { DlpAntiPeepManager } from '../utils/DlpAntiPeepManager';
 
 const TAG = 'PrivacySubscribe';
 
@@ -117,6 +134,8 @@ struct Index {
   @Local CurrentTokensCount: number = 0;
   @Local scrollEffectVersion: number = 0;
   @Local isAppLockOverlayVisible: boolean = false;
+  // 冷启动优化：Setting Tab 懒加载标志，仅在用户首次切换到"我的"Tab 时构建组件树
+  @Local settingTabInitialized: boolean = false;
   pageInfos: NavPathStack = new NavPathStack();
 
   /**
@@ -188,25 +207,114 @@ struct Index {
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
 
+  // [性能打点] hiTraceMeter 用于 DevEco Profiler 冷启动分析，搜索 "H:" 前缀查看各阶段耗时
   aboutToAppear(): void {
-    const accountInitPromise = HuaweiAccountManager.getInstance().init().then(() => {
-      this.syncHuaweiAccountState();
-    });
-    const tokenStoreInitPromise = tkStore.initTokenStore().then(() => {
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
-      if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
-        this.scrollEffectVersion++;
+    // 异步打点：覆盖整个 aboutToAppear 到首帧数据就绪（token_loading=false）
+    hiTraceMeter.startTrace('H:aboutToAppear', 1);
+
+    // 同步打点：6 个 eventHub 监听器注册耗时（预期 <1ms）
+    hiTraceMeter.startTrace('H:aboutToAppear.eventHub', 1);
+    if (this.appCtx.eventHub != undefined) {
+      this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE, () => {
+        AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME,new Date().toISOString());
       });
-      return tkStore.getTokens().then((tokens) => {
-        this.CurrentTokens = tokens;
-        this.CurrentTokensCount = tokens.length;
-        this.token_loading = false;
-        this.appIsInit = true;
+      this.appCtx.eventHub.on(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE, () => {});
+      this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
+        if (!isAccess) {
+          AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
+          AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
+        }
       });
+      this.appCtx.eventHub.on(EVENT_NAMES.START_QUICK_SCAN, () => {
+        this.start_quick_scan();
+      });
+      this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
+        this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+      });
+      this.appCtx.eventHub.on(EVENT_NAMES.START_TOKEN_SORT, () => {
+        this.pageInfos.pushPathByName(ROUTE_NAMES.TokenSortPage, null);
+      });
+      this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
+        this.backup_select_uri = uri;
+        if (this.backup_select_uri.endsWith('.bak')) {
+          this.password_input_dialog?.open();
+        } else if (this.backup_select_uri.endsWith('.json')) {
+          restoreFromBackup(uri).then((backup) => {
+            this.updateTokenConfigs(backup.configs).then(() => {
+              tkStore.sortTokens();
+            });
+          });
+        }
+        setTimeout(() => {
+          this.DropFilesDialogIsOpen = false;
+          this.DropFilesDialogController?.close();
+        }, 250)
+      });
+    }
+    hiTraceMeter.finishTrace('H:aboutToAppear.eventHub', 1);
+
+    // 异步打点：TokenStore 初始化（KV 数据库打开 + ASSET 迁移）
+    let stepReached = 0;
+    hiTraceMeter.startTrace('H:aboutToAppear.initTokenStore', 1);
+    tkStore.initTokenStore().then(() => {
+      stepReached = 1;
+      hiTraceMeter.finishTrace('H:aboutToAppear.initTokenStore', 1);
+
+      // 异步打点：从 TokenStore 读取全部 Token 列表
+      hiTraceMeter.startTrace('H:aboutToAppear.getTokens', 1);
+      if (this.appCtx.eventHub != undefined) {
+        this.appCtx.eventHub.on(EVENT_NAMES.TOKEN_CHANGED, () => this.onTokenChanged());
+        this.appCtx.eventHub.on(EVENT_NAMES.TOP_EFFECT_TYPE_CHANGED, () => {
+          this.scrollEffectVersion++;
+        });
+      }
+      return tkStore.getTokens();
+    }).then((tokens) => {
+      stepReached = 2;
+      hiTraceMeter.finishTrace('H:aboutToAppear.getTokens', 1);
+
+      this.CurrentTokens = tokens;
+      this.CurrentTokensCount = tokens.length;
+      this.token_loading = false;
+      this.appIsInit = true;
+      // 首帧数据已就绪，结束 aboutToAppear 打点
+      hiTraceMeter.finishTrace('H:aboutToAppear', 1);
+
+      setTimeout(() => this.deferredInit(), 0);
+    }).catch((err: BusinessError) => {
+      // 根据 stepReached 判断失败阶段，仅 finish 已 start 的 trace
+      if (stepReached >= 1) {
+        hiTraceMeter.finishTrace('H:aboutToAppear.getTokens', 1);
+      } else {
+        hiTraceMeter.finishTrace('H:aboutToAppear.initTokenStore', 1);
+      }
+      hiTraceMeter.finishTrace('H:aboutToAppear', 1);
+      this.token_loading = false;
+      hilog.error(err.code, TAG, `aboutToAppear init failed: ${err.message}`);
     });
 
-    Promise.all([accountInitPromise, tokenStoreInitPromise]).then(() => {
+    this.timestampIntervalId = setInterval(() => {
+      if (this.appCtx != undefined && this.appIsShow)
+        if (this.appCtx.eventHub != undefined)
+          this.updateTimestamp();
+    }, 1000);
+  }
+
+  // [冷启动优化] 非首帧必要的初始化操作，由 aboutToAppear 中 setTimeout(0) 延迟调用
+  // 包含：华为账号、权限检查、文件 I/O、隐私订阅等，均不阻塞首帧渲染
+  // [性能打点] deferredInit 整体耗时 + 华为账号初始化子阶段耗时
+  private deferredInit(): void {
+    hiTraceMeter.startTrace('H:deferredInit', 1);
+
+    // 异步打点：华为账号初始化（含网络请求，是 deferredInit 中最耗时操作）
+    hiTraceMeter.startTrace('H:deferredInit.accountInit', 1);
+    HuaweiAccountManager.getInstance().init().then(() => {
+      hiTraceMeter.finishTrace('H:deferredInit.accountInit', 1);
+      this.syncHuaweiAccountState();
       CloudBackupManager.getInstance().checkAndAutoBackup();
+    }).catch((err: BusinessError) => {
+      hiTraceMeter.finishTrace('H:deferredInit.accountInit', 1);
+      hilog.error(err.code, TAG, `deferredInit accountInit failed: ${err.message}`);
     });
 
     this.subscribeDistributedAccountLogout();
@@ -226,77 +334,31 @@ struct Index {
       }
     });
 
-    // save certification for forti token
+    // [冷启动优化] FortiToken 证书文件从同步读取改为异步读取，避免阻塞主线程
     let cer_path = this.appCtx.filesDir + "/fmt.ks"
     fs.access(cer_path, fs.AccessModeType.EXIST).then((exist) => {
       if (!exist) {
         fs.open(cer_path, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE).then((cer_file) => {
-          let arr = this.appCtx.resourceManager.getRawFileContentSync('ftm.ks')
-          fs.write(cer_file.fd, arr.buffer).then((cnt) => {
-            hilog.info(0, 'Index', 'store fmt.ks to cache dir')
-          })
-            .catch((err:BusinessError) => {
+          this.appCtx.resourceManager.getRawFileContent('ftm.ks').then((arr) => {
+            fs.write(cer_file.fd, arr.buffer).then(() => {
+              hilog.info(0, 'Index', 'store fmt.ks to cache dir')
+            }).catch((err: BusinessError) => {
               hilog.error(err.code, 'Index', `${err.message}`)
+            }).finally(() => {
+              // 确保文件描述符在写入完成或失败后关闭，防止资源泄漏
+              fs.close(cer_file);
             })
+          }).catch((err: BusinessError) => {
+            hilog.error(err.code, 'Index', `getRawFileContent failed: ${err.message}`)
+            // 读取失败时也需要关闭文件描述符
+            fs.close(cer_file);
+          })
         })
       }
     })
-    DeviceInfoHelper.getInstance().init();
     this.GetPrivacyManageInfo();
-    // 订阅KV数据库同步完成事件
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.KV_STORE_SYNC_COMPLETE,() => {
-      AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
-    })
-
-    //订阅RDB数据库同步完成事件
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.RDB_STORE_SYNC_COMPLETE,() => {
-      //todo 接收同步完成后刷新数据
-    })
-
-    //订阅权限变更 主页面不需要取消订阅 没有意义
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.DATASYNC_PERMISSIONS_UPDATE, (isAccess: boolean) => {
-      if (!isAccess) {
-        //如果数据同步权限被关闭 则需要将两个同步都关闭
-        AppPreference.setPreference(PREF_KEYS.DB_RDS_SYNC_ENABLE, false);
-        AppPreference.setPreference(PREF_KEYS.DB_RDS_CLOUD_SYNC_ENABLE, false);
-      }
-    })
-
-    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_QUICK_SCAN, () => {
-      this.start_quick_scan();
-    });
-
-    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
-      this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
-    });
-
-    if (this.appCtx.eventHub != undefined) this.appCtx.eventHub.on(EVENT_NAMES.START_TOKEN_SORT, () => {
-      this.pageInfos.pushPathByName(ROUTE_NAMES.TokenSortPage, null);
-    });
-
-    if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
-      this.backup_select_uri = uri;
-      if (this.backup_select_uri.endsWith('.bak')) { // 后缀bak为加密包 唤醒加密导入弹窗
-        this.password_input_dialog?.open();
-      } else if (this.backup_select_uri.endsWith('.json')) {
-        restoreFromBackup(uri).then((backup) => {
-          this.updateTokenConfigs(backup.configs).then(() => {
-            tkStore.sortTokens();
-          });
-        });
-      }
-      setTimeout(() => {
-        this.DropFilesDialogIsOpen = false;
-        this.DropFilesDialogController?.close();
-        }, 250)
-    });
-
-    // 存储 interval ID 以便 aboutToDisappear 清理
-    this.timestampIntervalId = setInterval(() => {
-      if (this.appCtx != undefined && this.appIsShow)
-        if (this.appCtx.eventHub != undefined)
-           this.updateTimestamp();
-    }, 1000);
+    // deferredInit 同步部分结束（异步任务仍在后台执行）
+    hiTraceMeter.finishTrace('H:deferredInit', 1);
   }
 
   //region 导入
@@ -391,6 +453,8 @@ struct Index {
 
   onPageShow(): void {
     this.appIsShow = true;
+    // 重置防窥蒙层标志，确保页面进入时能再次响应窥视事件
+    DlpAntiPeepManager.getInstance().resetMaskFlag();
     const needShowLock = AppStorage.get<boolean>('app_lock_need_show') ?? false;
     const cardConfigFormId = AppStorage.get<string>('card_config_formId') ?? '';
     if (!needShowLock && cardConfigFormId === '') {
@@ -631,7 +695,7 @@ struct Index {
       }
       AppStorage.setOrCreate("AppPrivacyManageInfoUrl", privacyLinkInfoArray[0]["url"]);
     } catch (error) {
-      hilog.error(0, 'TAG', "GetAppPrivacyManageInfoPublic exception code: " + error.code + ", exception message: " + error.message);
+      hilog.error(error.code, 'TAG', "GetAppPrivacyManageInfoPublic exception code: " + error.code + ", exception message: " + error.message);
     }
 
     hilog.info(0, TAG, "subscribe");
@@ -644,7 +708,7 @@ struct Index {
       try {
         CommonEventManager.subscribe(this.subscriber, (err, data) => {
           if (err) {
-            hilog.error(0, TAG, `subscribe failed, code is ${err?.code}, message is ${err?.message}`);
+            hilog.error(err?.code, TAG, `subscribe failed, code is ${err?.code}, message is ${err?.message}`);
             return;
           }
 
@@ -655,7 +719,7 @@ struct Index {
           }
         });
       } catch (error) {
-        hilog.error(0, TAG, "init createSubscriber failed, exception code: " + error.code + ", exception message: " + error.message);
+        hilog.error(error.code , TAG, "init createSubscriber failed, exception code: " + error.code + ", exception message: " + error.message);
       }
     });
   }
@@ -1369,25 +1433,28 @@ struct Index {
           .tabIndex(0)
 
           TabContent() {
-            HdsNavigation() {
-              this.SettingEntryCardBuilder()
-            }
-            .mode(NavigationMode.Stack)
-            .bindToScrollable([this.settingEntryScroller])
-            .titleMode(HdsNavigationTitleMode.MINI)
-            .hideBackButton(true) // 设置mini类型隐藏后退按钮
-            .titleBar({
-              avoidLayoutSafeArea: true, // 状态栏安全区沉浸
-              style: {
-                originalStyle: {
-                  contentStyle: {
-                    titleStyle: {
-                      mainTitleColor: $r('sys.color.font_primary'),
+            // [冷启动优化] Setting Tab 懒加载：仅在用户首次切换到"我的"Tab 时构建组件树，
+            // 避免冷启动时一次性构建两个 TabContent 导致首帧 build 耗时增加
+            if (this.settingTabInitialized) {
+              HdsNavigation() {
+                this.SettingEntryCardBuilder()
+              }
+              .mode(NavigationMode.Stack)
+              .bindToScrollable([this.settingEntryScroller])
+              .titleMode(HdsNavigationTitleMode.MINI)
+              .hideBackButton(true)
+              .titleBar({
+                avoidLayoutSafeArea: true,
+                style: {
+                  originalStyle: {
+                    contentStyle: {
+                      titleStyle: {
+                        mainTitleColor: $r('sys.color.font_primary'),
+                      },
+                      menuStyle: {
+                        iconColor: $r('sys.color.icon_primary')
+                      },
                     },
-                    menuStyle: {
-                      iconColor: $r('sys.color.icon_primary')
-                    },
-                  },
                   backgroundStyle: {
                     maskExtraHeight: 0
                   }
@@ -1399,7 +1466,7 @@ struct Index {
                 },
                 scrollEffectOpts: {
                   enableScrollEffect: true,
-                  scrollEffectType: this.currentScrollEffectType // 实时模糊，渐变是GRADIENT_BLUR
+                  scrollEffectType: this.currentScrollEffectType
                 },
                 systemMaterialEffect: {
                   materialType: hdsMaterial.MaterialType.ADAPTIVE,
@@ -1415,6 +1482,7 @@ struct Index {
                 }
               }
             })
+            }
           }
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
@@ -1446,6 +1514,10 @@ struct Index {
         .animationDuration(300)
         .onChange((index) => {
           this.tab_bar_index = index;
+          // [冷启动优化] 用户首次切换到 Setting Tab 时触发懒加载构建
+          if (index === 1 && !this.settingTabInitialized) {
+            this.settingTabInitialized = true;
+          }
         })
       }
       }

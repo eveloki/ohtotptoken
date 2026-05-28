@@ -124,7 +124,7 @@ export struct ShowDataSyncDetailsPage {
                         TokenStore.getInstance().DataSync().then(()=>{
                           setTimeout(() => {
                             this.Is_loaded = false;
-                            AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, Date().toString());
+                            AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, new Date().toISOString());
                             this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
                             this.AppDbKVArchiveTime = AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME);
                           }, 1500);
