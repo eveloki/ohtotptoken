@@ -681,6 +681,14 @@
       "value": "開啟列表項的錯落入場動畫效果。"
     },
     {
+      "name": "appearance_long_press_duration",
+      "value": "長按選單觸發時長"
+    },
+    {
+      "name": "appearance_long_press_duration_des",
+      "value": "控制長按Token項彈出選單的等待時間，範圍200-1000毫秒。"
+    },
+    {
       "name": "token_item_slider",
       "value": "尺寸與佈局"
     },
@@ -787,6 +795,14 @@
     {
       "name": "token_right_menu_copy",
       "value": "複製"
+    },
+    {
+      "name": "token_right_menu_sort",
+      "value": "排序"
+    },
+    {
+      "name": "token_sort_page_title",
+      "value": "排序"
     },
     {
       "name": "token_item_max_width",

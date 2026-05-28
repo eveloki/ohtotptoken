@@ -11,6 +11,7 @@ import lazy { AboutSheet } from '../pages/setting/AboutSheet'
 import lazy { FeedbackSheet } from '../pages/setting/FeedbackSheet'
 // [冷启动优化] NavDestination 子页面：仅在用户导航时触发评估
 import lazy { TokenCardConfigPage } from './TokenCardConfigPage'
+import lazy { TokenSortPage } from './TokenSortPage'
 import { util, url } from '@kit.ArkTS';
 // [冷启动优化] 文件 I/O 仅在 deferredInit 中使用
 import lazy { fileIo as fs } from '@kit.CoreFileKit';
@@ -229,6 +230,9 @@ struct Index {
       });
       this.appCtx.eventHub.on(EVENT_NAMES.START_CARD_CONFIG, () => {
         this.pageInfos.pushPathByName(ROUTE_NAMES.TokenCardConfigPage, null);
+      });
+      this.appCtx.eventHub.on(EVENT_NAMES.START_TOKEN_SORT, () => {
+        this.pageInfos.pushPathByName(ROUTE_NAMES.TokenSortPage, null);
       });
       this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
         this.backup_select_uri = uri;
@@ -1289,6 +1293,8 @@ struct Index {
       WebPage({ scrollEffectType: this.currentScrollEffectType, pageParams: param as WebPageParams })
     } else if (name === ROUTE_NAMES.TokenCardConfigPage) {
       TokenCardConfigPage()
+    } else if (name === ROUTE_NAMES.TokenSortPage) {
+      TokenSortPage({ scrollEffectType: this.currentScrollEffectType })
     }
   }
 

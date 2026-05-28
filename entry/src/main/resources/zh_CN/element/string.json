@@ -685,6 +685,14 @@
       "value": "开启列表项的错落入场动画效果。"
     },
     {
+      "name": "appearance_long_press_duration",
+      "value": "长按菜单触发时长"
+    },
+    {
+      "name": "appearance_long_press_duration_des",
+      "value": "控制长按Token项弹出菜单的等待时间，范围200-1000毫秒。"
+    },
+    {
       "name": "token_item_slider",
       "value": "尺寸与布局"
     },
@@ -791,6 +799,14 @@
     {
       "name": "token_right_menu_copy",
       "value": "复制"
+    },
+    {
+      "name": "token_right_menu_sort",
+      "value": "排序"
+    },
+    {
+      "name": "token_sort_page_title",
+      "value": "排序"
     },
     {
       "name": "token_item_max_width",

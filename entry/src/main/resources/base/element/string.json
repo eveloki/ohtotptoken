@@ -677,6 +677,14 @@
       "value": "Enable staggered enter animation for list items."
     },
     {
+      "name": "appearance_long_press_duration",
+      "value": "Long-press menu trigger duration"
+    },
+    {
+      "name": "appearance_long_press_duration_des",
+      "value": "Controls the wait time before the long-press menu appears on token items, range 200-1000 ms."
+    },
+    {
       "name": "token_item_slider",
       "value": "Size & Layout"
     },
@@ -783,6 +791,14 @@
     {
       "name": "token_right_menu_copy",
       "value": "Copy"
+    },
+    {
+      "name": "token_right_menu_sort",
+      "value": "Sort"
+    },
+    {
+      "name": "token_sort_page_title",
+      "value": "Sort"
     },
     {
       "name": "token_item_max_width",

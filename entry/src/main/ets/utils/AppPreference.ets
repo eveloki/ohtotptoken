@@ -30,6 +30,8 @@ export enum EVENT_NAMES {
   TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
   /** 握手偏好设置变更事件 */
   HOLDING_HAND_PREFERENCE_CHANGED = 'holdingHandPreferenceChanged',
+  /** 启动Token排序页面事件 */
+  START_TOKEN_SORT = 'onStartTokenSort',
 }
 
 /**
@@ -144,6 +146,8 @@ export enum PREF_KEYS {
   APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING = 'app_appearance_token_list_item_suffix_padding',
   /** 外观列表链式动画开关 */
   APPEARANCE_CHAIN_ANIMATION_ENABLE = 'app_appearance_chain_animation_enable',
+  /** 长按菜单触发时长（ms），范围 200-1000 */
+  APPEARANCE_LONG_PRESS_DURATION = 'app_appearance_long_press_duration',
   /** 快速扫描URI */
   WANT_URI = 'app_want_uri',
   /** 是否启用华为云备份 */
@@ -291,6 +295,7 @@ export class TokenPreference {
   @Trace app_appearance_token_list_item_prefix_padding = 10;
   @Trace app_appearance_token_list_item_suffix_padding = 10;
   @Trace app_appearance_chain_animation_enable = true;
+  @Trace app_appearance_long_press_duration = 300;
 }
 
 /**
@@ -312,6 +317,8 @@ export enum ROUTE_NAMES {
   WebPage = 'WebPage',
   /** 卡片令牌配置页面 */
   TokenCardConfigPage = 'TokenCardConfigPage',
+  /** Token排序页面 */
+  TokenSortPage = 'TokenSortPage',
   /** App首页 */
   IndexPage = 'pages/Index',
 }
@@ -409,6 +416,7 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_PREFIX_PADDING, 10],
     [PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING, 10],
     [PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE, true],
+    [PREF_KEYS.APPEARANCE_LONG_PRESS_DURATION, 300],
     // 外观-顶部模糊类型
     [PREF_KEYS.APPEARANCE_TOP_EFFECT_TYPE, SettingTopEffectType.IMMERSIVE_GRADIENT_BLUR],
     [PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false],
@@ -546,6 +554,8 @@ export class AppPreference {
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_LIST_ITEM_SUFFIX_PADDING) as number;
     token_appearance.app_appearance_chain_animation_enable =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean;
+    token_appearance.app_appearance_long_press_duration =
+      Math.max(200, Math.min(1000, AppPreference.getPreference(PREF_KEYS.APPEARANCE_LONG_PRESS_DURATION) as number));
   }
 
   /**

@@ -212,12 +212,6 @@ export struct TokenListPage {
           }, (item: TokenConfig) => {
             return item.TokenUUID
           })
-            .onMove((from, to) => {
-              if (!this.token_list_search_enable) {
-                // wait 500ms for animation done
-                setTimeout(() => tkStore.updateTokenRank(from, to), 500);
-              }
-            })
 
           ListItem() {
             Row()

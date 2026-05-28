@@ -143,6 +143,13 @@ export struct AppearancePage {
                   title: $r('app.string.token_item_function_slider'),
                   items: [
                     {
+                      name: $r('app.string.appearance_long_press_duration'),
+                      default: this.token_preference.app_appearance_long_press_duration,
+                      min: 200,
+                      max: 1000,
+                      step: 50
+                    },
+                    {
                       name: $r('app.string.token_item_color_change_threshold'),
                       default: this.token_preference.app_appearance_token_counter_next_margin,
                       min: 0,
@@ -154,6 +161,11 @@ export struct AppearancePage {
                   onChange: (index, value) => {
                     switch (index) {
                       case 0: {
+                        AppPreference.setPreference(PREF_KEYS.APPEARANCE_LONG_PRESS_DURATION, value);
+                        this.token_preference.app_appearance_long_press_duration = value;
+                        break;
+                      }
+                      case 1: {
                         AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_COUNTER_NEXT_MARGIN, value);
                         this.token_preference.app_appearance_token_counter_next_margin = value;
                         break;
