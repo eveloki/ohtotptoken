@@ -143,12 +143,14 @@ export struct ArcTokenIcon {
             .fillColor(this.token_preference.app_appearance_logo_dark_filter_color)
             .objectFit(ImageFit.Contain)
             .borderRadius(this.iconRadius)
+            .supportSvg2(true)
         } else {
           Image(this.icon)
             .height(this.token_preference.app_appearance_logo_size)
             .width(this.token_preference.app_appearance_logo_size)
             .objectFit(ImageFit.Contain)
             .borderRadius(this.iconRadius)
+            .supportSvg2(true)
         }
       }
     }
