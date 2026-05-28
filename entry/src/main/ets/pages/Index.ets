@@ -324,6 +324,8 @@ struct Index {
     });
     AppStorage.setOrCreate("AppPrivacyManageInfoUrl",
       'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=1537746898868267328');
+    AppStorage.setOrCreate("AppUserAgreementUrl",
+      'https://yylx.duan.red/user-agreement-zh-cn.html');
     fs.access(this.icon_pack_dir).then((res) => {
       if (!res) {
         fs.mkdir(this.icon_pack_dir);
@@ -693,7 +695,13 @@ struct Index {
         hilog.info(0, 'TAG', "Succeeded in getting AppPrivacyManageInfo type = " + privacyLinkInfoArray[i]["type"] + ", version = " + privacyLinkInfoArray[i]["versionCode"] + ", url = " + privacyLinkInfoArray[i]["url"]);
 
       }
-      AppStorage.setOrCreate("AppPrivacyManageInfoUrl", privacyLinkInfoArray[0]["url"]);
+      if (privacyLinkInfoArray.length>0) {
+        AppStorage.setOrCreate("AppPrivacyManageInfoUrl", privacyLinkInfoArray[0]["url"]);
+      }
+      if (privacyLinkInfoArray.length>1) {
+        AppStorage.setOrCreate("AppUserAgreementUrl", privacyLinkInfoArray[1]["url"]);
+      }
+
     } catch (error) {
       hilog.error(error.code, 'TAG', "GetAppPrivacyManageInfoPublic exception code: " + error.code + ", exception message: " + error.message);
     }

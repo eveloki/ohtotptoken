@@ -45,8 +45,9 @@ export struct AgreementSheet {
                   text: $r('app.string.user_agreement')
                 })
                   .onClick(throttle((event) => {
+                    const privacyUrl = AppStorage.get("AppUserAgreementUrl") as string;
                     this.pageInfos.pushPathByName(ROUTE_NAMES.WebPage,
-                      new WebPageParams('https://yylx.duan.red/user-agreement-zh-cn.html',
+                      new WebPageParams(privacyUrl,
                         $r('app.string.user_agreement')));
                   }, 1000))
 

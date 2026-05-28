@@ -19,6 +19,7 @@ export struct SubItemButton {
                 .width(LengthMetrics.vp(20).value)
                 .height(LengthMetrics.vp(20).value)
                 .fillColor($r('app.color.str_main'))
+                .supportSvg2(true)
             } else {
               SymbolGlyph(this.symbol)
                 .fontSize(LengthMetrics.vp(20).value)
