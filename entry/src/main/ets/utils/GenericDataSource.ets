@@ -52,6 +52,17 @@ export class GenericDataSource<T> implements IDataSource {
     this.notifyDataMove(from, to);
   }
 
+  /** 按条件查找索引，未找到返回 -1 */
+  findIndex(predicate: (item: T) => boolean): number {
+    return this.dataArray.findIndex(predicate);
+  }
+
+  /** 精准更新单项 —— 仅通知 LazyForEach 刷新该位置，不触发全量重建 */
+  updateItem(index: number, item: T): void {
+    this.dataArray[index] = item;
+    this.notifyDataChange(index);
+  }
+
   // --- Internal notification methods ---
   private notifyDataReload(): void {
     this.listeners.forEach((l: DataChangeListener): void => {

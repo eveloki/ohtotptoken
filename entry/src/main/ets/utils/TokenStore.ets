@@ -54,6 +54,16 @@ export class TokenStore {
     this.appCtx?.eventHub.emit(EVENT_NAMES.TOKEN_CHANGED);
   }
 
+  /**
+   * 单条 Token 更新事件（精准刷新）。
+   *
+   * 与 TOKEN_CHANGED（全量刷新）不同，此事件携带完整 TokenConfig，
+   * 消费方可按 UUID 精准定位并仅刷新该条记录，避免全列表重建。
+   */
+  private async emitTokenSingleUpdated(token: TokenConfig): Promise<void> {
+    this.appCtx?.eventHub.emit(EVENT_NAMES.TOKEN_SINGLE_UPDATED, token);
+  }
+
   public static getInstance(): TokenStore {
     if (!TokenStore.instance) {
       TokenStore.instance = new TokenStore();
@@ -243,7 +253,7 @@ export class TokenStore {
       this.token_array[token_index] = token_new;
     }
     await this.saveToken(token_new);
-    this.emitTokenChanged();
+    this.emitTokenSingleUpdated(token_new);
   }
 
   public async deleteToken(token_uuid: string): Promise<void> {
