@@ -509,7 +509,11 @@ struct Index {
 
   async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<boolean> {
     try {
+      const isNew = !this.CurrentTokens.some(t => t.TokenUUID === conf.TokenUUID);
       await tkStore.updateToken(conf);
+      if (isNew) {
+        this.CurrentTokens = [...(await tkStore.getTokens())];
+      }
       if (toast) {
         showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
       }
@@ -522,14 +526,24 @@ struct Index {
 
   async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<boolean> {
     let failCount = 0;
+    let hasNew = false;
+    const existingUuids = new Set(this.CurrentTokens.map(t => t.TokenUUID));
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].TokenUUID === undefined) {
         tokens[i].TokenUUID = util.generateRandomUUID();
       }
-      const ok = await this.updateTokenConfig(tokens[i], false);
-      if (!ok) {
+      if (!existingUuids.has(tokens[i].TokenUUID)) {
+        hasNew = true;
+      }
+      try {
+        await tkStore.updateToken(tokens[i]);
+      } catch (e) {
+        hilog.error(0, 'Index', `updateTokenConfigs[${i}] failed: ${e}`);
         failCount++;
       }
+    }
+    if (hasNew) {
+      this.CurrentTokens = [...(await tkStore.getTokens())];
     }
     if (failCount === 0) {
       showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
