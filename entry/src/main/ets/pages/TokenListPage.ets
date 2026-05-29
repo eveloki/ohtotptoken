@@ -11,9 +11,34 @@ import { AppStorageV2, curves, window } from "@kit.ArkUI";
 import { AppWindowInfo } from "../entryability/EntryAbility";
 import { CommonConstants } from "../utils/CommonConstants";
 import { GenericDataSource } from "../utils/GenericDataSource";
+import { showSnackBar, SnackBarNotifyType } from "../utils/HdsSnackBarUtils";
 import { common } from "@kit.AbilityKit";
+import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { util } from '@kit.ArkTS';
 
 let tkStore = TokenStore.getInstance();
+
+/**
+ * SHA-256 哈希（Hex），确定性，同步版。
+ *
+ * 用于 LazyForEach key 生成 —— 密钥变更时 hash 变化致 key 变化，
+ * LazyForEach 销毁旧组件实例并创建新实例，触发 aboutToAppear 正确初始化。
+ *
+ * 复用 cryptoFramework 同步 API（与 TokenUtils.doHmacBySync 同模式），
+ * 无需额外缓存或异步预计算，直接内联到 key 生成器中。
+ */
+function sha256Sync(input: string): string {
+  const textEncoder = new util.TextEncoder();
+  const data = textEncoder.encodeInto(input);
+
+  const md = cryptoFramework.createMd('SHA256');
+  md.updateSync({ data });
+  const result = md.digestSync();
+
+  return Array.from(result.data)
+    .map((b: number) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
 
 @Preview
 @ComponentV2
@@ -52,6 +77,7 @@ export struct TokenListPage {
   // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
   private toggleSearchHandler: () => void = () => {};
+  private onSingleTokenUpdatedHandler: (token: TokenConfig) => void = () => {};
 
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
@@ -73,6 +99,9 @@ export struct TokenListPage {
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
+    // 监听单条 Token 更新事件，实现精准单项刷新
+    this.onSingleTokenUpdatedHandler = (token: TokenConfig) => this.handleTokenSingleUpdated(token);
+    this.appCtx.eventHub?.on(EVENT_NAMES.TOKEN_SINGLE_UPDATED, this.onSingleTokenUpdatedHandler);
   }
 
   // onDidBuild 在 build() 完成后调用，此时 getUIContext() 保证可用
@@ -84,6 +113,7 @@ export struct TokenListPage {
   // 清理事件监听，防止组件销毁后监听器泄漏
   aboutToDisappear(): void {
     this.appCtx.eventHub?.off(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
+    this.appCtx.eventHub?.off(EVENT_NAMES.TOKEN_SINGLE_UPDATED, this.onSingleTokenUpdatedHandler);
   }
 
   private toggleTokenSearchByTitleBar(): void {
@@ -103,6 +133,32 @@ export struct TokenListPage {
       setTimeout(() => {
         focusControl.requestFocus(this.id_list[1])
       }, 100)
+    }
+  }
+
+  /**
+   * 直接更新单条 Token（绕过 Index 中转，缩短调用链）。
+   * 更新完成后通过 TOKEN_SINGLE_UPDATED 事件驱动 UI 精准刷新。
+   */
+  private updateSingleToken(conf: TokenConfig, toast: boolean): void {
+    tkStore.updateToken(conf).then(() => {
+      if (toast) {
+        showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
+      }
+    });
+  }
+
+  /**
+   * 处理单条 Token 更新事件 —— 精准刷新（仅更新被修改的那一项）。
+   *
+   * 如果该 Token 当前已被 LazyForEach 加载到 dataSource 中则精准刷新该项；
+   * 如果尚未加载（在滚动区域之外）则跳过 —— 因为 dataSource 底层数组
+   * 与 TokenStore.token_array 共享同一引用，数据已自动同步。
+   */
+  private handleTokenSingleUpdated(token: TokenConfig): void {
+    const index = this.dataSource.findIndex((t: TokenConfig) => t.TokenUUID === token.TokenUUID);
+    if (index >= 0) {
+      this.dataSource.updateItem(index, token);
     }
   }
 
@@ -177,7 +233,7 @@ export struct TokenListPage {
               TokenItem({
                 Config: token,
                 Update: async (conf_new) => {
-                  this.updateTokenConfig(conf_new, false);
+                  this.updateSingleToken(conf_new, false);
                 }
               })
                 .bindPopup(this.token_copy_guide_popup && token.TokenUUID === this.dataSource.getData(0)?.TokenUUID, {
@@ -210,7 +266,7 @@ export struct TokenListPage {
               }
             })
           }, (item: TokenConfig) => {
-            return item.TokenUUID
+            return item.TokenUUID + '_' + sha256Sync(item.TokenSecret)
           })
 
           ListItem() {
@@ -278,7 +334,7 @@ export struct TokenListPage {
               builder: TOTPConfigDialog({
                 conf_json: JSON.stringify(conf),
                 confirm: (new_conf) => {
-                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                  this.updateSingleToken(JSON.parse(new_conf), true)
                 }
               })
             })
@@ -288,7 +344,7 @@ export struct TokenListPage {
               builder: FortiConfigDialog({
                 conf_json: JSON.stringify(conf),
                 confirm: (new_conf) => {
-                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                  this.updateSingleToken(JSON.parse(new_conf), true)
                 }
               })
             })
@@ -298,7 +354,7 @@ export struct TokenListPage {
               builder: SteamConfigDialog({
                 conf_json: JSON.stringify(conf),
                 confirm: (new_conf) => {
-                  this.updateTokenConfig(JSON.parse(new_conf), true)
+                  this.updateSingleToken(JSON.parse(new_conf), true)
                 }
               })
             })
