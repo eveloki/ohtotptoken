@@ -460,7 +460,8 @@ export class AppPreference {
    * 从持久化存储加载所有设置
    * @returns Promise对象，表示加载操作完成
    */
-   public static loadSettings(): void {
+   public static async loadSettings(): Promise<void> {
+    await AppPreference.prefMgr.ensureInitialized();
     const allValues = AppPreference.prefMgr.getAllValues();
     for (const k of AppPreference.settings.keys()) {
       const raw = allValues[k];
@@ -469,7 +470,6 @@ export class AppPreference {
           const val: SettingValue = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SettingValue;
           AppPreference.settings.set(k, val);
         } catch (_) {
-          // 忽略解析失败的值，保留默认
         }
       }
     }
