@@ -24,7 +24,7 @@ export struct ArcTokenListPage {
   @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
   @Param listScroller: Scroller = new Scroller();
-  @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
+  @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => Promise<boolean> = async () => false;
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
@@ -80,8 +80,8 @@ export struct ArcTokenListPage {
             ArcListItem() {
               ArcTokenItem({
                 Config: token,
-                Update: async (conf_new) => {
-                  this.updateTokenConfig(conf_new, false);
+                Update: async (conf_new): Promise<boolean> => {
+                  return await this.updateTokenConfig(conf_new, false);
                 }
               })
             }

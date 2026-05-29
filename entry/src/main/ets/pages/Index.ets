@@ -507,21 +507,38 @@ struct Index {
     this.CurrentTokens = await tkStore.getTokens();
   }
 
-  async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<void> {
-    await tkStore.updateToken(conf);
-    if (toast) {
-      showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
+  async updateTokenConfig(conf: TokenConfig, toast: boolean = true): Promise<boolean> {
+    try {
+      await tkStore.updateToken(conf);
+      if (toast) {
+        showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
+      }
+      return true;
+    } catch (e) {
+      hilog.error(0, 'Index', `updateTokenConfig failed: ${e}`);
+      return false;
     }
   }
 
-  async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<void> {
+  async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<boolean> {
+    let failCount = 0;
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].TokenUUID === undefined) {
         tokens[i].TokenUUID = util.generateRandomUUID();
       }
-      await this.updateTokenConfig(tokens[i], false);
+      const ok = await this.updateTokenConfig(tokens[i], false);
+      if (!ok) {
+        failCount++;
+      }
     }
-    showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+    if (failCount === 0) {
+      showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+      return true;
+    } else {
+      hilog.error(0, 'Index', `updateTokenConfigs: ${failCount}/${tokens.length} failed`);
+      showSnackBar($r('app.string.toast_multi_token_update', tokens.length - failCount), SnackBarNotifyType.WARNING);
+      return false;
+    }
   }
 
   private syncHuaweiAccountState(): void {
@@ -630,8 +647,8 @@ struct Index {
         this.dialog_totp_config = new CustomDialogController({
           builder: TOTPConfigDialog({
             scan_code_original_Value: code,
-            confirm: (new_conf) => {
-              this.updateTokenConfig(JSON.parse(new_conf), true)
+            confirm: async (new_conf): Promise<boolean> => {
+              return await this.updateTokenConfig(JSON.parse(new_conf), true)
             }
           })
         })
@@ -643,8 +660,8 @@ struct Index {
   openTotpAddDialog(): void {
     this.dialog_totp_config = new CustomDialogController({
       builder: TOTPConfigDialog({
-        confirm: (new_conf) => {
-          this.updateTokenConfig(JSON.parse(new_conf), true)
+        confirm: async (new_conf): Promise<boolean> => {
+          return await this.updateTokenConfig(JSON.parse(new_conf), true)
         }
       })
     })
@@ -654,8 +671,8 @@ struct Index {
   openUriAddDialog(): void {
     this.dialog_uri_config = new CustomDialogController({
       builder: URIConfigDialog({
-        confirm: (tokens) => {
-          this.updateTokenConfigs(tokens);
+        confirm: async (tokens): Promise<boolean> => {
+          return await this.updateTokenConfigs(tokens);
         }
       })
     })
@@ -665,8 +682,8 @@ struct Index {
   openFortiAddDialog(): void {
     this.dialog_forti_config = new CustomDialogController({
       builder: FortiConfigDialog({
-        confirm: (new_conf) => {
-          this.updateTokenConfig(JSON.parse(new_conf), true)
+        confirm: async (new_conf): Promise<boolean> => {
+          return await this.updateTokenConfig(JSON.parse(new_conf), true)
         }
       })
     })
@@ -676,8 +693,8 @@ struct Index {
   openSteamAddDialog(): void {
     this.dialog_steam_config = new CustomDialogController({
       builder: SteamConfigDialog({
-        confirm: (new_conf) => {
-          this.updateTokenConfig(JSON.parse(new_conf), true)
+        confirm: async (new_conf): Promise<boolean> => {
+          return await this.updateTokenConfig(JSON.parse(new_conf), true)
         }
       })
     })

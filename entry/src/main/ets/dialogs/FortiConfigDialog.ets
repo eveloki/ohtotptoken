@@ -37,7 +37,7 @@ export struct FortiConfigDialog {
   @State btn_wait_from_forti: boolean = false;
 
   cancel?: () => void;
-  confirm: (new_conf: string) => void = () => {};
+  confirm: (new_conf: string) => Promise<boolean> = async () => false;
 
   dialog_icon_config = new CustomDialogController({
     builder: SelectIconDialog({
@@ -306,11 +306,13 @@ export struct FortiConfigDialog {
           .enabled(!!(this.conf.FortiToken && this.conf.FortiDevID && this.conf.TokenSecret && this.conf.TokenName))
           .fontColor(Color.Red)
           .backgroundColor(Color.Transparent)
-          .onClick(() => {
+          .onClick(async () => {
             if (this.conf.TokenSecret.length > 0) {
               if (this.controller != undefined) {
-                this.confirm(JSON.stringify(this.conf))
-                this.controller.close()
+                const ok = await this.confirm(JSON.stringify(this.conf))
+                if (ok) {
+                  this.controller.close()
+                }
               }
             } else {
               showSnackBar('Enter a correct key', SnackBarNotifyType.WARNING);

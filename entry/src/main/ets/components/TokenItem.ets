@@ -26,7 +26,7 @@ let tkStore = TokenStore.getInstance();
 @ComponentV2
 export struct TokenItem {
   @Require @Param Config: TokenConfig = new TokenConfig();
-  @Event Update: (conf: TokenConfig) => void = () => {};
+  @Event Update: (conf: TokenConfig) => Promise<boolean> = async () => false;
   @Param sortMode: boolean = false;
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
@@ -378,8 +378,8 @@ export struct TokenItem {
             this.dialog_totp_config = new CustomDialogController({
               builder: TOTPConfigDialog({
                 conf_json: JSON.stringify(this.Config),
-                confirm: (new_conf) => {
-                  this.Update(JSON.parse(new_conf))
+                confirm: async (new_conf): Promise<boolean> => {
+                  return await this.Update(JSON.parse(new_conf))
                 }
               })
             })
@@ -388,8 +388,8 @@ export struct TokenItem {
             this.dialog_forti_config = new CustomDialogController({
               builder: FortiConfigDialog({
                 conf_json: JSON.stringify(this.Config),
-                confirm: (new_conf) => {
-                  this.Update(JSON.parse(new_conf))
+                confirm: async (new_conf): Promise<boolean> => {
+                  return await this.Update(JSON.parse(new_conf))
                 }
               })
             })
@@ -398,8 +398,8 @@ export struct TokenItem {
             this.dialog_steam_config = new CustomDialogController({
               builder: SteamConfigDialog({
                 conf_json: JSON.stringify(this.Config),
-                confirm: (new_conf) => {
-                  this.Update(JSON.parse(new_conf))
+                confirm: async (new_conf): Promise<boolean> => {
+                  return await this.Update(JSON.parse(new_conf))
                 }
               })
             })

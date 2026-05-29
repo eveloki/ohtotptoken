@@ -16,7 +16,7 @@ export struct SteamConfigDialog {
   @State btn_camera_clicked: number = 0;
 
   cancel?: () => void;
-  confirm: (new_conf: string) => void = () => {};
+  confirm: (new_conf: string) => Promise<boolean> = async () => false;
 
   dialog_icon_config = new CustomDialogController({
     builder: SelectIconDialog({
@@ -183,10 +183,12 @@ export struct SteamConfigDialog {
           .enabled(!!(this.conf.TokenSecret && this.conf.TokenIssuer && this.conf.TokenName))
           .fontColor(Color.Red)
           .backgroundColor(Color.Transparent)
-          .onClick(() => {
+          .onClick(async () => {
             if (this.controller != undefined) {
-              this.confirm(JSON.stringify(this.conf))
-              this.controller.close()
+              const ok = await this.confirm(JSON.stringify(this.conf))
+              if (ok) {
+                this.controller.close()
+              }
             }
           })
           .width('100%')

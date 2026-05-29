@@ -3,8 +3,8 @@ import { FortiConfigDialog } from "../dialogs/FortiConfigDialog";
 import { TOTPConfigDialog } from "../dialogs/OTPConfigDialog";
 import { QRCodeDialog } from "../dialogs/QRCodeDialog";
 import { SteamConfigDialog } from "../dialogs/SteamConfigDialog";
-import { AppPreference, SettingValue, TokenPreference, EVENT_NAMES, PREF_KEYS } from "../utils/AppPreference";
-import { otpType, TokenConfig } from "../utils/TokenConfig";
+import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from "../utils/AppPreference";
+import { otpType, TokenConfig, TokenConfigVM } from "../utils/TokenConfig";
 import { TokenStore } from "../utils/TokenStore";
 import { convertToken2URI } from "../utils/TokenUtils";
 import { AppStorageV2, curves, window } from "@kit.ArkUI";
@@ -13,31 +13,13 @@ import { CommonConstants } from "../utils/CommonConstants";
 import { GenericDataSource } from "../utils/GenericDataSource";
 import { showSnackBar, SnackBarNotifyType } from "../utils/HdsSnackBarUtils";
 import { common } from "@kit.AbilityKit";
-import { cryptoFramework } from '@kit.CryptoArchitectureKit';
-import { util } from '@kit.ArkTS';
+import { hilog } from "@kit.PerformanceAnalysisKit";
 
 let tkStore = TokenStore.getInstance();
 
-/**
- * SHA-256 哈希（Hex），确定性，同步版。
- *
- * 用于 LazyForEach key 生成 —— 密钥变更时 hash 变化致 key 变化，
- * LazyForEach 销毁旧组件实例并创建新实例，触发 aboutToAppear 正确初始化。
- *
- * 复用 cryptoFramework 同步 API（与 TokenUtils.doHmacBySync 同模式），
- * 无需额外缓存或异步预计算，直接内联到 key 生成器中。
- */
-function sha256Sync(input: string): string {
-  const textEncoder = new util.TextEncoder();
-  const data = textEncoder.encodeInto(input);
-
-  const md = cryptoFramework.createMd('SHA256');
-  md.updateSync({ data });
-  const result = md.digestSync();
-
-  return Array.from(result.data)
-    .map((b: number) => b.toString(16).padStart(2, '0'))
-    .join('');
+/** 将纯数据 TokenConfig[] 转为带刷新标识的 ViewModel 数组，供 LazyForEach 消费 */
+function toVMs(tokens: TokenConfig[]): TokenConfigVM[] {
+  return tokens.map(t => new TokenConfigVM(t));
 }
 
 @Preview
@@ -49,7 +31,7 @@ export struct TokenListPage {
   @Require @Param appWindowSize: window.Size = { width: 0, height: 0 };
   @Require @Param TabBarVisible: boolean = true;
   @Param listScroller: Scroller = new Scroller();
-  @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => void = () => {};
+  @Event updateTokenConfig: (conf: TokenConfig, toast: boolean) => Promise<boolean> = async () => false;
   @Event updateTokenConfigs: (tokens: Array<TokenConfig>) => void = () => {};
 
   @Local token_preference: TokenPreference = AppStorageV2.connect(TokenPreference) as TokenPreference;
@@ -57,14 +39,15 @@ export struct TokenListPage {
 
   @Local token_copy_guide_popup: boolean = false;
 
-  @Local dataSource: GenericDataSource<TokenConfig> = new GenericDataSource([]);
+  @Local dataSource: GenericDataSource<TokenConfigVM> = new GenericDataSource([]);
 
+  /** 全量刷新：父组件 Tokens 变化时重建整个 ViewModel 数组 */
   @Monitor("Tokens")
   onTokensChange(monitor: IMonitor): void {
-    this.dataSource.updateData(monitor.value()?.now as TokenConfig[]);
+    this.dataSource.updateData(toVMs(monitor.value()?.now as TokenConfig[]));
   }
 
-  @Local token_list_search_result: TokenConfig[] = [];
+  @Local token_list_search_result: TokenConfigVM[] = [];
   @Local token_list_search_visible: boolean = false;
   @Local token_list_search_enable: boolean = false;
   @Local token_list_search_str: string = '';
@@ -74,7 +57,6 @@ export struct TokenListPage {
   private dialog_forti_config?: CustomDialogController;
   private dialog_steam_config?: CustomDialogController;
   private dialog_qrcode?: CustomDialogController;
-  // 使用 AppStorage 获取 context，避免在 aboutToAppear（build 之前）调用 getUIContext()
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
   private toggleSearchHandler: () => void = () => {};
   private onSingleTokenUpdatedHandler: (token: TokenConfig) => void = () => {};
@@ -82,7 +64,7 @@ export struct TokenListPage {
   async filterCurrentTokens(filter_word: string): Promise<void> {
     if (filter_word.length === 0) {
       this.token_list_search_enable = false;
-      this.dataSource.updateData(this.Tokens);
+      this.dataSource.updateData(toVMs(this.Tokens));
       return;
     }
     this.token_list_search_enable = true;
@@ -90,27 +72,24 @@ export struct TokenListPage {
     const filtered = this.Tokens.filter((token) => {
       return token.TokenIssuer.toLowerCase().indexOf(lower_filter_word) >= 0 || token.TokenName.toLowerCase().indexOf(lower_filter_word) >= 0
     });
-    this.token_list_search_result = filtered;
-    this.dataSource.updateData(filtered);
+    this.token_list_search_result = toVMs(filtered);
+    this.dataSource.updateData(this.token_list_search_result);
   }
 
   aboutToAppear(): void {
-    this.dataSource = new GenericDataSource(this.Tokens);
+    this.dataSource = new GenericDataSource(toVMs(this.Tokens));
     if (AppPreference.getPreference(PREF_KEYS.SHOW_GUIDE_TIPS) as boolean) {
       this.token_copy_guide_popup = true;
     }
-    // 监听单条 Token 更新事件，实现精准单项刷新
     this.onSingleTokenUpdatedHandler = (token: TokenConfig) => this.handleTokenSingleUpdated(token);
     this.appCtx.eventHub?.on(EVENT_NAMES.TOKEN_SINGLE_UPDATED, this.onSingleTokenUpdatedHandler);
   }
 
-  // onDidBuild 在 build() 完成后调用，此时 getUIContext() 保证可用
   onDidBuild(): void {
     this.toggleSearchHandler = () => { this.toggleTokenSearchByTitleBar() };
     this.appCtx.eventHub?.on(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
   }
 
-  // 清理事件监听，防止组件销毁后监听器泄漏
   aboutToDisappear(): void {
     this.appCtx.eventHub?.off(EVENT_NAMES.TOGGLE_TOKEN_SEARCH, this.toggleSearchHandler);
     this.appCtx.eventHub?.off(EVENT_NAMES.TOKEN_SINGLE_UPDATED, this.onSingleTokenUpdatedHandler);
@@ -136,29 +115,35 @@ export struct TokenListPage {
     }
   }
 
-  /**
-   * 直接更新单条 Token（绕过 Index 中转，缩短调用链）。
-   * 更新完成后通过 TOKEN_SINGLE_UPDATED 事件驱动 UI 精准刷新。
-   */
-  private updateSingleToken(conf: TokenConfig, toast: boolean): void {
-    tkStore.updateToken(conf).then(() => {
+  private async updateSingleToken(conf: TokenConfig, toast: boolean): Promise<boolean> {
+    try {
+      await tkStore.updateToken(conf);
       if (toast) {
         showSnackBar($r('app.string.toast_token_update', conf.TokenIssuer, conf.TokenName), SnackBarNotifyType.SUCCESS);
       }
-    });
+      return true;
+    } catch (e) {
+      hilog.error(0, 'TokenListPage', `updateSingleToken failed: ${e}`);
+      return false;
+    }
   }
 
   /**
-   * 处理单条 Token 更新事件 —— 精准刷新（仅更新被修改的那一项）。
+   * 单条 Token 精准刷新（由 TOKEN_SINGLE_UPDATED 事件驱动）。
    *
-   * 如果该 Token 当前已被 LazyForEach 加载到 dataSource 中则精准刷新该项；
-   * 如果尚未加载（在滚动区域之外）则跳过 —— 因为 dataSource 底层数组
-   * 与 TokenStore.token_array 共享同一引用，数据已自动同步。
+   * 流程：替换 vm.config 引用 + 刷新 objid → updateItem 触发 notifyDataChange
+   * → LazyForEach 检测到 key 变化 → 销毁旧行并创建新行 → aboutToAppear 重新初始化。
+   *
+   * 对于尚未加载到 LazyForEach 可视区域的 Token（滚动范围之外），
+   * 底层数组已在 TokenStore 中更新，下次滚动至此处时会自然使用新数据。
    */
   private handleTokenSingleUpdated(token: TokenConfig): void {
-    const index = this.dataSource.findIndex((t: TokenConfig) => t.TokenUUID === token.TokenUUID);
+    const index = this.dataSource.findIndex((vm: TokenConfigVM) => vm.config.TokenUUID === token.TokenUUID);
     if (index >= 0) {
-      this.dataSource.updateItem(index, token);
+      const vm = this.dataSource.getData(index);
+      vm.config = token;
+      vm.refreshObjId();
+      this.dataSource.updateItem(index, vm);
     }
   }
 
@@ -228,15 +213,16 @@ export struct TokenListPage {
             }
           }
 
-          LazyForEach(this.dataSource, (token: TokenConfig) => {
+          // key = vm.objid：变更 objid 后 LazyForEach 视为"新数据"，销毁旧组件并创建新实例
+          LazyForEach(this.dataSource, (vm: TokenConfigVM) => {
             ListItem() {
               TokenItem({
-                Config: token,
-                Update: async (conf_new) => {
-                  this.updateSingleToken(conf_new, false);
+                Config: vm.config,
+                Update: async (conf_new): Promise<boolean> => {
+                  return await this.updateSingleToken(conf_new, false);
                 }
               })
-                .bindPopup(this.token_copy_guide_popup && token.TokenUUID === this.dataSource.getData(0)?.TokenUUID, {
+                .bindPopup(this.token_copy_guide_popup && vm.config.TokenUUID === this.dataSource.getData(0)?.config.TokenUUID, {
                   placement: Placement.Left,
                   message: this.getUIContext().getHostContext()?.resourceManager
                     .getStringSync($r('app.string.token_copy_guide_popup').id),
@@ -261,13 +247,11 @@ export struct TokenListPage {
             .swipeAction({
               end: {
                 builder: () => {
-                  this.TokenItemSwipeEnd(token)
+                  this.TokenItemSwipeEnd(vm)
                 },
               }
             })
-          }, (item: TokenConfig) => {
-            return item.TokenUUID + '_' + sha256Sync(item.TokenSecret)
-          })
+          }, (vm: TokenConfigVM) => vm.objid) // keyGenerator: objid 变化 = 组件重建
 
           ListItem() {
             Row()
@@ -300,7 +284,7 @@ export struct TokenListPage {
   }
 
   @Builder
-  TokenItemSwipeEnd(conf: TokenConfig) {
+  TokenItemSwipeEnd(vm: TokenConfigVM) {
     Row({ space: 10 }) {
       Button({ type: ButtonType.Circle }) {
         Text() {
@@ -313,7 +297,7 @@ export struct TokenListPage {
       .backgroundColor(Color.Orange)
       .padding(10)
       .onClick(() => {
-        this.showQRCodeDialog(conf);
+        this.showQRCodeDialog(vm.config);
       })
 
       if (this.TabBarVisible) {
@@ -328,33 +312,36 @@ export struct TokenListPage {
         .backgroundColor(Color.Gray)
         .padding(10)
         .onClick(() => {
-          if (conf.TokenType === otpType.TOTP || conf.TokenType === otpType.HOTP ||
-            conf.TokenType === undefined) { // default
+          if (vm.config.TokenType === otpType.TOTP || vm.config.TokenType === otpType.HOTP ||
+            vm.config.TokenType === undefined) {
             this.dialog_totp_config = new CustomDialogController({
               builder: TOTPConfigDialog({
-                conf_json: JSON.stringify(conf),
-                confirm: (new_conf) => {
-                  this.updateSingleToken(JSON.parse(new_conf), true)
+                conf_json: JSON.stringify(vm.config),
+                confirm: async (new_conf): Promise<boolean> => {
+                  const md: TokenConfig = JSON.parse(new_conf);
+                  return await this.updateSingleToken(md, true);
                 }
               })
             })
             this.dialog_totp_config.open()
-          } else if (conf.TokenType === otpType.Forti) { // forti
+          } else if (vm.config.TokenType === otpType.Forti) {
             this.dialog_forti_config = new CustomDialogController({
               builder: FortiConfigDialog({
-                conf_json: JSON.stringify(conf),
-                confirm: (new_conf) => {
-                  this.updateSingleToken(JSON.parse(new_conf), true)
+                conf_json: JSON.stringify(vm.config),
+                confirm: async (new_conf): Promise<boolean> => {
+                  const md: TokenConfig = JSON.parse(new_conf);
+                  return await this.updateSingleToken(md, true);
                 }
               })
             })
             this.dialog_forti_config.open()
-          } else if (conf.TokenType === otpType.Steam) { // steam
+          } else if (vm.config.TokenType === otpType.Steam) {
             this.dialog_steam_config = new CustomDialogController({
               builder: SteamConfigDialog({
-                conf_json: JSON.stringify(conf),
-                confirm: (new_conf) => {
-                  this.updateSingleToken(JSON.parse(new_conf), true)
+                conf_json: JSON.stringify(vm.config),
+                confirm: async (new_conf): Promise<boolean> => {
+                  const md: TokenConfig = JSON.parse(new_conf);
+                  return await this.updateSingleToken(md, true);
                 }
               })
             })
@@ -375,7 +362,7 @@ export struct TokenListPage {
       .padding(10)
       .onClick(async () => {
         AlertDialog.show({
-          message: $r('app.string.alert_remove_confirm_msg', conf.TokenName),
+          message: $r('app.string.alert_remove_confirm_msg', vm.config.TokenName),
           autoCancel: true,
           alignment: DialogAlignment.Center,
           primaryButton: {
@@ -389,7 +376,7 @@ export struct TokenListPage {
             value: $r('app.string.dialog_btn_confirm'),
             fontColor: Color.Red,
             action: async () => {
-              tkStore.deleteToken(conf.TokenUUID);
+              tkStore.deleteToken(vm.config.TokenUUID);
             }
           }
         })
