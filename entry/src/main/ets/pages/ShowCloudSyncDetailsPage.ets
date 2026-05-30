@@ -273,8 +273,8 @@ export struct ShowCloudSyncDetailsPage {
 
                       SubItemButton({
                         symbol: $r('sys.symbol.arrow_clockwise'),
-                        text: $r('app.string.data_sync_manual'),
-                        description: $r('app.string.data_sync_manual_des')
+                        text: $r('app.string.cloud_backup_manual'),
+                        description: $r('app.string.cloud_backup_manual_des')
                       })
                         .onClick(() => {
                           if (!this.cloudSyncEnabled) {

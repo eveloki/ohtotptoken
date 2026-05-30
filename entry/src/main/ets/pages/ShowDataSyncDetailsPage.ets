@@ -17,7 +17,6 @@ export struct ShowDataSyncDetailsPage {
   pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Local AppDbKVSyncTime: SettingValue = '';
-  @Local AppDbKVArchiveTime: SettingValue = '';
   @Local Is_loaded: boolean = false;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
   @Local deviceName: string = '';
@@ -27,12 +26,8 @@ export struct ShowDataSyncDetailsPage {
 
   aboutToAppear(): void {
     this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
-    this.AppDbKVArchiveTime = AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME);
     if (this.AppDbKVSyncTime == '' || this.AppDbKVSyncTime == null) {
       this.AppDbKVSyncTime = 'invalid';
-    }
-    if (this.AppDbKVArchiveTime == '' || this.AppDbKVArchiveTime == null) {
-      this.AppDbKVArchiveTime = 'invalid';
     }
 
     const deviceInfo:DeviceInfoData = DeviceInfoHelper.getInstance().getDeviceInfo();
@@ -89,19 +84,7 @@ export struct ShowDataSyncDetailsPage {
 
                 }
                 .padding({ left: 10, right: 10 })
-                ListItem() {
-                  SettingItem({ title: $r('app.string.data_kv_archive_time') }) {
-                    Row() {
-                      Text(this.AppDbKVArchiveTime as string)
-                        .fontSize($r('sys.float.ohos_id_text_size_body2'))
-                        .fontColor($r('sys.color.ohos_id_color_text_primary'))
-                        .fontWeight(FontWeight.Medium)
-                        .textAlign(TextAlign.Start)
-                    }
-                    .padding(10)
-                  }
-                }
-                .padding({ left: 10, right: 10 })
+
                 ListItem() {
                   SettingItem({ title: $r('app.string.data_kv_sync_time') }) {
                     Row() {
@@ -117,7 +100,8 @@ export struct ShowDataSyncDetailsPage {
 
                     SubItemButton({
                       symbol: $r('sys.symbol.arrow_clockwise'),
-                      text: $r('app.string.data_sync_manual')
+                      text: $r('app.string.data_kv_sync_manual'),
+                      description: $r('app.string.data_kv_sync_manual_des')
                     })
                       .onClick(() => {
                         this.Is_loaded=true;
@@ -126,7 +110,6 @@ export struct ShowDataSyncDetailsPage {
                             this.Is_loaded = false;
                             AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, new Date().toISOString());
                             this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
-                            this.AppDbKVArchiveTime = AppPreference.getPreference(PREF_KEYS.DB_KV_ARCHIVE_TIME);
                           }, 1500);
                         });
                       })

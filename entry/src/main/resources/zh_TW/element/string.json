@@ -397,12 +397,20 @@
       "value": "更新時間"
     },
     {
-      "name": "data_kv_archive_time",
-      "value": "存檔時間"
+      "name": "data_kv_sync_manual",
+      "value": "立即同步"
     },
     {
-      "name": "data_sync_manual",
-      "value": "手動備份"
+      "name": "data_kv_sync_manual_des",
+      "value": "同步當前所有令牌到其他裝置"
+    },
+    {
+      "name": "cloud_backup_manual",
+      "value": "立即備份"
+    },
+    {
+      "name": "cloud_backup_manual_des",
+      "value": "將當前所有令牌備份至華為雲"
     },
     {
       "name": "data_dev_info",

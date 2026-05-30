@@ -397,15 +397,19 @@
       "value": "更新时间"
     },
     {
-      "name": "data_kv_archive_time",
-      "value": "存档时间"
+      "name": "data_kv_sync_manual",
+      "value": "立即同步"
     },
     {
-      "name": "data_sync_manual",
+      "name": "data_kv_sync_manual_des",
+      "value": "同步当前所有令牌到其他设备"
+    },
+    {
+      "name": "cloud_backup_manual",
       "value": "立即备份"
     },
     {
-      "name": "data_sync_manual_des",
+      "name": "cloud_backup_manual_des",
       "value": "将当前所有令牌备份到华为云"
     },
     {

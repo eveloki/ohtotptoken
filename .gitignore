@@ -13,6 +13,12 @@
 /.bitfun
 /.playwright-mcp/
 
+# Agent
+.kilo/
+
+# Crash dumps
+*.dmp
+
 # Agent Wiki
 /wiki/
 /raw/

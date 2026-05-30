@@ -397,15 +397,19 @@
       "value": "Last Updated"
     },
     {
-      "name": "data_kv_archive_time",
-      "value": "Last Data Archive Time"
+      "name": "data_kv_sync_manual",
+      "value": "Sync Now"
     },
     {
-      "name": "data_sync_manual",
+      "name": "data_kv_sync_manual_des",
+      "value": "Sync all tokens to other devices"
+    },
+    {
+      "name": "cloud_backup_manual",
       "value": "Backup Now"
     },
     {
-      "name": "data_sync_manual_des",
+      "name": "cloud_backup_manual_des",
       "value": "Upload all tokens to Huawei Cloud"
     },
     {

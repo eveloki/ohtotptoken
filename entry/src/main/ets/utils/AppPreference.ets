@@ -72,8 +72,6 @@ export enum PREF_KEYS {
   CLOUD_SYNC_LAST_TIME = 'app_cloud_sync_last_time',
   /** KV数据库同步时间 */
   DB_KV_SYNC_TIME = 'app_db_kv_sync_time',
-  /** KV数据库归档时间 */
-  DB_KV_ARCHIVE_TIME = 'app_db_kv_archive_time',
   /** 选中的图标包 */
   APPEARANCE_ICON_PACK_SELECTED = 'app_appearance_icon_pack_selected',
   /** 隐藏Token开关 */
@@ -370,8 +368,6 @@ export class AppPreference {
     [PREF_KEYS.DB_RDS_SYNC_ENABLE, false],
     // kv数据库同步时间
     [PREF_KEYS.DB_KV_SYNC_TIME, ''],
-    // kv数据库存档时间
-    [PREF_KEYS.DB_KV_ARCHIVE_TIME, ''],
     [PREF_KEYS.SHOW_GUIDE_TIPS, true],
     // 主密码弃用告知已确认
     [PREF_KEYS.MASTER_KEY_DEPRECATION_ACKNOWLEDGED, false],
