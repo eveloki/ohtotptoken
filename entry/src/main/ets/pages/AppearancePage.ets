@@ -59,16 +59,14 @@ export struct AppearancePage {
               ListItem() {
                 TokenItem({
                   Config: new TokenConfig('ABC', otpType.TOTP, 'Github', 'Foo Bar'),
-                  Update: () => {
-                  }
+                  Update: async (): Promise<boolean> => false
                 })
               }
 
               ListItem() {
                 TokenItem({
                   Config: new TokenConfig('ABC', otpType.HOTP, 'Microsoft', 'Some Body'),
-                  Update: () => {
-                  }
+                  Update: async (): Promise<boolean> => false
                 })
               }
             }

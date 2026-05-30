@@ -13,7 +13,7 @@ export struct URIConfigDialog {
   @State btn_folder_clicked: number = 0;
 
   cancel?: () => void;
-  confirm: (tokens: Array<TokenConfig>) => void = () => {};
+  confirm: (tokens: Array<TokenConfig>) => Promise<boolean> = async () => false;
 
   createTokens(uris: Array<string>): Array<TokenConfig> {
     let tokens: Array<TokenConfig> = [];
@@ -133,10 +133,12 @@ export struct URIConfigDialog {
         Button($r('app.string.dialog_btn_confirm'))
           .fontColor(Color.Red)
           .backgroundColor(Color.Transparent)
-          .onClick(() => {
+          .onClick(async () => {
             if (this.controller != undefined) {
-              this.confirm(this.createTokens(this.otp_uris))
-              this.controller.close()
+              const ok = await this.confirm(this.createTokens(this.otp_uris))
+              if (ok) {
+                this.controller.close()
+              }
             }
           })
           .width('100%')

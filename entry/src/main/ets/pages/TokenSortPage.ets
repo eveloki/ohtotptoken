@@ -7,6 +7,7 @@ import { AppWindowInfo } from "../entryability/EntryAbility";
 import { AppStorageV2 } from "@kit.ArkUI";
 import { common } from "@kit.AbilityKit";
 import { CommonConstants } from "../utils/CommonConstants";
+import { hilog } from "@kit.PerformanceAnalysisKit";
 import {
   HdsNavDestination,
   HdsNavDestinationTitleMode,
@@ -59,8 +60,14 @@ export struct TokenSortPage {
               TokenItem({
                 Config: token,
                 sortMode: true,
-                Update: async (conf_new) => {
-                  await tkStore.updateToken(conf_new);
+                Update: async (conf_new): Promise<boolean> => {
+                  try {
+                    await tkStore.updateToken(conf_new);
+                    return true;
+                  } catch (e) {
+                    hilog.error(0, 'TokenSortPage', `Update failed: ${e}`);
+                    return false;
+                  }
                 }
               })
             }
