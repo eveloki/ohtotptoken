@@ -9,6 +9,11 @@ import { AppWindowInfo } from '../entryability/EntryAbility';
 import { DeviceInfoHelper,DeviceInfoData } from '../utils/DeviceInfoHelper';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { CommonConstants } from '../utils/CommonConstants';
+import { showSnackBar, SnackBarNotifyType } from '../utils/HdsSnackBarUtils';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const TAG = 'ShowDataSyncDetailsPage';
+const DOMAIN = 0xFF00;
 
 @Entry
 @Preview
@@ -111,6 +116,10 @@ export struct ShowDataSyncDetailsPage {
                             AppPreference.setPreference(PREF_KEYS.DB_KV_SYNC_TIME, new Date().toISOString());
                             this.AppDbKVSyncTime = AppPreference.getPreference(PREF_KEYS.DB_KV_SYNC_TIME);
                           }, 1500);
+                        }).catch((err: Error) => {
+                          this.Is_loaded = false;
+                          hilog.error(DOMAIN, TAG, `DataSync failed: ${err.message}`);
+                          showSnackBar($r('app.string.cloud_sync_start_failed'), SnackBarNotifyType.WARNING);
                         });
                       })
                   }
