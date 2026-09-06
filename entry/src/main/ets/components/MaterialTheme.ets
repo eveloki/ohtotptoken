@@ -69,6 +69,13 @@ export class MaterialTheme {
       hdsMaterial.MaterialType.IMMERSIVE : hdsMaterial.MaterialType.NONE;
   }
 
+  /** HdsTabs 悬浮页签支持独立光效颜色；HDS 材质参数不支持 materialColor。 */
+  static hdsLightColor(): ResourceColor {
+    const preference = MaterialTheme.materialPref();
+    return MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.IMMERSIVE &&
+      preference.app_appearance_immersive_light_effect ? preference.app_appearance_light_color : Color.Transparent;
+  }
+
   /** 统一 HDS 性能等级，保留不支持沉浸材质设备的 SMOOTH 回退。 */
   static hdsMaterialLevel(): hdsMaterial.MaterialLevel {
     return MaterialPolicy.getInstance().getHdsAdaptiveMaterialLevel();

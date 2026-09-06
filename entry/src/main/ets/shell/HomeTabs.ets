@@ -157,6 +157,7 @@ export struct HomeTabs {
           this.effectiveBottomTabsType === SettingBottomTabsType.SUSPENSION ?
           {
             barBottomMargin: 28,
+            lightColor: MaterialTheme.hdsLightColor(),
             systemMaterialEffect: {
               materialType: MaterialTheme.hdsMaterialType(),
               materialLevel: MaterialTheme.hdsMaterialLevel()
