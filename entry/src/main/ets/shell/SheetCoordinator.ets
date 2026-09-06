@@ -50,6 +50,7 @@ export struct SheetCoordinator {
   @Event removeTestTokens: () => Promise<boolean> = async () => false;
 
   @Local isBackupSheetVisible: boolean = false;
+  @Local isUriImportPageVisible: boolean = false;
   @Local isSafetySheetVisible: boolean = false;
   @Local isAppearanceSheetVisible: boolean = false;
   @Local isDeveloperOptionsSheetVisible: boolean = false;
@@ -186,13 +187,20 @@ export struct SheetCoordinator {
     });
   }
 
+  private backupSheetOptions(): SheetOptions {
+    const options = MaterialSheetStyle.options();
+    options.showClose = !this.isUriImportPageVisible;
+    return options;
+  }
+
   @Builder
   BackupAndMigrationSheetBuilder(embedded: boolean) {
     BackupAndMigrationSheet({
       Tokens: this.tokens,
       scrollEffectStyle: this.scrollEffectType,
       embedded: embedded,
-      backupReload: this.backupReload
+      backupReload: this.backupReload,
+      onUriImportVisibilityChange: (visible: boolean) => this.isUriImportPageVisible = visible
     })
       .height('100%')
       .foregroundBlurStyle(this.window.BackgroundBlurActive ? BlurStyle.Thin : BlurStyle.NONE, {
@@ -510,7 +518,7 @@ export struct SheetCoordinator {
               }
             })
             .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(false),
-              MaterialSheetStyle.options())
+              this.backupSheetOptions())
 
           // 左侧跳过行边距 16vp、图标 20vp 和图文间距 10vp，与标题对齐。
           SubItemDivider({ insetLeft: 46 })

@@ -433,6 +433,7 @@ export enum ROUTE_NAMES {
   ShowCloudSyncDetailsPage = 'ShowCloudSyncDetailsPage',
   /** 云端备份历史页面 */
   ShowCloudBackupHistoryPage = 'ShowCloudBackupHistoryPage',
+  UriImportSheet = 'UriImportSheet',
   /** 展示验证码页面 */
   ShowCodePage = 'ShowCodePage',
   /** 通用Web页面 */

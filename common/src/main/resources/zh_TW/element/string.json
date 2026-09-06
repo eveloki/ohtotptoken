@@ -646,6 +646,18 @@
       "value": "文字連結"
     },
     {
+      "name": "uri_import_file",
+      "value": "從檔案讀取"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "檔案讀取失敗，請重新選擇檔案"
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "未找到有效的 otpauth:// 連結，請檢查後重試"
+    },
+    {
       "name": "tab_token_add_uri_title",
       "value": "輸入OTP URI"
     },

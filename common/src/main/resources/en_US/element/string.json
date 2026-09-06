@@ -621,6 +621,18 @@
       "value": "Text Link"
     },
     {
+      "name": "uri_import_file",
+      "value": "Read from file"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "Could not read the file. Please select it again."
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "No valid otpauth:// links found. Check the links and try again."
+    },
+    {
       "name": "tab_token_add_uri_title",
       "value": "Enter OTP URI"
     },

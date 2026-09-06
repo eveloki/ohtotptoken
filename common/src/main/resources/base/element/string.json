@@ -642,6 +642,18 @@
       "value": "Text URI"
     },
     {
+      "name": "uri_import_file",
+      "value": "从文件读取"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "文件读取失败，请重新选择文件"
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "未找到有效的 otpauth:// 链接，请检查后重试"
+    },
+    {
       "name": "tab_token_add_uri_title",
       "value": "Input OTP URI"
     },
