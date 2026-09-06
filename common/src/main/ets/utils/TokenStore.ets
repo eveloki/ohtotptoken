@@ -1,12 +1,11 @@
 import { KvManager } from "./KvManager";
-import { TokenConfig, otpType } from "./TokenConfig";
+import { TokenConfig, otpType, copyTokenConfig } from "./TokenConfig";
 import { TokenGroupStore } from './TokenGroupStore';
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
 import { EVENT_NAMES, PREF_KEYS, AppPreference } from "./AppPreference";
 import { AssetSecretStore } from './AssetSecretStore';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { BusinessError } from '@kit.BasicServicesKit';
 
 const TAG = 'TokenStore';
 const DOMAIN = 0xFF00;
@@ -23,7 +22,7 @@ const DOMAIN = 0xFF00;
  * 无需感知底层存储拆分。
  *
  * 数据流：
- * - 写入: saveToken() → ASSET upsert Secret + KV 写入完整 TokenConfig
+ * - 写入: updateTokens()/updateToken() → KV 事务提交完整配置 → ASSET 同步变更 Secret
  * - 读取: LoadTokenByDataBase() → KV 加载 → ASSET 批量回填 Secret（优先）
  * - 删除: deleteToken() → ASSET 删除 Secret + KV 删除元数据
  *
@@ -32,7 +31,7 @@ const DOMAIN = 0xFF00;
  *
  * TODO: ASSET 迁移完全落地后，当 Secret 满足 isSecretSizeValid 条件时，
  * KV 不再存储 TokenSecret（仅保留元数据），Secret 唯一存储于 ASSET。
- * 届时 saveToken() 写入 KV 前需清空 TokenConfig.TokenSecret，
+ * 届时需重新设计跨 KV/ASSET 提交与恢复流程，再清空 KV 中的 TokenSecret，
  * fillSecretsFromAsset() 成为 Secret 的唯一读取来源。
  * 超大 Secret（>900 字节）仍降级存储到 KV。
  * 此变更需确保 BackupRestoreHelper / CloudBackupManager 等备份恢复路径兼容。
@@ -47,6 +46,14 @@ export class TokenStore {
   private static instance: TokenStore;
 
   private token_prefix: string = "_token_uuid_";
+  private mutationQueue: Promise<void> = Promise.resolve();
+
+  // 排序、单条编辑、批量操作和重新加载共享队列，避免 await 期间互相覆盖内存快照。
+  private enqueueMutation(operation: () => Promise<void>): Promise<void> {
+    const pending = this.mutationQueue.then(operation);
+    this.mutationQueue = pending.catch(() => {});
+    return pending;
+  }
 
   private constructor() {
   }
@@ -82,11 +89,13 @@ export class TokenStore {
   }
 
   public async LoadTokenByDataBase(): Promise<void> {
-     await TokenGroupStore.getInstance().load();
-     this.token_array = await this.kvMgr.getTokenArray(this.token_prefix)
-     this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-     await this.fillSecretsFromAsset();
-     this.sortTokens();
+    return this.enqueueMutation(async () => {
+      await TokenGroupStore.getInstance().load();
+      this.token_array = await this.kvMgr.getTokenArray(this.token_prefix);
+      this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
+      await this.fillSecretsFromAsset();
+      this.sortTokens();
+    });
   }
 
   /**
@@ -196,25 +205,19 @@ export class TokenStore {
     this.emitTokenChanged();
   }
 
-  /**
-   * 持久化单条 Token（ASSET + KV 双写）.
-   *
-   * 仅在 Secret 发生变更时调用（如 updateToken）。
-   * ASSET 写入失败时不回退 KV（KV 仍作为安全后裔），
-   * Secret 为空时同步清除 ASSET 条目。
-   * KV 始终写入完整 TokenConfig（含 Secret），确保备份/克隆场景数据完整。
-   */
-  private async saveToken(token: TokenConfig): Promise<void> {
+  /** KV 提交成功后同步新增/变更的密钥；ASSET 失败仍保留完整加密 KV 降级副本。 */
+  private async saveTokenSecret(token: TokenConfig): Promise<void> {
     const secret = token.TokenSecret;
     if (secret.length > 0 && this.assetStore.isSecretSizeValid(secret)) {
-      await this.assetStore.upsertSecret(token.TokenUUID, secret);
-    } else if (secret.length === 0) {
+      const saved = await this.assetStore.upsertSecret(token.TokenUUID, secret);
+      if (!saved) {
+        // 写入失败时不保留可能已过期的密钥，完整加密 KV 仍可恢复。
+        await this.assetStore.removeSecret(token.TokenUUID);
+      }
+    } else {
+      // 密钥清空或变为超限长度时清除旧 ASSET 副本，避免迁移回填旧值。
       await this.assetStore.removeSecret(token.TokenUUID);
     }
-    // KV 始终写入完整 TokenConfig（含 Secret），作为备份/克隆的数据后裔
-    // TODO: ASSET 迁移落地后，满足 isSecretSizeValid 时 KV 不再存储 Secret，
-    // 改为: token.TokenSecret = '' 后再写入 KV，Secret 唯一存于 ASSET
-    await this.kvMgr.setValue<TokenConfig>(`${this.token_prefix}${token.TokenUUID}`, token);
   }
 
   /**
@@ -227,38 +230,51 @@ export class TokenStore {
   }
 
   public async moveTokenToGroup(uuid: string, groupId: string): Promise<void> {
-    const token = this.token_array.find(item => item.TokenUUID === uuid);
-    if (!token || token.TokenType === otpType.NFC_external) {
-      return;
-    }
-    if (groupId !== '' && !TokenGroupStore.getInstance().state.groups.some(group => group.id === groupId)) {
-      throw new Error('Group no longer exists');
-    }
-    const previous = token.TokenGroupId;
-    token.TokenGroupId = groupId;
-    try {
+    return this.enqueueMutation(async () => {
+      const index = this.token_array.findIndex(item => item.TokenUUID === uuid);
+      if (index < 0 || this.token_array[index].TokenType === otpType.NFC_external) {
+        return;
+      }
+      if (groupId !== '' && !TokenGroupStore.getInstance().state.groups.some(group => group.id === groupId)) {
+        throw new Error('Group no longer exists');
+      }
+      if ((this.token_array[index].TokenGroupId ?? '') === groupId) {
+        return;
+      }
+      const token = copyTokenConfig(this.token_array[index]);
+      token.TokenGroupId = groupId;
       await this.saveTokenKvOnly(token);
-    } catch (error) {
-      token.TokenGroupId = previous;
-      throw new Error((error as BusinessError).message);
-    }
-    this.emitTokenChanged();
+      this.token_array[index] = token;
+      this.emitTokenChanged();
+    });
   }
 
   public async setTokenFavorite(uuid: string, favorite: boolean): Promise<void> {
-    const token = this.token_array.find(item => item.TokenUUID === uuid);
-    if (!token || token.TokenType === otpType.NFC_external) {
-      return;
-    }
-    const previous = token.TokenFavorite;
-    token.TokenFavorite = favorite;
-    try {
-      await this.saveTokenKvOnly(token);
-    } catch (error) {
-      token.TokenFavorite = previous;
-      throw new Error((error as BusinessError).message);
-    }
-    this.emitTokenChanged();
+    return this.setTokensFavorite([uuid], favorite);
+  }
+
+  /** 只写入真正改变的本地令牌；同一事务、同一次列表刷新，不访问 ASSET。 */
+  public async setTokensFavorite(uuids: string[], favorite: boolean): Promise<void> {
+    const selected = new Set(uuids);
+    return this.enqueueMutation(async () => {
+      const changed: TokenConfig[] = [];
+      const next = this.token_array.map((token: TokenConfig): TokenConfig => {
+        if (!selected.has(token.TokenUUID) || token.TokenType === otpType.NFC_external ||
+          (token.TokenFavorite === true) === favorite) {
+          return token;
+        }
+        const updated = copyTokenConfig(token);
+        updated.TokenFavorite = favorite;
+        changed.push(updated);
+        return updated;
+      });
+      if (changed.length === 0) {
+        return;
+      }
+      await this.kvMgr.saveTokenBatch(this.token_prefix, changed);
+      this.token_array = next;
+      this.emitTokenChanged();
+    });
   }
 
   public async deleteGroup(id: string): Promise<void> {
@@ -271,58 +287,127 @@ export class TokenStore {
   }
 
   public async updateTokenRank(from: number, to: number): Promise<void> {
-    this.token_array[from].RankScore = to;
-    await this.saveTokenKvOnly(this.token_array[from]);
-    if (from > to) {
-      for (let i = to; i < from; i++) {
-        this.token_array[i].RankScore++;
-        await this.saveTokenKvOnly(this.token_array[i]);
+    return this.enqueueMutation(async () => {
+      if (from === to || from < 0 || to < 0 || from >= this.token_array.length || to >= this.token_array.length) {
+        return;
       }
-    } else {
-      for (let i = from + 1; i <= to; i++) {
-        this.token_array[i].RankScore--;
-        await this.saveTokenKvOnly(this.token_array[i]);
+      const next = [...this.token_array];
+      const moved = next.splice(from, 1)[0];
+      next.splice(to, 0, moved);
+      const changed: TokenConfig[] = [];
+      for (let i = Math.min(from, to); i <= Math.max(from, to); i++) {
+        const updated = copyTokenConfig(next[i]);
+        updated.RankScore = i;
+        next[i] = updated;
+        changed.push(updated);
       }
-    }
-    this.sortTokens();
+      await this.kvMgr.saveTokenBatch(this.token_prefix, changed);
+      this.token_array = next;
+      this.emitTokenChanged();
+    });
   }
 
   public async updateToken(token: TokenConfig): Promise<void> {
-    const token_new = token;
-    token_new.TokenGroupId = token_new.TokenGroupId ?? '';
-    const previousGroupId = this.token_array.find(item => item.TokenUUID === token.TokenUUID)?.TokenGroupId ?? '';
-    const token_uuids = this.token_array.map(t => t.TokenUUID);
-    if (!token_uuids.includes(token_new.TokenUUID)) {
-      token_new.RankScore = this.token_array.length;
-      this.token_array.push(token_new);
-    } else {
-      const token_index = token_uuids.findIndex(uuid => uuid === token_new.TokenUUID);
-      token_new.RankScore = this.token_array[token_index].RankScore;
-      // 编辑表单重建 TokenConfig 时保留本地收藏状态；收藏操作走独立元数据入口。
-      token_new.TokenFavorite = this.token_array[token_index].TokenFavorite === true;
-      this.token_array[token_index] = token_new;
+    const snapshot = copyTokenConfig(token);
+    return this.enqueueMutation(() => this.persistTokens([snapshot], true));
+  }
+
+  /** URI/备份统一批量入口。UUID 覆盖语义不变，KV 失败整批回滚，不发布未保存数据。 */
+  public async updateTokens(tokens: TokenConfig[]): Promise<void> {
+    const snapshots = tokens.map((token: TokenConfig): TokenConfig => copyTokenConfig(token));
+    return this.enqueueMutation(() => this.persistTokens(snapshots, false));
+  }
+
+  private async persistTokens(tokens: TokenConfig[], single: boolean): Promise<void> {
+    if (tokens.length === 0) {
+      return;
     }
-    await this.saveToken(token_new);
-    this.emitTokenSingleUpdated(token_new);
-    if (previousGroupId !== token_new.TokenGroupId) {
+    const next = [...this.token_array];
+    const indexes = new Map<string, number>();
+    const originalSecrets = new Map<string, string>();
+    let nextRank = 0;
+    this.token_array.forEach((token: TokenConfig, index: number) => {
+      indexes.set(token.TokenUUID, index);
+      originalSecrets.set(token.TokenUUID, token.TokenSecret);
+      nextRank = Math.max(nextRank, token.RankScore + 1);
+    });
+    const previousGroup = indexes.has(tokens[0].TokenUUID) ?
+      (next[indexes.get(tokens[0].TokenUUID)!].TokenGroupId ?? '') : '';
+    const changed = new Map<string, TokenConfig>();
+    for (const token of tokens) {
+      if (!token.TokenUUID || typeof token.TokenSecret !== 'string' || token.TokenType === otpType.NFC_external) {
+        throw new Error('Invalid persistent token');
+      }
+      const index = indexes.get(token.TokenUUID);
+      const updated = copyTokenConfig(token);
+      updated.TokenGroupId = token.TokenGroupId ?? '';
+      if (index === undefined) {
+        // 兼容历史 RankScore 有间隙的库，新令牌始终追加末尾。
+        updated.RankScore = nextRank++;
+        indexes.set(updated.TokenUUID, next.length);
+        next.push(updated);
+      } else {
+        updated.RankScore = next[index].RankScore;
+        // 已有令牌保留本地收藏；同批重复 UUID 最后一条内容生效，顺序保持首次出现的位置。
+        updated.TokenFavorite = next[index].TokenFavorite === true;
+        next[index] = updated;
+      }
+      changed.set(updated.TokenUUID, updated);
+    }
+    const writes = Array.from(changed.values());
+    // 先提交完整加密 KV，避免 KV 失败留下幽灵内存条目或提前覆盖 ASSET。
+    await this.kvMgr.saveTokenBatch(this.token_prefix, writes);
+    this.token_array = next;
+    for (const token of writes) {
+      if (originalSecrets.get(token.TokenUUID) !== token.TokenSecret) {
+        await this.saveTokenSecret(token);
+      }
+    }
+    if (single) {
+      this.emitTokenSingleUpdated(writes[0]);
+      if (previousGroup !== writes[0].TokenGroupId) {
+        this.emitTokenChanged();
+      }
+    } else {
       this.emitTokenChanged();
     }
   }
 
   public async deleteToken(token_uuid: string): Promise<void> {
-    const token_uuids = this.token_array.map(t => t.TokenUUID);
-    const token_index = token_uuids.findIndex(uuid => uuid === token_uuid);
-    if (token_index === -1) {
-      return;
-    }
-    for (let i = token_index; i < this.token_array.length; i++) {
-      this.token_array[i].RankScore--;
-      await this.saveTokenKvOnly(this.token_array[i]);
-    }
-    this.token_array = this.token_array.filter(t => t.TokenUUID !== token_uuid);
-    await this.kvMgr.deleteValue(`${this.token_prefix}${token_uuid}`);
-    await this.assetStore.removeSecret(token_uuid);
-    this.emitTokenChanged();
+    return this.deleteTokens([token_uuid]);
+  }
+
+  /** 一次过滤、一次重排，仅重写剩余且排序变化的令牌；清空时零排序写入。 */
+  public async deleteTokens(uuids: string[]): Promise<void> {
+    const selected = new Set(uuids);
+    return this.enqueueMutation(async () => {
+      const removed = this.token_array.filter(token => selected.has(token.TokenUUID));
+      if (removed.length === 0) {
+        return;
+      }
+      const changed: TokenConfig[] = [];
+      const next: TokenConfig[] = [];
+      let removedBefore = 0;
+      for (const token of this.token_array) {
+        if (selected.has(token.TokenUUID)) {
+          removedBefore++;
+        } else if (removedBefore === 0) {
+          next.push(token);
+        } else {
+          // 保持旧排序语义：只扣除前面删除的数量，不顺便重排其他历史数据。
+          const updated = copyTokenConfig(token);
+          updated.RankScore = token.RankScore - removedBefore;
+          next.push(updated);
+          changed.push(updated);
+        }
+      }
+      await this.kvMgr.saveTokenBatch(this.token_prefix, changed, removed.map(token => token.TokenUUID));
+      this.token_array = next;
+      for (const token of removed) {
+        await this.assetStore.removeSecret(token.TokenUUID);
+      }
+      this.emitTokenChanged();
+    });
   }
 
   /**

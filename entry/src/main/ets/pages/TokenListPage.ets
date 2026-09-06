@@ -65,10 +65,27 @@ export struct TokenListPage {
 
   @Local dataSource: GenericDataSource<TokenConfigVM> = new GenericDataSource([]);
 
-  /** 全量刷新：父组件 Tokens 变化时重建整个 ViewModel 数组 */
+  /** 批量只重载一次；内容替换的已有 UUID 必须换行 key，避免复用旧 OTP/收藏状态。 */
   @Monitor("Tokens")
   onTokensChange(monitor: IMonitor): void {
-    this.dataSource.updateData(toVMs(monitor.value()?.now as TokenConfig[]));
+    const previous = new Map<string, TokenConfigVM>();
+    for (let i = 0; i < this.dataSource.totalCount(); i++) {
+      const vm = this.dataSource.getData(i);
+      previous.set(vm.config.TokenUUID, vm);
+    }
+    const tokens = monitor.value()?.now as TokenConfig[];
+    const next = tokens.map((token: TokenConfig): TokenConfigVM => {
+      const vm = previous.get(token.TokenUUID);
+      if (!vm) {
+        return new TokenConfigVM(token);
+      }
+      if (vm.config !== token) {
+        vm.config = token;
+        vm.refreshObjId();
+      }
+      return vm;
+    });
+    this.dataSource.updateData(next);
   }
 
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;

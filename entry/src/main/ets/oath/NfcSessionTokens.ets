@@ -33,8 +33,16 @@ export class NfcSessionTokens {
   }
 
   public remove(uuid: string): void {
-    this.tokens = this.tokens.filter((t) => t.TokenUUID !== uuid);
-    this.notifyChanged();
+    this.removeMany([uuid]);
+  }
+
+  public removeMany(uuids: string[]): void {
+    const selected = new Set(uuids);
+    const next = this.tokens.filter(token => !selected.has(token.TokenUUID));
+    if (next.length !== this.tokens.length) {
+      this.tokens = next;
+      this.notifyChanged();
+    }
   }
 
   /**

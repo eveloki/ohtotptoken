@@ -3,8 +3,16 @@ import { SyncTimeHelper } from 'common';
 
 /**
  * SyncTimeHelper 单元测试(云同步时间戳的格式化/解析/边界)。
- * 使用本地时区构造期望值,避免断言依赖运行环境的时区设置。
+ * 从固定 UTC 时间戳的本地字段构造期望值，避免 Windows Previewer 的
+ * 本地 Date 构造器与 epoch getter 使用不同夏令时规则导致环境相关误报。
  */
+function expectedLocalTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  const fields = [date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()]
+    .map((value: number) => value.toString().padStart(2, '0'));
+  return `${date.getFullYear()}-${fields[0]}-${fields[1]} ${fields[2]}:${fields[3]}`;
+}
+
 export default function syncTimeHelperTest() {
   describe('syncTimeHelperTest', () => {
     it('formatTimestamp_invalid_returns_empty', 0, () => {
@@ -13,14 +21,17 @@ export default function syncTimeHelperTest() {
     });
 
     it('formatTimestamp_local_time_format', 0, () => {
-      // 2026-04-23 14:30 本地时间
-      let ts = new Date(2026, 3, 23, 14, 30).getTime();
-      expect(SyncTimeHelper.formatTimestamp(ts)).assertEqual('2026-04-23 14:30');
+      const ts = Date.UTC(2026, 3, 23, 6, 30);
+      expect(SyncTimeHelper.formatTimestamp(ts)).assertEqual(expectedLocalTime(ts));
+      expect(SyncTimeHelper.formatTimestamp(ts).length).assertEqual(16);
     });
 
     it('formatTimestamp_pads_single_digits', 0, () => {
-      let ts = new Date(2026, 0, 5, 3, 7).getTime();
-      expect(SyncTimeHelper.formatTimestamp(ts)).assertEqual('2026-01-05 03:07');
+      const ts = Date.UTC(2026, 0, 4, 19, 7);
+      const formatted = SyncTimeHelper.formatTimestamp(ts);
+      expect(formatted).assertEqual(expectedLocalTime(ts));
+      expect(formatted.substring(5, 7)).assertEqual('01');
+      expect(formatted.substring(14, 16)).assertEqual('07');
     });
 
     it('parseStoredTimestamp_number_passthrough', 0, () => {

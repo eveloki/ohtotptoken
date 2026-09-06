@@ -286,7 +286,8 @@ struct Index {
     if (this.multiSelectBusy || !this.multiSelectMode) {
       return;
     }
-    const selected = this.displayTokens.filter(token => this.selectedTokenIds.includes(token.TokenUUID));
+    const selectedIds = new Set(this.selectedTokenIds);
+    const selected = this.displayTokens.filter(token => selectedIds.has(token.TokenUUID));
     if (selected.length === 0) {
       return;
     }
@@ -295,27 +296,38 @@ struct Index {
       token.TokenType !== otpType.NFC_external && token.TokenFavorite === true);
     this.multiSelectBusy = true;
     const failed: string[] = [];
-    for (const token of selected) {
-      try {
-        if (action === 'delete') {
-          if (token.TokenType === otpType.NFC_external) {
-            NfcSessionTokens.getInstance().remove(token.TokenUUID);
+    const localIds = selected.filter(token => token.TokenType !== otpType.NFC_external).map(token => token.TokenUUID);
+    const externalIds = selected.filter(token => token.TokenType === otpType.NFC_external).map(token => token.TokenUUID);
+    try {
+      if (action === 'delete' || action === 'favorite') {
+        try {
+          if (action === 'delete') {
+            await tkStore.deleteTokens(localIds);
           } else {
-            await tkStore.deleteToken(token.TokenUUID);
+            await tkStore.setTokensFavorite(localIds, favorite);
           }
-        } else if (token.TokenType === otpType.NFC_external) {
-          // 会话令牌不支持持久化收藏或分组，保留选中并报告未完成。
-          failed.push(token.TokenUUID);
-        } else if (action === 'favorite') {
-          await tkStore.setTokenFavorite(token.TokenUUID, favorite);
-        } else {
-          await tkStore.moveTokenToGroup(token.TokenUUID, groupId);
+        } catch (_) {
+          // 本地 KV 事务失败整批保留；NFC 会话操作独立处理。
+          failed.push(...localIds);
         }
-      } catch (_) {
-        failed.push(token.TokenUUID);
+        if (action === 'delete') {
+          NfcSessionTokens.getInstance().removeMany(externalIds);
+        } else {
+          failed.push(...externalIds);
+        }
+      } else {
+        failed.push(...externalIds);
+        for (const uuid of localIds) {
+          try {
+            await tkStore.moveTokenToGroup(uuid, groupId);
+          } catch (_) {
+            failed.push(uuid);
+          }
+        }
       }
+    } finally {
+      this.multiSelectBusy = false;
     }
-    this.multiSelectBusy = false;
     this.selectedTokenIds = failed.filter(id => this.displayTokens.some(token => token.TokenUUID === id));
     if (failed.length === 0) {
       this.exitMultiSelect();
@@ -499,9 +511,7 @@ struct Index {
           this.openEncryptionPasswordDialog();
         } else if (this.backup_select_uri.endsWith('.json')) {
           restoreFromBackup(uri).then((backup) => {
-            this.updateTokenConfigs(backup.configs).then(() => {
-              tkStore.sortTokens();
-            });
+            this.updateTokenConfigs(backup.configs);
           }).catch((reason: BusinessError) => {
             showSnackBar(reason.message, SnackBarNotifyType.ERROR);
           });
@@ -639,9 +649,7 @@ struct Index {
     EncryptionPassWordDialog({
       confirm: (password: string) => {
         restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
-          this.updateTokenConfigs(backup.configs).then(() => {
-            tkStore.sortTokens();
-          });
+          this.updateTokenConfigs(backup.configs);
         }).catch((reason: BusinessError) => {
           showSnackBar(reason.message, SnackBarNotifyType.ERROR);
         });
@@ -979,49 +987,31 @@ struct Index {
       return true;
     }
 
-    let failCount = 0;
-    for (const token of testTokens) {
-      try {
-        await tkStore.deleteToken(token.TokenUUID);
-      } catch (error) {
-        failCount++;
-        hilog.error(0, 'DeveloperOptions', `Failed to remove test token: ${error}`);
-      }
+    try {
+      await tkStore.deleteTokens(testTokens.map(token => token.TokenUUID));
+      showSnackBar($r('app.string.toast_test_tokens_removed', testTokens.length), SnackBarNotifyType.SUCCESS);
+      return true;
+    } catch (error) {
+      hilog.error(0, 'DeveloperOptions', `Failed to remove test tokens: ${error}`);
+      showSnackBar($r('app.string.toast_test_tokens_removed', 0), SnackBarNotifyType.WARNING);
+      return false;
     }
-    await this.refreshDisplayTokens();
-    const removedCount = testTokens.length - failCount;
-    showSnackBar($r('app.string.toast_test_tokens_removed', removedCount),
-      failCount === 0 ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
-    return failCount === 0;
   }
 
   async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<boolean> {
-    let failCount = 0;
-    let hasNew = false;
-    const existingUuids = new Set(this.CurrentTokens.map(t => t.TokenUUID));
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].TokenUUID === undefined) {
-        tokens[i].TokenUUID = util.generateRandomUUID();
+    try {
+      for (const token of tokens) {
+        if (token.TokenUUID === undefined) {
+          token.TokenUUID = util.generateRandomUUID();
+        }
       }
-      if (!existingUuids.has(tokens[i].TokenUUID)) {
-        hasNew = true;
-      }
-      try {
-        await tkStore.updateToken(tokens[i]);
-      } catch (e) {
-        hilog.error(0, 'Index', `updateTokenConfigs[${i}] failed: ${e}`);
-        failCount++;
-      }
-    }
-    if (hasNew || this.tokenSortMode !== TokenListSortMode.DEFAULT) {
-      await this.refreshDisplayTokens();
-    }
-    if (failCount === 0) {
+      await tkStore.updateTokens(tokens);
+      // 批量入口只发送一次 TOKEN_CHANGED，包括全部覆盖已有 UUID 的情况。
       showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
       return true;
-    } else {
-      hilog.error(0, 'Index', `updateTokenConfigs: ${failCount}/${tokens.length} failed`);
-      showSnackBar($r('app.string.toast_multi_token_update', tokens.length - failCount), SnackBarNotifyType.WARNING);
+    } catch (e) {
+      hilog.error(0, 'Index', `updateTokenConfigs: transaction failed: ${e}`);
+      showSnackBar($r('app.string.toast_multi_token_update', 0), SnackBarNotifyType.WARNING);
       return false;
     }
   }
@@ -1240,7 +1230,6 @@ struct Index {
       },
       backupReload: async (conf) => {
         await this.updateTokenConfigs(conf);
-        tkStore.sortTokens();
       },
       addTestTokens: () => this.addTestTokens(),
       removeTestTokens: () => this.removeTestTokens()
@@ -1370,7 +1359,6 @@ struct Index {
         tokens: this.CurrentTokens,
         backupReload: async (conf: TokenConfig[]) => {
           await this.updateTokenConfigs(conf);
-          tkStore.sortTokens();
         },
         addTestTokens: () => this.addTestTokens(),
         removeTestTokens: () => this.removeTestTokens(),
