@@ -1,5 +1,5 @@
 import { LengthMetrics } from '@kit.ArkUI';
-import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING } from './SettingStyle';
+import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING, SETTING_ROW_ICON_OFFSET } from './SettingStyle';
 
 @Preview
 @ComponentV2
@@ -49,6 +49,8 @@ export struct SubItemButton {
           if (this.description != '') {
             if (this.descriptionMaxLines > 0) {
               Text(this.description)
+                .width('100%')
+                .padding({ left: SETTING_ROW_ICON_OFFSET })
                 .fontSize($r('sys.float.ohos_id_text_size_body2'))
                 .fontColor(this.descriptionColor)
                 .fontWeight(FontWeight.Regular)
@@ -60,6 +62,8 @@ export struct SubItemButton {
             } else {
               // 不设 maxLines：超长自动换行完整显示（官方 arkts-text-faq 推荐做法）
               Text(this.description)
+                .width('100%')
+                .padding({ left: SETTING_ROW_ICON_OFFSET })
                 .fontSize($r('sys.float.ohos_id_text_size_body2'))
                 .fontColor(this.descriptionColor)
                 .fontWeight(FontWeight.Regular)

@@ -11,6 +11,9 @@ export const SETTING_GROUP_RADIUS: Length = $r('sys.float.corner_radius_level8')
 
 export const SETTING_ROW_PADDING: Padding = { left: 16, right: 16, top: 14, bottom: 14 };
 
+// 描述与标题文字对齐：跳过 20vp 图标和 10vp 图文间距。
+export const SETTING_ROW_ICON_OFFSET: number = 30;
+
 /**
  * 行最小高度，取官方 UX 规范效率型列表单行档 56vp（通用高度档：48/56/64/72/96）。
  * 高度按内容分档而非完全等高：无副标题的单行补齐到 56 档（内容垂直居中）；

@@ -1,7 +1,7 @@
 import { AppWindowInfo } from 'common';
 import { MaterialTheme } from './MaterialTheme';
 import { AppStorageV2 } from "@kit.ArkUI";
-import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING } from './SettingStyle';
+import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING, SETTING_ROW_ICON_OFFSET } from './SettingStyle';
 
 export class SliderItem {
   name: ResourceStr = '';
@@ -54,6 +54,8 @@ export struct SubItemSlider {
           .alignItems(VerticalAlign.Center)
           if (this.description != '') {
             Text(this.description)
+              .width('100%')
+              .padding({ left: this.icon !== undefined ? SETTING_ROW_ICON_OFFSET : 0 })
               .fontSize($r('sys.float.ohos_id_text_size_body2'))
               .fontColor($r('sys.color.ohos_id_color_text_secondary'))
               .fontWeight(FontWeight.Regular)

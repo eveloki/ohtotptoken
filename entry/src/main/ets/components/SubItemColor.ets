@@ -2,7 +2,7 @@ import { ColorSelectDialog } from "../dialogs/ColorSelectDialog";
 import { dialogSystemMaterial, colorHex, hexColor } from 'common';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import { HdsColorPicker } from '@kit.UIDesignKit';
-import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING } from './SettingStyle';
+import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING, SETTING_ROW_ICON_OFFSET } from './SettingStyle';
 
 export class ColorItem {
   name: ResourceStr = '';
@@ -65,6 +65,8 @@ export struct SubItemColor {
         .alignItems(VerticalAlign.Center)
         if (this.description != '') {
           Text(this.description)
+            .width('100%')
+            .padding({ left: this.icon !== undefined ? SETTING_ROW_ICON_OFFSET : 0 })
             .fontSize($r('sys.float.ohos_id_text_size_body2'))
             .fontColor($r('sys.color.ohos_id_color_text_secondary'))
             .fontWeight(FontWeight.Regular)
