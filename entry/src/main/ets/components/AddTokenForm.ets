@@ -30,7 +30,7 @@ export class AddTokenPageParams {
 /**
  * 添加令牌页统一操作按钮。
  *
- * 内容区按钮不在沉浸光感生效范围，保持蓝底白字。
+ * 与图标选择页确认按钮一致：48vp 高、24vp 圆角、蓝底白字及原生按压反馈。
  */
 @Preview
 @ComponentV2
@@ -52,11 +52,12 @@ export struct AddTokenActionButton {
           .maxLines(1)
       }
     }
-    .type(ButtonType.ROUNDED_RECTANGLE)
+    .type(ButtonType.Capsule)
     .width('100%')
     .height(48)
+    .borderRadius(24)
     .backgroundColor(this.buttonEnabled ? $r('app.color.button_blue') : Color.Gray)
-    .stateEffect(false)
+    .stateEffect(true)
     .enabled(this.buttonEnabled)
     .onClick(() => this.action())
   }
