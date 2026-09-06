@@ -46,6 +46,7 @@ export struct TokenListPage {
   @Require @Param pageInfos: NavPathStack = new NavPathStack();
   @Require @Param TabBarVisible: boolean = true;
   @Param listScroller: Scroller = new Scroller();
+  @Param listStartOffset: number = 0;
   @Param multiSelectMode: boolean = false;
   @Param multiSelectBusy: boolean = false;
   @Param selectedTokenIds: string[] = [];
@@ -157,6 +158,7 @@ export struct TokenListPage {
           }, (vm: TokenConfigVM) => vm.objid) // keyGenerator: objid 变化 = 组件重建
         }
         .onDidScroll(() => this.onListScroll(this.listScroller.currentOffset().yOffset))
+        .contentStartOffset(this.listStartOffset)
         .contentEndOffset(this.TabBarVisible ? (80 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
         .alignListItem(ListItemAlign.Center)
         // ArkUI 链式动效要求显式单列且不能使用自动 lanes；仅 PC 保持自适应多列。

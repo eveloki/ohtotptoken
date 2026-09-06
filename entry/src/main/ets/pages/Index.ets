@@ -29,6 +29,8 @@ import { AppWindowInfo } from 'common';
 import lazy { AppLockOverlay } from './AppLockOverlay';
 import { AppStorageV2, ComponentContent } from '@kit.ArkUI';
 import { TokenGroupMoveDialog } from '../dialogs/TokenGroupMoveDialog';
+import { TokenMultiSelectPage } from './TokenMultiSelectPage';
+import { CommonConstants } from 'common';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 // [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
 import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
@@ -123,10 +125,9 @@ function TokenActionsMenuBuilder(host: Index) {
       builder: TokenSortMenuBuilder.bind(host, host)
     })
       .accessibilityText($r('app.string.menu_token_sort_method'))
-    MenuItem({ content: host.multiSelectMode ? $r('app.string.dialog_btn_cancel') :
-      $r('app.string.menu_token_multi_select') })
-      .enabled(!host.multiSelectBusy && (host.multiSelectMode || host.displayTokens.length > 0))
-      .onClick(() => host.toggleMultiSelectMode())
+    MenuItem({ content: $r('app.string.menu_token_multi_select') })
+      .enabled(!host.multiSelectMode && host.displayTokens.length > 0)
+      .onClick(() => host.openMultiSelectPage())
       .accessibilityText($r('app.string.menu_token_multi_select'))
   }
   .width(host.getTokenActionsMenuWidth())
@@ -235,12 +236,10 @@ struct Index {
   @Local multiSelectBusy: boolean = false;
   @Local selectedTokenIds: string[] = [];
 
-  toggleMultiSelectMode(): void {
-    if (this.multiSelectBusy) {
-      return;
-    }
-    if (this.multiSelectMode) {
-      this.exitMultiSelect();
+  private multiSelectListScroller: Scroller = new Scroller();
+
+  openMultiSelectPage(): void {
+    if (this.multiSelectMode || this.displayTokens.length === 0) {
       return;
     }
     this.selectedTokenIds = [];
@@ -249,9 +248,14 @@ struct Index {
     this.groupSidebarOpen = false;
     this.currentHomeTabIndex = 0;
     this.multiSelectMode = true;
+    this.openFullScreenRoute(ROUTE_NAMES.TokenMultiSelectPage, null);
   }
 
   private exitMultiSelect(): void {
+    const paths = this.pageInfos.getAllPathName();
+    if (paths[paths.length - 1] === ROUTE_NAMES.TokenMultiSelectPage) {
+      this.pageInfos.pop();
+    }
     this.multiSelectMode = false;
     this.selectedTokenIds = [];
   }
@@ -286,6 +290,9 @@ struct Index {
     if (selected.length === 0) {
       return;
     }
+    // 在写入前一次性确定目标状态，避免逐条更新触发列表刷新后改变操作方向。
+    const favorite = !selected.every(token =>
+      token.TokenType !== otpType.NFC_external && token.TokenFavorite === true);
     this.multiSelectBusy = true;
     const failed: string[] = [];
     for (const token of selected) {
@@ -300,7 +307,7 @@ struct Index {
           // 会话令牌不支持持久化收藏或分组，保留选中并报告未完成。
           failed.push(token.TokenUUID);
         } else if (action === 'favorite') {
-          await tkStore.setTokenFavorite(token.TokenUUID, true);
+          await tkStore.setTokenFavorite(token.TokenUUID, favorite);
         } else {
           await tkStore.moveTokenToGroup(token.TokenUUID, groupId);
         }
@@ -1245,11 +1252,31 @@ struct Index {
    * 通过箭头函数传给 AppShell，使 @Builder 保持 Index 的 this 与状态刷新能力。
    */
   @Builder
-  HomeContentBuilder() {
+  MultiSelectPageBuilder() {
+    TokenMultiSelectPage({
+      scrollEffectType: this.currentScrollEffectType,
+      listScroller: this.multiSelectListScroller,
+      busy: this.multiSelectBusy,
+      content: () => this.HomeContentBuilder(true),
+      onExitFullScreen: () => {
+        this.multiSelectMode = false;
+        this.selectedTokenIds = [];
+        this.businessSplitEnabled = true;
+      }
+    })
+  }
+
+  @Builder
+  HomeContentBuilder(multiSelect: boolean = false) {
     HomeTabs({
-      onTokenListScroll: (offset: number) => { this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56)); },
+      onTokenListScroll: (offset: number) => {
+        if (!multiSelect) {
+          this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56));
+        }
+      },
       tokens: this.displayTokens,
-      multiSelectMode: this.multiSelectMode,
+      multiSelectMode: multiSelect,
+      listStartOffset: multiSelect ? this.window.AvoidTopHeight + CommonConstants.AVOID_TOP_BASE_HEIGHT : 0,
       multiSelectBusy: this.multiSelectBusy,
       selectedTokenIds: this.selectedTokenIds,
       onToggleSelection: (conf: TokenConfig) => this.toggleTokenSelection(conf),
@@ -1264,7 +1291,7 @@ struct Index {
       pageInfos: this.pageInfos,
       updateTokenConfig: (conf: TokenConfig, toast?: boolean) => this.updateTokenConfig(conf, toast),
       updateTokenConfigs: (tokens: Array<TokenConfig>) => this.updateTokenConfigs(tokens),
-      tokenListScroller: this.tokenListScroller,
+      tokenListScroller: multiSelect ? this.multiSelectListScroller : this.tokenListScroller,
       settingEntryScroller: this.settingEntryScroller,
       selectedTokenUUID: this.selectedTokenUUID,
       onSelectToken: (conf: TokenConfig) => this.selectTokenForResponsiveEdit(conf),
@@ -1348,6 +1375,7 @@ struct Index {
         addTestTokens: () => this.addTestTokens(),
         removeTestTokens: () => this.removeTestTokens(),
         appLockContent: this.AppLockOverlayBuilder,
+        multiSelectPageContent: () => this.MultiSelectPageBuilder(),
         homeContent: () => {
           this.HomeContentBuilder();
         },

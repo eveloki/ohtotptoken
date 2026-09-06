@@ -1,4 +1,4 @@
-import { TokenConfig, SettingBottomTabsType } from 'common';
+import { TokenConfig, SettingBottomTabsType, otpType } from 'common';
 import { MaterialTheme } from '../components/MaterialTheme';
 
 import { TokenListPage } from '../pages/TokenListPage';
@@ -34,6 +34,7 @@ export struct HomeTabs {
     async (tokens: Array<TokenConfig>) => false;
   @Require @Param tokenListScroller: Scroller = new Scroller();
   @Require @Param settingEntryScroller: Scroller = new Scroller();
+  @Param listStartOffset: number = 0;
   @Param multiSelectMode: boolean = false;
   @Param multiSelectBusy: boolean = false;
   @Param selectedTokenIds: string[] = [];
@@ -73,6 +74,18 @@ export struct HomeTabs {
       selectedColor: $r('sys.color.font_secondary'),
       unselectedColor: $r('sys.color.font_secondary')
     } : {};
+  }
+
+  @Computed
+  get allSelectedFavorite(): boolean {
+    const selected = this.tokens.filter(token => this.selectedTokenIds.includes(token.TokenUUID));
+    return selected.length > 0 && selected.every(token =>
+      token.TokenType !== otpType.NFC_external && token.TokenFavorite === true);
+  }
+
+  @Computed
+  get favoriteActionIcon(): Resource {
+    return this.allSelectedFavorite ? $r('sys.symbol.star') : $r('sys.symbol.star_fill');
   }
 
   @Computed
@@ -120,6 +133,7 @@ export struct HomeTabs {
               updateTokenConfigs: this.updateTokenConfigs,
               listScroller: this.tokenListScroller,
               onListScroll: (offset: number) => this.onTokenListScroll(offset),
+              listStartOffset: this.listStartOffset,
               multiSelectMode: this.multiSelectMode,
               multiSelectBusy: this.multiSelectBusy,
               selectedTokenIds: this.selectedTokenIds,
@@ -133,10 +147,11 @@ export struct HomeTabs {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill')),
-              selected: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill'))
+              normal: this.tabSymbol(this.multiSelectMode ? this.favoriteActionIcon : $r('sys.symbol.key_fill')),
+              selected: this.tabSymbol(this.multiSelectMode ? this.favoriteActionIcon : $r('sys.symbol.key_fill'))
             },
-            this.multiSelectMode ? $r('app.string.token_favorite_add') : $r('app.string.tab_token'))
+            this.multiSelectMode ? (this.allSelectedFavorite ? $r('app.string.token_favorite_remove') :
+              $r('app.string.token_favorite_add')) : $r('app.string.tab_token'))
             .labelStyle(this.tabLabelStyle)
             // 悬浮：56vp 胶囊内居中；平铺：内容区顶对齐 + 4vp 顶部安全间距
             // (设计指南平铺式上下安全间距 4vp)，按钮热区落在 48vp 内容区内，

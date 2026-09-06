@@ -110,6 +110,7 @@ export struct AppShell {
 
   @BuilderParam appLockContent?: CustomBuilder = EmptyBuilder;
   @BuilderParam homeContent?: CustomBuilder = EmptyBuilder;
+  @BuilderParam multiSelectPageContent: CustomBuilder = EmptyBuilder;
 
   private splitPlaceholder: ComponentContent<Object> =
     new ComponentContent(this.getUIContext(), wrapBuilder(TokenSplitPlaceholder));
@@ -238,6 +239,10 @@ export struct AppShell {
         scrollEffectType: this.scrollEffectType,
         onExitFullScreen: () => this.onExitFullScreenRoute()
       })
+    } else if (name === ROUTE_NAMES.TokenMultiSelectPage) {
+      if (this.multiSelectPageContent) {
+        this.multiSelectPageContent()
+      }
     } else if (name === ROUTE_NAMES.TokenSearchPage) {
       TokenSearchPage({
         scrollEffectType: this.scrollEffectType,
