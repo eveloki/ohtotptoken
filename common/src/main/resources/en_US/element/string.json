@@ -1,5 +1,11 @@
 {
   "string": [
+    { "name": "token_multi_group", "value": "Group" },
+    { "name": "token_multi_select_all", "value": "Select all" },
+    { "name": "token_multi_deselect_all", "value": "Deselect all" },
+    { "name": "token_multi_delete_title", "value": "Delete %d selected tokens?" },
+    { "name": "token_multi_success", "value": "Processed %d tokens" },
+    { "name": "token_multi_failed", "value": "%d tokens could not be processed. Try again. NFC session tokens cannot be favorited or grouped." },
     {
       "name": "module_desc",
       "value": "Time-based One-Time Password Token"

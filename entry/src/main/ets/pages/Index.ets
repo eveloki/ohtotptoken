@@ -10,7 +10,7 @@ import { AppPreference, SettingTopEffectType, SettingBottomTabsType, EVENT_NAMES
 import lazy { privacyManager } from '@kit.StoreKit';
 import { hilog, hiTraceMeter } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
-import { TokenStore, TokenGroupState, TokenGroupStore, ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP } from 'common';
+import { TokenStore, TokenGroup, TokenGroupState, TokenGroupStore, ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP } from 'common';
 // [冷启动优化] 权限检查仅在 deferredInit 中使用
 import lazy { PermissionManager } from 'common';
 // [冷启动优化] 拖拽弹框仅在 onDragEnter 时触发
@@ -27,7 +27,7 @@ import { AppWindowInfo } from 'common';
 // [冷启动优化] AppLockOverlay 导入 @kit.CryptoArchitectureKit + @kit.UserAuthenticationKit，
 // bindContentCover 的 Builder 仅在 isAppLockOverlayVisible=true 时评估
 import lazy { AppLockOverlay } from './AppLockOverlay';
-import { AppStorageV2, ComponentContent } from '@kit.ArkUI';
+import { AppStorageV2, ComponentContent, CustomContentDialogV2, AdvancedDialogV2Button } from '@kit.ArkUI';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 // [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
 import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
@@ -122,8 +122,10 @@ function TokenActionsMenuBuilder(host: Index) {
       builder: TokenSortMenuBuilder.bind(host, host)
     })
       .accessibilityText($r('app.string.menu_token_sort_method'))
-    MenuItem({ content: $r('app.string.menu_token_multi_select') })
-      .enabled(false)
+    MenuItem({ content: host.multiSelectMode ? $r('app.string.dialog_btn_cancel') :
+      $r('app.string.menu_token_multi_select') })
+      .enabled(!host.multiSelectBusy && (host.multiSelectMode || host.displayTokens.length > 0))
+      .onClick(() => host.toggleMultiSelectMode())
       .accessibilityText($r('app.string.menu_token_multi_select'))
   }
   .width(host.getTokenActionsMenuWidth())
@@ -183,6 +185,12 @@ struct Index {
   @Local tokenTitleCollapse: number = 0;
 
   onBackPress(): boolean {
+    if (this.multiSelectMode && !this.isAppLockOverlayVisible) {
+      if (!this.multiSelectBusy) {
+        this.exitMultiSelect();
+      }
+      return true;
+    }
     if (this.groupSidebarOpen && !this.isAppLockOverlayVisible) {
       this.groupSidebarOpen = false;
       return true;
@@ -206,9 +214,13 @@ struct Index {
   }
 
   private selectGroup(id: string): void {
+    if (this.multiSelectBusy) {
+      return;
+    }
     if (id === this.groupState.selectedId) {
       return;
     }
+    this.exitMultiSelect();
     this.groupState.selectedId = id;
     this.tokenTitleCollapse = 0;
     this.tokenListScroller.scrollTo({ xOffset: 0, yOffset: 0 });
@@ -218,6 +230,170 @@ struct Index {
       this.pageInfos.clear();
     }
   }
+  @Local multiSelectMode: boolean = false;
+  @Local multiSelectBusy: boolean = false;
+  @Local selectedTokenIds: string[] = [];
+
+  toggleMultiSelectMode(): void {
+    if (this.multiSelectBusy) {
+      return;
+    }
+    if (this.multiSelectMode) {
+      this.exitMultiSelect();
+      return;
+    }
+    this.selectedTokenIds = [];
+    this.selectedTokenUUID = '';
+    this.pageInfos.clear();
+    this.groupSidebarOpen = false;
+    this.currentHomeTabIndex = 0;
+    this.multiSelectMode = true;
+  }
+
+  private exitMultiSelect(): void {
+    this.multiSelectMode = false;
+    this.selectedTokenIds = [];
+  }
+
+  @Monitor('displayTokens')
+  reconcileMultiSelection(): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.selectedTokenIds.filter(id =>
+        this.displayTokens.some(token => token.TokenUUID === id));
+    }
+  }
+
+  private toggleTokenSelection(conf: TokenConfig): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.selectedTokenIds.includes(conf.TokenUUID) ?
+        this.selectedTokenIds.filter(id => id !== conf.TokenUUID) : [...this.selectedTokenIds, conf.TokenUUID];
+    }
+  }
+
+  private selectAllTokens(): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.displayTokens.every(token => this.selectedTokenIds.includes(token.TokenUUID)) ?
+        [] : this.displayTokens.map(token => token.TokenUUID);
+    }
+  }
+
+  private async applyMultiAction(action: string, groupId: string = ''): Promise<void> {
+    if (this.multiSelectBusy || !this.multiSelectMode) {
+      return;
+    }
+    const selected = this.displayTokens.filter(token => this.selectedTokenIds.includes(token.TokenUUID));
+    if (selected.length === 0) {
+      return;
+    }
+    this.multiSelectBusy = true;
+    const failed: string[] = [];
+    for (const token of selected) {
+      try {
+        if (action === 'delete') {
+          if (token.TokenType === otpType.NFC_external) {
+            NfcSessionTokens.getInstance().remove(token.TokenUUID);
+          } else {
+            await tkStore.deleteToken(token.TokenUUID);
+          }
+        } else if (token.TokenType === otpType.NFC_external) {
+          // 会话令牌不支持持久化收藏或分组，保留选中并报告未完成。
+          failed.push(token.TokenUUID);
+        } else if (action === 'favorite') {
+          await tkStore.setTokenFavorite(token.TokenUUID, true);
+        } else {
+          await tkStore.moveTokenToGroup(token.TokenUUID, groupId);
+        }
+      } catch (_) {
+        failed.push(token.TokenUUID);
+      }
+    }
+    this.multiSelectBusy = false;
+    this.selectedTokenIds = failed.filter(id => this.displayTokens.some(token => token.TokenUUID === id));
+    if (failed.length === 0) {
+      this.exitMultiSelect();
+      showSnackBar($r('app.string.token_multi_success', selected.length), SnackBarNotifyType.SUCCESS);
+    } else {
+      showSnackBar($r('app.string.token_multi_failed', failed.length), SnackBarNotifyType.WARNING);
+    }
+  }
+
+  private confirmMultiDelete(): void {
+    if (this.multiSelectBusy || this.selectedTokenIds.length === 0) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      systemMaterial: dialogSystemMaterial(),
+      title: $r('app.string.token_multi_delete_title', this.selectedTokenIds.length),
+      message: $r('app.string.alert_remove_confirm_msg'),
+      primaryButton: { value: $r('app.string.dialog_btn_cancel'), action: () => {} },
+      secondaryButton: {
+        value: $r('app.string.dialog_btn_delete'),
+        fontColor: Color.Red,
+        action: () => { this.applyMultiAction('delete'); }
+      }
+    });
+  }
+
+  @Builder
+  MultiGroupContent(onPick: (id: string) => void) {
+    Column() {
+      List() {
+        ListItem() {
+          Button($r('app.string.token_group_ungrouped'))
+            .width('100%')
+            .type(ButtonType.Normal)
+            .backgroundColor(Color.Transparent)
+            .fontColor($r('sys.color.font_primary'))
+            .constraintSize({ minHeight: 48 })
+            .onClick(() => onPick(''))
+        }
+        ForEach(this.groupState.groups, (group: TokenGroup) => {
+          ListItem() {
+            Button(group.name)
+              .width('100%')
+              .type(ButtonType.Normal)
+              .backgroundColor(Color.Transparent)
+              .fontColor($r('sys.color.font_primary'))
+              .constraintSize({ minHeight: 48 })
+              .onClick(() => onPick(group.id))
+          }
+        }, (group: TokenGroup) => group.id)
+      }
+      .width('100%')
+      .constraintSize({ maxHeight: 320 })
+    }
+  }
+
+  @Builder
+  MultiGroupDialog(onPick: (id: string) => void, onClose: () => void) {
+    CustomContentDialogV2({
+      primaryTitle: $r('app.string.token_group_move'),
+      contentBuilder: () => this.MultiGroupContent(onPick),
+      buttons: [new AdvancedDialogV2Button({ content: $r('app.string.dialog_btn_cancel'), action: onClose })]
+    })
+  }
+
+  private openMultiGroupDialog(): void {
+    if (this.multiSelectBusy || this.selectedTokenIds.length === 0) {
+      return;
+    }
+    let dialogId: number = -1;
+    const onClose = (): void => {
+      if (dialogId !== -1) {
+        this.getUIContext().getPromptAction().closeCustomDialog(dialogId);
+      }
+    };
+    this.getUIContext().getPromptAction().openCustomDialog({
+      systemMaterial: dialogSystemMaterial(),
+      builder: () => this.MultiGroupDialog((id: string) => {
+        onClose();
+        this.applyMultiAction('group', id);
+      }, onClose)
+    }).then(id => { dialogId = id; }).catch(() => {
+      showSnackBar($r('app.string.token_group_error'), SnackBarNotifyType.ERROR);
+    });
+  }
+
   @Local tokenSortMode: TokenListSortMode = TokenListSortMode.DEFAULT;
   @Local token_loading: Boolean = true;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -1106,6 +1282,14 @@ struct Index {
     HomeTabs({
       onTokenListScroll: (offset: number) => { this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56)); },
       tokens: this.displayTokens,
+      multiSelectMode: this.multiSelectMode,
+      multiSelectBusy: this.multiSelectBusy,
+      selectedTokenIds: this.selectedTokenIds,
+      onToggleSelection: (conf: TokenConfig) => this.toggleTokenSelection(conf),
+      onSelectAll: () => this.selectAllTokens(),
+      onFavoriteSelected: () => { this.applyMultiAction('favorite'); },
+      onGroupSelected: () => this.openMultiGroupDialog(),
+      onDeleteSelected: () => this.confirmMultiDelete(),
       groupFiltered: this.groupState.selectedId !== ALL_TOKEN_GROUPS,
       window: this.window,
       bottomTabsType: this.currentBottomTabsType,

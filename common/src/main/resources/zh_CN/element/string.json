@@ -1,5 +1,11 @@
 {
   "string": [
+    { "name": "token_multi_group", "value": "分组" },
+    { "name": "token_multi_select_all", "value": "全选" },
+    { "name": "token_multi_deselect_all", "value": "取消全选" },
+    { "name": "token_multi_delete_title", "value": "删除选中的 %d 个令牌？" },
+    { "name": "token_multi_success", "value": "已处理 %d 个令牌" },
+    { "name": "token_multi_failed", "value": "%d 个令牌未完成，请重试。NFC 会话令牌不支持收藏和分组。" },
     { "name": "token_group_open_sidebar", "value": "展开分组侧栏" },
     { "name": "token_group_close_sidebar", "value": "收起分组侧栏" },
     { "name": "token_group_all", "value": "全部令牌" },

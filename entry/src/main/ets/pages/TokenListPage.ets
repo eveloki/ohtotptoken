@@ -46,6 +46,10 @@ export struct TokenListPage {
   @Require @Param pageInfos: NavPathStack = new NavPathStack();
   @Require @Param TabBarVisible: boolean = true;
   @Param listScroller: Scroller = new Scroller();
+  @Param multiSelectMode: boolean = false;
+  @Param multiSelectBusy: boolean = false;
+  @Param selectedTokenIds: string[] = [];
+  @Event onToggleSelection: (conf: TokenConfig) => void = () => {};
   @Param splitSelectionMode: boolean = false;
   @Param selectedTokenUUID: string = '';
   @Event onSelectToken: (conf: TokenConfig) => void = () => {};
@@ -140,8 +144,9 @@ export struct TokenListPage {
                 this.token_preference.app_appearance_token_list_item_prefix_padding,
                 this.token_preference.app_appearance_token_list_item_suffix_padding,
                 this.token_preference.app_appearance_item_radius),
-              isSelected: this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
-              swipeActionOptions: {
+              isSelected: this.multiSelectMode ? this.selectedTokenIds.includes(vm.config.TokenUUID) :
+                this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
+              swipeActionOptions: this.multiSelectMode ? undefined : {
                 end: {
                   builder: (): void => {
                     this.TokenItemSwipeEnd(vm)
@@ -212,8 +217,12 @@ export struct TokenListPage {
   TokenItemContentBuilder(vm: TokenConfigVM) {
     TokenItem({
       Config: vm.config,
+      multiSelectMode: this.multiSelectMode,
+      multiSelectBusy: this.multiSelectBusy,
+      onToggleSelection: (conf: TokenConfig) => this.onToggleSelection(conf),
       selectionMode: this.splitSelectionMode,
-      selected: this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
+      selected: this.multiSelectMode ? this.selectedTokenIds.includes(vm.config.TokenUUID) :
+        this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
       hdsCardMode: true,
       Select: (conf: TokenConfig) => this.onSelectToken(conf),
       Edit: (conf: TokenConfig) => this.openEditPage(conf),
@@ -221,7 +230,7 @@ export struct TokenListPage {
         return await this.updateSingleToken(conf_new, false);
       }
     })
-      .bindPopup(this.token_copy_guide_popup && vm.config.TokenUUID === this.dataSource.getData(0)?.config.TokenUUID, {
+      .bindPopup(!this.multiSelectMode && this.token_copy_guide_popup && vm.config.TokenUUID === this.dataSource.getData(0)?.config.TokenUUID, {
         systemMaterial: dialogSystemMaterial(),
         placement: Placement.Left,
         message: this.getUIContext().getHostContext()?.resourceManager

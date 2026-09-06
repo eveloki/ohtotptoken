@@ -29,6 +29,9 @@ export struct TokenItem {
   @Event Edit: (conf: TokenConfig) => void = () => {};
   @Event Select: (conf: TokenConfig) => void = () => {};
   @Param sortMode: boolean = false;
+  @Param multiSelectMode: boolean = false;
+  @Param multiSelectBusy: boolean = false;
+  @Event onToggleSelection: (conf: TokenConfig) => void = () => {};
   @Param selectionMode: boolean = false;
   @Param selected: boolean = false;
   @Param hdsCardMode: boolean = false;
@@ -533,7 +536,16 @@ export struct TokenItem {
   }
 
   build() {
-    if (this.sortMode) {
+    if (this.multiSelectMode) {
+      Column() {
+        this.TokenRowContent(false)
+      }
+      .width('100%')
+      .backgroundColor(this.selected ? Color.Transparent : $r('app.color.item_bg'))
+      .borderRadius(this.token_preference.app_appearance_item_radius)
+      .clip(true)
+      .enabled(!this.multiSelectBusy)
+    } else if (this.sortMode) {
       // 排序模式：禁用上下文菜单和长按手势，Suffix 显示排序图标；
       // 普通列表内容不在沉浸光感生效区，始终保留实体背景。
       Column() {
@@ -624,7 +636,19 @@ export struct TokenItem {
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
 
-      if (sort) {
+      if (this.multiSelectMode) {
+        // 每个令牌使用独立 group，避免 Radio 的组内互斥；状态由 UUID 选择集控制。
+        Radio({ value: this.Config.TokenUUID, group: `token_multi_${this.Config.TokenUUID}` })
+          .id(`token_multi_radio_${this.Config.TokenUUID}`)
+          .checked(this.selected)
+          .margin({ left: 12, right: 16 })
+          .accessibilityText(`${this.Config.TokenIssuer} ${this.Config.TokenName}`)
+          .onClick(() => {
+            if (!this.multiSelectBusy) {
+              this.onToggleSelection(this.Config);
+            }
+          })
+      } else if (sort) {
         this.TokenSortIconBuilder()
       } else {
         this.TokenCodeBuilder()
@@ -634,7 +658,9 @@ export struct TokenItem {
     .height(this.token_preference.app_appearance_item_height)
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
-      if (this.selectionMode && !sort) {
+      if (this.multiSelectMode && !this.multiSelectBusy) {
+        this.onToggleSelection(this.Config);
+      } else if (this.selectionMode && !sort) {
         this.Select(this.Config);
       }
     })

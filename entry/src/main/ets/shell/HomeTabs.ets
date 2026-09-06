@@ -34,6 +34,14 @@ export struct HomeTabs {
     async (tokens: Array<TokenConfig>) => false;
   @Require @Param tokenListScroller: Scroller = new Scroller();
   @Require @Param settingEntryScroller: Scroller = new Scroller();
+  @Param multiSelectMode: boolean = false;
+  @Param multiSelectBusy: boolean = false;
+  @Param selectedTokenIds: string[] = [];
+  @Event onToggleSelection: (conf: TokenConfig) => void = () => {};
+  @Event onSelectAll: () => void = () => {};
+  @Event onFavoriteSelected: () => void = () => {};
+  @Event onGroupSelected: () => void = () => {};
+  @Event onDeleteSelected: () => void = () => {};
   @Param selectedTokenUUID: string = '';
   @Event onSelectToken: (conf: TokenConfig) => void = () => {};
   @Event onTabChange: (index: number) => void = () => {};
@@ -50,11 +58,16 @@ export struct HomeTabs {
     return this.window.IsPcOrTablet ? SettingBottomTabsType.SUSPENSION : this.bottomTabsType;
   }
 
+  @Computed
+  get allTokensSelected(): boolean {
+    return this.tokens.length > 0 && this.tokens.every(token => this.selectedTokenIds.includes(token.TokenUUID));
+  }
+
   build() {
     if (
       (this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_MD ||
         this.window.HeightBreakpoint === HeightBreakpoint.HEIGHT_SM) &&
-        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM
+        this.window.WidthBreakpoint === WidthBreakpoint.WIDTH_SM && !this.multiSelectMode
     ) {
       PageScaffold() {
         TokenListPage({
@@ -76,7 +89,7 @@ export struct HomeTabs {
       }
     } else {
       Column() {
-        HdsTabs({ index: this.currentTabIndex }) {
+        HdsTabs({ index: this.multiSelectMode ? 0 : this.currentTabIndex }) {
           TabContent() {
             TokenListPage({
               Tokens: this.tokens,
@@ -90,7 +103,11 @@ export struct HomeTabs {
               updateTokenConfigs: this.updateTokenConfigs,
               listScroller: this.tokenListScroller,
               onListScroll: (offset: number) => this.onTokenListScroll(offset),
-              splitSelectionMode: this.window.AllowSplit,
+              multiSelectMode: this.multiSelectMode,
+              multiSelectBusy: this.multiSelectBusy,
+              selectedTokenIds: this.selectedTokenIds,
+              onToggleSelection: (conf: TokenConfig) => this.onToggleSelection(conf),
+              splitSelectionMode: this.window.AllowSplit && !this.multiSelectMode,
               selectedTokenUUID: this.selectedTokenUUID,
               onSelectToken: (conf: TokenConfig) => this.onSelectToken(conf)
             })
@@ -99,10 +116,10 @@ export struct HomeTabs {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier($r('sys.symbol.key_fill')),
-              selected: new SymbolGlyphModifier($r('sys.symbol.key_fill'))
+              normal: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill')),
+              selected: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill'))
             },
-            $r('app.string.tab_token'))
+            this.multiSelectMode ? $r('app.string.token_favorite_add') : $r('app.string.tab_token'))
             // 悬浮：56vp 胶囊内居中；平铺：内容区顶对齐 + 4vp 顶部安全间距
             // (设计指南平铺式上下安全间距 4vp)，按钮热区落在 48vp 内容区内，
             // 整体高度向下扩展避让导航条(下方 barHeight)
@@ -117,7 +134,7 @@ export struct HomeTabs {
           TabContent() {
             // [冷启动优化] Setting Tab 懒加载:仅在用户首次切换到"我的"Tab 时构建组件树,
             // 避免冷启动时一次性构建两个 TabContent 导致首帧 build 耗时增加
-            if (this.settingTabInitialized && this.settingEntryContent) {
+            if (!this.multiSelectMode && this.settingTabInitialized && this.settingEntryContent) {
               this.settingEntryContent();
             }
           }
@@ -125,10 +142,12 @@ export struct HomeTabs {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
-              selected: new SymbolGlyphModifier($r('sys.symbol.person_crop_circle_fill_1')),
+              normal: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
+                $r('sys.symbol.person_crop_circle_fill_1')),
+              selected: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
+                $r('sys.symbol.person_crop_circle_fill_1')),
             },
-            $r('app.string.tab_me'))
+            this.multiSelectMode ? $r('app.string.token_multi_group') : $r('app.string.tab_me'))
             // 悬浮：56vp 胶囊内居中；平铺：内容区顶对齐 + 4vp 顶部安全间距
             // (设计指南平铺式上下安全间距 4vp)，按钮热区落在 48vp 内容区内，
             // 整体高度向下扩展避让导航条(下方 barHeight)
@@ -139,6 +158,22 @@ export struct HomeTabs {
               { left: 4, right: 4, top: 4, bottom: 0 })
           )
           .tabIndex(1)
+
+          if (this.multiSelectMode) {
+            TabContent() {}
+              .tabBar(BottomTabBarStyle.of({
+                normal: new SymbolGlyphModifier($r('sys.symbol.trash_fill')),
+                selected: new SymbolGlyphModifier($r('sys.symbol.trash_fill'))
+              }, $r('app.string.dialog_btn_delete')))
+            TabContent() {}
+              .tabBar(BottomTabBarStyle.of({
+                normal: new SymbolGlyphModifier(this.allTokensSelected ?
+                  $r('sys.symbol.minus_circle_fill') : $r('sys.symbol.checkmark_circle_fill')),
+                selected: new SymbolGlyphModifier(this.allTokensSelected ?
+                  $r('sys.symbol.minus_circle_fill') : $r('sys.symbol.checkmark_circle_fill'))
+              }, this.allTokensSelected ?
+                $r('app.string.token_multi_deselect_all') : $r('app.string.token_multi_select_all')))
+          }
         }
         .clip(false)
         .backgroundColor($r('app.color.window_background'))
@@ -165,12 +200,33 @@ export struct HomeTabs {
           } : undefined)
         .vertical(this.window.UseSideNavigation)
         // 侧边一级导航仅允许点击页签，避免在内容空白区上下拖动时误切换页面。
-        .scrollable(!this.window.UseSideNavigation)
+        .scrollable(!this.multiSelectMode && !this.window.UseSideNavigation)
+        // 多选页签是操作栏，点击只触发操作，列表内容始终停留在第一个页签。
+        .onContentWillChange(() => !this.multiSelectMode)
+        .onTabBarClick((index: number) => {
+          if (!this.multiSelectMode || this.multiSelectBusy) {
+            return;
+          }
+          if (index === 3) {
+            this.onSelectAll();
+          } else if (this.selectedTokenIds.length > 0) {
+            if (index === 0) {
+              this.onFavoriteSelected();
+            } else if (index === 1) {
+              this.onGroupSelected();
+            } else if (index === 2) {
+              this.onDeleteSelected();
+            }
+          }
+        })
         .barMode(BarMode.Fixed)
         // HDS 的 BottomTabBarStyle 在侧边一级导航下默认不使用内容切换动效，
         // 避免宽屏主内容切换时出现整页缩放/翻页感；窄屏暂时保持现有体验。
         .animationDuration(this.window.UseSideNavigation ? 0 : 300)
         .onChange((index) => {
+          if (this.multiSelectMode) {
+            return;
+          }
           this.onTabChange(index);
           // [冷启动优化] 用户首次切换到 Setting Tab 时触发懒加载构建
           if (index === 1 && !this.settingTabInitialized) {
