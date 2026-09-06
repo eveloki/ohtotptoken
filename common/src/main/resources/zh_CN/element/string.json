@@ -910,6 +910,22 @@
       "value": "图标背景可以让一些图标在深色模式时获得更好的可视度。"
     },
     {
+      "name": "token_separator",
+      "value": "验证码分隔"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "关闭"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "空格"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "点"
+    },
+    {
       "name": "enable_dark_icon_filter",
       "value": "深色模式图标滤镜"
     },

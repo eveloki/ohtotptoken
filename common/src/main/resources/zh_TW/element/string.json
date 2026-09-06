@@ -910,6 +910,22 @@
       "value": "圖示背景可以讓某些圖示在深色模式時獲得更好的可視度。"
     },
     {
+      "name": "token_separator",
+      "value": "驗證碼分隔"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "關閉"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "空格"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "點"
+    },
+    {
       "name": "enable_dark_icon_filter",
       "value": "深色模式圖示濾鏡"
     },

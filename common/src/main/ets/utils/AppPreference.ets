@@ -60,6 +60,7 @@ export enum PREF_KEYS {
   APPEARANCE_LOGO_BACKGROUND = 'app_appearance_logo_background',
   /** 启用深色图标滤镜 */
   APPEARANCE_LOGO_DARK_FILTER = 'app_appearance_logo_dark_filter',
+  APPEARANCE_TOKEN_SEPARATOR = 'app_appearance_token_separator',
   /** 安全锁定开关 */
   SAFETY_LOCK_ENABLE = 'app_safety_lock_enable',
   /** 颜色模式 */
@@ -245,8 +246,21 @@ export interface EnumSelectOption {
 }
 
 /**
- * 隐藏令牌样式
+ * 验证码分隔样式
  */
+export enum SettingTokenSeparator {
+  NONE = 0,
+  SPACE = 1,
+  DOT = 2,
+}
+
+export const AVAILABLE_TOKEN_SEPARATORS: EnumSelectOption[] = [
+  { label: $r('app.string.token_separator_none'), value: SettingTokenSeparator.NONE },
+  { label: $r('app.string.token_separator_space'), value: SettingTokenSeparator.SPACE },
+  { label: $r('app.string.token_separator_dot'), value: SettingTokenSeparator.DOT },
+];
+
+/** 隐藏令牌样式 */
 export enum SettingHiddenTokenType {
   /** 4个稍大的圆点 */
   COMPACT,
@@ -358,6 +372,7 @@ export class TokenPreference {
   @Trace app_appearance_logo_background_radius = 5;
   @Trace app_appearance_logo_background_color = 0xffececec;
   @Trace app_appearance_logo_dark_filter = false;
+  @Trace app_appearance_token_separator: number = SettingTokenSeparator.NONE;
   @Trace app_appearance_logo_dark_filter_color = 0xFFD6D6D6;
   @Trace app_appearance_token_color = 0xFF012EE0;
   @Trace app_appearance_token_color_dark = 0xFF638FF6;
@@ -559,6 +574,7 @@ export class AppPreference {
     [PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS, 5],
     [PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR, 0xffececec],
     [PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER, false],
+    [PREF_KEYS.APPEARANCE_TOKEN_SEPARATOR, SettingTokenSeparator.NONE],
     [PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER_COLOR, 0xFFD6D6D6],
     [PREF_KEYS.APPEARANCE_TOKEN_COLOR, 0xFF254ff7],
     [PREF_KEYS.APPEARANCE_TOKEN_NEXT_COLOR, 0xFFD71616],
@@ -685,6 +701,8 @@ export class AppPreference {
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_RADIUS) as number;
     token_appearance.app_appearance_logo_background_color =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_BACKGROUND_COLOR) as number;
+    token_appearance.app_appearance_token_separator =
+      AppPreference.getPreference(PREF_KEYS.APPEARANCE_TOKEN_SEPARATOR) as number;
     token_appearance.app_appearance_logo_dark_filter =
       AppPreference.getPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER) as boolean;
     token_appearance.app_appearance_logo_dark_filter_color =

@@ -902,6 +902,22 @@
       "value": "The icon background can improve the visibility of some icons in dark mode."
     },
     {
+      "name": "token_separator",
+      "value": "Code separator"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "Off"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "Space"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "Dot"
+    },
+    {
       "name": "enable_dark_icon_filter",
       "value": "Dark Mode Icon Filter"
     },

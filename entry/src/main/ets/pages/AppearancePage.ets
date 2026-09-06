@@ -7,7 +7,8 @@ import { SubItemToggle } from '../components/SubItemToggle';
 import { TokenItem } from '../components/TokenItem';
 import { PageScaffold } from '../components/PageScaffold';
 import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, SettingHiddenTokenType,
-  SettingTokenProgressType, AVAILABLE_HIDDEN_TOKEN_TYPES, AVAILABLE_TOKEN_PROGRESS_TYPES } from 'common';
+  SettingTokenProgressType, AVAILABLE_HIDDEN_TOKEN_TYPES, AVAILABLE_TOKEN_PROGRESS_TYPES,
+  AVAILABLE_TOKEN_SEPARATORS } from 'common';
 import { otpType, TokenConfig } from 'common';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
@@ -156,6 +157,19 @@ export struct AppearancePage {
                   onChange: (IsOn: boolean) => {
                     AppPreference.setPreference(PREF_KEYS.APPEARANCE_LOGO_DARK_FILTER, IsOn);
                     this.token_preference.app_appearance_logo_dark_filter = IsOn;
+                  }
+                })
+
+                SubItemDivider()
+
+                SubItemEnumSelect({
+                  icon: $r('sys.symbol.circle_lefthalf_inset_filled'),
+                  title: $r('app.string.token_separator'),
+                  options: AVAILABLE_TOKEN_SEPARATORS,
+                  selected: this.token_preference.app_appearance_token_separator,
+                  onChange: (value: number) => {
+                    AppPreference.setPreference(PREF_KEYS.APPEARANCE_TOKEN_SEPARATOR, value);
+                    this.token_preference.app_appearance_token_separator = value;
                   }
                 })
 
