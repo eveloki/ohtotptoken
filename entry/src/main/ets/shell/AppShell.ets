@@ -90,8 +90,6 @@ export struct AppShell {
   @Require @Param businessSplitEnabled: boolean = true;
   @Require @Param tokenListScroller: Scroller = new Scroller();
   @Require @Param settingEntryScroller: Scroller = new Scroller();
-  @Require @Param openAddTokenMenu: () => void = () => {};
-  @Require @Param addTokenMenuTargetId: string = '';
   @Require @Param openTokenSortMenu: () => void = () => {};
   @Require @Param sortTokenMenuTargetId: string = '';
   @Event onOpenFullScreenRoute: (name: ROUTE_NAMES, param: Object | null) => void = () => {};
@@ -424,17 +422,6 @@ export struct AppShell {
                 isEnabled: true,
                 action: () => {
                   this.onOpenFullScreenRoute(ROUTE_NAMES.TokenSearchPage, null);
-                }
-              }
-            },
-            {
-              content: {
-                label: $r('app.string.app_ua_add_token'),
-                icon: $r('sys.symbol.plus'),
-                isEnabled: true,
-                componentId: this.addTokenMenuTargetId,
-                action: () => {
-                  this.openAddTokenMenu();
                 }
               }
             },

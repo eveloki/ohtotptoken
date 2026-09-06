@@ -112,6 +112,11 @@ function TokenAddMenuBuilder(host: Index) {
 function TokenActionsMenuBuilder(host: Index) {
   Menu() {
     MenuItem({
+      content: $r('app.string.app_ua_add_token'),
+      builder: TokenAddMenuBuilder.bind(host, host)
+    })
+      .accessibilityText($r('app.string.app_ua_add_token'))
+    MenuItem({
       content: $r('app.string.menu_token_sort_method'),
       // 子菜单延迟构建时必须绑定组件上下文，不能以普通函数直接调用全局 @Builder。
       builder: TokenSortMenuBuilder.bind(host, host)
@@ -122,7 +127,7 @@ function TokenActionsMenuBuilder(host: Index) {
       .accessibilityText($r('app.string.menu_token_multi_select'))
   }
   .width(host.getTokenActionsMenuWidth())
-  // 使用原生内嵌展开，让排序选项在“排序方式”下方显示。
+  // 使用原生内嵌展开，让添加和排序选项在各自入口下方显示。
   .subMenuExpandingMode(SubMenuExpandingMode.EMBEDDED_EXPAND)
   .systemMaterial(dialogSystemMaterial())
 }
@@ -306,7 +311,6 @@ struct Index {
   }
 
   private backup_select_uri: string = '';
-  private readonly addTokenMenuTargetId: string = 'app_ua_add_token';
   private readonly sortTokenMenuTargetId: string = 'token_right_menu_sort';
   private dialog_nfc_read?: CustomDialogController;
 
@@ -894,22 +898,16 @@ struct Index {
     });
   }
 
-  private openAddTokenMenu(): void {
-    const uiContext = this.getUIContext();
-    const promptAction = uiContext.getPromptAction();
-    const contentNode = new ComponentContent(uiContext, wrapBuilder(TokenAddMenuBuilder), this);
-    try {
-      promptAction.openMenu(contentNode, { id: this.addTokenMenuTargetId }, {});
-    } catch (error) {
-      const err = error as BusinessError;
-      hilog.error(err.code, 'Index', `openAddTokenMenu failed: ${err.message}`);
-    }
-  }
-
   getTokenActionsMenuWidth(): number | undefined {
     const uiContext = this.getUIContext();
     const measure = uiContext.getMeasureUtils();
     const labels: Resource[] = [
+      $r('app.string.app_ua_add_token'),
+      $r('app.string.app_scan_code'),
+      $r('app.string.tab_token_add_key'),
+      $r('app.string.tab_token_add_forti_key'),
+      $r('app.string.tab_token_add_stream_key'),
+      $r('app.string.menu_add_nfc_read'),
       $r('app.string.menu_token_sort_method'),
       $r('app.string.menu_token_multi_select'),
       $r('app.string.menu_token_sort_default'),
@@ -1150,8 +1148,6 @@ struct Index {
         businessSplitEnabled: this.businessSplitEnabled,
         tokenListScroller: this.tokenListScroller,
         settingEntryScroller: this.settingEntryScroller,
-        openAddTokenMenu: () => this.openAddTokenMenu(),
-        addTokenMenuTargetId: this.addTokenMenuTargetId,
         openTokenSortMenu: () => this.openTokenSortMenu(),
         sortTokenMenuTargetId: this.sortTokenMenuTargetId,
         onOpenFullScreenRoute: (name: ROUTE_NAMES, param: Object | null) => this.openFullScreenRoute(name, param),
