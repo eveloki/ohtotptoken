@@ -1,10 +1,10 @@
-import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType, hdsMaterial } from '@kit.UIDesignKit';
 import { MaterialTheme } from './MaterialTheme';
 import { ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP, TokenConfig, otpType, TokenGroup, TokenGroupState,
   TokenGroupStore, TokenStore, GenericDataSource, dialogSystemMaterial, showSnackBar, SnackBarNotifyType } from 'common';
 import { TokenGroupNameDialog } from '../dialogs/TokenGroupNameDialog';
 
-/** 分类和分组共用一个滚动区；分组标题行提供新建和编辑入口。 */
+/** 分类和分组共用一个滚动区；标题栏提供新建入口，分组标题行提供编辑入口。 */
 @ComponentV2
 export struct TokenGroupSidePanel {
   @Local state: TokenGroupState = TokenGroupStore.getInstance().state;
@@ -161,19 +161,6 @@ export struct TokenGroupSidePanel {
               .fontSize(16)
               .fontColor($r('sys.color.font_secondary'))
               .layoutWeight(1)
-            Button({ type: ButtonType.Circle }) {
-              SymbolGlyph($r('sys.symbol.plus'))
-                .fontSize(20)
-                .fontColor([$r('sys.color.font_emphasize')])
-            }
-            .id('token_group_new')
-            .width(48)
-            .height(48)
-            .padding(0)
-            .backgroundColor(Color.Transparent)
-            .accessibilityText($r('app.string.token_group_new'))
-            .enabled(!this.busy)
-            .onClick(() => this.onAdd())
             Button(this.editing ? $r('app.string.token_group_done') : $r('app.string.token_group_edit'))
               .id('token_group_edit')
               .fontSize(16)
@@ -250,7 +237,12 @@ export struct TokenGroupSidePanel {
     }
     .width('100%')
     .height('100%')
-    .padding({ left: 20, right: 20, bottom: 8, top: 12 })
+    .padding({
+      left: $r('sys.float.padding_level8'),
+      right: $r('sys.float.padding_level8'),
+      bottom: 8,
+      top: 12
+    })
   }
 
   build() {
@@ -267,7 +259,39 @@ export struct TokenGroupSidePanel {
     .titleBar({
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: true,
+      content: {
+        menu: {
+          value: [
+            {
+              content: {
+                label: $r('app.string.token_group_new'),
+                icon: $r('sys.symbol.plus'),
+                componentId: 'token_group_new',
+                isEnabled: !this.busy,
+                action: () => this.onAdd()
+              }
+            }
+          ]
+        }
+      },
       style: {
+        originalStyle: {
+          contentStyle: {
+            menuStyle: {
+              iconColor: $r('sys.color.icon_primary'),
+              backgroundColor: MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.NONE ?
+                $r('sys.color.comp_background_gray') : undefined
+            }
+          }
+        },
+        scrollEffectStyle: {
+          contentStyle: {
+            menuStyle: {
+              backgroundColor: MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.NONE ?
+                $r('sys.color.comp_background_gray') : undefined
+            }
+          }
+        },
         scrollEffectOpts: {
           enableScrollEffect: true,
           scrollEffectType: this.scrollEffectType
