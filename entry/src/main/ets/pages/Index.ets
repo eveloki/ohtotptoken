@@ -10,7 +10,7 @@ import { AppPreference, SettingTopEffectType, SettingBottomTabsType, EVENT_NAMES
 import lazy { privacyManager } from '@kit.StoreKit';
 import { hilog, hiTraceMeter } from '@kit.PerformanceAnalysisKit';
 import CommonEventManager from '@ohos.commonEventManager';
-import { TokenStore, TokenGroup, TokenGroupState, TokenGroupStore, ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP } from 'common';
+import { TokenStore, TokenGroupState, TokenGroupStore, ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP } from 'common';
 // [冷启动优化] 权限检查仅在 deferredInit 中使用
 import lazy { PermissionManager } from 'common';
 // [冷启动优化] 拖拽弹框仅在 onDragEnter 时触发
@@ -27,7 +27,8 @@ import { AppWindowInfo } from 'common';
 // [冷启动优化] AppLockOverlay 导入 @kit.CryptoArchitectureKit + @kit.UserAuthenticationKit，
 // bindContentCover 的 Builder 仅在 isAppLockOverlayVisible=true 时评估
 import lazy { AppLockOverlay } from './AppLockOverlay';
-import { AppStorageV2, ComponentContent, CustomContentDialogV2, AdvancedDialogV2Button } from '@kit.ArkUI';
+import { AppStorageV2, ComponentContent } from '@kit.ArkUI';
+import { TokenGroupMoveDialog } from '../dialogs/TokenGroupMoveDialog';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 // [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
 import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
@@ -335,42 +336,8 @@ struct Index {
   }
 
   @Builder
-  MultiGroupContent(onPick: (id: string) => void) {
-    Column() {
-      List() {
-        ListItem() {
-          Button($r('app.string.token_group_ungrouped'))
-            .width('100%')
-            .type(ButtonType.Normal)
-            .backgroundColor(Color.Transparent)
-            .fontColor($r('sys.color.font_primary'))
-            .constraintSize({ minHeight: 48 })
-            .onClick(() => onPick(''))
-        }
-        ForEach(this.groupState.groups, (group: TokenGroup) => {
-          ListItem() {
-            Button(group.name)
-              .width('100%')
-              .type(ButtonType.Normal)
-              .backgroundColor(Color.Transparent)
-              .fontColor($r('sys.color.font_primary'))
-              .constraintSize({ minHeight: 48 })
-              .onClick(() => onPick(group.id))
-          }
-        }, (group: TokenGroup) => group.id)
-      }
-      .width('100%')
-      .constraintSize({ maxHeight: 320 })
-    }
-  }
-
-  @Builder
   MultiGroupDialog(onPick: (id: string) => void, onClose: () => void) {
-    CustomContentDialogV2({
-      primaryTitle: $r('app.string.token_group_move'),
-      contentBuilder: () => this.MultiGroupContent(onPick),
-      buttons: [new AdvancedDialogV2Button({ content: $r('app.string.dialog_btn_cancel'), action: onClose })]
-    })
+    TokenGroupMoveDialog({ onConfirm: onPick, onClose: onClose })
   }
 
   private openMultiGroupDialog(): void {

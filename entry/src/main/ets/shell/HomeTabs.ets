@@ -58,6 +58,23 @@ export struct HomeTabs {
     return this.window.IsPcOrTablet ? SettingBottomTabsType.SUSPENSION : this.bottomTabsType;
   }
 
+  private tabSymbol(icon: Resource): SymbolGlyphModifier {
+    const modifier = new SymbolGlyphModifier(icon);
+    if (this.multiSelectMode) {
+      // 操作页签不表达当前页面，普通态和选中态均使用同一语义色。
+      modifier.fontColor([$r('sys.color.icon_secondary')]);
+    }
+    return modifier;
+  }
+
+  @Computed
+  get tabLabelStyle(): LabelStyle {
+    return this.multiSelectMode ? {
+      selectedColor: $r('sys.color.font_secondary'),
+      unselectedColor: $r('sys.color.font_secondary')
+    } : {};
+  }
+
   @Computed
   get allTokensSelected(): boolean {
     return this.tokens.length > 0 && this.tokens.every(token => this.selectedTokenIds.includes(token.TokenUUID));
@@ -116,10 +133,11 @@ export struct HomeTabs {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill')),
-              selected: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill'))
+              normal: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill')),
+              selected: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.star_fill') : $r('sys.symbol.key_fill'))
             },
             this.multiSelectMode ? $r('app.string.token_favorite_add') : $r('app.string.tab_token'))
+            .labelStyle(this.tabLabelStyle)
             // 悬浮：56vp 胶囊内居中；平铺：内容区顶对齐 + 4vp 顶部安全间距
             // (设计指南平铺式上下安全间距 4vp)，按钮热区落在 48vp 内容区内，
             // 整体高度向下扩展避让导航条(下方 barHeight)
@@ -142,12 +160,13 @@ export struct HomeTabs {
           .backgroundColor($r('app.color.window_background'))
           .tabBar(BottomTabBarStyle.of(
             {
-              normal: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
+              normal: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
                 $r('sys.symbol.person_crop_circle_fill_1')),
-              selected: new SymbolGlyphModifier(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
+              selected: this.tabSymbol(this.multiSelectMode ? $r('sys.symbol.folder_fill') :
                 $r('sys.symbol.person_crop_circle_fill_1')),
             },
             this.multiSelectMode ? $r('app.string.token_multi_group') : $r('app.string.tab_me'))
+            .labelStyle(this.tabLabelStyle)
             // 悬浮：56vp 胶囊内居中；平铺：内容区顶对齐 + 4vp 顶部安全间距
             // (设计指南平铺式上下安全间距 4vp)，按钮热区落在 48vp 内容区内，
             // 整体高度向下扩展避让导航条(下方 barHeight)
@@ -162,17 +181,19 @@ export struct HomeTabs {
           if (this.multiSelectMode) {
             TabContent() {}
               .tabBar(BottomTabBarStyle.of({
-                normal: new SymbolGlyphModifier($r('sys.symbol.trash_fill')),
-                selected: new SymbolGlyphModifier($r('sys.symbol.trash_fill'))
-              }, $r('app.string.dialog_btn_delete')))
+                normal: this.tabSymbol($r('sys.symbol.trash_fill')),
+                selected: this.tabSymbol($r('sys.symbol.trash_fill'))
+              }, $r('app.string.dialog_btn_delete'))
+                .labelStyle(this.tabLabelStyle))
             TabContent() {}
               .tabBar(BottomTabBarStyle.of({
-                normal: new SymbolGlyphModifier(this.allTokensSelected ?
+                normal: this.tabSymbol(this.allTokensSelected ?
                   $r('sys.symbol.minus_circle_fill') : $r('sys.symbol.checkmark_circle_fill')),
-                selected: new SymbolGlyphModifier(this.allTokensSelected ?
+                selected: this.tabSymbol(this.allTokensSelected ?
                   $r('sys.symbol.minus_circle_fill') : $r('sys.symbol.checkmark_circle_fill'))
               }, this.allTokensSelected ?
-                $r('app.string.token_multi_deselect_all') : $r('app.string.token_multi_select_all')))
+                $r('app.string.token_multi_deselect_all') : $r('app.string.token_multi_select_all'))
+                .labelStyle(this.tabLabelStyle))
           }
         }
         .clip(false)
