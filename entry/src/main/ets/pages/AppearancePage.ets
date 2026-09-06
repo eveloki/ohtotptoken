@@ -444,6 +444,7 @@ export struct AppearancePage {
                 SubItemColor({
                   icon: $r('sys.symbol.paintpalette'),
                   title: $r('app.string.custom_color_palette'),
+                  expandable: true,
                   description: $r('app.string.custom_color_palette_des'),
                   colors: [
                     {

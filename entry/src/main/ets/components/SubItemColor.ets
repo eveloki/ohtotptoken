@@ -19,6 +19,8 @@ export struct SubItemColor {
   @Param icon: Resource | undefined = undefined;
   @Param description: string | Resource = '';
   @Param rowPadding: Padding = SETTING_ROW_PADDING;
+  @Param expandable: boolean = false;
+  @Local collapsed: boolean = true;
 
   private dialog_color_picker?: CustomDialogController;
 
@@ -40,8 +42,8 @@ export struct SubItemColor {
     this.dialog_color_picker.open();
   }
 
-  build() {
-    Row({ space: 12 }) {
+  @Builder
+  titleBuilder() {
       Column({ space: 4 }) {
         Row({ space: 10 }) {
           if (this.icon != undefined) {
@@ -73,15 +75,19 @@ export struct SubItemColor {
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
+  }
 
+  @Builder
+  colorsBuilder() {
       Column({ space: 8 }) {
         // 索引键复用行时直接读取 @Param 数组，避免捕获已被替换的普通 ColorItem。
         ForEach(this.colors, (_color: ColorItem, index: number) => {
           Row({ space: 8 }) {
-            if (this.colors.length > 1) {
+            if (this.expandable || this.colors.length > 1) {
               Text(this.colors[index].name)
                 .fontSize($r('sys.float.ohos_id_text_size_body2'))
                 .fontColor($r('sys.color.font_secondary'))
+                .layoutWeight(this.expandable ? 1 : 0)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
             }
@@ -117,15 +123,53 @@ export struct SubItemColor {
               .onClick(() => this.openLegacyColorPicker(this.colors[index].color, index))
             }
           }
+          .width(this.expandable ? '100%' : undefined)
           .alignItems(VerticalAlign.Center)
         }, (_color: ColorItem, index: number) => index.toString())
       }
+      .width(this.expandable ? '100%' : undefined)
       .alignItems(HorizontalAlign.End)
+  }
+
+  build() {
+    Column() {
+      if (this.expandable) {
+        Row({ space: 12 }) {
+          this.titleBuilder()
+          SymbolGlyph($r('sys.symbol.chevron_right'))
+            .fontColor([$r('sys.color.font_tertiary')])
+            .fontSize(24)
+            .rotate({ angle: this.collapsed ? 0 : 90 })
+            .translate(this.collapsed ? {} : { x: -3 })
+        }
+        .width('100%')
+        .constraintSize({ minHeight: SETTING_ROW_MIN_HEIGHT })
+        .padding(this.rowPadding)
+        .alignItems(VerticalAlign.Center)
+        .onClick(() => {
+          this.getUIContext().animateTo({ duration: 200, curve: Curve.Sharp }, () => {
+            this.collapsed = !this.collapsed;
+          });
+        })
+        if (!this.collapsed) {
+          Column() {
+            this.colorsBuilder()
+          }
+          .width('100%')
+          .padding(this.rowPadding)
+        }
+      } else {
+        Row({ space: 12 }) {
+          this.titleBuilder()
+          this.colorsBuilder()
+        }
+        .width('100%')
+        .padding(this.rowPadding)
+        .constraintSize({ minHeight: SETTING_ROW_MIN_HEIGHT })
+        .alignItems(VerticalAlign.Center)
+      }
     }
     .width('100%')
-    .padding(this.rowPadding)
-    .constraintSize({ minHeight: SETTING_ROW_MIN_HEIGHT })
-    .alignItems(VerticalAlign.Center)
     .enabled(!this.disable)
     .opacity(this.disable ? 0.4 : 1)
   }
