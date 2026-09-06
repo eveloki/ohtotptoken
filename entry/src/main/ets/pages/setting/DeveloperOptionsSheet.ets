@@ -106,7 +106,7 @@ export struct DeveloperOptionsSheet {
                   this.showAddTestTokensConfirmDialog();
                 })
 
-              SubItemDivider()
+              SubItemDivider({ insetLeft: 46 })
 
               SubItemButton({
                 symbol: $r('sys.symbol.trash'),

@@ -59,7 +59,7 @@ export struct AppearanceSheet {
                 })
 
                 if (!this.window.IsPc) {
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
                     icon: $r('sys.symbol.rectangle_stack'),
@@ -98,7 +98,7 @@ export struct AppearanceSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemEnumSelect({
                   icon: $r('sys.symbol.slider_horizontal_2'),
@@ -115,7 +115,7 @@ export struct AppearanceSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 if (!this.window.IsPcOrTablet) {
                   SubItemEnumSelect({
@@ -133,12 +133,12 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
                 }
 
                 SubItemIconManager()
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r("sys.symbol.paintpalette"),
@@ -168,7 +168,7 @@ export struct AppearanceSheet {
                 })
 
                 if (this.material_preference.app_appearance_immersive_enable) {
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
                     icon: $r('sys.symbol.rectangle_stack'),
@@ -183,7 +183,7 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
                     icon: $r('sys.symbol.rectangle_stack'),
@@ -198,7 +198,7 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
                     icon: $r('sys.symbol.rectangle_stack'),
@@ -213,7 +213,7 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemEnumSelect({
                     icon: $r('sys.symbol.rectangle_split_3x1'),
@@ -259,7 +259,7 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemButton({
                     text: $r('app.string.setting_material_reset_colors'),

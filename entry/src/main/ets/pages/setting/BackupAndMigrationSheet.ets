@@ -278,7 +278,7 @@ export struct BackupAndMigrationSheet {
                     this.callFilePickerSaveFile()
                   })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.folder'),
@@ -288,7 +288,7 @@ export struct BackupAndMigrationSheet {
                     this.callFilePickerSelectFile()
                   })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.briefcase'),
@@ -307,7 +307,7 @@ export struct BackupAndMigrationSheet {
                 SettingItem({ title: $r('app.string.setting_import_from_other_apps') }) {
                   ForEach(this.importers, (importer: TokenImporter, index: number) => {
                     if (index > 0) {
-                      SubItemDivider()
+                      SubItemDivider({ insetLeft: 46 })
                     }
                     SubItemButton({
                       symbol: importer.icon,
@@ -367,7 +367,7 @@ export struct BackupAndMigrationSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.info_circle'),

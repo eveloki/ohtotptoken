@@ -55,7 +55,7 @@ export struct SecuritySheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemToggle({
                   icon: $r('sys.symbol.key_shield'),
@@ -76,7 +76,7 @@ export struct SecuritySheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemToggle({
                   icon: $r('sys.symbol.face'),
@@ -88,7 +88,7 @@ export struct SecuritySheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemToggle({
                   icon: $r('sys.symbol.eye_slash'),
@@ -101,7 +101,7 @@ export struct SecuritySheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemToggle({
                   icon: $r('sys.symbol.blur_bar'),
@@ -113,7 +113,7 @@ export struct SecuritySheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemToggle({
                   icon: $r('sys.symbol.eye'),

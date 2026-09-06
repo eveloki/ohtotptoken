@@ -72,7 +72,7 @@ export struct DataSyncSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.arrow_counterclockwise_clock'),
@@ -82,7 +82,7 @@ export struct DataSyncSheet {
                     this.pageInfos.pushPathByName(ROUTE_NAMES.ShowDataSyncDetailsPage, null);
                   }, 1000))
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 // 手表同步: 经 Wear Engine P2P 下发令牌到手表(独立子页面, 经本 Sheet 内嵌导航栈 push)
                 SubItemButton({

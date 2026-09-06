@@ -512,7 +512,8 @@ export struct SheetCoordinator {
             .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          // 左侧跳过行边距 16vp、图标 20vp 和图文间距 10vp，与标题对齐。
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.link'),
@@ -550,7 +551,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.chevron_up_2_circle'),
@@ -568,7 +569,7 @@ export struct SheetCoordinator {
               MaterialSheetStyle.options())
 
           if (this.debug_mode_is_on) {
-            SubItemDivider()
+            SubItemDivider({ insetLeft: 46 })
 
             SubItemButton({
               symbol: $r('sys.symbol.wrench_and_screwdriver'),
@@ -607,7 +608,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.envelope'),
@@ -624,7 +625,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.info_circle'),

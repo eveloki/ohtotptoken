@@ -156,7 +156,7 @@ export struct AboutSheet {
                   startBrowsableAbility(this.appCtx, EXTERNAL_URLS.REPO_HOME);
                 }, 1000))
 
-              SubItemDivider()
+              SubItemDivider({ insetLeft: 46 })
 
               SubItemButton({
                 symbol: $r('sys.symbol.doc_plaintext'),
@@ -167,7 +167,7 @@ export struct AboutSheet {
                   startBrowsableAbility(this.appCtx, EXTERNAL_URLS.REPO_LICENSE);
                 }, 1000))
 
-              SubItemDivider()
+              SubItemDivider({ insetLeft: 46 })
 
               // 贡献者名单完整展示，不设行数上限
               SubItemButton({
@@ -196,7 +196,7 @@ export struct AboutSheet {
                     startBrowsableAbility(this.appCtx, entry.url);
                   }, 1000))
                 if (index < this.ossEntries.length - 1) {
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
                 }
               }, (entry: OssEntry) => entry.repoPath)
             }
