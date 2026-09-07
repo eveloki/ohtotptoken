@@ -10,8 +10,6 @@ import { showSnackBar, SnackBarNotifyType } from 'common';
 import { AppWindowInfo, CommonConstants } from 'common';
 import { AppStorageV2 } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { MaterialSurface } from '../components/MaterialSurface';
-import { MaterialTheme, MaterialThickness } from '../components/MaterialTheme';
 import { SETTING_PAGE_INSET } from '../components/SettingStyle';
 
 const TAG = 'BleWatchSyncPage';
@@ -360,26 +358,16 @@ export struct BleWatchSyncPage {
                       .layoutWeight(1)
                       .maxLines(1)
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    // 刷新扫描按钮: MaterialSurface 光感材质(重启扫描以发现新广播)
-                    MaterialSurface({
-                      thickness: MaterialThickness.THIN,
-                      lightEffect: true,
-                      interactive: true,
-                      materialColor: $r('app.color.button_light_gray'),
-                      radius: 8,
-                      solidColor: Color.Transparent,
-                      fillWidth: false
-                    }) {
-                      Button($r('app.string.watch_sync_scan'))
-                        .fontSize(14)
-                        .height(32)
-                        .backgroundColor(MaterialTheme.surfaceBackground($r('app.color.button_light_gray')))
-                        .fontColor(this.is_dark_mode ? Color.White : Color.Black)
-                        .stateEffect(false)
-                        .onClick(() => {
-                          this.refreshScan();
-                        })
-                    }
+                    // 刷新扫描按钮: 内容区实体背景(重启扫描以发现新广播)
+                    Button($r('app.string.watch_sync_scan'))
+                      .fontSize(14)
+                      .height(32)
+                      .backgroundColor($r('app.color.button_light_gray'))
+                      .fontColor(this.is_dark_mode ? Color.White : Color.Black)
+                      .stateEffect(false)
+                      .onClick(() => {
+                        this.refreshScan();
+                      })
                   }
                   .padding(10)
 
@@ -433,27 +421,17 @@ export struct BleWatchSyncPage {
                           .fontSize(14)
                           .fontColor($r('sys.color.font_secondary'))
                       } else {
-                        // 连接按钮: MaterialSurface 光感材质
-                        MaterialSurface({
-                          thickness: MaterialThickness.THIN,
-                          lightEffect: true,
-                          interactive: true,
-                          materialColor: $r('app.color.button_light_gray'),
-                          radius: 8,
-                          solidColor: Color.Transparent,
-                          fillWidth: false
-                        }) {
-                          Button($r('app.string.watch_sync_connect'))
-                            .fontSize(14)
-                            .height(32)
-                            .backgroundColor(MaterialTheme.surfaceBackground($r('app.color.button_light_gray')))
-                            .fontColor(this.is_dark_mode ? Color.White : Color.Black)
-                            .stateEffect(false)
-                            .enabled(this.connectingDeviceId === '' && !this.has_connected_device)
-                            .onClick(() => {
-                              this.connectDevice(device);
-                            })
-                        }
+                        // 连接按钮: 内容区实体背景
+                        Button($r('app.string.watch_sync_connect'))
+                          .fontSize(14)
+                          .height(32)
+                          .backgroundColor($r('app.color.button_light_gray'))
+                          .fontColor(this.is_dark_mode ? Color.White : Color.Black)
+                          .stateEffect(false)
+                          .enabled(this.connectingDeviceId === '' && !this.has_connected_device)
+                          .onClick(() => {
+                            this.connectDevice(device);
+                          })
                       }
                     }
                     .padding(10)
@@ -527,53 +505,33 @@ export struct BleWatchSyncPage {
               }
               .padding({ left: SETTING_PAGE_INSET, right: SETTING_PAGE_INSET })
 
-              // 传输按钮: 未连接设备时禁用
+              // 传输按钮: 内容区实体背景, 未连接设备时禁用
               ListItem() {
-                MaterialSurface({
-                  thickness: MaterialThickness.THIN,
-                  lightEffect: true,
-                  interactive: true,
-                  materialColor: $r('app.color.button_light_gray'),
-                  radius: 10,
-                  solidColor: Color.Transparent,
-                  fillWidth: true
-                }) {
-                  Button($r('app.string.watch_sync_transfer'))
-                    .width('100%')
-                    .height(44)
-                    .backgroundColor(MaterialTheme.surfaceBackground($r('app.color.button_light_gray')))
-                    .fontColor(this.is_dark_mode ? Color.White : Color.Black)
-                    .stateEffect(false)
-                    .enabled(!this.transferring && this.has_connected_device)
-                    .onClick(() => {
-                      this.transfer();
-                    })
-                }
+                Button($r('app.string.watch_sync_transfer'))
+                  .width('100%')
+                  .height(44)
+                  .backgroundColor($r('app.color.button_light_gray'))
+                  .fontColor(this.is_dark_mode ? Color.White : Color.Black)
+                  .stateEffect(false)
+                  .enabled(!this.transferring && this.has_connected_device)
+                  .onClick(() => {
+                    this.transfer();
+                  })
               }
               .padding({ left: SETTING_PAGE_INSET, right: SETTING_PAGE_INSET })
 
               // 同步设置按钮: 将手机端外观/安全设置(白名单)经 BLE 下发到手表
               ListItem() {
-                MaterialSurface({
-                  thickness: MaterialThickness.THIN,
-                  lightEffect: true,
-                  interactive: true,
-                  materialColor: $r('app.color.button_light_gray'),
-                  radius: 10,
-                  solidColor: Color.Transparent,
-                  fillWidth: true
-                }) {
-                  Button($r('app.string.watch_sync_settings'))
-                    .width('100%')
-                    .height(44)
-                    .backgroundColor(MaterialTheme.surfaceBackground($r('app.color.button_light_gray')))
-                    .fontColor(this.is_dark_mode ? Color.White : Color.Black)
-                    .stateEffect(false)
-                    .enabled(!this.transferring && this.has_connected_device)
-                    .onClick(() => {
-                      this.syncSettings();
-                    })
-                }
+                Button($r('app.string.watch_sync_settings'))
+                  .width('100%')
+                  .height(44)
+                  .backgroundColor($r('app.color.button_light_gray'))
+                  .fontColor(this.is_dark_mode ? Color.White : Color.Black)
+                  .stateEffect(false)
+                  .enabled(!this.transferring && this.has_connected_device)
+                  .onClick(() => {
+                    this.syncSettings();
+                  })
               }
               .padding({ left: SETTING_PAGE_INSET, right: SETTING_PAGE_INSET })
 
