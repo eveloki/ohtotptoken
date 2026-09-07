@@ -27,6 +27,7 @@ export * from './src/main/ets/utils/SnackBar';
 export * from './src/main/ets/utils/SteamUtils';
 export * from './src/main/ets/utils/SyncTimeHelper';
 export * from './src/main/ets/utils/TokenBackup';
+export * from './src/main/ets/utils/TokenBatchProgress';
 export * from './src/main/ets/utils/TokenCardStore';
 export * from './src/main/ets/utils/TokenConfig';
 export * from './src/main/ets/utils/TokenGroupStore';

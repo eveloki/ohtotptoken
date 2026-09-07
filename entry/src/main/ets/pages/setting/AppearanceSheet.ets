@@ -59,7 +59,7 @@ export struct AppearanceSheet {
                 })
 
                 if (!this.window.IsPc) {
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
                     icon: $r('sys.symbol.rectangle_stack'),
@@ -98,7 +98,7 @@ export struct AppearanceSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemEnumSelect({
                   icon: $r('sys.symbol.slider_horizontal_2'),
@@ -115,7 +115,7 @@ export struct AppearanceSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 if (!this.window.IsPcOrTablet) {
                   SubItemEnumSelect({
@@ -133,12 +133,12 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
                 }
 
                 SubItemIconManager()
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r("sys.symbol.paintpalette"),
@@ -155,7 +155,7 @@ export struct AppearanceSheet {
             ListItem() {
               SettingItem({ title: $r('app.string.setting_group_material') }) {
                 SubItemToggle({
-                  icon: $r('sys.symbol.rectangle_stack'),
+                  icon: $r('sys.symbol.lightbulb_max'),
                   title: $r('app.string.setting_immersive_enable'),
                   description: $r('app.string.setting_immersive_enable_desc'),
                   isOn: this.material_preference.app_appearance_immersive_enable,
@@ -168,10 +168,10 @@ export struct AppearanceSheet {
                 })
 
                 if (this.material_preference.app_appearance_immersive_enable) {
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
-                    icon: $r('sys.symbol.rectangle_stack'),
+                    icon: $r('sys.symbol.hand_point_up_tap'),
                     title: $r('app.string.setting_immersive_interactive'),
                     description: $r('app.string.setting_immersive_interactive_desc'),
                     isOn: this.material_preference.app_appearance_immersive_interactive,
@@ -183,10 +183,10 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
-                    icon: $r('sys.symbol.rectangle_stack'),
+                    icon: $r('sys.symbol.sun_max'),
                     title: $r('app.string.setting_immersive_light_effect'),
                     description: $r('app.string.setting_immersive_light_effect_desc'),
                     isOn: this.material_preference.app_appearance_immersive_light_effect,
@@ -198,10 +198,10 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemToggle({
-                    icon: $r('sys.symbol.rectangle_stack'),
+                    icon: $r('sys.symbol.shadow'),
                     title: $r('app.string.setting_material_shadow'),
                     description: $r('app.string.setting_material_shadow_desc'),
                     isOn: this.material_preference.app_appearance_material_shadow,
@@ -213,10 +213,10 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemEnumSelect({
-                    icon: $r('sys.symbol.rectangle_split_3x1'),
+                    icon: $r('sys.symbol.layer'),
                     title: $r('app.string.setting_immersive_style'),
                     options: AVAILABLE_IMMERSIVE_STYLES,
                     description: $r('app.string.setting_immersive_style_desc'),
@@ -232,6 +232,7 @@ export struct AppearanceSheet {
                   SubItemDivider()
 
                   SubItemColor({
+                    icon: $r('sys.symbol.paintpalette'),
                     title: $r('app.string.setting_material_color'),
                     description: $r('app.string.setting_material_color_desc'),
                     colors: [{
@@ -247,6 +248,7 @@ export struct AppearanceSheet {
                   SubItemDivider()
 
                   SubItemColor({
+                    icon: $r('sys.symbol.light_color'),
                     title: $r('app.string.setting_light_color'),
                     description: $r('app.string.setting_light_color_desc'),
                     colors: [{
@@ -259,7 +261,7 @@ export struct AppearanceSheet {
                     }
                   })
 
-                  SubItemDivider()
+                  SubItemDivider({ insetLeft: 46 })
 
                   SubItemButton({
                     text: $r('app.string.setting_material_reset_colors'),

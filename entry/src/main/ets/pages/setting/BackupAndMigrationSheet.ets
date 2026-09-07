@@ -8,7 +8,10 @@ import { SubItemButton } from '../../components/SubItemButton';
 import { SubItemToggle } from '../../components/SubItemToggle';
 import { SettingItem } from '../../components/SettingItem';
 import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup, saveBackupToFile, TokenBackup } from 'common';
+import { saveBackupToFile, TokenBackup } from 'common';
+import { importBackupWithProgress, TokenImportHandler } from '../../utils/BackupImportOperation';
+import { TokenBatchOperation } from '../../utils/TokenBatchOperation';
+import { TokenProgressDialog, TokenProgressDialogParams } from '../../dialogs/TokenProgressDialog';
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from 'common';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { LengthMetrics, AppStorageV2 } from '@kit.ArkUI';
@@ -20,7 +23,7 @@ import { ShowCloudBackupHistoryPage } from '../ShowCloudBackupHistoryPage';
 import { HuaweiAccountManager } from 'common';
 import { hdsMaterial, HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { TokenImporterRegistry, TokenImporter } from 'common';
-import { URIConfigDialog } from '../../dialogs/URIConfigDialog';
+import { UriImportSheet } from './UriImportSheet';
 import { SETTING_PAGE_INSET } from '../../components/SettingStyle';
 import { MaterialTheme } from '../../components/MaterialTheme';
 import { AppWindowInfo } from 'common';
@@ -32,7 +35,8 @@ export struct BackupAndMigrationSheet {
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Param embedded: boolean = false;
-  @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
+  @Event backupReload: TokenImportHandler = async () => {};
+  @Event onUriImportVisibilityChange: (visible: boolean) => void = () => {};
 
   @Local versionCode?: number;
   @Local cloudBackupEnabled: boolean = false;
@@ -44,8 +48,6 @@ export struct BackupAndMigrationSheet {
   // 导入时选择的备份文件路径
   private backup_select_uri: string = '';
   private appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
-  // URI 导入对话框控制器（组件内持有，避免非组件上下文问题）
-  private uriDialogController: CustomDialogController | null = null;
 
   aboutToAppear(): void {
     let bundleInfo = AppStorage.get<bundleManager.BundleInfo>("BundleInfo");
@@ -90,11 +92,7 @@ export struct BackupAndMigrationSheet {
     EncryptionPassWordDialog({
       title: $r('app.string.dialog_backup_password'),
       confirm: (password: string) => {
-        restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
-          this.backupReload(backup.configs);
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
-        });
+        importBackupWithProgress(this, this.backup_select_uri, true, password, this.backupReload);
       }
     })
   }
@@ -231,7 +229,13 @@ export struct BackupAndMigrationSheet {
   }
 
   async callFilePickerSelectFile(): Promise<void> {
+    if (TokenBatchOperation.isBusy()) {
+      return;
+    }
     showSelectFilePicker(1, ['JSON|.json', 'BAK|.bak']).then((uris) => {
+      if (uris.length === 0 || !uris[0]) {
+        return;
+      }
       this.backup_select_uri = uris[0];
       if (this.backup_select_uri.endsWith('.bak')) {
         //后缀bak为加密包 唤醒加密导入弹窗
@@ -239,11 +243,7 @@ export struct BackupAndMigrationSheet {
           this.EncryptionPasswordImportDialogBuilder();
         });
       } else {
-        restoreFromBackup(uris[0]).then((backup) => {
-          this.backupReload(backup.configs);
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
-        });
+        importBackupWithProgress(this, uris[0], false, '', this.backupReload);
       }
     });
   }
@@ -254,13 +254,20 @@ export struct BackupAndMigrationSheet {
       ShowCloudSyncDetailsPage({ scrollEffectType: this.scrollEffectStyle })
     } else if (name === ROUTE_NAMES.ShowCloudBackupHistoryPage) {
       ShowCloudBackupHistoryPage({ scrollEffectType: this.scrollEffectStyle })
+    } else if (name === ROUTE_NAMES.UriImportSheet) {
+      UriImportSheet({
+        scrollEffectStyle: this.scrollEffectStyle,
+        backupReload: this.backupReload,
+        onVisibilityChange: this.onUriImportVisibilityChange
+      })
     }
   }
 
   //endregion
-  // 在自定义组件即将析构销毁时释放 URI Dialog 控制器。
-  aboutToDisappear() {
-    this.uriDialogController = null
+
+  @Builder
+  buildTokenProgressDialog(params: TokenProgressDialogParams) {
+    TokenProgressDialog({ params: params })
   }
 
   build() {
@@ -278,7 +285,7 @@ export struct BackupAndMigrationSheet {
                     this.callFilePickerSaveFile()
                   })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.folder'),
@@ -288,7 +295,7 @@ export struct BackupAndMigrationSheet {
                     this.callFilePickerSelectFile()
                   })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.briefcase'),
@@ -307,7 +314,7 @@ export struct BackupAndMigrationSheet {
                 SettingItem({ title: $r('app.string.setting_import_from_other_apps') }) {
                   ForEach(this.importers, (importer: TokenImporter, index: number) => {
                     if (index > 0) {
-                      SubItemDivider()
+                      SubItemDivider({ insetLeft: 46 })
                     }
                     SubItemButton({
                       symbol: importer.icon,
@@ -316,20 +323,7 @@ export struct BackupAndMigrationSheet {
                     })
                       .onClick(() => {
                         if (importer.id === 'uri') {
-                          // URI 导入需要组件上下文，在此创建 CustomDialogController
-                          this.uriDialogController = new CustomDialogController({
-                            systemMaterial: dialogSystemMaterial(),
-                            builder: URIConfigDialog({
-                              confirm: async (tokens: Array<TokenConfig>): Promise<boolean> => {
-                                this.backupReload(tokens);
-                                return true;
-                              }
-                            }),
-                            autoCancel: true,
-                            customStyle: false,
-                            cornerRadius: 10,
-                          });
-                          this.uriDialogController.open();
+                          this.pageInfos.pushPathByName(ROUTE_NAMES.UriImportSheet, null);
                         } else {
                           // 其他导入器（如 TwoFAImporter）使用各自的 import() 方法
                           importer.import(this.getUIContext(), (tokens: Array<TokenConfig>) => {
@@ -367,7 +361,7 @@ export struct BackupAndMigrationSheet {
                   }
                 })
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r('sys.symbol.info_circle'),

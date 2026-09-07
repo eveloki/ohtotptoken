@@ -41,7 +41,7 @@ export struct AgreementSheet {
                       new WebPageParams(privacyUrl, $r('app.string.privacy_statement')));
                   }, 1000))
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   symbol: $r("sys.symbol.doc_plaintext_and_pencil"),

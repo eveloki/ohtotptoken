@@ -4,7 +4,7 @@ import { SETTING_DIVIDER_INSET_LEFT, SETTING_DIVIDER_INSET_RIGHT } from './Setti
 @Preview
 @ComponentV2
 export struct SubItemDivider {
-  /** 左侧缩进，默认 16 与行内文字对齐；特殊布局可由调用方覆盖 */
+  /** 左侧缩进，默认 46 与“我的”页图标后文字对齐，无图标行也保持一致 */
   @Param insetLeft: number = SETTING_DIVIDER_INSET_LEFT;
   @Param insetRight: number = SETTING_DIVIDER_INSET_RIGHT;
 

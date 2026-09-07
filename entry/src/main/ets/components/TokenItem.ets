@@ -6,7 +6,7 @@ import { convertToken2URI, copyText, generateOTP } from 'common';
 import { TokenIcon } from 'uikit';
 import { SteamUtils } from 'common';
 import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, SettingHiddenTokenType,
-  SettingTokenProgressType } from 'common';
+  SettingTokenProgressType, SettingTokenSeparator } from 'common';
 import { AppStorageV2, curves, SymbolGlyphModifier } from '@kit.ArkUI';
 import { QRCodeDialog } from 'uikit';
 import { AppWindowInfo } from 'common';
@@ -29,6 +29,9 @@ export struct TokenItem {
   @Event Edit: (conf: TokenConfig) => void = () => {};
   @Event Select: (conf: TokenConfig) => void = () => {};
   @Param sortMode: boolean = false;
+  @Param multiSelectMode: boolean = false;
+  @Param multiSelectBusy: boolean = false;
+  @Event onToggleSelection: (conf: TokenConfig) => void = () => {};
   @Param selectionMode: boolean = false;
   @Param selected: boolean = false;
   @Param hdsCardMode: boolean = false;
@@ -403,6 +406,38 @@ export struct TokenItem {
     }
   }
 
+  private tokenCodeGroups(code: string): string[] {
+    // 仅拆分显示，原始验证码仍用于复制和计算。
+    if (this.token_preference.app_appearance_token_separator === SettingTokenSeparator.NONE ||
+      (code.length !== 4 && code.length !== 6 && code.length !== 8)) {
+      return [code];
+    }
+    const midpoint = code.length / 2;
+    return [code.substring(0, midpoint), code.substring(midpoint)];
+  }
+
+  @Builder
+  GroupedTokenCode(code: string, size: number, weight: number, color: ResourceColor) {
+    Row({ space: this.token_preference.app_appearance_token_separator === SettingTokenSeparator.SPACE ?
+      size * 0.33 : Math.min(4, size * 0.13) }) {
+      ForEach(this.tokenCodeGroups(code), (group: string, index: number) => {
+        if (index > 0 && this.token_preference.app_appearance_token_separator === SettingTokenSeparator.DOT) {
+          Circle({ width: Math.min(4, size * 0.2), height: Math.min(4, size * 0.2) })
+            .fill(color)
+        }
+        Text(group)
+          .textAlign(TextAlign.End)
+          .textOverflow({ overflow: TextOverflow.MARQUEE })
+          .maxLines(1)
+          .fontColor(color)
+          .fontSize(size)
+          .fontWeight(weight)
+          .fontFamily(AppFonts.CODE_FONT)
+      }, (group: string, index: number) => `${index}:${group}`)
+    }
+    .alignItems(VerticalAlign.Center)
+  }
+
   @Builder
   TokenCodeBuilder() {
     Column() {
@@ -411,16 +446,14 @@ export struct TokenItem {
       } else {
         Row({ space: 4 }) {
           Column() {
-            Text(this.TokenNumber)
-              .textAlign(TextAlign.End)
-              .textOverflow({ overflow: TextOverflow.MARQUEE })
-              .maxLines(1)
-              .fontColor(this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP &&
-                this.Config.TokenType !== otpType.NFC_external ?
-                this.token_color_expiring : this.token_color_normal)
-              .fontSize(this.token_preference.app_appearance_token_font_size)
-              .fontWeight(this.token_preference.app_appearance_token_font_weight)
-              .fontFamily(AppFonts.CODE_FONT)
+            Row() {
+              this.GroupedTokenCode(this.TokenNumber,
+                this.token_preference.app_appearance_token_font_size,
+                this.token_preference.app_appearance_token_font_weight,
+                this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP &&
+                  this.Config.TokenType !== otpType.NFC_external ?
+                  this.token_color_expiring : this.token_color_normal)
+            }
               .onAreaChange((_oldValue: Area, newValue: Area) => {
                 const width = Number(newValue.width);
                 if (width > 0 && width !== this.tokenNumberWidth) {
@@ -444,21 +477,20 @@ export struct TokenItem {
                   this.token_progress_color_normal)
             }
             if (this.Config.TokenType == otpType.HOTP) {
-              Text(this.TokenCounter + (this.token_preference.app_appearance_show_next_token_enable ? ":" + this.TokenNumberNext : ""))
-                .textAlign(TextAlign.End)
-                .textOverflow({ overflow: TextOverflow.MARQUEE })
-                .maxLines(1)
-                .fontColor($r('app.color.str_gray'))
-                .fontSize(10)
+              Row() {
+                Text(this.TokenCounter + (this.token_preference.app_appearance_show_next_token_enable ? ":" : ""))
+                  .textAlign(TextAlign.End)
+                  .textOverflow({ overflow: TextOverflow.MARQUEE })
+                  .maxLines(1)
+                  .fontColor($r('app.color.str_gray'))
+                  .fontSize(10)
+                if (this.token_preference.app_appearance_show_next_token_enable) {
+                  this.GroupedTokenCode(this.TokenNumberNext, 10, 400, $r('app.color.str_gray'))
+                }
+              }
             } else if (this.Config.TokenType !== otpType.NFC_external &&
               this.token_preference.app_appearance_show_next_token_enable) {
-              Text(this.TokenNumberNext)
-                .textAlign(TextAlign.End)
-                .textOverflow({ overflow: TextOverflow.MARQUEE })
-                .maxLines(1)
-                .fontColor($r('app.color.str_gray'))
-                .fontSize(10)
-                .fontFamily(AppFonts.CODE_FONT)
+              this.GroupedTokenCode(this.TokenNumberNext, 10, 400, $r('app.color.str_gray'))
             }
           }
           .opacity(this.tokenCodeOpacity)
@@ -504,7 +536,16 @@ export struct TokenItem {
   }
 
   build() {
-    if (this.sortMode) {
+    if (this.multiSelectMode) {
+      Column() {
+        this.TokenRowContent(false)
+      }
+      .width('100%')
+      .backgroundColor(this.selected ? Color.Transparent : $r('app.color.item_bg'))
+      .borderRadius(this.token_preference.app_appearance_item_radius)
+      .clip(true)
+      .enabled(!this.multiSelectBusy)
+    } else if (this.sortMode) {
       // 排序模式：禁用上下文菜单和长按手势，Suffix 显示排序图标；
       // 普通列表内容不在沉浸光感生效区，始终保留实体背景。
       Column() {
@@ -595,7 +636,19 @@ export struct TokenItem {
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
 
-      if (sort) {
+      if (this.multiSelectMode) {
+        // 每个令牌使用独立 group，避免 Radio 的组内互斥；状态由 UUID 选择集控制。
+        Radio({ value: this.Config.TokenUUID, group: `token_multi_${this.Config.TokenUUID}` })
+          .id(`token_multi_radio_${this.Config.TokenUUID}`)
+          .checked(this.selected)
+          .margin({ left: 12, right: 16 })
+          .accessibilityText(`${this.Config.TokenIssuer} ${this.Config.TokenName}`)
+          .onClick(() => {
+            if (!this.multiSelectBusy) {
+              this.onToggleSelection(this.Config);
+            }
+          })
+      } else if (sort) {
         this.TokenSortIconBuilder()
       } else {
         this.TokenCodeBuilder()
@@ -605,7 +658,9 @@ export struct TokenItem {
     .height(this.token_preference.app_appearance_item_height)
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
-      if (this.selectionMode && !sort) {
+      if (this.multiSelectMode && !this.multiSelectBusy) {
+        this.onToggleSelection(this.Config);
+      } else if (this.selectionMode && !sort) {
         this.Select(this.Config);
       }
     })

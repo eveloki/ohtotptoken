@@ -29,7 +29,7 @@ function randomBytes(length: number): Uint8Array {
 const LEGACY_IV_STR = 'ohtotptokenaesiv';
 const LEGACY_SALT = new Uint8Array(16); // zero salt
 
-function legacyDeriveKey(user_key: string): cryptoFramework.SymKey {
+async function legacyDeriveKey(user_key: string): Promise<cryptoFramework.SymKey> {
   let spec: cryptoFramework.PBKDF2Spec = {
     algName: 'PBKDF2',
     password: user_key,
@@ -38,7 +38,7 @@ function legacyDeriveKey(user_key: string): cryptoFramework.SymKey {
     keySize: 16
   };
   let kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
-  let symKeyBlob = kdf.generateSecretSync(spec);
+  let symKeyBlob = await kdf.generateSecret(spec);
   let aesGenerator = cryptoFramework.createSymKeyGenerator('AES128');
   return aesGenerator.convertKeySync(symKeyBlob);
 }
@@ -49,7 +49,7 @@ function legacyIvSpec(): cryptoFramework.IvParamsSpec {
   return { algName: "IvParamsSpec", iv: { data: bytes } };
 }
 
-function deriveKey(user_key: string, salt: Uint8Array, iterations: number): cryptoFramework.SymKey {
+async function deriveKey(user_key: string, salt: Uint8Array, iterations: number): Promise<cryptoFramework.SymKey> {
   let spec: cryptoFramework.PBKDF2Spec = {
     algName: 'PBKDF2',
     password: user_key,
@@ -58,7 +58,7 @@ function deriveKey(user_key: string, salt: Uint8Array, iterations: number): cryp
     keySize: 16
   };
   let kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
-  let symKeyBlob = kdf.generateSecretSync(spec);
+  let symKeyBlob = await kdf.generateSecret(spec);
   let aesGenerator = cryptoFramework.createSymKeyGenerator('AES128');
   return aesGenerator.convertKeySync(symKeyBlob);
 }
@@ -75,7 +75,7 @@ export async function decryptFile(file_buf: Uint8Array, user_key: string): Promi
     cipherData = file_buf.slice(HEADER_SIZE);
     let aes_decoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
     let aes_iv: cryptoFramework.IvParamsSpec = { algName: "IvParamsSpec", iv: { data: iv } };
-    let aes_key = deriveKey(user_key, salt, 600000);
+    let aes_key = await deriveKey(user_key, salt, 600000);
     await aes_decoder.init(cryptoFramework.CryptoMode.DECRYPT_MODE, aes_key, aes_iv);
     let decryptData = await aes_decoder.doFinal({ data: cipherData });
     let decoder = new util.TextDecoder();
@@ -83,7 +83,7 @@ export async function decryptFile(file_buf: Uint8Array, user_key: string): Promi
   } else {
     // ---- V0 (legacy): raw ciphertext, hardcoded IV, zero salt ----
     let aes_decoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
-    let aes_key = legacyDeriveKey(user_key);
+    let aes_key = await legacyDeriveKey(user_key);
     await aes_decoder.init(cryptoFramework.CryptoMode.DECRYPT_MODE, aes_key, legacyIvSpec());
     let decryptData = await aes_decoder.doFinal({ data: file_buf });
     let decoder = new util.TextDecoder();
@@ -96,7 +96,7 @@ export async function encryptFile(file_str: string, user_key: string): Promise<U
   let iv = randomBytes(16);
   let aes_encoder = cryptoFramework.createCipher('AES128|CBC|PKCS7');
   let aes_iv: cryptoFramework.IvParamsSpec = { algName: "IvParamsSpec", iv: { data: iv } };
-  let aes_key = deriveKey(user_key, salt, 600000);
+  let aes_key = await deriveKey(user_key, salt, 600000);
   aes_encoder.initSync(cryptoFramework.CryptoMode.ENCRYPT_MODE, aes_key, aes_iv);
   let ciphertext = new Uint8Array((await aes_encoder.doFinal({ data: new Uint8Array(buffer.from(file_str).buffer) })).data);
   // Build V2 output: MAGIC(4) + salt(16) + iv(16) + ciphertext

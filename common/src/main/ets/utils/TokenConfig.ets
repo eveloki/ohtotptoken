@@ -56,6 +56,22 @@ export class TokenConfig {
   }
 }
 
+/** 创建独立的配置快照；ArkTS 不支持对象展开，且不能在事务提交前修改共享实例。 */
+export function copyTokenConfig(token: TokenConfig): TokenConfig {
+  const copy = new TokenConfig(token.TokenSecret, token.TokenType, token.TokenIssuer, token.TokenName,
+    token.TokenAlgorithm, token.TokenPeriod, token.TokenDigits, token.TokenCounter, token.RankScore);
+  copy.TokenUUID = token.TokenUUID;
+  copy.TokenSecret = token.TokenSecret;
+  copy.FortiToken = token.FortiToken;
+  copy.FortiDevID = token.FortiDevID;
+  copy.TokenGroupId = token.TokenGroupId;
+  copy.TokenFavorite = token.TokenFavorite;
+  copy.SteamMaFile = token.SteamMaFile;
+  copy.TokenIconPath = token.TokenIconPath;
+  copy.TokenExternalCode = token.TokenExternalCode;
+  return copy;
+}
+
 /**
  * LazyForEach ViewModel 包装层。
  *

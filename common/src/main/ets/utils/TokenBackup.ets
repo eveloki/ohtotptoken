@@ -1,5 +1,6 @@
 import { readFileContent, writeFileContent,writeFileContentCheckHashEqual } from "./FileUtils";
 import { TokenConfig } from "./TokenConfig";
+import { TokenBatchProgressCallback, TokenBatchStage, reportTokenBatchProgress } from './TokenBatchProgress';
 import { TokenGroup, TokenGroupStore } from './TokenGroupStore';
 import { base32Decode, base32Encode, intArrayToString, stringToIntArray } from "./TokenUtils";
 import { decryptFile, encryptFile } from "./CryptoUtils";
@@ -30,10 +31,17 @@ export async function saveBackupToFile(file_uri: string, backup: TokenBackup, do
   await writeFileContentCheckHashEqual(file_uri, b32_encoded);
 }
 
-export async function restoreFromBackup(file_uri: string, is_encrypt: boolean = false, password: string = ''): Promise<TokenBackup> {
+export async function restoreFromBackup(file_uri: string, is_encrypt: boolean = false, password: string = '',
+  onProgress?: TokenBatchProgressCallback): Promise<TokenBackup> {
+  reportTokenBatchProgress(onProgress, TokenBatchStage.READING);
   const file_content = await readFileContent(file_uri);
+  reportTokenBatchProgress(onProgress, TokenBatchStage.DECODING);
   const b32_decoded = base32Decode(file_content);
+  if (is_encrypt) {
+    reportTokenBatchProgress(onProgress, TokenBatchStage.DECRYPTING);
+  }
   const backup_string = is_encrypt ? await decryptFile(b32_decoded, password) : intArrayToString(b32_decoded.buffer as ArrayBuffer);
+  reportTokenBatchProgress(onProgress, TokenBatchStage.PARSING);
   const backup: TokenBackup = JSON.parse(backup_string) as TokenBackup;
   if (backup.magic !== TOKEN_BACKUP_MAGIC || !Array.isArray(backup.configs)) {
     throw new Error('invalid backup file');

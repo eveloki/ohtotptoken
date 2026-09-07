@@ -1,5 +1,10 @@
 # 辅助脚本
 
+## 批量令牌操作回归
+
+运行 `node --test scripts/*.test.mjs`。覆盖生产 TokenStore/KvManager 的分块、事务回滚、事件次数及并发顺序。
+真机 Hypium 构建、执行与数据保护约定见 [TOKEN_BATCH_TESTS.md](TOKEN_BATCH_TESTS.md)。
+
 ## 材质策略回归测试
 
 需要 Node.js ≥ 22.13.0（使用 `node:module` 的 `stripTypeScriptTypes` API）。在仓库根目录运行：

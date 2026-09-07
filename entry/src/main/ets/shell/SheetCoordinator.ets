@@ -1,4 +1,5 @@
 import { dialogSystemMaterial } from 'common';
+import { TokenImportHandler } from '../utils/BackupImportOperation';
 import { common } from '@kit.AbilityKit';
 import { TokenConfig } from 'common';
 // [冷启动优化] 各 Sheet 仅在用户点击对应入口时触发模块评估
@@ -43,13 +44,14 @@ export struct SheetCoordinator {
   @Param detailOnlyRoute: string = '';
   @Event onSelectRoute: (route: ROUTE_NAMES) => void = () => {};
   /** 备份恢复完成回调(由 Index 提供:批量更新 Token 并重新排序) */
-  @Require @Param backupReload: (conf: TokenConfig[]) => Promise<void> = async (conf: TokenConfig[]) => {};
+  @Require @Param backupReload: TokenImportHandler = async () => {};
   /** 开发者选项：生成并持久化 100 个随机测试令牌 */
   @Event addTestTokens: () => Promise<boolean> = async () => false;
   /** 开发者选项：移除生成的测试令牌 */
   @Event removeTestTokens: () => Promise<boolean> = async () => false;
 
   @Local isBackupSheetVisible: boolean = false;
+  @Local isUriImportPageVisible: boolean = false;
   @Local isSafetySheetVisible: boolean = false;
   @Local isAppearanceSheetVisible: boolean = false;
   @Local isDeveloperOptionsSheetVisible: boolean = false;
@@ -186,13 +188,20 @@ export struct SheetCoordinator {
     });
   }
 
+  private backupSheetOptions(): SheetOptions {
+    const options = MaterialSheetStyle.options();
+    options.showClose = !this.isUriImportPageVisible;
+    return options;
+  }
+
   @Builder
   BackupAndMigrationSheetBuilder(embedded: boolean) {
     BackupAndMigrationSheet({
       Tokens: this.tokens,
       scrollEffectStyle: this.scrollEffectType,
       embedded: embedded,
-      backupReload: this.backupReload
+      backupReload: this.backupReload,
+      onUriImportVisibilityChange: (visible: boolean) => this.isUriImportPageVisible = visible
     })
       .height('100%')
       .foregroundBlurStyle(this.window.BackgroundBlurActive ? BlurStyle.Thin : BlurStyle.NONE, {
@@ -510,9 +519,10 @@ export struct SheetCoordinator {
               }
             })
             .bindSheet($$this.isBackupSheetVisible, this.BackupAndMigrationSheetBuilder(false),
-              MaterialSheetStyle.options())
+              this.backupSheetOptions())
 
-          SubItemDivider()
+          // 左侧跳过行边距 16vp、图标 20vp 和图文间距 10vp，与标题对齐。
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.link'),
@@ -550,7 +560,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isSafetySheetVisible, this.SecuritySheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.chevron_up_2_circle'),
@@ -568,7 +578,7 @@ export struct SheetCoordinator {
               MaterialSheetStyle.options())
 
           if (this.debug_mode_is_on) {
-            SubItemDivider()
+            SubItemDivider({ insetLeft: 46 })
 
             SubItemButton({
               symbol: $r('sys.symbol.wrench_and_screwdriver'),
@@ -607,7 +617,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isAgreementSheetVisible, this.AgreementSheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.envelope'),
@@ -624,7 +634,7 @@ export struct SheetCoordinator {
             .bindSheet($$this.isFeedbackSheetVisible, this.FeedbackSheetBuilder(false),
               MaterialSheetStyle.options())
 
-          SubItemDivider()
+          SubItemDivider({ insetLeft: 46 })
 
           SubItemButton({
             symbol: $r('sys.symbol.info_circle'),

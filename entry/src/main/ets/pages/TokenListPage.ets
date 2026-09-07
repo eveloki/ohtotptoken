@@ -46,6 +46,11 @@ export struct TokenListPage {
   @Require @Param pageInfos: NavPathStack = new NavPathStack();
   @Require @Param TabBarVisible: boolean = true;
   @Param listScroller: Scroller = new Scroller();
+  @Param listStartOffset: number = 0;
+  @Param multiSelectMode: boolean = false;
+  @Param multiSelectBusy: boolean = false;
+  @Param selectedTokenIds: string[] = [];
+  @Event onToggleSelection: (conf: TokenConfig) => void = () => {};
   @Param splitSelectionMode: boolean = false;
   @Param selectedTokenUUID: string = '';
   @Event onSelectToken: (conf: TokenConfig) => void = () => {};
@@ -60,10 +65,27 @@ export struct TokenListPage {
 
   @Local dataSource: GenericDataSource<TokenConfigVM> = new GenericDataSource([]);
 
-  /** 全量刷新：父组件 Tokens 变化时重建整个 ViewModel 数组 */
+  /** 批量只重载一次；内容替换的已有 UUID 必须换行 key，避免复用旧 OTP/收藏状态。 */
   @Monitor("Tokens")
   onTokensChange(monitor: IMonitor): void {
-    this.dataSource.updateData(toVMs(monitor.value()?.now as TokenConfig[]));
+    const previous = new Map<string, TokenConfigVM>();
+    for (let i = 0; i < this.dataSource.totalCount(); i++) {
+      const vm = this.dataSource.getData(i);
+      previous.set(vm.config.TokenUUID, vm);
+    }
+    const tokens = monitor.value()?.now as TokenConfig[];
+    const next = tokens.map((token: TokenConfig): TokenConfigVM => {
+      const vm = previous.get(token.TokenUUID);
+      if (!vm) {
+        return new TokenConfigVM(token);
+      }
+      if (vm.config !== token) {
+        vm.config = token;
+        vm.refreshObjId();
+      }
+      return vm;
+    });
+    this.dataSource.updateData(next);
   }
 
   private appCtx: common.UIAbilityContext = AppStorage.get('appContext') as common.UIAbilityContext;
@@ -140,8 +162,9 @@ export struct TokenListPage {
                 this.token_preference.app_appearance_token_list_item_prefix_padding,
                 this.token_preference.app_appearance_token_list_item_suffix_padding,
                 this.token_preference.app_appearance_item_radius),
-              isSelected: this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
-              swipeActionOptions: {
+              isSelected: this.multiSelectMode ? this.selectedTokenIds.includes(vm.config.TokenUUID) :
+                this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
+              swipeActionOptions: this.multiSelectMode ? undefined : {
                 end: {
                   builder: (): void => {
                     this.TokenItemSwipeEnd(vm)
@@ -152,6 +175,7 @@ export struct TokenListPage {
           }, (vm: TokenConfigVM) => vm.objid) // keyGenerator: objid 变化 = 组件重建
         }
         .onDidScroll(() => this.onListScroll(this.listScroller.currentOffset().yOffset))
+        .contentStartOffset(this.listStartOffset)
         .contentEndOffset(this.TabBarVisible ? (80 + this.appBottomAvoidHeight) : (20 + this.appBottomAvoidHeight))
         .alignListItem(ListItemAlign.Center)
         // ArkUI 链式动效要求显式单列且不能使用自动 lanes；仅 PC 保持自适应多列。
@@ -212,8 +236,12 @@ export struct TokenListPage {
   TokenItemContentBuilder(vm: TokenConfigVM) {
     TokenItem({
       Config: vm.config,
+      multiSelectMode: this.multiSelectMode,
+      multiSelectBusy: this.multiSelectBusy,
+      onToggleSelection: (conf: TokenConfig) => this.onToggleSelection(conf),
       selectionMode: this.splitSelectionMode,
-      selected: this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
+      selected: this.multiSelectMode ? this.selectedTokenIds.includes(vm.config.TokenUUID) :
+        this.splitSelectionMode && vm.config.TokenUUID === this.selectedTokenUUID,
       hdsCardMode: true,
       Select: (conf: TokenConfig) => this.onSelectToken(conf),
       Edit: (conf: TokenConfig) => this.openEditPage(conf),
@@ -221,7 +249,7 @@ export struct TokenListPage {
         return await this.updateSingleToken(conf_new, false);
       }
     })
-      .bindPopup(this.token_copy_guide_popup && vm.config.TokenUUID === this.dataSource.getData(0)?.config.TokenUUID, {
+      .bindPopup(!this.multiSelectMode && this.token_copy_guide_popup && vm.config.TokenUUID === this.dataSource.getData(0)?.config.TokenUUID, {
         systemMaterial: dialogSystemMaterial(),
         placement: Placement.Left,
         message: this.getUIContext().getHostContext()?.resourceManager

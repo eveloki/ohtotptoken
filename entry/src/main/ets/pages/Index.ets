@@ -1,5 +1,8 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { base32Encode, otpType, TokenConfig, dialogSystemMaterial } from 'common';
+import { base32Encode, otpType, TokenConfig, TokenBatchProgressCallback, dialogSystemMaterial } from 'common';
+import { TokenBatchOperation } from '../utils/TokenBatchOperation';
+import { TokenProgressDialog, TokenProgressDialogParams } from '../dialogs/TokenProgressDialog';
+import { importBackupWithProgress } from '../utils/BackupImportOperation';
 import { util, url } from '@kit.ArkTS';
 // [冷启动优化] 文件 I/O 仅在 deferredInit 中使用
 import lazy { fileIo as fs } from '@kit.CoreFileKit';
@@ -18,7 +21,6 @@ import lazy { DropFilesDialog } from '../dialogs/DropFilesDialog';
 // [冷启动优化] 加密导入弹框仅在文件拖入 .bak 时触发
 import lazy { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 // [冷启动优化] 备份恢复仅在文件拖入时触发
-import lazy { restoreFromBackup } from 'common';
 // [冷启动优化] TokenIconPacks 仅在 deferredInit 中使用，ScanBarCode 仅在扫码时使用
 import lazy { TokenIconPacks, ScanBarCode } from 'common';
 // [冷启动优化] 云备份管理器仅在 deferredInit 中使用
@@ -27,7 +29,10 @@ import { AppWindowInfo } from 'common';
 // [冷启动优化] AppLockOverlay 导入 @kit.CryptoArchitectureKit + @kit.UserAuthenticationKit，
 // bindContentCover 的 Builder 仅在 isAppLockOverlayVisible=true 时评估
 import lazy { AppLockOverlay } from './AppLockOverlay';
-import { AppStorageV2, ComponentContent } from '@kit.ArkUI';
+import { AdvancedDialogV2Button, AlertDialogV2, AppStorageV2, ComponentContent } from '@kit.ArkUI';
+import { TokenGroupMoveDialog } from '../dialogs/TokenGroupMoveDialog';
+import { TokenMultiSelectPage } from './TokenMultiSelectPage';
+import { CommonConstants } from 'common';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 // [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
 import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
@@ -112,17 +117,23 @@ function TokenAddMenuBuilder(host: Index) {
 function TokenActionsMenuBuilder(host: Index) {
   Menu() {
     MenuItem({
+      content: $r('app.string.app_ua_add_token'),
+      builder: TokenAddMenuBuilder.bind(host, host)
+    })
+      .accessibilityText($r('app.string.app_ua_add_token'))
+    MenuItem({
       content: $r('app.string.menu_token_sort_method'),
       // 子菜单延迟构建时必须绑定组件上下文，不能以普通函数直接调用全局 @Builder。
       builder: TokenSortMenuBuilder.bind(host, host)
     })
       .accessibilityText($r('app.string.menu_token_sort_method'))
     MenuItem({ content: $r('app.string.menu_token_multi_select') })
-      .enabled(false)
+      .enabled(!host.multiSelectMode && host.displayTokens.length > 0)
+      .onClick(() => host.openMultiSelectPage())
       .accessibilityText($r('app.string.menu_token_multi_select'))
   }
   .width(host.getTokenActionsMenuWidth())
-  // 使用原生内嵌展开，让排序选项在“排序方式”下方显示。
+  // 使用原生内嵌展开，让添加和排序选项在各自入口下方显示。
   .subMenuExpandingMode(SubMenuExpandingMode.EMBEDDED_EXPAND)
   .systemMaterial(dialogSystemMaterial())
 }
@@ -178,6 +189,12 @@ struct Index {
   @Local tokenTitleCollapse: number = 0;
 
   onBackPress(): boolean {
+    if (this.multiSelectMode && !this.isAppLockOverlayVisible) {
+      if (!this.multiSelectBusy) {
+        this.exitMultiSelect();
+      }
+      return true;
+    }
     if (this.groupSidebarOpen && !this.isAppLockOverlayVisible) {
       this.groupSidebarOpen = false;
       return true;
@@ -201,9 +218,13 @@ struct Index {
   }
 
   private selectGroup(id: string): void {
+    if (this.multiSelectBusy) {
+      return;
+    }
     if (id === this.groupState.selectedId) {
       return;
     }
+    this.exitMultiSelect();
     this.groupState.selectedId = id;
     this.tokenTitleCollapse = 0;
     this.tokenListScroller.scrollTo({ xOffset: 0, yOffset: 0 });
@@ -213,6 +234,174 @@ struct Index {
       this.pageInfos.clear();
     }
   }
+  @Local multiSelectMode: boolean = false;
+  @Local multiSelectBusy: boolean = false;
+  @Local selectedTokenIds: string[] = [];
+
+  private multiSelectListScroller: Scroller = new Scroller();
+
+  openMultiSelectPage(): void {
+    if (this.multiSelectMode || this.displayTokens.length === 0) {
+      return;
+    }
+    this.selectedTokenIds = [];
+    this.selectedTokenUUID = '';
+    this.pageInfos.clear();
+    this.groupSidebarOpen = false;
+    this.currentHomeTabIndex = 0;
+    this.multiSelectMode = true;
+    this.openFullScreenRoute(ROUTE_NAMES.TokenMultiSelectPage, null);
+  }
+
+  private exitMultiSelect(): void {
+    const paths = this.pageInfos.getAllPathName();
+    if (paths[paths.length - 1] === ROUTE_NAMES.TokenMultiSelectPage) {
+      this.pageInfos.pop();
+    }
+    this.multiSelectMode = false;
+    this.selectedTokenIds = [];
+  }
+
+  @Monitor('displayTokens')
+  reconcileMultiSelection(): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.selectedTokenIds.filter(id =>
+        this.displayTokens.some(token => token.TokenUUID === id));
+    }
+  }
+
+  private toggleTokenSelection(conf: TokenConfig): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.selectedTokenIds.includes(conf.TokenUUID) ?
+        this.selectedTokenIds.filter(id => id !== conf.TokenUUID) : [...this.selectedTokenIds, conf.TokenUUID];
+    }
+  }
+
+  private selectAllTokens(): void {
+    if (!this.multiSelectBusy) {
+      this.selectedTokenIds = this.displayTokens.every(token => this.selectedTokenIds.includes(token.TokenUUID)) ?
+        [] : this.displayTokens.map(token => token.TokenUUID);
+    }
+  }
+
+  private async applyMultiAction(action: string, groupId: string = ''): Promise<void> {
+    if (this.multiSelectBusy || TokenBatchOperation.isBusy() || !this.multiSelectMode) {
+      return;
+    }
+    const selectedIds = new Set(this.selectedTokenIds);
+    const selected = this.displayTokens.filter(token => selectedIds.has(token.TokenUUID));
+    if (selected.length === 0) {
+      return;
+    }
+    // 在写入前一次性确定目标状态，避免逐条更新触发列表刷新后改变操作方向。
+    const favorite = !selected.every(token =>
+      token.TokenType !== otpType.NFC_external && token.TokenFavorite === true);
+    this.multiSelectBusy = true;
+    const failed: string[] = [];
+    const localIds = selected.filter(token => token.TokenType !== otpType.NFC_external).map(token => token.TokenUUID);
+    const externalIds = selected.filter(token => token.TokenType === otpType.NFC_external).map(token => token.TokenUUID);
+    try {
+      if (action === 'delete' || action === 'favorite') {
+        try {
+          if (localIds.length > 0) {
+            await TokenBatchOperation.run(this, action === 'delete' ?
+              $r('app.string.token_batch_delete_title') : $r('app.string.token_batch_favorite_title'), async (report) => {
+              if (action === 'delete') {
+                await tkStore.deleteTokens(localIds, report);
+              } else {
+                await tkStore.setTokensFavorite(localIds, favorite, report);
+              }
+            });
+          }
+        } catch (_) {
+          // 本地 KV 事务失败整批保留；NFC 会话操作独立处理。
+          failed.push(...localIds);
+        }
+        if (action === 'delete') {
+          NfcSessionTokens.getInstance().removeMany(externalIds);
+        } else {
+          failed.push(...externalIds);
+        }
+      } else {
+        failed.push(...externalIds);
+        for (const uuid of localIds) {
+          try {
+            await tkStore.moveTokenToGroup(uuid, groupId);
+          } catch (_) {
+            failed.push(uuid);
+          }
+        }
+      }
+    } finally {
+      this.multiSelectBusy = false;
+    }
+    this.selectedTokenIds = failed.filter(id => this.displayTokens.some(token => token.TokenUUID === id));
+    if (failed.length === 0) {
+      this.exitMultiSelect();
+      showSnackBar($r('app.string.token_multi_success', selected.length), SnackBarNotifyType.SUCCESS);
+    } else {
+      showSnackBar($r('app.string.token_multi_failed', failed.length), SnackBarNotifyType.WARNING);
+    }
+  }
+
+  @Builder
+  buildTokenProgressDialog(params: TokenProgressDialogParams) {
+    TokenProgressDialog({ params: params })
+  }
+
+  private confirmMultiDelete(): void {
+    if (this.multiSelectBusy || this.selectedTokenIds.length === 0) {
+      return;
+    }
+    this.getUIContext().getPromptAction().openCustomDialog({
+      builder: () => this.MultiDeleteDialog()
+    }).catch(() => {
+      showSnackBar($r('app.string.token_multi_failed', this.selectedTokenIds.length), SnackBarNotifyType.ERROR);
+    });
+  }
+
+  @Builder
+  MultiDeleteDialog() {
+    AlertDialogV2({
+      primaryTitle: $r('app.string.token_multi_delete_title', this.selectedTokenIds.length),
+      content: $r('app.string.alert_remove_confirm_msg'),
+      primaryButton: new AdvancedDialogV2Button({
+        content: $r('app.string.dialog_btn_cancel')
+      }),
+      secondaryButton: new AdvancedDialogV2Button({
+        content: $r('app.string.dialog_btn_delete'),
+        role: ButtonRole.ERROR,
+        action: () => { this.applyMultiAction('delete'); }
+      })
+    })
+  }
+
+  @Builder
+  MultiGroupDialog(onPick: (id: string) => void, onClose: () => void) {
+    TokenGroupMoveDialog({ onConfirm: onPick, onClose: onClose })
+  }
+
+  private openMultiGroupDialog(): void {
+    if (this.multiSelectBusy || this.selectedTokenIds.length === 0) {
+      return;
+    }
+    let dialogId: number = -1;
+    const onClose = (): void => {
+      if (dialogId !== -1) {
+        this.getUIContext().getPromptAction().closeCustomDialog(dialogId);
+      }
+    };
+    this.getUIContext().getPromptAction().openCustomDialog({
+      systemMaterial: dialogSystemMaterial(),
+      builder: () => this.MultiGroupDialog((id: string) => {
+        onClose();
+        this.applyMultiAction('group', id);
+      }, onClose)
+    }).then(id => { dialogId = id; }).catch(() => {
+      showSnackBar($r('app.string.token_group_error'), SnackBarNotifyType.ERROR);
+    });
+  }
+
   @Local tokenSortMode: TokenListSortMode = TokenListSortMode.DEFAULT;
   @Local token_loading: Boolean = true;
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
@@ -306,7 +495,6 @@ struct Index {
   }
 
   private backup_select_uri: string = '';
-  private readonly addTokenMenuTargetId: string = 'app_ua_add_token';
   private readonly sortTokenMenuTargetId: string = 'token_right_menu_sort';
   private dialog_nfc_read?: CustomDialogController;
 
@@ -344,12 +532,8 @@ struct Index {
         if (this.backup_select_uri.endsWith('.bak')) {
           this.openEncryptionPasswordDialog();
         } else if (this.backup_select_uri.endsWith('.json')) {
-          restoreFromBackup(uri).then((backup) => {
-            this.updateTokenConfigs(backup.configs).then(() => {
-              tkStore.sortTokens();
-            });
-          }).catch((reason: BusinessError) => {
-            showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+          importBackupWithProgress(this, uri, false, '', async (tokens, report) => {
+            await this.updateTokenConfigs(tokens, report);
           });
         }
         setTimeout(() => {
@@ -484,12 +668,8 @@ struct Index {
   EncryptionPasswordDialogBuilder(): void {
     EncryptionPassWordDialog({
       confirm: (password: string) => {
-        restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
-          this.updateTokenConfigs(backup.configs).then(() => {
-            tkStore.sortTokens();
-          });
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+        importBackupWithProgress(this, this.backup_select_uri, true, password, async (tokens, report) => {
+          await this.updateTokenConfigs(tokens, report);
         });
       }
     })
@@ -825,49 +1005,45 @@ struct Index {
       return true;
     }
 
-    let failCount = 0;
-    for (const token of testTokens) {
-      try {
-        await tkStore.deleteToken(token.TokenUUID);
-      } catch (error) {
-        failCount++;
-        hilog.error(0, 'DeveloperOptions', `Failed to remove test token: ${error}`);
-      }
+    try {
+      await TokenBatchOperation.run(this, $r('app.string.token_batch_delete_title'), async (report) => {
+        await tkStore.deleteTokens(testTokens.map(token => token.TokenUUID), report);
+      });
+      showSnackBar($r('app.string.toast_test_tokens_removed', testTokens.length), SnackBarNotifyType.SUCCESS);
+      return true;
+    } catch (error) {
+      hilog.error(0, 'DeveloperOptions', `Failed to remove test tokens: ${error}`);
+      showSnackBar($r('app.string.toast_test_tokens_removed', 0), SnackBarNotifyType.WARNING);
+      return false;
     }
-    await this.refreshDisplayTokens();
-    const removedCount = testTokens.length - failCount;
-    showSnackBar($r('app.string.toast_test_tokens_removed', removedCount),
-      failCount === 0 ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
-    return failCount === 0;
   }
 
-  async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<boolean> {
-    let failCount = 0;
-    let hasNew = false;
-    const existingUuids = new Set(this.CurrentTokens.map(t => t.TokenUUID));
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].TokenUUID === undefined) {
-        tokens[i].TokenUUID = util.generateRandomUUID();
-      }
-      if (!existingUuids.has(tokens[i].TokenUUID)) {
-        hasNew = true;
-      }
-      try {
-        await tkStore.updateToken(tokens[i]);
-      } catch (e) {
-        hilog.error(0, 'Index', `updateTokenConfigs[${i}] failed: ${e}`);
-        failCount++;
+  private async persistImportedTokens(tokens: TokenConfig[], report: TokenBatchProgressCallback): Promise<void> {
+    for (const token of tokens) {
+      if (token.TokenUUID === undefined) {
+        token.TokenUUID = util.generateRandomUUID();
       }
     }
-    if (hasNew || this.tokenSortMode !== TokenListSortMode.DEFAULT) {
-      await this.refreshDisplayTokens();
+    await tkStore.updateTokens(tokens, report);
+  }
+
+  async updateTokenConfigs(tokens: Array<TokenConfig>, report?: TokenBatchProgressCallback): Promise<boolean> {
+    if (report) {
+      // URI/备份页面已经打开 Dialog：沿用它的进度通道，异常交还调用方，保留输入供重试。
+      await this.persistImportedTokens(tokens, report);
+      return true;
     }
-    if (failCount === 0) {
+    if (TokenBatchOperation.isBusy()) {
+      return false;
+    }
+    try {
+      await TokenBatchOperation.run(this, $r('app.string.token_batch_import_title'),
+        async (observer) => { await this.persistImportedTokens(tokens, observer); });
       showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
       return true;
-    } else {
-      hilog.error(0, 'Index', `updateTokenConfigs: ${failCount}/${tokens.length} failed`);
-      showSnackBar($r('app.string.toast_multi_token_update', tokens.length - failCount), SnackBarNotifyType.WARNING);
+    } catch (e) {
+      hilog.error(0, 'Index', `updateTokenConfigs: transaction failed: ${e}`);
+      showSnackBar($r('app.string.token_batch_import_failed'), SnackBarNotifyType.ERROR);
       return false;
     }
   }
@@ -894,22 +1070,16 @@ struct Index {
     });
   }
 
-  private openAddTokenMenu(): void {
-    const uiContext = this.getUIContext();
-    const promptAction = uiContext.getPromptAction();
-    const contentNode = new ComponentContent(uiContext, wrapBuilder(TokenAddMenuBuilder), this);
-    try {
-      promptAction.openMenu(contentNode, { id: this.addTokenMenuTargetId }, {});
-    } catch (error) {
-      const err = error as BusinessError;
-      hilog.error(err.code, 'Index', `openAddTokenMenu failed: ${err.message}`);
-    }
-  }
-
   getTokenActionsMenuWidth(): number | undefined {
     const uiContext = this.getUIContext();
     const measure = uiContext.getMeasureUtils();
     const labels: Resource[] = [
+      $r('app.string.app_ua_add_token'),
+      $r('app.string.app_scan_code'),
+      $r('app.string.tab_token_add_key'),
+      $r('app.string.tab_token_add_forti_key'),
+      $r('app.string.tab_token_add_stream_key'),
+      $r('app.string.menu_add_nfc_read'),
       $r('app.string.menu_token_sort_method'),
       $r('app.string.menu_token_multi_select'),
       $r('app.string.menu_token_sort_default'),
@@ -1090,9 +1260,8 @@ struct Index {
       onSelectRoute: (route: ROUTE_NAMES) => {
         this.selectedSettingRoute = route;
       },
-      backupReload: async (conf) => {
-        await this.updateTokenConfigs(conf);
-        tkStore.sortTokens();
+      backupReload: async (conf, report) => {
+        await this.updateTokenConfigs(conf, report);
       },
       addTestTokens: () => this.addTestTokens(),
       removeTestTokens: () => this.removeTestTokens()
@@ -1104,10 +1273,38 @@ struct Index {
    * 通过箭头函数传给 AppShell，使 @Builder 保持 Index 的 this 与状态刷新能力。
    */
   @Builder
-  HomeContentBuilder() {
+  MultiSelectPageBuilder() {
+    TokenMultiSelectPage({
+      scrollEffectType: this.currentScrollEffectType,
+      listScroller: this.multiSelectListScroller,
+      busy: this.multiSelectBusy,
+      content: () => this.HomeContentBuilder(true),
+      onExitFullScreen: () => {
+        this.multiSelectMode = false;
+        this.selectedTokenIds = [];
+        this.businessSplitEnabled = true;
+      }
+    })
+  }
+
+  @Builder
+  HomeContentBuilder(multiSelect: boolean = false) {
     HomeTabs({
-      onTokenListScroll: (offset: number) => { this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56)); },
+      onTokenListScroll: (offset: number) => {
+        if (!multiSelect) {
+          this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56));
+        }
+      },
       tokens: this.displayTokens,
+      multiSelectMode: multiSelect,
+      listStartOffset: multiSelect ? this.window.AvoidTopHeight + CommonConstants.AVOID_TOP_BASE_HEIGHT : 0,
+      multiSelectBusy: this.multiSelectBusy,
+      selectedTokenIds: this.selectedTokenIds,
+      onToggleSelection: (conf: TokenConfig) => this.toggleTokenSelection(conf),
+      onSelectAll: () => this.selectAllTokens(),
+      onFavoriteSelected: () => { this.applyMultiAction('favorite'); },
+      onGroupSelected: () => this.openMultiGroupDialog(),
+      onDeleteSelected: () => this.confirmMultiDelete(),
       groupFiltered: this.groupState.selectedId !== ALL_TOKEN_GROUPS,
       window: this.window,
       bottomTabsType: this.currentBottomTabsType,
@@ -1115,7 +1312,7 @@ struct Index {
       pageInfos: this.pageInfos,
       updateTokenConfig: (conf: TokenConfig, toast?: boolean) => this.updateTokenConfig(conf, toast),
       updateTokenConfigs: (tokens: Array<TokenConfig>) => this.updateTokenConfigs(tokens),
-      tokenListScroller: this.tokenListScroller,
+      tokenListScroller: multiSelect ? this.multiSelectListScroller : this.tokenListScroller,
       settingEntryScroller: this.settingEntryScroller,
       selectedTokenUUID: this.selectedTokenUUID,
       onSelectToken: (conf: TokenConfig) => this.selectTokenForResponsiveEdit(conf),
@@ -1150,8 +1347,6 @@ struct Index {
         businessSplitEnabled: this.businessSplitEnabled,
         tokenListScroller: this.tokenListScroller,
         settingEntryScroller: this.settingEntryScroller,
-        openAddTokenMenu: () => this.openAddTokenMenu(),
-        addTokenMenuTargetId: this.addTokenMenuTargetId,
         openTokenSortMenu: () => this.openTokenSortMenu(),
         sortTokenMenuTargetId: this.sortTokenMenuTargetId,
         onOpenFullScreenRoute: (name: ROUTE_NAMES, param: Object | null) => this.openFullScreenRoute(name, param),
@@ -1194,13 +1389,13 @@ struct Index {
         },
         saveToken: (conf: TokenConfig) => this.updateTokenConfig(conf, true),
         tokens: this.CurrentTokens,
-        backupReload: async (conf: TokenConfig[]) => {
-          await this.updateTokenConfigs(conf);
-          tkStore.sortTokens();
+        backupReload: async (conf: TokenConfig[], report?: TokenBatchProgressCallback) => {
+          await this.updateTokenConfigs(conf, report);
         },
         addTestTokens: () => this.addTestTokens(),
         removeTestTokens: () => this.removeTestTokens(),
         appLockContent: this.AppLockOverlayBuilder,
+        multiSelectPageContent: () => this.MultiSelectPageBuilder(),
         homeContent: () => {
           this.HomeContentBuilder();
         },

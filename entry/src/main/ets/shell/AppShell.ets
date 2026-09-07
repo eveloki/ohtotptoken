@@ -1,4 +1,5 @@
 import { MaterialTheme } from '../components/MaterialTheme';
+import { TokenImportHandler } from '../utils/BackupImportOperation';
 import { TokenGroupSidePanel } from '../components/TokenGroupSidePanel';
 import { ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP, TokenGroupState, TokenGroupStore, dialogSystemMaterial,
   showSnackBar, SnackBarNotifyType } from 'common';
@@ -90,8 +91,6 @@ export struct AppShell {
   @Require @Param businessSplitEnabled: boolean = true;
   @Require @Param tokenListScroller: Scroller = new Scroller();
   @Require @Param settingEntryScroller: Scroller = new Scroller();
-  @Require @Param openAddTokenMenu: () => void = () => {};
-  @Require @Param addTokenMenuTargetId: string = '';
   @Require @Param openTokenSortMenu: () => void = () => {};
   @Require @Param sortTokenMenuTargetId: string = '';
   @Event onOpenFullScreenRoute: (name: ROUTE_NAMES, param: Object | null) => void = () => {};
@@ -106,12 +105,13 @@ export struct AppShell {
   /** 独立添加令牌页面共用的持久化入口，由 Index 注入 */
   @Require @Param saveToken: (conf: TokenConfig) => Promise<boolean> = async () => false;
   @Require @Param tokens: TokenConfig[] = [];
-  @Require @Param backupReload: (conf: TokenConfig[]) => Promise<void> = async () => {};
+  @Require @Param backupReload: TokenImportHandler = async () => {};
   @Event addTestTokens: () => Promise<boolean> = async () => false;
   @Event removeTestTokens: () => Promise<boolean> = async () => false;
 
   @BuilderParam appLockContent?: CustomBuilder = EmptyBuilder;
   @BuilderParam homeContent?: CustomBuilder = EmptyBuilder;
+  @BuilderParam multiSelectPageContent: CustomBuilder = EmptyBuilder;
 
   private splitPlaceholder: ComponentContent<Object> =
     new ComponentContent(this.getUIContext(), wrapBuilder(TokenSplitPlaceholder));
@@ -240,6 +240,10 @@ export struct AppShell {
         scrollEffectType: this.scrollEffectType,
         onExitFullScreen: () => this.onExitFullScreenRoute()
       })
+    } else if (name === ROUTE_NAMES.TokenMultiSelectPage) {
+      if (this.multiSelectPageContent) {
+        this.multiSelectPageContent()
+      }
     } else if (name === ROUTE_NAMES.TokenSearchPage) {
       TokenSearchPage({
         scrollEffectType: this.scrollEffectType,
@@ -424,17 +428,6 @@ export struct AppShell {
                 isEnabled: true,
                 action: () => {
                   this.onOpenFullScreenRoute(ROUTE_NAMES.TokenSearchPage, null);
-                }
-              }
-            },
-            {
-              content: {
-                label: $r('app.string.app_ua_add_token'),
-                icon: $r('sys.symbol.plus'),
-                isEnabled: true,
-                componentId: this.addTokenMenuTargetId,
-                action: () => {
-                  this.openAddTokenMenu();
                 }
               }
             },

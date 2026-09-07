@@ -4,6 +4,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
 import { TokenConfig } from './TokenConfig';
+import { TokenBatchProgressCallback, TokenBatchStage, reportTokenBatchProgress } from './TokenBatchProgress';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { fileIo as fs } from "@kit.CoreFileKit";
 
@@ -14,6 +15,55 @@ export class KvManager {
   private _kvStoreNoE: distributedKVStore.SingleKVStore | undefined = undefined;
 
   private static instance: KvManager;
+  // SingleKVStore 事务属于连接，普通写入也必须排队，避免被另一批事务回滚。
+  private writeQueue: Promise<void> = Promise.resolve();
+
+  private enqueueWrite(operation: () => Promise<void>): Promise<void> {
+    const pending = this.writeQueue.then(operation);
+    this.writeQueue = pending.catch(() => {});
+    return pending;
+  }
+
+  /** 原子提交令牌变更；按平台 MAX_BATCH_SIZE=128 分块，不逐条 put/delete。 */
+  async saveTokenBatch(prefix: string, tokens: TokenConfig[], deletedUuids: string[] = [],
+    onProgress?: TokenBatchProgressCallback): Promise<void> {
+    const entries: distributedKVStore.Entry[] = tokens.map((token: TokenConfig): distributedKVStore.Entry => {
+      return {
+        key: `${prefix}${token.TokenUUID}`,
+        value: { type: distributedKVStore.ValueType.STRING, value: JSON.stringify(token) }
+      };
+    });
+    const keys = deletedUuids.map(uuid => `${prefix}${uuid}`);
+    if (entries.length === 0 && keys.length === 0) {
+      return;
+    }
+    return this.enqueueWrite(async () => {
+      const store = this._kvStore;
+      if (!store) {
+        throw new Error('Token batch failed: KV store not initialized');
+      }
+      const total = entries.length + keys.length;
+      reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING, 0, total);
+      await store.startTransaction();
+      try {
+        for (let offset = 0; offset < entries.length; offset += 128) {
+          await store.putBatch(entries.slice(offset, offset + 128));
+          reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING, Math.min(offset + 128, entries.length), total);
+        }
+        for (let offset = 0; offset < keys.length; offset += 128) {
+          await store.deleteBatch(keys.slice(offset, offset + 128));
+          reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING,
+            entries.length + Math.min(offset + 128, keys.length), total);
+        }
+        reportTokenBatchProgress(onProgress, TokenBatchStage.COMMITTING);
+        await store.commit();
+      } catch (error) {
+        reportTokenBatchProgress(onProgress, TokenBatchStage.ROLLING_BACK);
+        await store.rollback();
+        throw new Error((error as BusinessError).message);
+      }
+    });
+  }
 
   private constructor() {
 
@@ -169,9 +219,13 @@ export class KvManager {
   }
 
   async setValue<T>(key: string, value: T): Promise<void> {
-    if (this._kvStore) {
-      await this._kvStore.put(key, JSON.stringify(value));
-    }
+    const json = JSON.stringify(value);
+    return this.enqueueWrite(async () => {
+      if (!this._kvStore) {
+        throw new Error('KV store not initialized');
+      }
+      await this._kvStore.put(key, json);
+    });
   }
 
 
@@ -227,15 +281,12 @@ export class KvManager {
   }
 
   async setString(key: string, value: string): Promise<void> {
-    if (this._kvStore) {
-     this._kvStore.put(key, value, (err) => {
-          if (err != undefined) {
-          hilog.error(err.code, 'KvManager', `Failed to put.code is ${err.code},message is ${err.message}`);
-           return;
-         }
-         hilog.info(0, 'KvManager', "Succeeded in putting");
-     });
-    }
+    return this.enqueueWrite(async () => {
+      if (!this._kvStore) {
+        throw new Error('KV store not initialized');
+      }
+      await this._kvStore.put(key, value);
+    });
   }
 
   async getString(key: string): Promise<string|null> {
@@ -280,9 +331,12 @@ export class KvManager {
     return null;
   }
   async deleteValue(key: string): Promise<void> {
-    if (this._kvStore) {
+    return this.enqueueWrite(async () => {
+      if (!this._kvStore) {
+        throw new Error('KV store not initialized');
+      }
       await this._kvStore.delete(key);
-    }
+    });
   }
 
   /**
@@ -333,7 +387,9 @@ export class KvManager {
       try {
         const allEntries = await this._kvStoreNoE.getEntries('^');
         if (allEntries && allEntries.length > 0) {
-          await this._kvStore.putBatch(allEntries);
+          await this.enqueueWrite(async () => {
+            await this._kvStore?.putBatch(allEntries);
+          });
           return allEntries.length;
         }
         hilog.info(0, 'KvManager', 'DataSyncToEncryptDatabase: non-encrypted KV is empty, nothing to restore.');
@@ -394,7 +450,7 @@ export class KvManager {
           // });
           if (deviceNetWorkIDList.length > 0) {
             let formattedDate: string = Date.now().toString();
-            this._kvStore?.put("LastSyncTime", formattedDate)
+            await this.setString("LastSyncTime", formattedDate);
             const query = new distributedKVStore.Query();
             query.prefixKey("_token_uuid_");
             this._kvStore?.sync(deviceNetWorkIDList, query, distributedKVStore.SyncMode.PUSH_PULL, 1000*10);

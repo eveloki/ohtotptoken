@@ -12,7 +12,7 @@ import { throttle, startBrowsableAbility } from 'common';
 import { showSnackBar, SnackBarNotifyType } from 'common';
 import { TokenStore } from 'common';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING } from './SettingStyle';
+import { SETTING_ROW_MIN_HEIGHT, SETTING_ROW_PADDING, SETTING_ROW_ICON_OFFSET } from './SettingStyle';
 
 interface PackItem {
   id: string;
@@ -183,6 +183,9 @@ export struct SubItemIconManager {
           }
 
           Text($r('app.string.setting_icon_pack_desc'))
+            .width('100%')
+            .padding({ left: SETTING_ROW_ICON_OFFSET })
+            .textAlign(TextAlign.Start)
             .fontSize($r('sys.float.ohos_id_text_size_body2'))
             .fontColor($r('sys.color.ohos_id_color_text_secondary'))
             .fontWeight(FontWeight.Regular)

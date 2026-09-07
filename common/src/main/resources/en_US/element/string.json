@@ -1,5 +1,29 @@
 {
   "string": [
+    { "name": "token_batch_import_title", "value": "Importing tokens" },
+    { "name": "token_batch_delete_title", "value": "Deleting tokens" },
+    { "name": "token_batch_favorite_title", "value": "Updating favorites" },
+    { "name": "token_batch_loading", "value": "Loading..." },
+    { "name": "token_batch_preparing", "value": "Preparing…" },
+    { "name": "token_batch_reading", "value": "Reading backup…" },
+    { "name": "token_batch_decoding", "value": "Decoding backup…" },
+    { "name": "token_batch_decrypting", "value": "Decrypting backup…" },
+    { "name": "token_batch_parsing", "value": "Checking token data…" },
+    { "name": "token_batch_saving", "value": "Saving changes…" },
+    { "name": "token_batch_committing", "value": "Committing changes…" },
+    { "name": "token_batch_writing_secrets", "value": "Updating secure storage…" },
+    { "name": "token_batch_removing_secrets", "value": "Cleaning up secure storage…" },
+    { "name": "token_batch_rolling_back", "value": "Restoring previous data…" },
+    { "name": "token_batch_finishing", "value": "Finishing…" },
+    { "name": "token_batch_count", "value": "%d of %d processed" },
+    { "name": "token_batch_keep_open", "value": "Please keep the app open until processing finishes." },
+    { "name": "token_batch_import_failed", "value": "Import failed. Check the data or backup password and try again." },
+    { "name": "token_multi_group", "value": "Group" },
+    { "name": "token_multi_select_all", "value": "Select all" },
+    { "name": "token_multi_deselect_all", "value": "Deselect all" },
+    { "name": "token_multi_delete_title", "value": "Delete %d selected tokens?" },
+    { "name": "token_multi_success", "value": "Processed %d tokens" },
+    { "name": "token_multi_failed", "value": "%d tokens could not be processed. Try again. NFC session tokens cannot be favorited or grouped." },
     {
       "name": "module_desc",
       "value": "Time-based One-Time Password Token"
@@ -621,6 +645,18 @@
       "value": "Text Link"
     },
     {
+      "name": "uri_import_file",
+      "value": "Read from file"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "Could not read the file. Please select it again."
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "No valid otpauth:// links found. Check the links and try again."
+    },
+    {
       "name": "tab_token_add_uri_title",
       "value": "Enter OTP URI"
     },
@@ -883,6 +919,22 @@
     {
       "name": "enable_icon_background_des",
       "value": "The icon background can improve the visibility of some icons in dark mode."
+    },
+    {
+      "name": "token_separator",
+      "value": "Code separator"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "Off"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "Space"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "Dot"
     },
     {
       "name": "enable_dark_icon_filter",

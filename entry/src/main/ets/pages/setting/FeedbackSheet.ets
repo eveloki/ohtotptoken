@@ -45,7 +45,7 @@ export struct FeedbackSheet {
                       new WebPageParams(EXTERNAL_URLS.FEEDBACK_SURVEY, $r('app.string.feedback_survey')));
                   }, 1000))
 
-                SubItemDivider()
+                SubItemDivider({ insetLeft: 46 })
 
                 SubItemButton({
                   icon: $r('app.media.github_logo'),

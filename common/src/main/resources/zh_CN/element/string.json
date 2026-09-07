@@ -1,5 +1,29 @@
 {
   "string": [
+    { "name": "token_batch_import_title", "value": "正在导入令牌" },
+    { "name": "token_batch_delete_title", "value": "正在删除令牌" },
+    { "name": "token_batch_favorite_title", "value": "正在更新收藏" },
+    { "name": "token_batch_loading", "value": "加载中..." },
+    { "name": "token_batch_preparing", "value": "正在准备…" },
+    { "name": "token_batch_reading", "value": "正在读取备份…" },
+    { "name": "token_batch_decoding", "value": "正在解码备份…" },
+    { "name": "token_batch_decrypting", "value": "正在解密备份…" },
+    { "name": "token_batch_parsing", "value": "正在检查令牌数据…" },
+    { "name": "token_batch_saving", "value": "正在保存变更…" },
+    { "name": "token_batch_committing", "value": "正在提交变更…" },
+    { "name": "token_batch_writing_secrets", "value": "正在更新安全存储…" },
+    { "name": "token_batch_removing_secrets", "value": "正在清理安全存储…" },
+    { "name": "token_batch_rolling_back", "value": "正在恢复原有数据…" },
+    { "name": "token_batch_finishing", "value": "正在完成…" },
+    { "name": "token_batch_count", "value": "已处理 %d / %d" },
+    { "name": "token_batch_keep_open", "value": "请保持应用打开，等待处理完成。" },
+    { "name": "token_batch_import_failed", "value": "导入失败，请检查数据或备份密码后重试。" },
+    { "name": "token_multi_group", "value": "分组" },
+    { "name": "token_multi_select_all", "value": "全选" },
+    { "name": "token_multi_deselect_all", "value": "取消全选" },
+    { "name": "token_multi_delete_title", "value": "删除选中的 %d 个令牌？" },
+    { "name": "token_multi_success", "value": "已处理 %d 个令牌" },
+    { "name": "token_multi_failed", "value": "%d 个令牌未完成，请重试。NFC 会话令牌不支持收藏和分组。" },
     { "name": "token_group_open_sidebar", "value": "展开分组侧栏" },
     { "name": "token_group_close_sidebar", "value": "收起分组侧栏" },
     { "name": "token_group_all", "value": "全部令牌" },
@@ -575,7 +599,7 @@
     },
     {
       "name": "app_ua_add_token",
-      "value": "添加密钥"
+      "value": "添加令牌"
     },
     {
       "name": "menu_token_actions",
@@ -644,6 +668,18 @@
     {
       "name": "tab_token_add_uri",
       "value": "文本链接"
+    },
+    {
+      "name": "uri_import_file",
+      "value": "从文件读取"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "文件读取失败，请重新选择文件"
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "未找到有效的 otpauth:// 链接，请检查后重试"
     },
     {
       "name": "tab_token_add_uri_title",
@@ -908,6 +944,22 @@
     {
       "name": "enable_icon_background_des",
       "value": "图标背景可以让一些图标在深色模式时获得更好的可视度。"
+    },
+    {
+      "name": "token_separator",
+      "value": "验证码分隔"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "关闭"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "空格"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "点"
     },
     {
       "name": "enable_dark_icon_filter",

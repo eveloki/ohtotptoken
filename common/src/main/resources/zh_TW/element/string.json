@@ -1,5 +1,29 @@
 {
   "string": [
+    { "name": "token_batch_import_title", "value": "正在匯入權杖" },
+    { "name": "token_batch_delete_title", "value": "正在刪除權杖" },
+    { "name": "token_batch_favorite_title", "value": "正在更新收藏" },
+    { "name": "token_batch_loading", "value": "載入中..." },
+    { "name": "token_batch_preparing", "value": "正在準備…" },
+    { "name": "token_batch_reading", "value": "正在讀取備份…" },
+    { "name": "token_batch_decoding", "value": "正在解碼備份…" },
+    { "name": "token_batch_decrypting", "value": "正在解密備份…" },
+    { "name": "token_batch_parsing", "value": "正在檢查權杖資料…" },
+    { "name": "token_batch_saving", "value": "正在儲存變更…" },
+    { "name": "token_batch_committing", "value": "正在提交變更…" },
+    { "name": "token_batch_writing_secrets", "value": "正在更新安全儲存…" },
+    { "name": "token_batch_removing_secrets", "value": "正在清理安全儲存…" },
+    { "name": "token_batch_rolling_back", "value": "正在還原原有資料…" },
+    { "name": "token_batch_finishing", "value": "正在完成…" },
+    { "name": "token_batch_count", "value": "已處理 %d / %d" },
+    { "name": "token_batch_keep_open", "value": "請保持應用程式開啟，等待處理完成。" },
+    { "name": "token_batch_import_failed", "value": "匯入失敗，請檢查資料或備份密碼後重試。" },
+    { "name": "token_multi_group", "value": "分組" },
+    { "name": "token_multi_select_all", "value": "全選" },
+    { "name": "token_multi_deselect_all", "value": "取消全選" },
+    { "name": "token_multi_delete_title", "value": "刪除選中的 %d 個權杖？" },
+    { "name": "token_multi_success", "value": "已處理 %d 個權杖" },
+    { "name": "token_multi_failed", "value": "%d 個權杖未完成，請重試。NFC 工作階段權杖不支援收藏和分組。" },
     { "name": "token_group_open_sidebar", "value": "展開分組側欄" },
     { "name": "token_group_close_sidebar", "value": "收起分組側欄" },
     { "name": "token_group_all", "value": "全部權杖" },
@@ -646,6 +670,18 @@
       "value": "文字連結"
     },
     {
+      "name": "uri_import_file",
+      "value": "從檔案讀取"
+    },
+    {
+      "name": "uri_import_file_failed",
+      "value": "檔案讀取失敗，請重新選擇檔案"
+    },
+    {
+      "name": "uri_import_invalid",
+      "value": "未找到有效的 otpauth:// 連結，請檢查後重試"
+    },
+    {
       "name": "tab_token_add_uri_title",
       "value": "輸入OTP URI"
     },
@@ -908,6 +944,22 @@
     {
       "name": "enable_icon_background_des",
       "value": "圖示背景可以讓某些圖示在深色模式時獲得更好的可視度。"
+    },
+    {
+      "name": "token_separator",
+      "value": "驗證碼分隔"
+    },
+    {
+      "name": "token_separator_none",
+      "value": "關閉"
+    },
+    {
+      "name": "token_separator_space",
+      "value": "空格"
+    },
+    {
+      "name": "token_separator_dot",
+      "value": "點"
     },
     {
       "name": "enable_dark_icon_filter",
