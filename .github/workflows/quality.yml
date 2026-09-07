@@ -78,9 +78,10 @@ jobs:
     name: Build HAP (all modules)
     # LocalUnit only compiles entry for test purposes; the wearable HAP and
     # the release build path (obfuscation, resource packaging) are otherwise
-    # never verified before main. Plain assembleHap runs fine on Linux - only
-    # `hvigorw test` needs the previewer runtime (see localunit job).
-    runs-on: ubuntu-latest
+    # never verified before main. Runs on the same macOS image as localunit
+    # so both jobs share one setup-ohos SDK cache (actions/cache is keyed
+    # per runner OS); the macOS runner needs no extra system packages.
+    runs-on: macos-latest
     timeout-minutes: 40
 
     steps:
@@ -95,12 +96,6 @@ jobs:
           # Keep the SDK version in sync with the localunit job.
           version: 26.0.0.821
           cache: true
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl libgl1-mesa-dev
-        shell: bash
 
       - name: Install project dependencies
         run: ohpm install --all --rt 5 --ri 5000
