@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+      # dev push = PR merge commits. PR-tip checks cannot see semantic merge
+      # conflicts between separately-green PRs (e.g. ed5e53e: #196 still
+      # referenced MaterialSurface that #197 had deleted), so the trunk
+      # itself must be gated too.
+      - dev
   workflow_call:
 
 permissions:
@@ -68,3 +73,57 @@ jobs:
             exit 1
           fi
           echo "All LocalUnit tests passed - $SUMMARY"
+
+  build:
+    name: Build HAP (all modules)
+    # LocalUnit only compiles entry for test purposes; the wearable HAP and
+    # the release build path (obfuscation, resource packaging) are otherwise
+    # never verified before main. Plain assembleHap runs fine on Linux - only
+    # `hvigorw test` needs the previewer runtime (see localunit job).
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup HarmonyOS CLI tools
+        uses: ErBWs/setup-ohos@v2
+        with:
+          # Keep the SDK version in sync with the localunit job.
+          version: 26.0.0.821
+          cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl libgl1-mesa-dev
+        shell: bash
+
+      - name: Install project dependencies
+        run: ohpm install --all --rt 5 --ri 5000
+        shell: bash
+
+      # Same release-mode unsigned path as the shipping build.yaml, so a
+      # PR that only breaks release packaging (not debug/LocalUnit) is
+      # still caught before merge.
+      - name: Build HAPs (default product, release, unsigned)
+        run: hvigorw assembleHap -p buildMode=release --config properties.ignoreSignHap=true --no-daemon
+        shell: bash
+
+      - name: Verify build artifacts
+        shell: bash
+        run: |
+          FAIL=0
+          for MODULE in entry wearable; do
+            HAP=$(find "${MODULE}/build" -name "*.hap" -type f 2>/dev/null | head -n 1)
+            if [ -z "$HAP" ]; then
+              echo "::error::No hap found for module ${MODULE}"
+              FAIL=1
+            else
+              echo "Module ${MODULE}: $(basename "$HAP")"
+            fi
+          done
+          exit $FAIL
