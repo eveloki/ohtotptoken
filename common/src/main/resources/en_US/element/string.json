@@ -1301,6 +1301,10 @@
       "value": "Used to pair with wearable devices and securely sync tokens"
     },
     {
+      "name": "nearlink_access_permission_reason",
+      "value": "Used to pair with wearable devices via NearLink and securely sync tokens"
+    },
+    {
       "name": "setting_top_effect_type",
       "value": "Title Bar Blur Type"
     },

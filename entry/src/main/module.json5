@@ -86,6 +86,16 @@
           "when": "inuse"
         }
       },
+      {
+        "name": "ohos.permission.ACCESS_NEARLINK",
+        "reason": "$string:nearlink_access_permission_reason",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "inuse"
+        }
+      },
 
     {
         "name": "ohos.permission.DLP_GET_HIDE_STATUS",
