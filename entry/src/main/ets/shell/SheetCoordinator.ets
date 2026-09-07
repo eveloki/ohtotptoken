@@ -1,4 +1,5 @@
 import { dialogSystemMaterial } from 'common';
+import { TokenImportHandler } from '../utils/BackupImportOperation';
 import { common } from '@kit.AbilityKit';
 import { TokenConfig } from 'common';
 // [冷启动优化] 各 Sheet 仅在用户点击对应入口时触发模块评估
@@ -43,7 +44,7 @@ export struct SheetCoordinator {
   @Param detailOnlyRoute: string = '';
   @Event onSelectRoute: (route: ROUTE_NAMES) => void = () => {};
   /** 备份恢复完成回调(由 Index 提供:批量更新 Token 并重新排序) */
-  @Require @Param backupReload: (conf: TokenConfig[]) => Promise<void> = async (conf: TokenConfig[]) => {};
+  @Require @Param backupReload: TokenImportHandler = async () => {};
   /** 开发者选项：生成并持久化 100 个随机测试令牌 */
   @Event addTestTokens: () => Promise<boolean> = async () => false;
   /** 开发者选项：移除生成的测试令牌 */

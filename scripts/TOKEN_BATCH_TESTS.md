@@ -68,3 +68,34 @@ hdc -t <serial> shell aa test -b smartcityshenzhen.yylx.totptoken -m entry_test 
 - 用户完成页面批量收藏/取消收藏、备份及删除操作。手动日志中 ASSET 无失败。
 - 真机 257 条：导入 5979ms、收藏 163ms、取消收藏及重载合计 182ms、删除 4988ms。
 - 用户 100 条场景：ASSET 写入日志首尾跨度 2227–2435ms；100/103 条删除分别 1444/1580ms。它们不是完整按钮响应时间，说明剩余主要开销仍是逐条 ASSET 操作，第一阶段未将其并发化。
+
+## 第二阶段：ASSET 对比与进度 Dialog
+
+`AssetConcurrencyDeviceTest` 只创建随机 UUID 的临时 ASSET 条目，不访问 TokenStore。每轮 64 条，逐条查回校验后删除，再逐条确认不存在。正反两轮 1/2/4 路受控异步请求（不是 TaskPool），真机结果：
+
+| 并发数 | 轮次 | 写入 ms | 删除 ms |
+| --- | --- | ---: | ---: |
+| 1 | 0 | 998 | 961 |
+| 2 | 1 | 1076 | 990 |
+| 4 | 2 | 1903 | 1247 |
+| 4 | 3 | 1991 | 1206 |
+| 2 | 4 | 1927 | 1183 |
+| 1 | 5 | 2169 | 1460 |
+
+6/6 数据完整性测试通过，但存在明显时间漂移，未观察到稳定的并发加速收益。**生产保持串行 ASSET，不添加缺乏证据的并发实现。**
+
+进度由 `TokenBatchProgress` 传递当前阶段及已处理/总数：读取、解码/解密、检查数据、保存、提交、ASSET 更新/清理、回滚、完成。UI 使用系统 `LoadingDialogV2`；与新建分组一致，由真实页面组件内的 `@Builder` 创建，通过 `openCustomDialog({ builder })` 打开。`TokenBatchDialogHost` 保留组件接收者，`@ObservedV2 / @Trace` 传递实时进度；生产路径不使用 `ComponentContent` 或手动背板。中间更新节流至约 12 帧/秒，阶段首尾必达。没有伪造整体百分比或完成时间；KV 提交不代表 ASSET 已处理完。
+
+`TokenBatchOperation` 在工作前打开弹窗，完成或失败后通过 dialogId 关闭。工作期间阻止误取消与重复提交；进度观察者异常不影响事务，弹窗关闭失败不伪装成数据库写入失败。URI 失败保留输入；备份读取/解密到持久化只用一个 Dialog。进度计数不包含名称、URI 或密钥。
+
+新增验证：
+
+- `scripts/token-progress-dialog.test.mjs`：弹窗打开/关闭失败、数据失败、重复操作、更新节流、延迟回调、URI 重试、备份流程及四种语言资源。
+- `TokenProgressDialogDeviceTest`：真实弹窗阶段/计数更新与失败后的释放，仅查询组件，不模拟点击，不操作令牌。执行时需手机保持解锁。
+
+```sh
+hdc -t <serial> shell aa test -b smartcityshenzhen.yylx.totptoken -m entry_test \
+  -s unittest OpenHarmonyTestRunner -s class TokenBatchDeviceTest,TokenProgressDialogDeviceTest -s timeout 180000
+```
+
+`TokenBatchUI` 日志记录阶段耗时与总耗时，不记录令牌内容。

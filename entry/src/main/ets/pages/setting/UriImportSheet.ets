@@ -4,12 +4,15 @@ import { HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType, hdsMat
 import { AppWindowInfo, TokenConfig, ScanBarCode, parseOtpAuthUris, readFileContent,
   showSelectFilePicker, showSnackBar, SnackBarNotifyType } from 'common';
 import { MaterialTheme } from '../../components/MaterialTheme';
+import { TokenBatchOperation } from '../../utils/TokenBatchOperation';
+import { TokenProgressDialog, TokenProgressDialogParams } from '../../dialogs/TokenProgressDialog';
+import { TokenImportHandler } from '../../utils/BackupImportOperation';
 import { AddTokenActionButton, ADD_TOKEN_PAGE_INSET, ADD_TOKEN_BOTTOM_ACTION_INSET } from '../../components/AddTokenForm';
 
 @ComponentV2
 export struct UriImportSheet {
   @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
-  @Event backupReload: (tokens: Array<TokenConfig>) => void = () => {};
+  @Event backupReload: TokenImportHandler = async () => {};
   @Event onVisibilityChange: (visible: boolean) => void = () => {};
   @Local uriText: string = '';
   @Local isReading: boolean = false;
@@ -56,8 +59,8 @@ export struct UriImportSheet {
     }
   }
 
-  private submit(): void {
-    if (this.isReading || this.uriText.trim() === '') {
+  private async submit(): Promise<void> {
+    if (this.isReading || TokenBatchOperation.isBusy() || this.uriText.trim() === '') {
       return;
     }
     const tokens = parseOtpAuthUris(this.uriText.split('\n').map((line: string) => line.trim()));
@@ -65,8 +68,23 @@ export struct UriImportSheet {
       showSnackBar($r('app.string.uri_import_invalid'), SnackBarNotifyType.ERROR);
       return;
     }
-    this.backupReload(tokens);
-    this.pageInfos?.pop();
+    this.isReading = true;
+    try {
+      await TokenBatchOperation.run(this, $r('app.string.token_batch_import_title'),
+        async (report) => { await this.backupReload(tokens, report); });
+      showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
+      this.pageInfos?.pop();
+    } catch (_) {
+      // 保存失败保留 URI 输入，允许用户重试，不能直接退回上级页面。
+      showSnackBar($r('app.string.token_batch_import_failed'), SnackBarNotifyType.ERROR);
+    } finally {
+      this.isReading = false;
+    }
+  }
+
+  @Builder
+  buildTokenProgressDialog(params: TokenProgressDialogParams) {
+    TokenProgressDialog({ params: params })
   }
 
   build() {
@@ -143,6 +161,7 @@ export struct UriImportSheet {
         }
       }
     })
+    .onBackPressed(() => this.isReading)
     .onShown(() => this.onVisibilityChange(true))
     .onHidden(() => this.onVisibilityChange(false))
     .onWillDisappear(() => this.onVisibilityChange(false))

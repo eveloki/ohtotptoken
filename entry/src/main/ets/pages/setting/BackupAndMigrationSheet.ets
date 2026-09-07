@@ -8,7 +8,10 @@ import { SubItemButton } from '../../components/SubItemButton';
 import { SubItemToggle } from '../../components/SubItemToggle';
 import { SettingItem } from '../../components/SettingItem';
 import { EncryptionPassWordDialog } from '../../dialogs/EncryptionPassWordDialog';
-import { restoreFromBackup, saveBackupToFile, TokenBackup } from 'common';
+import { saveBackupToFile, TokenBackup } from 'common';
+import { importBackupWithProgress, TokenImportHandler } from '../../utils/BackupImportOperation';
+import { TokenBatchOperation } from '../../utils/TokenBatchOperation';
+import { TokenProgressDialog, TokenProgressDialogParams } from '../../dialogs/TokenProgressDialog';
 import { showSaveFilePicker, showSelectFilePicker, writeFileContent } from 'common';
 import { SubItemDivider } from '../../components/SubItemDivider';
 import { LengthMetrics, AppStorageV2 } from '@kit.ArkUI';
@@ -32,7 +35,7 @@ export struct BackupAndMigrationSheet {
   @Require @Param Tokens: Array<TokenConfig> = [];
   @Require @Param scrollEffectStyle: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Param embedded: boolean = false;
-  @Event backupReload: (conf: Array<TokenConfig>) => void = () => {};
+  @Event backupReload: TokenImportHandler = async () => {};
   @Event onUriImportVisibilityChange: (visible: boolean) => void = () => {};
 
   @Local versionCode?: number;
@@ -89,11 +92,7 @@ export struct BackupAndMigrationSheet {
     EncryptionPassWordDialog({
       title: $r('app.string.dialog_backup_password'),
       confirm: (password: string) => {
-        restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
-          this.backupReload(backup.configs);
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
-        });
+        importBackupWithProgress(this, this.backup_select_uri, true, password, this.backupReload);
       }
     })
   }
@@ -230,7 +229,13 @@ export struct BackupAndMigrationSheet {
   }
 
   async callFilePickerSelectFile(): Promise<void> {
+    if (TokenBatchOperation.isBusy()) {
+      return;
+    }
     showSelectFilePicker(1, ['JSON|.json', 'BAK|.bak']).then((uris) => {
+      if (uris.length === 0 || !uris[0]) {
+        return;
+      }
       this.backup_select_uri = uris[0];
       if (this.backup_select_uri.endsWith('.bak')) {
         //后缀bak为加密包 唤醒加密导入弹窗
@@ -238,11 +243,7 @@ export struct BackupAndMigrationSheet {
           this.EncryptionPasswordImportDialogBuilder();
         });
       } else {
-        restoreFromBackup(uris[0]).then((backup) => {
-          this.backupReload(backup.configs);
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
-        });
+        importBackupWithProgress(this, uris[0], false, '', this.backupReload);
       }
     });
   }
@@ -263,6 +264,11 @@ export struct BackupAndMigrationSheet {
   }
 
   //endregion
+
+  @Builder
+  buildTokenProgressDialog(params: TokenProgressDialogParams) {
+    TokenProgressDialog({ params: params })
+  }
 
   build() {
     Column() {

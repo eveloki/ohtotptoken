@@ -1,4 +1,5 @@
 import { MaterialTheme } from '../components/MaterialTheme';
+import { TokenImportHandler } from '../utils/BackupImportOperation';
 import { TokenGroupSidePanel } from '../components/TokenGroupSidePanel';
 import { ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP, TokenGroupState, TokenGroupStore, dialogSystemMaterial,
   showSnackBar, SnackBarNotifyType } from 'common';
@@ -104,7 +105,7 @@ export struct AppShell {
   /** 独立添加令牌页面共用的持久化入口，由 Index 注入 */
   @Require @Param saveToken: (conf: TokenConfig) => Promise<boolean> = async () => false;
   @Require @Param tokens: TokenConfig[] = [];
-  @Require @Param backupReload: (conf: TokenConfig[]) => Promise<void> = async () => {};
+  @Require @Param backupReload: TokenImportHandler = async () => {};
   @Event addTestTokens: () => Promise<boolean> = async () => false;
   @Event removeTestTokens: () => Promise<boolean> = async () => false;
 

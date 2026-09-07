@@ -1,6 +1,7 @@
 import { KvManager } from "./KvManager";
 import { TokenConfig, otpType, copyTokenConfig } from "./TokenConfig";
 import { TokenGroupStore } from './TokenGroupStore';
+import { TokenBatchProgressCallback, TokenBatchStage, reportTokenBatchProgress } from './TokenBatchProgress';
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
 import { EVENT_NAMES, PREF_KEYS, AppPreference } from "./AppPreference";
@@ -254,7 +255,8 @@ export class TokenStore {
   }
 
   /** 只写入真正改变的本地令牌；同一事务、同一次列表刷新，不访问 ASSET。 */
-  public async setTokensFavorite(uuids: string[], favorite: boolean): Promise<void> {
+  public async setTokensFavorite(uuids: string[], favorite: boolean,
+    onProgress?: TokenBatchProgressCallback): Promise<void> {
     const selected = new Set(uuids);
     return this.enqueueMutation(async () => {
       const changed: TokenConfig[] = [];
@@ -268,12 +270,12 @@ export class TokenStore {
         changed.push(updated);
         return updated;
       });
-      if (changed.length === 0) {
-        return;
+      if (changed.length > 0) {
+        await this.kvMgr.saveTokenBatch(this.token_prefix, changed, [], onProgress);
+        this.token_array = next;
+        this.emitTokenChanged();
       }
-      await this.kvMgr.saveTokenBatch(this.token_prefix, changed);
-      this.token_array = next;
-      this.emitTokenChanged();
+      reportTokenBatchProgress(onProgress, TokenBatchStage.DONE, changed.length, changed.length);
     });
   }
 
@@ -313,13 +315,15 @@ export class TokenStore {
   }
 
   /** URI/备份统一批量入口。UUID 覆盖语义不变，KV 失败整批回滚，不发布未保存数据。 */
-  public async updateTokens(tokens: TokenConfig[]): Promise<void> {
+  public async updateTokens(tokens: TokenConfig[], onProgress?: TokenBatchProgressCallback): Promise<void> {
     const snapshots = tokens.map((token: TokenConfig): TokenConfig => copyTokenConfig(token));
-    return this.enqueueMutation(() => this.persistTokens(snapshots, false));
+    return this.enqueueMutation(() => this.persistTokens(snapshots, false, onProgress));
   }
 
-  private async persistTokens(tokens: TokenConfig[], single: boolean): Promise<void> {
+  private async persistTokens(tokens: TokenConfig[], single: boolean,
+    onProgress?: TokenBatchProgressCallback): Promise<void> {
     if (tokens.length === 0) {
+      reportTokenBatchProgress(onProgress, TokenBatchStage.DONE);
       return;
     }
     const next = [...this.token_array];
@@ -356,11 +360,14 @@ export class TokenStore {
     }
     const writes = Array.from(changed.values());
     // 先提交完整加密 KV，避免 KV 失败留下幽灵内存条目或提前覆盖 ASSET。
-    await this.kvMgr.saveTokenBatch(this.token_prefix, writes);
+    await this.kvMgr.saveTokenBatch(this.token_prefix, writes, [], onProgress);
     this.token_array = next;
-    for (const token of writes) {
-      if (originalSecrets.get(token.TokenUUID) !== token.TokenSecret) {
-        await this.saveTokenSecret(token);
+    const secretWrites = writes.filter(token => originalSecrets.get(token.TokenUUID) !== token.TokenSecret);
+    if (secretWrites.length > 0) {
+      reportTokenBatchProgress(onProgress, TokenBatchStage.WRITING_SECRETS, 0, secretWrites.length);
+      for (let i = 0; i < secretWrites.length; i++) {
+        await this.saveTokenSecret(secretWrites[i]);
+        reportTokenBatchProgress(onProgress, TokenBatchStage.WRITING_SECRETS, i + 1, secretWrites.length);
       }
     }
     if (single) {
@@ -371,6 +378,7 @@ export class TokenStore {
     } else {
       this.emitTokenChanged();
     }
+    reportTokenBatchProgress(onProgress, TokenBatchStage.DONE, writes.length, writes.length);
   }
 
   public async deleteToken(token_uuid: string): Promise<void> {
@@ -378,11 +386,12 @@ export class TokenStore {
   }
 
   /** 一次过滤、一次重排，仅重写剩余且排序变化的令牌；清空时零排序写入。 */
-  public async deleteTokens(uuids: string[]): Promise<void> {
+  public async deleteTokens(uuids: string[], onProgress?: TokenBatchProgressCallback): Promise<void> {
     const selected = new Set(uuids);
     return this.enqueueMutation(async () => {
       const removed = this.token_array.filter(token => selected.has(token.TokenUUID));
       if (removed.length === 0) {
+        reportTokenBatchProgress(onProgress, TokenBatchStage.DONE);
         return;
       }
       const changed: TokenConfig[] = [];
@@ -401,12 +410,15 @@ export class TokenStore {
           changed.push(updated);
         }
       }
-      await this.kvMgr.saveTokenBatch(this.token_prefix, changed, removed.map(token => token.TokenUUID));
+      await this.kvMgr.saveTokenBatch(this.token_prefix, changed, removed.map(token => token.TokenUUID), onProgress);
       this.token_array = next;
-      for (const token of removed) {
-        await this.assetStore.removeSecret(token.TokenUUID);
+      reportTokenBatchProgress(onProgress, TokenBatchStage.REMOVING_SECRETS, 0, removed.length);
+      for (let i = 0; i < removed.length; i++) {
+        await this.assetStore.removeSecret(removed[i].TokenUUID);
+        reportTokenBatchProgress(onProgress, TokenBatchStage.REMOVING_SECRETS, i + 1, removed.length);
       }
       this.emitTokenChanged();
+      reportTokenBatchProgress(onProgress, TokenBatchStage.DONE, removed.length, removed.length);
     });
   }
 

@@ -24,10 +24,11 @@ function source(file) {
 }
 const code = [
   'common/src/main/ets/utils/TokenConfig.ets',
+  'common/src/main/ets/utils/TokenBatchProgress.ets',
   'common/src/main/ets/utils/KvManager.ets',
   'common/src/main/ets/utils/TokenStore.ets',
   'common/src/main/ets/utils/OtpAuthParser.ets'
-].map(source).join('\n') + '\n({ KvManager, TokenStore, TokenConfig, TokenConfigVM, copyTokenConfig, otpType, parseOtpAuthUris });';
+].map(source).join('\n') + '\n({ KvManager, TokenStore, TokenConfig, TokenConfigVM, copyTokenConfig, otpType, parseOtpAuthUris, TokenBatchStage });';
 const plain = value => JSON.parse(JSON.stringify(value));
 const prefix = '_token_uuid_';
 
@@ -151,6 +152,54 @@ for (const count of [1, 127, 128, 129, 257]) {
     assert.equal(tokens[0].RankScore, 0, 'input was not mutated');
   });
 }
+
+test('import progress counts actual ASSET work, and DONE follows KV commit and all secrets', async () => {
+  const f = await fixture(1);
+  const updates = [];
+  await f.store.updateTokens([f.make('old-0'), f.make('new-1'), f.make('new-2')], update => {
+    updates.push({ ...plain(update), assetWrites: sizes(f, 'assetPut').length,
+      commits: f.calls.filter(call => call[0] === 'commit').length });
+  });
+  assert.equal(updates.at(-1).assetWrites, 2);
+  assert.equal(updates.at(-1).commits, 1);
+  const secrets = updates.filter(p => p.stage === f.TokenBatchStage.WRITING_SECRETS);
+  assert.deepEqual(secrets.map(p => p.completed), [0, 1, 2]);
+  assert.equal(secrets.every(p => p.total === 2), true, 'unchanged secret is not counted');
+  assert.equal(updates.at(-1).stage, f.TokenBatchStage.DONE);
+  assert.ok(updates.findIndex(p => p.stage === f.TokenBatchStage.COMMITTING) < updates.findIndex(p => p.stage === f.TokenBatchStage.WRITING_SECRETS));
+});
+
+test('delete progress follows KV removal and only finishes after ASSET cleanup', async () => {
+  const f = await fixture(3);
+  const updates = [];
+  await f.store.deleteTokens(['old-0', 'old-2'], p => updates.push(plain(p)));
+  assert.deepEqual(updates.filter(p => p.stage === f.TokenBatchStage.REMOVING_SECRETS).map(p => p.completed), [0, 1, 2]);
+  assert.equal(updates.at(-1).stage, f.TokenBatchStage.DONE);
+});
+
+test('failed batch reports rollback without false DONE; observer failure never alters persistence', async () => {
+  const f = await fixture(2);
+  const updates = [];
+  f.fail('commit');
+  await assert.rejects(f.store.setTokensFavorite(['old-0'], true, p => updates.push(plain(p))));
+  assert.equal(updates.at(-1).stage, f.TokenBatchStage.ROLLING_BACK);
+  assert.equal(updates.some(p => p.stage === f.TokenBatchStage.DONE), false);
+  await f.store.updateTokens([f.make('new')], () => { throw new Error('UI was destroyed'); });
+  assert.equal(f.persisted().length, 3);
+  assert.equal(f.events.length, 1);
+});
+
+test('empty/no-op progress finishes without database calls or token notifications', async () => {
+  const f = await fixture(1);
+  const updates = [];
+  await f.store.setTokensFavorite(['old-0'], false, p => updates.push(plain(p)));
+  await f.store.updateTokens([], p => updates.push(plain(p)));
+  await f.store.deleteTokens([], p => updates.push(plain(p)));
+  assert.equal(updates.length, 3);
+  assert.equal(updates.every(p => p.stage === f.TokenBatchStage.DONE), true);
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.events.length, 0);
+});
 
 test('snapshot preserves all token fields, including Forti/Steam/icon metadata', async () => {
   const f = await fixture();

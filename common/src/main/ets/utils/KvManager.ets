@@ -4,6 +4,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { AppPreference, EVENT_NAMES, PREF_KEYS } from './AppPreference';
 import { distributedDeviceManager } from '@kit.DistributedServiceKit';
 import { TokenConfig } from './TokenConfig';
+import { TokenBatchProgressCallback, TokenBatchStage, reportTokenBatchProgress } from './TokenBatchProgress';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { fileIo as fs } from "@kit.CoreFileKit";
 
@@ -24,7 +25,8 @@ export class KvManager {
   }
 
   /** 原子提交令牌变更；按平台 MAX_BATCH_SIZE=128 分块，不逐条 put/delete。 */
-  async saveTokenBatch(prefix: string, tokens: TokenConfig[], deletedUuids: string[] = []): Promise<void> {
+  async saveTokenBatch(prefix: string, tokens: TokenConfig[], deletedUuids: string[] = [],
+    onProgress?: TokenBatchProgressCallback): Promise<void> {
     const entries: distributedKVStore.Entry[] = tokens.map((token: TokenConfig): distributedKVStore.Entry => {
       return {
         key: `${prefix}${token.TokenUUID}`,
@@ -40,16 +42,23 @@ export class KvManager {
       if (!store) {
         throw new Error('Token batch failed: KV store not initialized');
       }
+      const total = entries.length + keys.length;
+      reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING, 0, total);
       await store.startTransaction();
       try {
         for (let offset = 0; offset < entries.length; offset += 128) {
           await store.putBatch(entries.slice(offset, offset + 128));
+          reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING, Math.min(offset + 128, entries.length), total);
         }
         for (let offset = 0; offset < keys.length; offset += 128) {
           await store.deleteBatch(keys.slice(offset, offset + 128));
+          reportTokenBatchProgress(onProgress, TokenBatchStage.SAVING,
+            entries.length + Math.min(offset + 128, keys.length), total);
         }
+        reportTokenBatchProgress(onProgress, TokenBatchStage.COMMITTING);
         await store.commit();
       } catch (error) {
+        reportTokenBatchProgress(onProgress, TokenBatchStage.ROLLING_BACK);
         await store.rollback();
         throw new Error((error as BusinessError).message);
       }

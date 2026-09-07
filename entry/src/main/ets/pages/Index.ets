@@ -1,5 +1,8 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { base32Encode, otpType, TokenConfig, dialogSystemMaterial } from 'common';
+import { base32Encode, otpType, TokenConfig, TokenBatchProgressCallback, dialogSystemMaterial } from 'common';
+import { TokenBatchOperation } from '../utils/TokenBatchOperation';
+import { TokenProgressDialog, TokenProgressDialogParams } from '../dialogs/TokenProgressDialog';
+import { importBackupWithProgress } from '../utils/BackupImportOperation';
 import { util, url } from '@kit.ArkTS';
 // [冷启动优化] 文件 I/O 仅在 deferredInit 中使用
 import lazy { fileIo as fs } from '@kit.CoreFileKit';
@@ -18,7 +21,6 @@ import lazy { DropFilesDialog } from '../dialogs/DropFilesDialog';
 // [冷启动优化] 加密导入弹框仅在文件拖入 .bak 时触发
 import lazy { EncryptionPassWordDialog } from '../dialogs/EncryptionPassWordDialog';
 // [冷启动优化] 备份恢复仅在文件拖入时触发
-import lazy { restoreFromBackup } from 'common';
 // [冷启动优化] TokenIconPacks 仅在 deferredInit 中使用，ScanBarCode 仅在扫码时使用
 import lazy { TokenIconPacks, ScanBarCode } from 'common';
 // [冷启动优化] 云备份管理器仅在 deferredInit 中使用
@@ -27,7 +29,7 @@ import { AppWindowInfo } from 'common';
 // [冷启动优化] AppLockOverlay 导入 @kit.CryptoArchitectureKit + @kit.UserAuthenticationKit，
 // bindContentCover 的 Builder 仅在 isAppLockOverlayVisible=true 时评估
 import lazy { AppLockOverlay } from './AppLockOverlay';
-import { AppStorageV2, ComponentContent } from '@kit.ArkUI';
+import { AdvancedDialogV2Button, AlertDialogV2, AppStorageV2, ComponentContent } from '@kit.ArkUI';
 import { TokenGroupMoveDialog } from '../dialogs/TokenGroupMoveDialog';
 import { TokenMultiSelectPage } from './TokenMultiSelectPage';
 import { CommonConstants } from 'common';
@@ -283,7 +285,7 @@ struct Index {
   }
 
   private async applyMultiAction(action: string, groupId: string = ''): Promise<void> {
-    if (this.multiSelectBusy || !this.multiSelectMode) {
+    if (this.multiSelectBusy || TokenBatchOperation.isBusy() || !this.multiSelectMode) {
       return;
     }
     const selectedIds = new Set(this.selectedTokenIds);
@@ -301,10 +303,15 @@ struct Index {
     try {
       if (action === 'delete' || action === 'favorite') {
         try {
-          if (action === 'delete') {
-            await tkStore.deleteTokens(localIds);
-          } else {
-            await tkStore.setTokensFavorite(localIds, favorite);
+          if (localIds.length > 0) {
+            await TokenBatchOperation.run(this, action === 'delete' ?
+              $r('app.string.token_batch_delete_title') : $r('app.string.token_batch_favorite_title'), async (report) => {
+              if (action === 'delete') {
+                await tkStore.deleteTokens(localIds, report);
+              } else {
+                await tkStore.setTokensFavorite(localIds, favorite, report);
+              }
+            });
           }
         } catch (_) {
           // 本地 KV 事务失败整批保留；NFC 会话操作独立处理。
@@ -337,21 +344,36 @@ struct Index {
     }
   }
 
+  @Builder
+  buildTokenProgressDialog(params: TokenProgressDialogParams) {
+    TokenProgressDialog({ params: params })
+  }
+
   private confirmMultiDelete(): void {
     if (this.multiSelectBusy || this.selectedTokenIds.length === 0) {
       return;
     }
-    this.getUIContext().showAlertDialog({
-      systemMaterial: dialogSystemMaterial(),
-      title: $r('app.string.token_multi_delete_title', this.selectedTokenIds.length),
-      message: $r('app.string.alert_remove_confirm_msg'),
-      primaryButton: { value: $r('app.string.dialog_btn_cancel'), action: () => {} },
-      secondaryButton: {
-        value: $r('app.string.dialog_btn_delete'),
-        fontColor: Color.Red,
-        action: () => { this.applyMultiAction('delete'); }
-      }
+    this.getUIContext().getPromptAction().openCustomDialog({
+      builder: () => this.MultiDeleteDialog()
+    }).catch(() => {
+      showSnackBar($r('app.string.token_multi_failed', this.selectedTokenIds.length), SnackBarNotifyType.ERROR);
     });
+  }
+
+  @Builder
+  MultiDeleteDialog() {
+    AlertDialogV2({
+      primaryTitle: $r('app.string.token_multi_delete_title', this.selectedTokenIds.length),
+      content: $r('app.string.alert_remove_confirm_msg'),
+      primaryButton: new AdvancedDialogV2Button({
+        content: $r('app.string.dialog_btn_cancel')
+      }),
+      secondaryButton: new AdvancedDialogV2Button({
+        content: $r('app.string.dialog_btn_delete'),
+        role: ButtonRole.ERROR,
+        action: () => { this.applyMultiAction('delete'); }
+      })
+    })
   }
 
   @Builder
@@ -510,10 +532,8 @@ struct Index {
         if (this.backup_select_uri.endsWith('.bak')) {
           this.openEncryptionPasswordDialog();
         } else if (this.backup_select_uri.endsWith('.json')) {
-          restoreFromBackup(uri).then((backup) => {
-            this.updateTokenConfigs(backup.configs);
-          }).catch((reason: BusinessError) => {
-            showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+          importBackupWithProgress(this, uri, false, '', async (tokens, report) => {
+            await this.updateTokenConfigs(tokens, report);
           });
         }
         setTimeout(() => {
@@ -648,10 +668,8 @@ struct Index {
   EncryptionPasswordDialogBuilder(): void {
     EncryptionPassWordDialog({
       confirm: (password: string) => {
-        restoreFromBackup(this.backup_select_uri, true, password).then((backup) => {
-          this.updateTokenConfigs(backup.configs);
-        }).catch((reason: BusinessError) => {
-          showSnackBar(reason.message, SnackBarNotifyType.ERROR);
+        importBackupWithProgress(this, this.backup_select_uri, true, password, async (tokens, report) => {
+          await this.updateTokenConfigs(tokens, report);
         });
       }
     })
@@ -988,7 +1006,9 @@ struct Index {
     }
 
     try {
-      await tkStore.deleteTokens(testTokens.map(token => token.TokenUUID));
+      await TokenBatchOperation.run(this, $r('app.string.token_batch_delete_title'), async (report) => {
+        await tkStore.deleteTokens(testTokens.map(token => token.TokenUUID), report);
+      });
       showSnackBar($r('app.string.toast_test_tokens_removed', testTokens.length), SnackBarNotifyType.SUCCESS);
       return true;
     } catch (error) {
@@ -998,20 +1018,32 @@ struct Index {
     }
   }
 
-  async updateTokenConfigs(tokens: Array<TokenConfig>): Promise<boolean> {
-    try {
-      for (const token of tokens) {
-        if (token.TokenUUID === undefined) {
-          token.TokenUUID = util.generateRandomUUID();
-        }
+  private async persistImportedTokens(tokens: TokenConfig[], report: TokenBatchProgressCallback): Promise<void> {
+    for (const token of tokens) {
+      if (token.TokenUUID === undefined) {
+        token.TokenUUID = util.generateRandomUUID();
       }
-      await tkStore.updateTokens(tokens);
-      // 批量入口只发送一次 TOKEN_CHANGED，包括全部覆盖已有 UUID 的情况。
+    }
+    await tkStore.updateTokens(tokens, report);
+  }
+
+  async updateTokenConfigs(tokens: Array<TokenConfig>, report?: TokenBatchProgressCallback): Promise<boolean> {
+    if (report) {
+      // URI/备份页面已经打开 Dialog：沿用它的进度通道，异常交还调用方，保留输入供重试。
+      await this.persistImportedTokens(tokens, report);
+      return true;
+    }
+    if (TokenBatchOperation.isBusy()) {
+      return false;
+    }
+    try {
+      await TokenBatchOperation.run(this, $r('app.string.token_batch_import_title'),
+        async (observer) => { await this.persistImportedTokens(tokens, observer); });
       showSnackBar($r('app.string.toast_multi_token_update', tokens.length), SnackBarNotifyType.SUCCESS);
       return true;
     } catch (e) {
       hilog.error(0, 'Index', `updateTokenConfigs: transaction failed: ${e}`);
-      showSnackBar($r('app.string.toast_multi_token_update', 0), SnackBarNotifyType.WARNING);
+      showSnackBar($r('app.string.token_batch_import_failed'), SnackBarNotifyType.ERROR);
       return false;
     }
   }
@@ -1228,8 +1260,8 @@ struct Index {
       onSelectRoute: (route: ROUTE_NAMES) => {
         this.selectedSettingRoute = route;
       },
-      backupReload: async (conf) => {
-        await this.updateTokenConfigs(conf);
+      backupReload: async (conf, report) => {
+        await this.updateTokenConfigs(conf, report);
       },
       addTestTokens: () => this.addTestTokens(),
       removeTestTokens: () => this.removeTestTokens()
@@ -1357,8 +1389,8 @@ struct Index {
         },
         saveToken: (conf: TokenConfig) => this.updateTokenConfig(conf, true),
         tokens: this.CurrentTokens,
-        backupReload: async (conf: TokenConfig[]) => {
-          await this.updateTokenConfigs(conf);
+        backupReload: async (conf: TokenConfig[], report?: TokenBatchProgressCallback) => {
+          await this.updateTokenConfigs(conf, report);
         },
         addTestTokens: () => this.addTestTokens(),
         removeTestTokens: () => this.removeTestTokens(),
