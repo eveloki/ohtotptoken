@@ -13,6 +13,7 @@ const runnerSource = load('entry/src/main/ets/utils/TokenBatchOperation.ets');
 
 function fixture({ failOpen = false, failClose = false } = {}) {
   const events = [];
+  const systemMaterial = { kind: 'test-dialog-material' };
   let options;
   let clock = 0;
   let current;
@@ -22,7 +23,7 @@ function fixture({ failOpen = false, failClose = false } = {}) {
       assert.equal(typeof value.builder, 'function');
       assert.equal(value.customStyle, undefined);
       assert.equal(value.backgroundColor, undefined);
-      assert.equal(value.systemMaterial, undefined);
+      assert.equal(value.systemMaterial, systemMaterial);
       if (failOpen) throw new Error('open failed');
       value.builder();
       return 42;
@@ -51,6 +52,7 @@ function fixture({ failOpen = false, failClose = false } = {}) {
   };
   const { TokenBatchOperation } = runInNewContext(stripTypeScriptTypes(paramsSource + runnerSource) + '\n({ TokenBatchOperation });', {
     TokenProgressDialogBuilder() { throw new Error('Builder cannot be called without a View context'); },
+    dialogSystemMaterial: () => systemMaterial,
     TokenBatchStage: { PREPARING: 0 },
     DialogAlignment: { Center: 0 }, Date: { now: () => clock }, hilog: { info() {}, warn() {} }
   });
