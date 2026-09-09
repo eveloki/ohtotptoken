@@ -2,7 +2,7 @@ import { ble, connection, constant } from '@kit.ConnectivityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TokenConfig } from './TokenConfig';
+import { TokenConfig, sanitizedTokenForTransfer } from './TokenConfig';
 import { AppPreference } from './AppPreference';
 import { decryptBlePayload, encryptBlePayload } from './CryptoUtils';
 import { WEAR_SYNC_PREF_KEYS, SettingValuePair, saveTokensBatch, applyWearSettings } from './WearEngineTransfer';
@@ -735,7 +735,10 @@ export class BleTokenClient {
    */
   public async sendTokens(tokens: TokenConfig[]): Promise<void> {
     const encoder = new util.TextEncoder();
-    await this.sendPayload(encoder.encodeInto(JSON.stringify(tokens)), tokens.length, MSG_TYPE_TOKENS);
+    // 手表只需要 TokenSecret 即可显示动态码；剥离 Steam 高权限凭证与 mafile 密钥
+    const sanitized: TokenConfig[] = tokens.map((token: TokenConfig): TokenConfig =>
+      sanitizedTokenForTransfer(token));
+    await this.sendPayload(encoder.encodeInto(JSON.stringify(sanitized)), sanitized.length, MSG_TYPE_TOKENS);
   }
 
   /**

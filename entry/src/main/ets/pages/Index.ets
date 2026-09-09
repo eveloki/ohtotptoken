@@ -1,12 +1,12 @@
 import { bundleManager,common } from '@kit.AbilityKit';
-import { base32Encode, otpType, TokenConfig, TokenBatchProgressCallback, dialogSystemMaterial } from 'common';
+import { base32Encode, nowUnixSeconds, otpType, TokenConfig, TokenBatchProgressCallback, dialogSystemMaterial } from 'common';
 import { TokenBatchOperation } from '../utils/TokenBatchOperation';
 import { TokenProgressDialog, TokenProgressDialogParams } from '../dialogs/TokenProgressDialog';
 import { importBackupWithProgress } from '../utils/BackupImportOperation';
 import { util, url } from '@kit.ArkTS';
 // [冷启动优化] 文件 I/O 仅在 deferredInit 中使用
 import lazy { fileIo as fs } from '@kit.CoreFileKit';
-import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { showSnackBar, SnackBarNotifyType } from 'common';
 import { AppPreference, SettingTopEffectType, SettingBottomTabsType, EVENT_NAMES, PREF_KEYS, ROUTE_NAMES, BUILTIN_DEFAULT_PACK_ID } from 'common';
 // [冷启动优化] privacyManager 仅在 deferredInit 的 GetPrivacyManageInfo 中使用
@@ -35,7 +35,9 @@ import { TokenMultiSelectPage } from './TokenMultiSelectPage';
 import { CommonConstants } from 'common';
 import { ScrollEffectType } from '@kit.UIDesignKit';
 // [冷启动优化] Google Auth 解码仅在扫描迁移链接时使用
-import lazy { decodeProtobuf } from '../utils/GoogleAuthUtils';
+// [冷启动优化] Google Auth 迁移解析（含手写 protobuf codec）仅在扫码时使用
+import lazy { decodeGoogleAuthMigration, GA_MIGRATION_EMPTY, GA_MIGRATION_PARSE_FAILED,
+  GoogleAuthMigrationResult, resetGoogleAuthBatch } from 'common';
 // [冷启动优化] 华为账号管理器仅在 deferredInit 中初始化
 import lazy { HuaweiAccountManager } from 'common';
 import lazy { IconPackCloudBackup } from 'common';
@@ -47,6 +49,7 @@ import { HomeTabs } from '../shell/HomeTabs';
 import lazy { SheetCoordinator } from '../shell/SheetCoordinator';
 import { NFCReadDialog } from '../dialogs/NFCReadDialog';
 import { NfcSessionTokens } from '../oath/NfcSessionTokens';
+import { SteamConfirmationsPageParams } from './SteamConfirmationsPage';
 import { NfcOathReader, NfcSupportStatus } from '../oath/NfcOathReader';
 import { OathReadResult } from '../oath/OathApplet';
 import { ResponsiveTokenEditStore, TokenSwitchPerf } from '../utils/TokenSwitchPerf';
@@ -525,6 +528,11 @@ struct Index {
       this.appCtx.eventHub.on(EVENT_NAMES.START_TOKEN_SORT, () => {
         this.openFullScreenRoute(ROUTE_NAMES.TokenSortPage, null);
       });
+      // Steam 交易确认列表：由令牌右键菜单触发
+      this.appCtx.eventHub.on(EVENT_NAMES.OPEN_STEAM_CONFIRMATIONS, (conf: TokenConfig) => {
+        this.openFullScreenRoute(ROUTE_NAMES.SteamConfirmationsPage,
+          new SteamConfirmationsPageParams(conf));
+      });
       // NFC 外部令牌变更事件：合并刷新（本地令牌 + 会话级 NFC 令牌）
       this.appCtx.eventHub.on(EVENT_NAMES.NFC_EXTERNAL_TOKENS_CHANGED, () => this.refreshDisplayTokens());
       this.appCtx.eventHub.on(EVENT_NAMES.FILE_DROP, (uri: string) => {
@@ -779,7 +787,7 @@ struct Index {
   }
 
   updateTimestamp(): void {
-    const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+    const timestamp = nowUnixSeconds();
     if (this.appCtx.eventHub != undefined) {
       this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
     }
@@ -800,7 +808,7 @@ struct Index {
       this.isAppLockOverlayVisible = true;
     }
     AppStorage.setOrCreate('app_lock_need_show', false);
-    const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+    const timestamp = nowUnixSeconds();
     if (this.appCtx.eventHub!= undefined) this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, true);
     //页面打开的时候刷新token
     tkStore.LoadTokenByDataBase().then(() => {
@@ -1121,15 +1129,30 @@ struct Index {
     ScanBarCode().then((code) => {
       if (code.startsWith('otpauth-migration://offline?data=')) {
         const data = new url.URLParams(url.URL.parseURL(code).search).get('data');
-        decodeProtobuf(decodeURIComponent(data ?? '')).then((confs) => {
-          this.updateTokenConfigs(confs);
-        });
+        const result: GoogleAuthMigrationResult = decodeGoogleAuthMigration(decodeURIComponent(data ?? ''));
+        if (result.errorCode === GA_MIGRATION_PARSE_FAILED) {
+          showSnackBar($r('app.string.google_auth_migration_invalid'), SnackBarNotifyType.ERROR);
+          return;
+        }
+        if (result.errorCode === GA_MIGRATION_EMPTY) {
+          showSnackBar($r('app.string.google_auth_migration_empty'), SnackBarNotifyType.ERROR);
+          return;
+        }
+        if (!result.complete) {
+          // 令牌数量多时 Google 会把导出拆成多张二维码，收齐后再落库
+          showSnackBar($r('app.string.google_auth_migration_batch', result.batchReceived, result.batchSize),
+            SnackBarNotifyType.INFO);
+          return;
+        }
+        this.updateTokenConfigs(result.tokens);
       } else if (code.startsWith('otpauth://')) {
         this.openFullScreenRoute(ROUTE_NAMES.AddTotpTokenPage, new AddTotpRouteParams(code));
       }
     }).catch((err: BusinessError) => {
       // 1000500002: 用户取消扫码, 静默处理
       if (err.code === 1000500002) {
+        // 取消时丢弃未收齐的批次，避免下次导入串批
+        resetGoogleAuthBatch();
         return;
       }
       hilog.error(0x0000, 'Index', `start_quick_scan failed: ${err.code} ${err.message}`);
@@ -1146,7 +1169,8 @@ struct Index {
   }
 
   openSteamAddPage(): void {
-    this.openFullScreenRoute(ROUTE_NAMES.AddSteamTokenPage, new AddTotpRouteParams(''));
+    // 必须用 AddTokenPageParams：页面声明的是该类型，传 AddTotpRouteParams 会丢字段
+    this.openFullScreenRoute(ROUTE_NAMES.AddSteamTokenPage, new AddTokenPageParams(''));
   }
 
   openNfcReadDialog(): void {

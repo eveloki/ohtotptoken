@@ -1,7 +1,8 @@
 import { MaterialTheme } from '../components/MaterialTheme';
 import { TokenGroupSelect } from '../components/TokenGroupSelect';
 import { AppWindowInfo, EVENT_NAMES, maFile, otpType, readFileContent, ROUTE_NAMES, ScanBarCode,
-  showSelectFilePicker, showSnackBar, SnackBarNotifyType, TokenConfig } from 'common';
+  showSelectFilePicker, showSnackBar, SnackBarNotifyType, steamAuthCanRevoke,
+  steamAuthHasConfirmationCredentials, SteamAuth, TokenConfig, TokenStore } from 'common';
 import { AppStorageV2 } from '@kit.ArkUI';
 import { JSON, url } from '@kit.ArkTS';
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -13,8 +14,13 @@ import { AddTokenActionButton, AddTokenHeader, AddTokenPageParams, ADD_TOKEN_BOT
   ADD_TOKEN_SECTION_PADDING, ADD_TOKEN_SECTION_RADIUS,
   AddTokenSectionTitle, AddTokenTextField } from '../components/AddTokenForm';
 import { PageScaffold } from '../components/PageScaffold';
+import { SteamLoginFlow } from '../components/SteamLoginFlow';
+import { steamApproveQrLogin, steamConfirmRevoke } from '../utils/SteamActions';
+import { WebPageParams } from './WebPage';
 import { IconPickerPageParams } from './IconPickerPage';
 import { ResponsiveTokenEditStore, TokenSwitchPerf, TokenSwitchTrace } from '../utils/TokenSwitchPerf';
+
+let tkStore = TokenStore.getInstance();
 
 @Entry
 @Preview
@@ -32,6 +38,14 @@ export struct AddSteamTokenPage {
   @Local iconPath: string = '';
   @Local groupId: string = '';
   @Local isSaving: boolean = false;
+  /** 是否处于「登录 Steam 迁移」内嵌步骤 */
+  @Local showLoginFlow: boolean = false;
+  /** 已绑定 Steam 账号时展示账户状态 + 功能入口（@Local 保证登录完成后能重绘） */
+  @Local hasSteamAuth: boolean = false;
+  @Local canConfirm: boolean = false;
+  @Local canRevoke: boolean = false;
+  @Local boundAccount: string = '';
+  @Local boundSteamId: string = '';
   @Local window: AppWindowInfo = AppStorageV2.connect(AppWindowInfo) as AppWindowInfo;
 
   private pageInfos: NavPathStack | null = null;
@@ -41,6 +55,8 @@ export struct AddSteamTokenPage {
   private onResponsiveTokenSelectedHandler: (config: TokenConfig, trace: TokenSwitchTrace) => void = () => {};
 
   private steamMaFile: maFile | undefined = undefined;
+  /** 登录/迁移得到的 Steam 授权数据（含 ASSET 侧凭证） */
+  private steamAuth: SteamAuth | undefined = undefined;
 
   private applyEditConfig(editConfig: TokenConfig): void {
     this.activeEditConfig = editConfig;
@@ -50,6 +66,31 @@ export struct AddSteamTokenPage {
     this.iconPath = editConfig.TokenIconPath ?? '';
     this.groupId = editConfig.TokenGroupId ?? '';
     this.steamMaFile = editConfig.SteamMaFile;
+    this.steamAuth = editConfig.SteamAuth;
+    this.refreshSteamStatus();
+  }
+
+  /** 从 steamAuth 推导绑定状态与可用能力 */
+  private refreshSteamStatus(): void {
+    const auth: SteamAuth | undefined = this.steamAuth;
+    this.hasSteamAuth = auth !== undefined;
+    this.canConfirm = steamAuthHasConfirmationCredentials(auth);
+    this.canRevoke = steamAuthCanRevoke(auth);
+    this.boundAccount = auth === undefined ? '' : (auth.accountName ?? '');
+    this.boundSteamId = auth === undefined ? '' : (auth.steamid ?? '');
+  }
+
+  /** 用当前表单内容构造令牌配置：右键菜单同款动作可直接复用 */
+  private currentConfig(): TokenConfig {
+    const conf = new TokenConfig(this.secret.trim(), otpType.Steam, this.issuer.trim(), this.accountName.trim(),
+      'SHA1', 30, 10, 0, this.activeEditConfig?.RankScore ?? 0);
+    if (this.activeEditConfig !== undefined) {
+      conf.TokenUUID = this.activeEditConfig.TokenUUID;
+    }
+    conf.TokenIconPath = this.iconPath;
+    conf.TokenGroupId = this.groupId;
+    conf.SteamAuth = this.steamAuth;
+    return conf;
   }
 
   aboutToAppear(): void {
@@ -138,19 +179,137 @@ export struct AddSteamTokenPage {
   private async submit(): Promise<void> {
     if (!this.canSave()) return;
     this.isSaving = true;
-    const conf = new TokenConfig(this.secret.trim(), otpType.Steam, this.issuer.trim(), this.accountName.trim(),
-      'SHA1', 30, 10, 0, this.activeEditConfig?.RankScore ?? 0);
-    if (this.activeEditConfig !== undefined) {
-      conf.TokenUUID = this.activeEditConfig.TokenUUID;
-    }
-    conf.TokenIconPath = this.iconPath;
-    conf.TokenGroupId = this.groupId;
+    const conf: TokenConfig = this.currentConfig();
     conf.SteamMaFile = this.steamMaFile;
     const ok = await this.saveToken(conf);
     this.isSaving = false;
     if (ok && !(this.window.AllowSplit && this.pageParams.editConfig !== undefined)) {
       this.pageInfos?.pop();
     }
+  }
+
+  /** 登录/迁移流程完成：用返回的配置填充表单并直接保存 */
+  private async onLoginCompleted(conf: TokenConfig): Promise<void> {
+    this.secret = conf.TokenSecret;
+    this.issuer = conf.TokenIssuer;
+    this.accountName = conf.TokenName;
+    this.steamAuth = conf.SteamAuth;
+    this.steamMaFile = undefined;
+    this.refreshSteamStatus();
+    await this.submit();
+  }
+
+  /** 交易确认列表（与令牌右键菜单走同一个事件，由 Index 打开全屏页） */
+  private openConfirmations(): void {
+    this.appCtx.eventHub?.emit(EVENT_NAMES.OPEN_STEAM_CONFIRMATIONS, this.currentConfig());
+  }
+
+  /** 扫码登录：扫描网页登录二维码后向 Steam 确认 */
+  private approveQrLogin(): void {
+    steamApproveQrLogin(this.currentConfig());
+  }
+
+  /** 撤销验证器：成功后本地令牌已失效，直接删除并退出编辑页 */
+  private revokeAuthenticator(): void {
+    const conf: TokenConfig = this.currentConfig();
+    steamConfirmRevoke(this.getUIContext(), conf, () => {
+      tkStore.deleteToken(conf.TokenUUID);
+      this.navigateBack();
+    });
+  }
+
+  @Builder
+  InfoRow(label: ResourceStr, value: string) {
+    Row() {
+      Text(label)
+        .fontSize(13).fontColor($r('sys.color.font_secondary')).layoutWeight(1)
+      Text(value)
+        .fontSize(13).fontColor($r('sys.color.font_primary'))
+        .textAlign(TextAlign.End).layoutWeight(2)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  CapabilityRow(label: ResourceStr, available: boolean) {
+    Row() {
+      Text(label)
+        .fontSize(13).fontColor($r('sys.color.font_secondary')).layoutWeight(1)
+      Text(available ? $r('app.string.steam_status_available') : $r('app.string.steam_status_unavailable'))
+        .fontSize(13)
+        .fontColor(available ? $r('sys.color.font_primary') : $r('sys.color.warning'))
+        .textAlign(TextAlign.End).layoutWeight(1)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  SteamAccountPanel() {
+    Column({ space: 12 }) {
+      AddTokenSectionTitle({ text: $r('app.string.steam_account_section') })
+      Column({ space: 10 }) {
+        this.InfoRow($r('app.string.steam_login_account'),
+          this.boundAccount.length > 0 ? this.boundAccount : this.accountName)
+        this.InfoRow($r('app.string.steam_account_steamid'),
+          this.boundSteamId.length > 0 ? this.boundSteamId : '—')
+        Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
+        this.CapabilityRow($r('app.string.steam_account_confirm_cap'), this.canConfirm)
+        this.CapabilityRow($r('app.string.steam_account_revoke_cap'), this.canRevoke)
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .padding(ADD_TOKEN_SECTION_PADDING)
+      .borderRadius(ADD_TOKEN_SECTION_RADIUS)
+      .backgroundColor($r('app.color.item_bg'))
+
+      if (!this.canConfirm) {
+        Text($r('app.string.steam_account_incomplete_hint'))
+          .fontSize(12).lineHeight(18).fontColor($r('sys.color.font_tertiary')).width('100%')
+      }
+
+      Row({ space: 10 }) {
+        if (this.canConfirm) {
+          Button($r('app.string.steam_menu_confirmations'))
+            .fontSize(14).height(44).layoutWeight(1)
+            .backgroundColor($r('sys.color.comp_background_tertiary'))
+            .fontColor($r('sys.color.font_primary'))
+            .onClick(() => this.openConfirmations())
+          Button($r('app.string.steam_menu_qr_login'))
+            .fontSize(14).height(44).layoutWeight(1)
+            .backgroundColor($r('sys.color.comp_background_tertiary'))
+            .fontColor($r('sys.color.font_primary'))
+            .onClick(() => this.approveQrLogin())
+        }
+      }
+      .width('100%')
+
+      if (this.canRevoke) {
+        Button($r('app.string.steam_menu_revoke'))
+          .fontSize(14).height(44).width('100%')
+          .backgroundColor($r('sys.color.comp_background_tertiary'))
+          .fontColor(Color.Red)
+          .onClick(() => this.revokeAuthenticator())
+      }
+
+      Text($r('app.string.steam_action_relogin'))
+        .fontSize(14)
+        .fontColor($r('sys.color.font_emphasize'))
+        .decoration({ type: TextDecorationType.Underline, color: $r('sys.color.font_emphasize') })
+        .width('100%').textAlign(TextAlign.Center)
+        .onClick(() => this.showLoginFlow = true)
+      Text($r('app.string.steam_relogin_warning'))
+        .fontSize(12).lineHeight(18).fontColor($r('sys.color.font_tertiary')).width('100%')
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 应用内打开 Steam 网页（用于引导绑定手机号） */
+  private openSteamWebPage(url: string): void {
+    this.pageInfos?.pushPathByName(ROUTE_NAMES.WebPage,
+      new WebPageParams(url, $r('app.string.steam_bind_phone_page_title')));
   }
 
   private navigateBack(): void {
@@ -177,67 +336,94 @@ export struct AddSteamTokenPage {
             .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET, top: 12 })
 
             ListItem() {
-              Row() {
+              if (this.showLoginFlow) {
+                SteamLoginFlow({
+                  rank: this.activeEditConfig?.RankScore ?? 0,
+                  initialAccountName: this.boundAccount.length > 0 ? this.boundAccount : this.accountName,
+                  onCancel: () => this.showLoginFlow = false,
+                  onCompleted: (conf: TokenConfig) => this.onLoginCompleted(conf),
+                  onOpenUrl: (url: string) => this.openSteamWebPage(url)
+                })
+              } else if (this.hasSteamAuth) {
+                // 已绑定：展示账户状态 + 交易确认/扫码登录/撤销等全部功能
+                this.SteamAccountPanel()
+              } else {
                 AddTokenActionButton({
-                  text: $r('app.string.dialog_cfg_steam_from_mafile'),
-                  action: () => this.importMaFile()
+                  text: $r('app.string.steam_login_entry'),
+                  action: () => this.showLoginFlow = true
                 })
-                .layoutWeight(1)
               }
-              .width('100%')
             }
             .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET })
 
-            ListItem() { AddTokenSectionTitle({ text: $r('app.string.add_token_account_section') }) }
-              .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET, top: 8 })
-
-            ListItem() {
-              Column({ space: 14 }) {
-                AddTokenTextField({
-                  label: $r('app.string.dialog_cfg_tk_secret'),
-                  value: this.secret,
-                  inputType: InputType.Password,
-                  onChange: (value: string) => this.secret = value
-                })
-                Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
-                AddTokenTextField({
-                  label: $r('app.string.dialog_cfg_tk_issuer'),
-                  value: this.issuer,
-                  onChange: (value: string) => this.issuer = value
-                })
-                Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
-                AddTokenTextField({
-                  label: $r('app.string.dialog_cfg_tk_name'),
-                  value: this.accountName,
-                  onChange: (value: string) => this.accountName = value
-                })
-                Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
-                TokenGroupSelect({ groupId: this.groupId, onChange: (id: string) => this.groupId = id })
+            if (!this.showLoginFlow) {
+              if (!this.hasSteamAuth) {
+                ListItem() {
+                  Row() {
+                    AddTokenActionButton({
+                      text: $r('app.string.dialog_cfg_steam_from_mafile'),
+                      action: () => this.importMaFile()
+                    })
+                    .layoutWeight(1)
+                  }
+                  .width('100%')
+                }
+                .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET })
               }
-              .padding(ADD_TOKEN_SECTION_PADDING).width('100%')
-              .borderRadius(ADD_TOKEN_SECTION_RADIUS)
-              .backgroundColor($r('app.color.item_bg'))
+
+              ListItem() { AddTokenSectionTitle({ text: $r('app.string.add_token_account_section') }) }
+                .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET, top: 8 })
+
+              ListItem() {
+                Column({ space: 14 }) {
+                  AddTokenTextField({
+                    label: $r('app.string.dialog_cfg_tk_secret'),
+                    value: this.secret,
+                    inputType: InputType.Password,
+                    onChange: (value: string) => this.secret = value
+                  })
+                  Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
+                  AddTokenTextField({
+                    label: $r('app.string.dialog_cfg_tk_issuer'),
+                    value: this.issuer,
+                    onChange: (value: string) => this.issuer = value
+                  })
+                  Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
+                  AddTokenTextField({
+                    label: $r('app.string.dialog_cfg_tk_name'),
+                    value: this.accountName,
+                    onChange: (value: string) => this.accountName = value
+                  })
+                  Divider().color($r('sys.color.comp_divider')).strokeWidth(0.5)
+                  TokenGroupSelect({ groupId: this.groupId, onChange: (id: string) => this.groupId = id })
+                }
+                .padding(ADD_TOKEN_SECTION_PADDING).width('100%')
+                .borderRadius(ADD_TOKEN_SECTION_RADIUS)
+                .backgroundColor($r('app.color.item_bg'))
+              }
+              .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET })
             }
-            .padding({ left: ADD_TOKEN_PAGE_INSET, right: ADD_TOKEN_PAGE_INSET })
             ListItem().height(this.window.AvoidBottomHeight + 16)
           }
           .layoutWeight(1).width('100%').scrollBar(BarState.Off)
           .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
           .clip(false)
 
-          AddTokenActionButton({
-            text: this.isSaving ? $r('app.string.add_token_saving') : $r('app.string.add_token_save'),
-            loading: this.isSaving,
-            buttonEnabled: this.canSave(),
-            action: () => this.submit()
-          })
-          .width('100%')
-          .padding({
-            left: ADD_TOKEN_PAGE_INSET,
-            right: ADD_TOKEN_PAGE_INSET,
-            top: 10,
-            bottom: ADD_TOKEN_BOTTOM_ACTION_INSET
-          })
+          if (!this.showLoginFlow) {
+            AddTokenActionButton({
+              text: this.isSaving ? $r('app.string.add_token_saving') : $r('app.string.add_token_save'),
+              loading: this.isSaving,
+              buttonEnabled: this.canSave(),
+              action: () => this.submit()
+            })
+            .width('100%')
+            .padding({
+              left: ADD_TOKEN_PAGE_INSET,
+              right: ADD_TOKEN_PAGE_INSET,
+              top: 10,
+              bottom: ADD_TOKEN_BOTTOM_ACTION_INSET
+            })
+          }
         }
         .width('100%').height('100%')
       }
@@ -272,7 +458,8 @@ export struct AddSteamTokenPage {
         title: { mainTitle: this.pageParams.editConfig === undefined ?
           $r('app.string.tab_token_add_stream_key') : $r('app.string.edit_token_title') },
         menu: {
-          value: this.window.IsPc ? [] : [{
+          // 已绑定的令牌不允许再扫码替换密钥：会与 Steam 侧的验证器密钥不一致
+          value: (this.window.IsPc || this.hasSteamAuth) ? [] : [{
             content: {
               label: $r('app.string.add_token_scan'),
               icon: $r('sys.symbol.qrcode'),

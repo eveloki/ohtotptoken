@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@ohos/hypium';
-import { base32Encode, base32Decode } from 'common';
+import { base32Encode, base32Decode, counterToBytes64 } from 'common';
 
 function bytesToString(bytes: Uint8Array): string {
   return Array.from(bytes).join(',');
@@ -63,9 +63,24 @@ export default function base32Test() {
       expect(bytesToString(base32Decode(encoded))).assertEqual(bytesToString(raw));
     });
 
-    it('decode_invalid_char_throws', 0, () => {
-      let bad = (): Uint8Array => base32Decode('AB!C');
-      expect(bad).assertThrowError(Error);
+    it('decode_skips_separators_and_invalid_chars', 0, () => {
+      // 与卡片端 CardOTPUtils.base32Decode 保持一致：跳过非法字符并容忍分隔符。
+      // 此前这里抛错 → generateOTP 返回 0 → 主界面显示 000000，
+      // 而同一 secret 在桌面卡片上仍能出码（两端行为不一致）。
+      expect(bytesToString(base32Decode('MZ XW6==='))).assertEqual('102,111,111');
+      expect(bytesToString(base32Decode('MZX-W6==='))).assertEqual('102,111,111');
+      expect(bytesToString(base32Decode('MZ!XW6==='))).assertEqual('102,111,111');
+      expect(bytesToString(base32Decode('MZXW6YTB\n'))).assertEqual('102,111,111,98,97');
+    });
+
+    it('counter_to_bytes64_is_big_endian', 0, () => {
+      // HOTP 计数器：8 字节大端，>2^31 不再因有符号右移出错
+      expect(bytesToString(counterToBytes64(0))).assertEqual('0,0,0,0,0,0,0,0');
+      expect(bytesToString(counterToBytes64(1))).assertEqual('0,0,0,0,0,0,0,1');
+      expect(bytesToString(counterToBytes64(4294967297))).assertEqual('0,0,0,1,0,0,0,1');
+      expect(bytesToString(counterToBytes64(2147483648))).assertEqual('0,0,0,0,128,0,0,0');
+      expect(bytesToString(counterToBytes64(9007199254740991)))
+        .assertEqual('0,31,255,255,255,255,255,255');
     });
   });
 }

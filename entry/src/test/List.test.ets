@@ -10,6 +10,15 @@ import commonUtilsTest from './CommonUtils.test';
 import genericDataSourceTest from './GenericDataSource.test';
 import otpAuthParserTest from './OtpAuthParser.test';
 import twoFaBackupTest from './TwoFABackup.test';
+import steamProtoTest from './SteamProto.test';
+import steamMessagesTest from './SteamMessages.test';
+import steamCryptoTest from './SteamCrypto.test';
+import steamClientTest from './SteamClient.test';
+import steamAuthTest from './SteamAuth.test';
+import steamFlowTest from './SteamFlow.test';
+import steamActionsTest from './SteamActions.test';
+import steamHttpTest from './SteamHttp.test';
+import googleAuthMigrationTest from './GoogleAuthMigration.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -24,4 +33,13 @@ export default function testsuite() {
   genericDataSourceTest();
   otpAuthParserTest();
   twoFaBackupTest();
+  steamProtoTest();
+  steamMessagesTest();
+  steamCryptoTest();
+  steamClientTest();
+  steamAuthTest();
+  steamFlowTest();
+  steamActionsTest();
+  steamHttpTest();
+  googleAuthMigrationTest();
 }

@@ -7,9 +7,7 @@
   "license": "",
   "dependencies": {
     "common": "file:../common",
-    "uikit": "file:../uikit",
-    "libotpcutils.so": "file:./src/main/cpp/types/libotpcutils",
-    "long": "^5.2.1"
+    "uikit": "file:../uikit"
   },
   "devDependencies": {},
   "dynamicDependencies": {}

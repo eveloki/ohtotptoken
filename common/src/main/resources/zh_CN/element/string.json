@@ -174,6 +174,314 @@
       "value": "通过二维码、maFile 或手动输入导入 Steam Guard 账户。"
     },
     {
+      "name": "google_auth_migration_invalid",
+      "value": "无法解析该 Google Authenticator 二维码"
+    },
+    {
+      "name": "google_auth_migration_empty",
+      "value": "二维码里没有可导入的令牌"
+    },
+    {
+      "name": "google_auth_migration_batch",
+      "value": "已扫描第 %d/%d 张二维码，请继续扫描"
+    },
+    {
+      "name": "steam_login_entry",
+      "value": "登录 Steam 迁移令牌"
+    },
+    {
+      "name": "steam_login_section",
+      "value": "登录 Steam"
+    },
+    {
+      "name": "steam_login_intro",
+      "value": "登录后可将已有的 Steam 令牌迁移到本机。"
+    },
+    {
+      "name": "steam_login_account",
+      "value": "Steam 账户名"
+    },
+    {
+      "name": "steam_login_password",
+      "value": "密码"
+    },
+    {
+      "name": "steam_login_password_hint",
+      "value": "密码会使用 Steam 公钥加密后发送，不会保存在本机。"
+    },
+    {
+      "name": "steam_login_action",
+      "value": "登录"
+    },
+    {
+      "name": "steam_mfa_section",
+      "value": "两步验证"
+    },
+    {
+      "name": "steam_mfa_device_code_hint",
+      "value": "请输入当前 Steam 令牌中的验证码。"
+    },
+    {
+      "name": "steam_mfa_email_code_hint",
+      "value": "请输入发送到邮箱的验证码。"
+    },
+    {
+      "name": "steam_mfa_code",
+      "value": "验证码"
+    },
+    {
+      "name": "steam_mfa_submit",
+      "value": "验证"
+    },
+    {
+      "name": "steam_mfa_wait_hint",
+      "value": "请在其他设备或邮箱中确认本次登录，并保持本页面打开。"
+    },
+    {
+      "name": "steam_link_section",
+      "value": "添加验证器"
+    },
+    {
+      "name": "steam_link_hint",
+      "value": "如果该账户已绑定验证器，将会改为迁移流程。"
+    },
+    {
+      "name": "steam_link_action",
+      "value": "添加 / 迁移"
+    },
+    {
+      "name": "steam_transfer_section",
+      "value": "迁移已有验证器"
+    },
+    {
+      "name": "steam_transfer_warning",
+      "value": "迁移会替换其他设备（如 Steam 官方 App）上的验证器，该设备将不再生成有效验证码。"
+    },
+    {
+      "name": "steam_transfer_phone_hint",
+      "value": "该 Steam 账户必须已绑定并验证手机号，才能接收短信验证码。"
+    },
+    {
+      "name": "steam_bind_phone_action",
+      "value": "去 Steam 绑定手机号"
+    },
+    {
+      "name": "steam_bind_phone_page_title",
+      "value": "Steam 账号"
+    },
+    {
+      "name": "steam_transfer_action",
+      "value": "确认迁移"
+    },
+    {
+      "name": "steam_activation_section",
+      "value": "完成添加"
+    },
+    {
+      "name": "steam_activation_sms_hint",
+      "value": "请输入 Steam 发送到手机的短信验证码。"
+    },
+    {
+      "name": "steam_activation_email_hint",
+      "value": "请输入 Steam 发送到邮箱的验证码。"
+    },
+    {
+      "name": "steam_activation_code",
+      "value": "验证码"
+    },
+    {
+      "name": "steam_activation_submit",
+      "value": "完成"
+    },
+    {
+      "name": "steam_transfer_sms_section",
+      "value": "确认迁移"
+    },
+    {
+      "name": "steam_transfer_sms_hint",
+      "value": "请输入 Steam 发送到手机的短信验证码。"
+    },
+    {
+      "name": "steam_transfer_sms_submit",
+      "value": "完成迁移"
+    },
+    {
+      "name": "steam_done_section",
+      "value": "完成"
+    },
+    {
+      "name": "steam_menu_qr_login",
+      "value": "Steam 扫码登录"
+    },
+    {
+      "name": "steam_menu_confirmations",
+      "value": "交易确认"
+    },
+    {
+      "name": "steam_menu_revoke",
+      "value": "撤销 Steam 验证器"
+    },
+    {
+      "name": "steam_confirmations_title",
+      "value": "交易确认"
+    },
+    {
+      "name": "steam_confirmations_empty",
+      "value": "暂无待处理的确认。"
+    },
+    {
+      "name": "steam_confirmations_loading",
+      "value": "正在加载…"
+    },
+    {
+      "name": "steam_confirmations_approve",
+      "value": "批准"
+    },
+    {
+      "name": "steam_confirmations_deny",
+      "value": "拒绝"
+    },
+    {
+      "name": "steam_confirmations_refresh",
+      "value": "刷新"
+    },
+    {
+      "name": "steam_confirmations_done",
+      "value": "已提交"
+    },
+    {
+      "name": "steam_qr_invalid",
+      "value": "不是有效的 Steam 登录二维码。"
+    },
+    {
+      "name": "steam_qr_success",
+      "value": "已批准登录。"
+    },
+    {
+      "name": "steam_qr_confirming",
+      "value": "正在确认登录…"
+    },
+    {
+      "name": "steam_revoke_confirm_title",
+      "value": "确认撤销验证器？"
+    },
+    {
+      "name": "steam_revoke_confirm_message",
+      "value": "撤销后该账户将不再绑定此验证器，需要重新添加。"
+    },
+    {
+      "name": "steam_revoke_success",
+      "value": "已撤销验证器。"
+    },
+    {
+      "name": "steam_error_no_credentials",
+      "value": "该令牌没有 Steam 登录数据，请先通过 maFile 导入或登录获取。"
+    },
+    {
+      "name": "steam_status_logging_in",
+      "value": "正在登录 Steam…"
+    },
+    {
+      "name": "steam_status_verifying",
+      "value": "正在验证…"
+    },
+    {
+      "name": "steam_status_wait_confirm",
+      "value": "已发送确认请求，请在其他设备或邮箱完成确认…"
+    },
+    {
+      "name": "steam_status_adding",
+      "value": "正在向 Steam 添加验证器…"
+    },
+    {
+      "name": "steam_status_transfer_request",
+      "value": "正在请求迁移，短信验证码即将发送…"
+    },
+    {
+      "name": "steam_status_finalizing",
+      "value": "正在完成添加…"
+    },
+    {
+      "name": "steam_status_transferring",
+      "value": "正在迁移验证器…"
+    },
+    {
+      "name": "steam_status_success",
+      "value": "已成功获取 Steam 令牌"
+    },
+    {
+      "name": "steam_err_bad_credentials",
+      "value": "账号或密码错误"
+    },
+    {
+      "name": "steam_err_twofactor_disabled",
+      "value": "该账号未启用两步验证，无法添加验证器"
+    },
+    {
+      "name": "steam_err_session_expired",
+      "value": "会话已失效，请重新登录"
+    },
+    {
+      "name": "steam_err_transfer_phone",
+      "value": "迁移需要 Steam 向账号绑定的手机号发送短信验证码，该账号很可能未绑定手机号。请先在 Steam 绑定并验证手机号，再回到此处重试。"
+    },
+    {
+      "name": "steam_err_finalize_incomplete",
+      "value": "添加未完成，请重新点击「完成」"
+    },
+    {
+      "name": "steam_err_transfer_code",
+      "value": "迁移失败，请检查短信验证码"
+    },
+    {
+      "name": "steam_err_no_secret",
+      "value": "未能解析出令牌密钥，请重试"
+    },
+    {
+      "name": "steam_confirmations_retry",
+      "value": "重试"
+    },
+    {
+      "name": "steam_confirmations_slow",
+      "value": "网络较慢，仍在连接 Steam…"
+    },
+    {
+      "name": "steam_account_section",
+      "value": "Steam 账户"
+    },
+    {
+      "name": "steam_account_steamid",
+      "value": "SteamID"
+    },
+    {
+      "name": "steam_account_confirm_cap",
+      "value": "交易确认 / 扫码登录"
+    },
+    {
+      "name": "steam_account_revoke_cap",
+      "value": "撤销验证器"
+    },
+    {
+      "name": "steam_status_available",
+      "value": "可用"
+    },
+    {
+      "name": "steam_status_unavailable",
+      "value": "需要重新登录"
+    },
+    {
+      "name": "steam_account_incomplete_hint",
+      "value": "该令牌缺少登录凭证（可能来自 maFile 导入或云备份恢复），重新登录并迁移后可启用交易确认与撤销。"
+    },
+    {
+      "name": "steam_action_relogin",
+      "value": "重新登录 Steam（更换密钥）"
+    },
+    {
+      "name": "steam_relogin_warning",
+      "value": "重新登录会再次迁移验证器并更换密钥，旧密钥将失效。"
+    },
+    {
       "name": "add_forti_regenerate_device_id",
       "value": "生成新的设备 ID"
     },

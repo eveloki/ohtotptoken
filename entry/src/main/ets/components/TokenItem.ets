@@ -1,7 +1,7 @@
 import { dialogSystemMaterial, TokenGroup, TokenGroupStore, showSnackBar, SnackBarNotifyType } from 'common';
-import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { otpType, TokenConfig } from 'common';
+import { nowUnixSeconds, otpType, TokenConfig } from 'common';
 import { convertToken2URI, copyText, generateOTP } from 'common';
 import { TokenIcon } from 'uikit';
 import { SteamUtils } from 'common';
@@ -17,6 +17,8 @@ import { AppFonts } from 'common';
 
 import { MaterialTheme } from './MaterialTheme';
 import { NfcSessionTokens } from '../oath/NfcSessionTokens';
+import { canRevokeSteamAuthenticator, canUseSteamAccountFeatures, steamApproveQrLogin,
+  steamConfirmRevoke } from '../utils/SteamActions';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 let tkStore = TokenStore.getInstance();
@@ -52,7 +54,9 @@ export struct TokenItem {
   @Local tokenNumberWidth: number = 0;
 
   @Local menu_icon_trash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.trash')).fontSize('22vp').fontColor([Color.Red]);
+  @Local menu_icon_slash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.icloud_slash')).fontSize('22vp');
   @Local menu_icon_qrcode: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.qrcode')).fontSize('22vp');
+  @Local menu_icon_qrcode_scan: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.line_viewfinder')).fontSize('22vp');
   @Local menu_icon_edit: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')).fontSize('22vp');
   @Local menu_icon_copy: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.doc_text_on_doc_text')).fontSize('22vp');
   @Local menu_icon_sort: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.list_bullet')).fontSize('22vp');
@@ -281,7 +285,7 @@ export struct TokenItem {
     if (this.Config.TokenType == otpType.HOTP) {
       this.updateHOTPToken();
     } else {
-      const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+      const timestamp = nowUnixSeconds();
       this.onTimestampChanged(timestamp, true);
     }
   }
@@ -723,7 +727,9 @@ export struct TokenItem {
         .width('100%')
         if (this.Config.TokenType !== otpType.NFC_external) {
           Row({ space: 12 }) {
-            this.TokenPreviewMetadata($r('app.string.dialog_cfg_tk_digits'), this.Config.TokenDigits.toString())
+            // Steam 令牌内部用 TokenDigits=10 保留完整截断值，展示时按实际位数显示 5
+            this.TokenPreviewMetadata($r('app.string.dialog_cfg_tk_digits'),
+              this.Config.TokenType === otpType.Steam ? '5' : this.Config.TokenDigits.toString())
             this.TokenPreviewMetadata(
               this.Config.TokenType === otpType.HOTP ?
                 $r('app.string.dialog_cfg_tk_counter') : $r('app.string.dialog_cfg_tk_timeout'),
@@ -873,6 +879,34 @@ export struct TokenItem {
             });
           })
           .accessibilityText($r('app.string.token_right_menu_edit'))
+      }
+      if (this.Config.TokenType === otpType.Steam && canUseSteamAccountFeatures(this.Config)) {
+        // Steam 账号能力（需要登录/迁移时写入的 refresh_token + identity_secret）
+        MenuItem({ symbolStartIcon: this.menu_icon_qrcode_scan, content: $r('app.string.steam_menu_qr_login') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              steamApproveQrLogin(this.Config);
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_qr_login'))
+        MenuItem({ symbolStartIcon: this.menu_icon_copy, content: $r('app.string.steam_menu_confirmations') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              this.appCtx.eventHub?.emit(EVENT_NAMES.OPEN_STEAM_CONFIRMATIONS, this.Config);
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_confirmations'))
+      }
+      if (this.Config.TokenType === otpType.Steam && canRevokeSteamAuthenticator(this.Config)) {
+        MenuItem({ symbolStartIcon: this.menu_icon_slash, content: $r('app.string.steam_menu_revoke') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              steamConfirmRevoke(this.getUIContext(), this.Config, () => {
+                tkStore.deleteToken(this.Config.TokenUUID);
+              });
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_revoke'))
       }
       MenuItem({ symbolStartIcon: this.menu_icon_trash, content: $r('app.string.token_right_menu_delete') })
         .onClick(() => {

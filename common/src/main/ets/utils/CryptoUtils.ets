@@ -20,7 +20,13 @@ function startsWith(data: Uint8Array, prefix: Uint8Array): boolean {
   return true;
 }
 
-function randomBytes(length: number): Uint8Array {
+/**
+ * 密码学安全随机字节。
+ *
+ * 云备份等场景必须用本函数，**不要**用 `Math.random()`
+ * （`CloudBackupCrypto.generateRandomBytes` 曾是后者，salt/iv 可被预测）。
+ */
+export function randomBytes(length: number): Uint8Array {
   const result = cryptoFramework.createRandom().generateRandomSync(length);
   return new Uint8Array(result.data);
 }

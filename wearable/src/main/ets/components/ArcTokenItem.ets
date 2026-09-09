@@ -1,5 +1,5 @@
-import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
-import { otpType, TokenConfig } from 'common';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { nowUnixSeconds, otpType, TokenConfig } from 'common';
 import { convertToken2URI, copyText, generateOTP } from 'common';
 import { SteamUtils } from 'common';
 import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS } from 'common';
@@ -153,7 +153,7 @@ export struct ArcTokenItem {
     if (this.Config.TokenType == otpType.HOTP) {
       this.updateHOTPToken();
     } else {
-      const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+      const timestamp = nowUnixSeconds();
       this.onTimestampChanged(timestamp, true);
     }
   }

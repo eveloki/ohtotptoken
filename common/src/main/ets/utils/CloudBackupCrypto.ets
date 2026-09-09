@@ -1,6 +1,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { buffer, util } from '@kit.ArkTS';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { randomBytes } from './CryptoUtils';
 
 const TAG = 'CloudBackupCrypto';
 const DOMAIN = 0xFF00;
@@ -254,11 +255,9 @@ export class CloudBackupCrypto {
   }
 
   private generateRandomBytes(length: number): Uint8Array {
-    const arr = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      arr[i] = Math.floor(Math.random() * 256) as number;
-    }
-    return arr;
+    // 必须用 CSPRNG：salt/iv 若可预测，AES-CBC 密文可被离线攻击。
+    // 这里委托 CryptoUtils.randomBytes（cryptoFramework.createRandom）。
+    return randomBytes(length);
   }
 
   private encodeBase64(text: string): string {

@@ -1,6 +1,8 @@
-import { http } from "@kit.NetworkKit";
-import { BusinessError } from "@kit.BasicServicesKit";
-
+/**
+ * 旧版 mafile 结构（Steam Guard 导出格式）。
+ *
+ * 仍被 `SteamAuth.fromMaFile()` / `TokenConfig.SteamMaFile` 兼容路径使用。
+ */
 export class maFile {
   public shared_secret: string = '';
   public serial_number: string = '';
@@ -23,36 +25,7 @@ export enum ESessionPersistence {
   k_ESessionPersistence_Persistent = 1,
 }
 
-class SteamAPI {
-  private static steam_api_url: string = 'https://api.steampowered.com';
-
-  public static UpdateAuthSessionWithMobileConfirmation(version: number, client_id: number, steamid: number, signature: string, confirm: boolean, persistence: ESessionPersistence): void {
-    const api_url_base = SteamAPI.steam_api_url + '/IAuthenticationService/UpdateAuthSessionWithMobileConfirmation/v1/';
-    let httpRequest = http.createHttp();
-
-    httpRequest.request(
-      api_url_base,
-      {
-        method: http.RequestMethod.POST,
-        extraData: { 'version': version, 'client_id': client_id, 'steamid': steamid, 'signature': signature, 'confirm': confirm, 'persistence': persistence},
-        header: { 'Accept' : 'application/json' },
-        readTimeout: 60000,
-        connectTimeout: 60000,
-        usingProtocol: http.HttpProtocol.HTTP1_1,
-        usingProxy: false,
-      },
-      (err: BusinessError, data: http.HttpResponse) => {
-        let tmp = data;
-        if (!err) {
-
-        } else {
-
-        }
-        httpRequest.destroy();
-      });
-  }
-}
-
+/** Steam 5 位字母动态码（由 TOTP 数字映射），供列表/卡片共用 */
 export class SteamUtils {
   private static steam_chars: string = "23456789BCDFGHJKMNPQRTVWXY";
   private static steam_digits: number = 5;
@@ -68,8 +41,4 @@ export class SteamUtils {
     }
     return steam_token;
   }
-
-  public static LoginWithQR(url: string): void {
-  }
-
 }

@@ -37,6 +37,8 @@ export enum EVENT_NAMES {
   START_CARD_CONFIG = 'onStartCardConfig',
   /** 切换Token搜索事件 */
   TOGGLE_TOKEN_SEARCH = 'toggleTokenSearch',
+  /** 打开 Steam 交易确认列表事件（携带 TokenConfig） */
+  OPEN_STEAM_CONFIRMATIONS = 'onOpenSteamConfirmations',
   /** 握手偏好设置变更事件 */
   HOLDING_HAND_PREFERENCE_CHANGED = 'holdingHandPreferenceChanged',
   /** 启动Token排序页面事件 */
@@ -457,6 +459,8 @@ export enum ROUTE_NAMES {
   WatchSyncPage = 'WatchSyncPage',
   /** 手表同步(BLE)验证页面 */
   BleWatchSyncPage = 'BleWatchSyncPage',
+  /** Steam 交易确认列表页 */
+  SteamConfirmationsPage = 'SteamConfirmationsPage',
   /** “我的”页华为账号详情 */
   SettingAccount = 'setting/account',
   /** “我的”页备份与迁移详情 */

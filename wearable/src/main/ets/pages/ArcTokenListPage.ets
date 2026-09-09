@@ -1,8 +1,7 @@
 import { QRCodeDialog } from 'uikit';
-import { TokenPreference, EVENT_NAMES } from 'common';
+import { nowUnixSeconds, TokenPreference, EVENT_NAMES } from 'common';
 import { TokenConfig, TokenIconPacks } from 'common';
 import { TokenStore, WearEngineServer, BleTokenServer, BleSyncStatus, WearEngineClient, BluetoothPermissionResult, convertToken2URI } from 'common';
-import { systemDateTime } from '@kit.BasicServicesKit';
 import { AppStorageV2, ArcList, ArcListItem, LengthMetrics } from "@kit.ArkUI";
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -131,7 +130,7 @@ export struct ArcTokenListPage {
 
   /** 广播当前时间戳(秒)到全局事件总线 */
   updateTimestamp(force: boolean): void {
-    const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+    const timestamp = nowUnixSeconds();
     if (this.appCtx.eventHub != undefined) {
       this.appCtx.eventHub.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, force);
     }

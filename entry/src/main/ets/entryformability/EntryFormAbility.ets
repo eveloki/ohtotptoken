@@ -2,30 +2,11 @@ import { formBindingData, FormExtensionAbility, formInfo, formProvider } from '@
 import { Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TokenCardStore, CardConfig } from 'common';
+import { emptyCardData, TokenCardStore, CardConfig } from 'common';
 import { KvManager } from 'common';
 
 const TAG = 'EntryFormAbility';
 const DOMAIN = 0xFF00;
-
-function emptyCardData(formId: string, formName: string): Record<string, Object> {
-  const data: Record<string, Object> = {
-    'hasToken': 'false',
-    'formId': formId,
-    'formName': formName,
-  };
-  for (let i = 0; i < 2; i++) {
-    data[`token${i}_issuer`] = '';
-    data[`token${i}_name`] = '';
-    data[`token${i}_secret`] = '';
-    data[`token${i}_algorithm`] = '';
-    data[`token${i}_digits`] = '';
-    data[`token${i}_period`] = '';
-    data[`token${i}_type`] = '';
-    data[`token${i}_counter`] = '';
-  }
-  return data;
-}
 
 export default class EntryFormAbility extends FormExtensionAbility {
   onAddForm(want: Want): formBindingData.FormBindingData {

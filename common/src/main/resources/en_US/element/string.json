@@ -149,6 +149,314 @@
       "value": "Import a Steam Guard account by QR code, maFile, or manual entry."
     },
     {
+      "name": "google_auth_migration_invalid",
+      "value": "Could not parse this Google Authenticator QR code"
+    },
+    {
+      "name": "google_auth_migration_empty",
+      "value": "This QR code contains no tokens"
+    },
+    {
+      "name": "google_auth_migration_batch",
+      "value": "Scanned %d of %d QR codes — please continue"
+    },
+    {
+      "name": "steam_login_entry",
+      "value": "Sign in to Steam and migrate"
+    },
+    {
+      "name": "steam_login_section",
+      "value": "Sign in to Steam"
+    },
+    {
+      "name": "steam_login_intro",
+      "value": "Sign in to migrate your existing Steam Guard authenticator to this device."
+    },
+    {
+      "name": "steam_login_account",
+      "value": "Steam account name"
+    },
+    {
+      "name": "steam_login_password",
+      "value": "Password"
+    },
+    {
+      "name": "steam_login_password_hint",
+      "value": "Your password is encrypted with Steam's public key and is never stored on this device."
+    },
+    {
+      "name": "steam_login_action",
+      "value": "Sign in"
+    },
+    {
+      "name": "steam_mfa_section",
+      "value": "Two-step verification"
+    },
+    {
+      "name": "steam_mfa_device_code_hint",
+      "value": "Enter the code from your current Steam Guard authenticator."
+    },
+    {
+      "name": "steam_mfa_email_code_hint",
+      "value": "Enter the code Steam sent to your email."
+    },
+    {
+      "name": "steam_mfa_code",
+      "value": "Verification code"
+    },
+    {
+      "name": "steam_mfa_submit",
+      "value": "Verify"
+    },
+    {
+      "name": "steam_mfa_wait_hint",
+      "value": "Confirm the sign-in on your other device or via email, and keep this page open."
+    },
+    {
+      "name": "steam_link_section",
+      "value": "Add authenticator"
+    },
+    {
+      "name": "steam_link_hint",
+      "value": "If this account already has an authenticator, you will be asked to migrate it instead."
+    },
+    {
+      "name": "steam_link_action",
+      "value": "Add / migrate"
+    },
+    {
+      "name": "steam_transfer_section",
+      "value": "Migrate existing authenticator"
+    },
+    {
+      "name": "steam_transfer_warning",
+      "value": "Migration replaces the authenticator on your other device (for example the official Steam app). That device will no longer generate valid codes."
+    },
+    {
+      "name": "steam_transfer_phone_hint",
+      "value": "Your Steam account must have a verified phone number to receive the SMS code."
+    },
+    {
+      "name": "steam_bind_phone_action",
+      "value": "Bind a phone number on Steam"
+    },
+    {
+      "name": "steam_bind_phone_page_title",
+      "value": "Steam account"
+    },
+    {
+      "name": "steam_transfer_action",
+      "value": "Confirm migration"
+    },
+    {
+      "name": "steam_activation_section",
+      "value": "Complete adding"
+    },
+    {
+      "name": "steam_activation_sms_hint",
+      "value": "Enter the SMS code Steam sent to your phone."
+    },
+    {
+      "name": "steam_activation_email_hint",
+      "value": "Enter the code Steam sent to your email."
+    },
+    {
+      "name": "steam_activation_code",
+      "value": "Code"
+    },
+    {
+      "name": "steam_activation_submit",
+      "value": "Complete"
+    },
+    {
+      "name": "steam_transfer_sms_section",
+      "value": "Confirm migration"
+    },
+    {
+      "name": "steam_transfer_sms_hint",
+      "value": "Enter the SMS code Steam sent to your phone."
+    },
+    {
+      "name": "steam_transfer_sms_submit",
+      "value": "Complete migration"
+    },
+    {
+      "name": "steam_done_section",
+      "value": "Done"
+    },
+    {
+      "name": "steam_menu_qr_login",
+      "value": "Approve Steam QR sign-in"
+    },
+    {
+      "name": "steam_menu_confirmations",
+      "value": "Trade confirmations"
+    },
+    {
+      "name": "steam_menu_revoke",
+      "value": "Remove Steam authenticator"
+    },
+    {
+      "name": "steam_confirmations_title",
+      "value": "Trade confirmations"
+    },
+    {
+      "name": "steam_confirmations_empty",
+      "value": "No pending confirmations."
+    },
+    {
+      "name": "steam_confirmations_loading",
+      "value": "Loading..."
+    },
+    {
+      "name": "steam_confirmations_approve",
+      "value": "Approve"
+    },
+    {
+      "name": "steam_confirmations_deny",
+      "value": "Deny"
+    },
+    {
+      "name": "steam_confirmations_refresh",
+      "value": "Refresh"
+    },
+    {
+      "name": "steam_confirmations_done",
+      "value": "Submitted"
+    },
+    {
+      "name": "steam_qr_invalid",
+      "value": "Not a valid Steam sign-in QR code."
+    },
+    {
+      "name": "steam_qr_success",
+      "value": "Sign-in approved."
+    },
+    {
+      "name": "steam_qr_confirming",
+      "value": "Confirming the sign-in…"
+    },
+    {
+      "name": "steam_revoke_confirm_title",
+      "value": "Remove authenticator?"
+    },
+    {
+      "name": "steam_revoke_confirm_message",
+      "value": "This removes the Steam Guard authenticator from your account. You will need to set it up again."
+    },
+    {
+      "name": "steam_revoke_success",
+      "value": "Authenticator removed."
+    },
+    {
+      "name": "steam_error_no_credentials",
+      "value": "This token has no Steam sign-in data. Import via maFile or sign in first."
+    },
+    {
+      "name": "steam_status_logging_in",
+      "value": "Signing in to Steam…"
+    },
+    {
+      "name": "steam_status_verifying",
+      "value": "Verifying…"
+    },
+    {
+      "name": "steam_status_wait_confirm",
+      "value": "Confirmation request sent. Approve it on your other device or in your email…"
+    },
+    {
+      "name": "steam_status_adding",
+      "value": "Adding the authenticator to Steam…"
+    },
+    {
+      "name": "steam_status_transfer_request",
+      "value": "Requesting the migration. An SMS code will arrive shortly…"
+    },
+    {
+      "name": "steam_status_finalizing",
+      "value": "Finishing up…"
+    },
+    {
+      "name": "steam_status_transferring",
+      "value": "Migrating the authenticator…"
+    },
+    {
+      "name": "steam_status_success",
+      "value": "Steam token acquired"
+    },
+    {
+      "name": "steam_err_bad_credentials",
+      "value": "Incorrect account name or password"
+    },
+    {
+      "name": "steam_err_twofactor_disabled",
+      "value": "Steam Guard is not enabled on this account, so an authenticator cannot be added"
+    },
+    {
+      "name": "steam_err_session_expired",
+      "value": "Session expired, please sign in again"
+    },
+    {
+      "name": "steam_err_transfer_phone",
+      "value": "Migration requires Steam to send an SMS code to the phone number bound to this account, which is most likely not bound yet. Bind and verify a phone number on Steam first, then retry here."
+    },
+    {
+      "name": "steam_err_finalize_incomplete",
+      "value": "Adding did not complete. Tap Finish again."
+    },
+    {
+      "name": "steam_err_transfer_code",
+      "value": "Migration failed, please check the SMS code"
+    },
+    {
+      "name": "steam_err_no_secret",
+      "value": "Could not read the token secret, please retry"
+    },
+    {
+      "name": "steam_confirmations_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "steam_confirmations_slow",
+      "value": "The network is slow — still connecting to Steam…"
+    },
+    {
+      "name": "steam_account_section",
+      "value": "Steam account"
+    },
+    {
+      "name": "steam_account_steamid",
+      "value": "SteamID"
+    },
+    {
+      "name": "steam_account_confirm_cap",
+      "value": "Confirmations / QR sign-in"
+    },
+    {
+      "name": "steam_account_revoke_cap",
+      "value": "Remove authenticator"
+    },
+    {
+      "name": "steam_status_available",
+      "value": "Available"
+    },
+    {
+      "name": "steam_status_unavailable",
+      "value": "Sign in again"
+    },
+    {
+      "name": "steam_account_incomplete_hint",
+      "value": "This token has no sign-in credentials (it may come from a maFile import or a cloud restore). Sign in and migrate again to enable confirmations and removal."
+    },
+    {
+      "name": "steam_action_relogin",
+      "value": "Sign in to Steam again (new key)"
+    },
+    {
+      "name": "steam_relogin_warning",
+      "value": "Signing in again migrates the authenticator once more and issues a new key; the old key stops working."
+    },
+    {
       "name": "add_forti_regenerate_device_id",
       "value": "Generate a new device ID"
     },

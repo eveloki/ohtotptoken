@@ -8,6 +8,7 @@
  * 首次读取时自动向上兼容。
  */
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { padZero } from './CommonUtils';
 
 const TAG = 'SyncTimeHelper';
 const DOMAIN = 0xFF00;
@@ -19,7 +20,7 @@ export class SyncTimeHelper {
       return '';
     }
     const d = new Date(ts);
-    return `${d.getFullYear()}-${SyncTimeHelper.padZero(d.getMonth() + 1)}-${SyncTimeHelper.padZero(d.getDate())} ${SyncTimeHelper.padZero(d.getHours())}:${SyncTimeHelper.padZero(d.getMinutes())}`;
+    return `${d.getFullYear()}-${padZero(d.getMonth() + 1)}-${padZero(d.getDate())} ${padZero(d.getHours())}:${padZero(d.getMinutes())}`;
   }
 
   /** 判断时间戳是否为今天 */
@@ -90,9 +91,5 @@ export class SyncTimeHelper {
       hilog.warn(DOMAIN, TAG, `parseStoredTimestamp: failed: ${(e as Error).message}`);
     }
     return 0;
-  }
-
-  private static padZero(n: number): string {
-    return n < 10 ? `0${n}` : `${n}`;
   }
 }

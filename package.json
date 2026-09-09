@@ -1,6 +1,12 @@
 {
   "scripts": {
-    "generate:icon-thumbnails": "node scripts/generate-icon-thumbnails.mjs"
+    "generate:icon-thumbnails": "node scripts/generate-icon-thumbnails.mjs",
+    "test": "node --test \"scripts/*.test.mjs\"",
+    "check:strings": "node scripts/check-string-keys.mjs",
+    "check:fields": "node scripts/verify-steam-field-numbers.mjs",
+    "check": "npm run check:strings && npm run check:fields && npm test",
+    "probe:steam": "node scripts/steam-live-probe.mjs",
+    "golden:steam": "node scripts/steam-golden-vectors.mjs"
   },
   "dependencies": {
     "@ohos/hamock": "^1.0.0",
