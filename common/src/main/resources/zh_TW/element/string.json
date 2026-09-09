@@ -1326,6 +1326,10 @@
       "value": "用於透過藍牙與手錶配對並安全同步令牌"
     },
     {
+      "name": "nearlink_access_permission_reason",
+      "value": "用於透過星閃與手錶配對並安全同步令牌"
+    },
+    {
       "name": "setting_top_effect_type",
       "value": "頂部模糊類型"
     },
