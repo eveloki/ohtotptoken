@@ -20,6 +20,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  node-regression:
+    name: Node offline checks
+    # These scripts need no HarmonyOS SDK and no npm dependencies (node: builtins
+    # only): Steam field-number cross-check against the committed reference
+    # snapshot, string-resource completeness, and the TokenStore/KvManager
+    # regression suites. Previously they only ran on the author's machine.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check string resources
+        run: node scripts/check-string-keys.mjs
+        shell: bash
+
+      - name: Cross-check Steam field numbers
+        run: node scripts/verify-steam-field-numbers.mjs
+        shell: bash
+
+      - name: Run node regression suites
+        run: node --test "scripts/*.test.mjs"
+        shell: bash
+
   localunit:
     name: ArkTS unit tests (LocalUnit)
     # macOS ARM runner: LocalUnit executes tests inside the SDK Previewer

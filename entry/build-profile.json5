@@ -1,16 +1,8 @@
 {
   "apiType": "stageMode",
-  "buildOption": {
-    "externalNativeOptions": {
-      "path": "./src/main/cpp/CMakeLists.txt",
-      "arguments": "",
-      "cppFlags": "",
-      "abiFilters": [
-        "arm64-v8a",
-        "x86_64"
-      ],
-    }
-  },
+  // Google Authenticator 迁移解析已改为纯 ArkTS（common/utils/GoogleAuthMigration.ets），
+  // 不再需要 libotpcutils.so / nanopb，故移除 externalNativeOptions
+  "buildOption": {},
   "buildOptionSet": [
     {
       "name": "release",

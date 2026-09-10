@@ -1,11 +1,13 @@
 import { KvManager } from "./KvManager";
-import { TokenConfig, otpType, copyTokenConfig } from "./TokenConfig";
+import { TokenConfig, otpType, copyTokenConfig, sanitizedTokenForTransfer } from "./TokenConfig";
 import { TokenGroupStore } from './TokenGroupStore';
 import { TokenBatchProgressCallback, TokenBatchStage, reportTokenBatchProgress } from './TokenBatchProgress';
 import { RdbManager } from "./RdbManager";
 import { common } from '@kit.AbilityKit';
 import { EVENT_NAMES, PREF_KEYS, AppPreference } from "./AppPreference";
 import { AssetSecretStore } from './AssetSecretStore';
+import { SteamSecretStore } from './SteamSecretStore';
+import { SteamAuth } from './SteamAuth';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'TokenStore';
@@ -41,6 +43,7 @@ export class TokenStore {
   private kvMgr: KvManager = KvManager.getInstance();
   private rdbMgr: RdbManager = RdbManager.getInstance();
   private assetStore: AssetSecretStore = AssetSecretStore.getInstance();
+  private steamSecretStore: SteamSecretStore = SteamSecretStore.getInstance();
   private token_array: TokenConfig[] = [];
   private appCtx: common.UIAbilityContext | undefined = undefined;
   private init_done: boolean = false;
@@ -93,8 +96,12 @@ export class TokenStore {
     return this.enqueueMutation(async () => {
       await TokenGroupStore.getInstance().load();
       this.token_array = await this.kvMgr.getTokenArray(this.token_prefix);
+      // KV 里的对象是 JSON 裸数据：TokenConfig/SteamAuth 都没有原型方法，
+      // 统一用 copyTokenConfig 重建实例，否则后续调用实例方法会崩溃
+      this.token_array = this.token_array.map((token: TokenConfig): TokenConfig => copyTokenConfig(token));
       this.appCtx = AppStorage.get<common.UIAbilityContext>('appContext') as common.UIAbilityContext;
       await this.fillSecretsFromAsset();
+      await this.fillSteamSecretsFromAsset();
       this.sortTokens();
     });
   }
@@ -180,6 +187,35 @@ export class TokenStore {
     }
   }
 
+  /**
+   * 从 ASSET 回填 Steam 凭证，并迁移旧版 mafile 数据。
+   *
+   * - 新数据：KV 只存非敏感元数据；identity_secret / revocation_code / refresh_token 在 ASSET
+   * - 旧数据：TokenConfig.SteamMaFile 内含明文密钥，转换为 SteamAuth 并补写 ASSET，
+   *   后续保存时 sanitizedForTransfer() 会把 KV 中的 mafile 密钥剥离
+   */
+  private async fillSteamSecretsFromAsset(): Promise<void> {
+    for (const token of this.token_array) {
+      if (token.TokenType !== otpType.Steam) {
+        continue;
+      }
+      let migratedFromMaFile: boolean = false;
+      if (token.SteamAuth === undefined && token.SteamMaFile !== undefined) {
+        token.SteamAuth = SteamAuth.fromMaFile(token.SteamMaFile);
+        migratedFromMaFile = true;
+      }
+      const auth: SteamAuth | undefined = token.SteamAuth;
+      if (auth === undefined) {
+        continue;
+      }
+      await this.steamSecretStore.load(token.TokenUUID, auth);
+      if (migratedFromMaFile && (auth.identitySecret.length > 0 || auth.revocationCode.length > 0)) {
+        await this.steamSecretStore.save(token.TokenUUID, auth);
+        hilog.info(DOMAIN, TAG, `fillSteamSecretsFromAsset: migrated legacy mafile ${token.TokenUUID}`);
+      }
+    }
+  }
+
   public async getTokens(): Promise<TokenConfig[]> {
     return this.token_array;
   }
@@ -198,7 +234,11 @@ export class TokenStore {
         token.TokenSecret = secret;
       }
     }
-    return token ?? new TokenConfig();
+    if (!token) {
+      return new TokenConfig();
+    }
+    // 同上：补齐原型方法后再交给 UI
+    return copyTokenConfig(token);
   }
 
   public sortTokens(): void {
@@ -360,7 +400,10 @@ export class TokenStore {
     }
     const writes = Array.from(changed.values());
     // 先提交完整加密 KV，避免 KV 失败留下幽灵内存条目或提前覆盖 ASSET。
-    await this.kvMgr.saveTokenBatch(this.token_prefix, writes, [], onProgress);
+    // KV 副本必须剥离 Steam 凭证与 mafile 密钥：TokenConfig 会被手表同步原样序列化，
+    // 高权限字段（identity_secret / refresh_token / revocation_code）只允许留在 ASSET。
+    const kvWrites = writes.map((token: TokenConfig): TokenConfig => sanitizedTokenForTransfer(token));
+    await this.kvMgr.saveTokenBatch(this.token_prefix, kvWrites, [], onProgress);
     this.token_array = next;
     const secretWrites = writes.filter(token => originalSecrets.get(token.TokenUUID) !== token.TokenSecret);
     if (secretWrites.length > 0) {
@@ -369,6 +412,18 @@ export class TokenStore {
         await this.saveTokenSecret(secretWrites[i]);
         reportTokenBatchProgress(onProgress, TokenBatchStage.WRITING_SECRETS, i + 1, secretWrites.length);
       }
+    }
+    // Steam 凭证写入 ASSET（内存对象保留明文，KV 副本已剥离）
+    for (let i = 0; i < writes.length; i++) {
+      const token: TokenConfig = writes[i];
+      if (token.TokenType !== otpType.Steam) {
+        continue;
+      }
+      const auth: SteamAuth | undefined = token.SteamAuth;
+      if (auth === undefined) {
+        continue;
+      }
+      await this.steamSecretStore.save(token.TokenUUID, auth);
     }
     if (single) {
       this.emitTokenSingleUpdated(writes[0]);
@@ -415,6 +470,7 @@ export class TokenStore {
       reportTokenBatchProgress(onProgress, TokenBatchStage.REMOVING_SECRETS, 0, removed.length);
       for (let i = 0; i < removed.length; i++) {
         await this.assetStore.removeSecret(removed[i].TokenUUID);
+        await this.steamSecretStore.remove(removed[i].TokenUUID);
         reportTokenBatchProgress(onProgress, TokenBatchStage.REMOVING_SECRETS, i + 1, removed.length);
       }
       this.emitTokenChanged();

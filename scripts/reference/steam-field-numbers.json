@@ -1,0 +1,313 @@
+{
+  "_comment": "Steam 消息字段号参考快照（字段号/wireType）。由 scripts/generate-steam-field-manifest.mjs 生成，勿手改。",
+  "_sources": {
+    "proto": "参考工程内的官方 .proto（steammessages_auth.steamclient.proto / service_twofactor.proto）",
+    "generatedJs": "参考工程内 protobufjs 生成的 *.js（独立第二来源）"
+  },
+  "fromProto": {
+    "CAuthentication_DeviceDetails": [
+      "1/2",
+      "2/0",
+      "3/0",
+      "4/0",
+      "5/0",
+      "6/2"
+    ],
+    "CAuthentication_AllowedConfirmation": [
+      "1/0",
+      "2/2"
+    ],
+    "CAuthentication_BeginAuthSessionViaCredentials_Request": [
+      "1/2",
+      "2/2",
+      "3/2",
+      "4/0",
+      "5/0",
+      "6/0",
+      "7/0",
+      "8/2",
+      "9/2",
+      "10/2",
+      "11/0",
+      "12/0"
+    ],
+    "CAuthentication_BeginAuthSessionViaCredentials_Response": [
+      "1/0",
+      "2/2",
+      "3/5",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2"
+    ],
+    "CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request": [
+      "1/0",
+      "2/1",
+      "3/2",
+      "4/0"
+    ],
+    "CAuthentication_PollAuthSessionStatus_Request": [
+      "1/0",
+      "2/2",
+      "3/1"
+    ],
+    "CAuthentication_PollAuthSessionStatus_Response": [
+      "1/0",
+      "2/2",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2"
+    ],
+    "CTwoFactor_AddAuthenticator_Request": [
+      "1/1",
+      "2/0",
+      "3/1",
+      "4/0",
+      "5/2",
+      "6/2",
+      "7/2",
+      "8/0"
+    ],
+    "CTwoFactor_AddAuthenticator_Response": [
+      "1/2",
+      "2/1",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2",
+      "9/2",
+      "10/0",
+      "11/2",
+      "12/0"
+    ],
+    "CTwoFactor_FinalizeAddAuthenticator_Request": [
+      "1/1",
+      "2/2",
+      "3/0",
+      "4/2",
+      "5/2",
+      "6/0"
+    ],
+    "CTwoFactor_FinalizeAddAuthenticator_Response": [
+      "1/0",
+      "2/0",
+      "3/0",
+      "4/0"
+    ],
+    "CTwoFactor_Status_Request": [
+      "1/1"
+    ],
+    "CTwoFactor_Status_Response": [
+      "1/0",
+      "2/0",
+      "3/0",
+      "4/0",
+      "5/0",
+      "6/2",
+      "7/0",
+      "8/2",
+      "9/0",
+      "10/0",
+      "11/2",
+      "12/0",
+      "13/0",
+      "14/0"
+    ],
+    "CTwoFactor_RemoveAuthenticator_Request": [
+      "2/2",
+      "5/0",
+      "6/0",
+      "7/0"
+    ],
+    "CTwoFactor_RemoveAuthenticator_Response": [
+      "1/0",
+      "3/0",
+      "5/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeStart_Response": [
+      "1/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeContinue_Request": [
+      "1/2",
+      "2/0",
+      "3/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeContinue_Response": [
+      "1/0",
+      "2/2"
+    ],
+    "CRemoveAuthenticatorViaChallengeContinue_Replacement_Token": [
+      "1/2",
+      "2/1",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2",
+      "9/2",
+      "10/0",
+      "11/0",
+      "12/1"
+    ]
+  },
+  "fromGeneratedJs": {
+    "CAuthentication_DeviceDetails": [
+      "1/2",
+      "2/0",
+      "3/0",
+      "4/0",
+      "5/0",
+      "6/2"
+    ],
+    "CAuthentication_AllowedConfirmation": [
+      "1/0",
+      "2/2"
+    ],
+    "CAuthentication_BeginAuthSessionViaCredentials_Request": [
+      "1/2",
+      "2/2",
+      "3/2",
+      "4/0",
+      "5/0",
+      "6/0",
+      "7/0",
+      "8/2",
+      "9/2",
+      "10/2",
+      "11/0",
+      "12/0"
+    ],
+    "CAuthentication_BeginAuthSessionViaCredentials_Response": [
+      "1/0",
+      "2/2",
+      "3/5",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2"
+    ],
+    "CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request": [
+      "1/0",
+      "2/1",
+      "3/2",
+      "4/0"
+    ],
+    "CAuthentication_PollAuthSessionStatus_Request": [
+      "1/0",
+      "2/2",
+      "3/1"
+    ],
+    "CAuthentication_PollAuthSessionStatus_Response": [
+      "1/0",
+      "2/2",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2"
+    ],
+    "CTwoFactor_AddAuthenticator_Request": [
+      "1/1",
+      "2/0",
+      "3/1",
+      "4/0",
+      "5/2",
+      "6/2",
+      "7/2",
+      "8/0"
+    ],
+    "CTwoFactor_AddAuthenticator_Response": [
+      "1/2",
+      "2/1",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2",
+      "9/2",
+      "10/0",
+      "11/2",
+      "12/0"
+    ],
+    "CTwoFactor_FinalizeAddAuthenticator_Request": [
+      "1/1",
+      "2/2",
+      "3/0",
+      "4/2",
+      "5/2",
+      "6/0"
+    ],
+    "CTwoFactor_FinalizeAddAuthenticator_Response": [
+      "1/0",
+      "2/0",
+      "3/0",
+      "4/0"
+    ],
+    "CTwoFactor_Status_Request": [
+      "1/1"
+    ],
+    "CTwoFactor_Status_Response": [
+      "1/0",
+      "2/0",
+      "3/0",
+      "4/0",
+      "5/0",
+      "6/2",
+      "7/0",
+      "8/2",
+      "9/0",
+      "10/0",
+      "11/2",
+      "12/0",
+      "13/0",
+      "14/0"
+    ],
+    "CTwoFactor_RemoveAuthenticator_Request": [
+      "2/2",
+      "5/0",
+      "6/0",
+      "7/0"
+    ],
+    "CTwoFactor_RemoveAuthenticator_Response": [
+      "1/0",
+      "3/0",
+      "5/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeStart_Response": [
+      "1/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeContinue_Request": [
+      "1/2",
+      "2/0",
+      "3/0"
+    ],
+    "CTwoFactor_RemoveAuthenticatorViaChallengeContinue_Response": [
+      "1/0",
+      "2/2"
+    ],
+    "CRemoveAuthenticatorViaChallengeContinue_Replacement_Token": [
+      "1/2",
+      "2/1",
+      "3/2",
+      "4/2",
+      "5/0",
+      "6/2",
+      "7/2",
+      "8/2",
+      "9/2",
+      "10/0",
+      "11/0",
+      "12/1"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ import { nfcController, tag } from '@kit.ConnectivityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { OathError, OathReadResult, OathSession } from './OathApplet';
 import { NfcTagTransport } from './TagTransport';
-import { Logger } from 'common';
+import { Logger, nowUnixSeconds } from 'common';
 
 let logger = Logger;
 
@@ -173,7 +173,7 @@ export class NfcOathReader {
           throw this.toOathError(e);
         }
       }
-      const timestamp = Math.floor(Date.now() / 1000);
+      const timestamp = nowUnixSeconds();
       const credentials = await session.calculateAll(timestamp);
       if (credentials.length === 0) {
         this.dispatchReadFailed(new OathError('NO_TOKENS', 'no available tokens on this card'));

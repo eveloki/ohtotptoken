@@ -14,7 +14,12 @@ export interface CardConfig {
 const CARD_CONFIG_PREFIX = "card_config_";
 const CARD_CONFIGS_KEY = "card_configs_list";
 
-function emptyCardData(formId: string, formName: string): Record<string, Object> {
+/**
+ * 空卡片数据（无令牌时的绑定数据）。
+ *
+ * entry 的 EntryFormAbility 与 TokenCardStore 内部都使用，导出避免两处各写一份。
+ */
+export function emptyCardData(formId: string, formName: string): Record<string, Object> {
   const data: Record<string, Object> = {
     'hasToken': 'false',
     'formId': formId,

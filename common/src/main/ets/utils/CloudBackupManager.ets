@@ -2,7 +2,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppPreference, PREF_KEYS } from './AppPreference';
 import { CloudBackupCrypto, CloudBackupRecord, CloudBackupTokenError } from './CloudBackupCrypto';
 import { TokenStore } from './TokenStore';
-import { TokenConfig } from './TokenConfig';
+import { TokenConfig, sanitizedTokenForBackup } from './TokenConfig';
 import { TokenGroup, TokenGroupStore } from './TokenGroupStore';
 import { fileIo as fs, cloudSync, fileUri } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
@@ -137,10 +137,12 @@ export class CloudBackupManager {
     hilog.info(DOMAIN, TAG, `backupToCloud: starting backup, mode=${mode}`);
 
     // 构造 CloudBackupPayload：包含令牌、图标包启用列表、图标包元数据
+    // 注意：载荷会被序列化后上传云端，必须剥离 Steam 高权限凭证
+    // （identity_secret / refresh_token / revocation_code），TokenSecret 保留以便恢复后显示动态码
     const tokens = await TokenStore.getInstance().getTokens();
     const enabledPacks = TokenIconPacks.enabled_packs;
     const payload = new CloudBackupPayload();
-    payload.tokens = tokens;
+    payload.tokens = tokens.map((token: TokenConfig): TokenConfig => sanitizedTokenForBackup(token));
     payload.groups = [...TokenGroupStore.getInstance().state.groups];
     payload.enabledPacks = enabledPacks;
     const metaList: PackMetaEntry[] = [];
@@ -517,8 +519,8 @@ export class CloudBackupManager {
             hilog.warn(DOMAIN, TAG, `listBackupRecords: parse header failed for ${fileName}, using file stat`);
           }
 
-          const d = new Date(timestamp);
-          const dateStr = `${d.getFullYear()}-${this.padZero(d.getMonth() + 1)}-${this.padZero(d.getDate())} ${this.padZero(d.getHours())}:${this.padZero(d.getMinutes())}`;
+          // 与 SyncTimeHelper.formatTimestamp 同一格式，避免两处各写一遍补零逻辑
+          const dateStr = SyncTimeHelper.formatTimestamp(timestamp);
 
           records.push({
             id: fileName,
@@ -584,9 +586,5 @@ export class CloudBackupManager {
 
   get maxBackupCount(): number {
     return MAX_BACKUP_COUNT;
-  }
-
-  private padZero(n: number): string {
-    return n < 10 ? `0${n}` : `${n}`;
   }
 }

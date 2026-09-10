@@ -1,7 +1,7 @@
 import { dialogSystemMaterial, TokenGroup, TokenGroupStore, showSnackBar, SnackBarNotifyType } from 'common';
-import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { otpType, TokenConfig } from 'common';
+import { nowUnixSeconds, otpType, TokenConfig } from 'common';
 import { convertToken2URI, copyText, generateOTP } from 'common';
 import { TokenIcon } from 'uikit';
 import { SteamUtils } from 'common';
@@ -17,6 +17,8 @@ import { AppFonts } from 'common';
 
 import { MaterialTheme } from './MaterialTheme';
 import { NfcSessionTokens } from '../oath/NfcSessionTokens';
+import { canRevokeSteamAuthenticator, canUseSteamAccountFeatures, steamApproveQrLogin,
+  steamConfirmRevoke } from '../utils/SteamActions';
 
 let current_token_hide_map: Map<string, boolean> = new Map();
 let tkStore = TokenStore.getInstance();
@@ -52,7 +54,9 @@ export struct TokenItem {
   @Local tokenNumberWidth: number = 0;
 
   @Local menu_icon_trash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.trash')).fontSize('22vp').fontColor([Color.Red]);
+  @Local menu_icon_slash: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.icloud_slash')).fontSize('22vp');
   @Local menu_icon_qrcode: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.qrcode')).fontSize('22vp');
+  @Local menu_icon_qrcode_scan: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.line_viewfinder')).fontSize('22vp');
   @Local menu_icon_edit: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')).fontSize('22vp');
   @Local menu_icon_copy: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.doc_text_on_doc_text')).fontSize('22vp');
   @Local menu_icon_sort: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.list_bullet')).fontSize('22vp');
@@ -281,7 +285,7 @@ export struct TokenItem {
     if (this.Config.TokenType == otpType.HOTP) {
       this.updateHOTPToken();
     } else {
-      const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+      const timestamp = nowUnixSeconds();
       this.onTimestampChanged(timestamp, true);
     }
   }
@@ -416,22 +420,69 @@ export struct TokenItem {
     return [code.substring(0, midpoint), code.substring(midpoint)];
   }
 
+  /** 验证码分组的字间距（按字号推导） */
+  private codeGroupSpace(size: number): number {
+    return this.token_preference.app_appearance_token_separator === SettingTokenSeparator.SPACE ?
+    size * 0.33 : Math.min(4, size * 0.13);
+  }
+
+  /** 当前验证码颜色：临近过期时高亮 */
+  private currentCodeColor(): ResourceColor {
+    if (this.TokenLeftPeriod <= this.token_color_change_threshold &&
+      this.Config.TokenType !== otpType.HOTP && this.Config.TokenType !== otpType.NFC_external) {
+      return this.token_color_expiring;
+    }
+    return this.token_color_normal;
+  }
+
+  /**
+   * 当前验证码。
+   *
+   * **必须是无参 @Builder**：ArkUI 中 @Builder 按值传参时，参数来源的状态变化
+   * 不会刷新 Builder 内的 UI（只有 Builder 体内直接读取的状态变量才会被追踪）。
+   * 此前写作 `GroupedTokenCode(this.TokenNumber, size, weight, color)`，
+   * 导致倒计时（直接读 @Local TokenLeftPeriod）正常刷新、验证码文本却停在首帧值。
+   */
   @Builder
-  GroupedTokenCode(code: string, size: number, weight: number, color: ResourceColor) {
-    Row({ space: this.token_preference.app_appearance_token_separator === SettingTokenSeparator.SPACE ?
-      size * 0.33 : Math.min(4, size * 0.13) }) {
-      ForEach(this.tokenCodeGroups(code), (group: string, index: number) => {
+  CurrentTokenCode() {
+    Row({ space: this.codeGroupSpace(this.token_preference.app_appearance_token_font_size) }) {
+      ForEach(this.tokenCodeGroups(this.TokenNumber), (group: string, index: number) => {
         if (index > 0 && this.token_preference.app_appearance_token_separator === SettingTokenSeparator.DOT) {
-          Circle({ width: Math.min(4, size * 0.2), height: Math.min(4, size * 0.2) })
-            .fill(color)
+          Circle({
+            width: Math.min(4, this.token_preference.app_appearance_token_font_size * 0.2),
+            height: Math.min(4, this.token_preference.app_appearance_token_font_size * 0.2)
+          })
+            .fill(this.currentCodeColor())
         }
         Text(group)
           .textAlign(TextAlign.End)
           .textOverflow({ overflow: TextOverflow.MARQUEE })
           .maxLines(1)
-          .fontColor(color)
-          .fontSize(size)
-          .fontWeight(weight)
+          .fontColor(this.currentCodeColor())
+          .fontSize(this.token_preference.app_appearance_token_font_size)
+          .fontWeight(this.token_preference.app_appearance_token_font_weight)
+          .fontFamily(AppFonts.CODE_FONT)
+      }, (group: string, index: number) => `${index}:${group}`)
+    }
+    .alignItems(VerticalAlign.Center)
+  }
+
+  /** 下一个验证码（次要样式；同样无参，直接读 this.TokenNumberNext） */
+  @Builder
+  NextTokenCode() {
+    Row({ space: this.codeGroupSpace(10) }) {
+      ForEach(this.tokenCodeGroups(this.TokenNumberNext), (group: string, index: number) => {
+        if (index > 0 && this.token_preference.app_appearance_token_separator === SettingTokenSeparator.DOT) {
+          Circle({ width: 2, height: 2 })
+            .fill($r('app.color.str_gray'))
+        }
+        Text(group)
+          .textAlign(TextAlign.End)
+          .textOverflow({ overflow: TextOverflow.MARQUEE })
+          .maxLines(1)
+          .fontColor($r('app.color.str_gray'))
+          .fontSize(10)
+          .fontWeight(400)
           .fontFamily(AppFonts.CODE_FONT)
       }, (group: string, index: number) => `${index}:${group}`)
     }
@@ -447,12 +498,7 @@ export struct TokenItem {
         Row({ space: 4 }) {
           Column() {
             Row() {
-              this.GroupedTokenCode(this.TokenNumber,
-                this.token_preference.app_appearance_token_font_size,
-                this.token_preference.app_appearance_token_font_weight,
-                this.TokenLeftPeriod <= this.token_color_change_threshold && this.Config.TokenType !== otpType.HOTP &&
-                  this.Config.TokenType !== otpType.NFC_external ?
-                  this.token_color_expiring : this.token_color_normal)
+              this.CurrentTokenCode()
             }
               .onAreaChange((_oldValue: Area, newValue: Area) => {
                 const width = Number(newValue.width);
@@ -491,12 +537,12 @@ export struct TokenItem {
                   .fontColor($r('app.color.str_gray'))
                   .fontSize(10)
                 if (this.token_preference.app_appearance_show_next_token_enable) {
-                  this.GroupedTokenCode(this.TokenNumberNext, 10, 400, $r('app.color.str_gray'))
+                  this.NextTokenCode()
                 }
               }
             } else if (this.Config.TokenType !== otpType.NFC_external &&
               this.token_preference.app_appearance_show_next_token_enable) {
-              this.GroupedTokenCode(this.TokenNumberNext, 10, 400, $r('app.color.str_gray'))
+              this.NextTokenCode()
             }
           }
           .opacity(this.tokenCodeOpacity)
@@ -723,7 +769,9 @@ export struct TokenItem {
         .width('100%')
         if (this.Config.TokenType !== otpType.NFC_external) {
           Row({ space: 12 }) {
-            this.TokenPreviewMetadata($r('app.string.dialog_cfg_tk_digits'), this.Config.TokenDigits.toString())
+            // Steam 令牌内部用 TokenDigits=10 保留完整截断值，展示时按实际位数显示 5
+            this.TokenPreviewMetadata($r('app.string.dialog_cfg_tk_digits'),
+              this.Config.TokenType === otpType.Steam ? '5' : this.Config.TokenDigits.toString())
             this.TokenPreviewMetadata(
               this.Config.TokenType === otpType.HOTP ?
                 $r('app.string.dialog_cfg_tk_counter') : $r('app.string.dialog_cfg_tk_timeout'),
@@ -873,6 +921,34 @@ export struct TokenItem {
             });
           })
           .accessibilityText($r('app.string.token_right_menu_edit'))
+      }
+      if (this.Config.TokenType === otpType.Steam && canUseSteamAccountFeatures(this.Config)) {
+        // Steam 账号能力（需要登录/迁移时写入的 refresh_token + identity_secret）
+        MenuItem({ symbolStartIcon: this.menu_icon_qrcode_scan, content: $r('app.string.steam_menu_qr_login') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              steamApproveQrLogin(this.Config);
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_qr_login'))
+        MenuItem({ symbolStartIcon: this.menu_icon_copy, content: $r('app.string.steam_menu_confirmations') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              this.appCtx.eventHub?.emit(EVENT_NAMES.OPEN_STEAM_CONFIRMATIONS, this.Config);
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_confirmations'))
+      }
+      if (this.Config.TokenType === otpType.Steam && canRevokeSteamAuthenticator(this.Config)) {
+        MenuItem({ symbolStartIcon: this.menu_icon_slash, content: $r('app.string.steam_menu_revoke') })
+          .onClick(() => {
+            this.requestContextMenuAction(() => {
+              steamConfirmRevoke(this.getUIContext(), this.Config, () => {
+                tkStore.deleteToken(this.Config.TokenUUID);
+              });
+            });
+          })
+          .accessibilityText($r('app.string.steam_menu_revoke'))
       }
       MenuItem({ symbolStartIcon: this.menu_icon_trash, content: $r('app.string.token_right_menu_delete') })
         .onClick(() => {

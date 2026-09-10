@@ -9,7 +9,7 @@ import { PageScaffold } from '../components/PageScaffold';
 import { AppPreference, TokenPreference, EVENT_NAMES, PREF_KEYS, SettingHiddenTokenType,
   SettingTokenProgressType, AVAILABLE_HIDDEN_TOKEN_TYPES, AVAILABLE_TOKEN_PROGRESS_TYPES,
   AVAILABLE_TOKEN_SEPARATORS } from 'common';
-import { otpType, TokenConfig } from 'common';
+import { nowUnixSeconds, otpType, TokenConfig } from 'common';
 import { systemDateTime } from '@kit.BasicServicesKit';
 import { SubItemColor } from '../components/SubItemColor';
 import { SubItemSlider } from '../components/SubItemSlider';
@@ -69,7 +69,7 @@ export struct AppearancePage {
     // 保证全局心跳缺失时兜底能稳定每 1s 广播一次。
     this.timestampIntervalId = setInterval(() => {
       if (systemDateTime.getTime() - this.lastTimestampTick > AppearancePage.HEARTBEAT_TIMEOUT_MS) {
-        const timestamp = Math.floor(systemDateTime.getTime() / 1000);
+        const timestamp = nowUnixSeconds();
         this.selfEmitting = true;
         this.context.eventHub?.emit(EVENT_NAMES.TIMESTAMP_CHANGED, timestamp, false);
         this.selfEmitting = false;

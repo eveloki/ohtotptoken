@@ -140,9 +140,72 @@ export class AssetSecretStore {
     }
   }
 
+  // ---------------------------------------------------------------------
+  // 通用别名接口：供 Steam 等多字段凭证复用同一套 ASSET 语义
+  // ---------------------------------------------------------------------
+
+  /** 写入/更新任意别名（别名长度需 ≤ 256 字节，ASSET 限制） */
+  async upsertNamedSecret(alias: string, secret: string): Promise<boolean> {
+    if (!this.isSecretSizeValid(secret)) {
+      hilog.warn(DOMAIN, TAG, `upsertNamedSecret: size exceeds limit for ${alias}`);
+      return false;
+    }
+    const attr: asset.AssetMap = new Map();
+    attr.set(asset.Tag.SECRET, stringToUint8Array(secret));
+    attr.set(asset.Tag.ALIAS, stringToUint8Array(alias));
+    attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToUint8Array(ASSET_LABEL));
+    attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+    attr.set(asset.Tag.SYNC_TYPE, asset.SyncType.TRUSTED_DEVICE);
+    attr.set(asset.Tag.CONFLICT_RESOLUTION, asset.ConflictResolution.OVERWRITE);
+    try {
+      await asset.add(attr);
+      return true;
+    } catch (e) {
+      const err = e as BusinessError;
+      hilog.error(DOMAIN, TAG, `upsertNamedSecret: failed for ${alias}, code=${err.code}, msg=${err.message}`);
+      return false;
+    }
+  }
+
+  /** 查询任意别名；未找到返回 null */
+  async queryNamedSecret(alias: string): Promise<string | null> {
+    const query: asset.AssetMap = new Map();
+    query.set(asset.Tag.ALIAS, stringToUint8Array(alias));
+    query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);
+    try {
+      const results: Array<asset.AssetMap> = await asset.query(query);
+      if (results.length > 0) {
+        return uint8ArrayToString(results[0].get(asset.Tag.SECRET) as Uint8Array);
+      }
+      return null;
+    } catch (e) {
+      const err = e as BusinessError;
+      if (err.code === ASSET_NOT_FOUND) {
+        // 分片探测会主动查询「下一个分片是否存在」，未找到属正常路径
+        hilog.info(DOMAIN, TAG, `queryNamedSecret: absent ${alias}`);
+      } else {
+        hilog.error(DOMAIN, TAG, `queryNamedSecret: failed for ${alias}, code=${err.code}, msg=${err.message}`);
+      }
+      return null;
+    }
+  }
+
+  /** 删除任意别名；不存在时静默忽略 */
+  async removeNamedSecret(alias: string): Promise<void> {
+    const query: asset.AssetMap = new Map();
+    query.set(asset.Tag.ALIAS, stringToUint8Array(alias));
+    try {
+      await asset.remove(query);
+    } catch (e) {
+      const err = e as BusinessError;
+      if (err.code !== ASSET_NOT_FOUND) {
+        hilog.error(DOMAIN, TAG, `removeNamedSecret: failed for ${alias}, code=${err.code}, msg=${err.message}`);
+      }
+    }
+  }
+
   /**
-   * 批量查询 ASSET 中的 Secret（逐条串行查询）.
-   *
+   * 批量查询 ASSET 中的 Secret（逐条串行查询）.   *
    * 【限制说明】ASSET 按标签批量查询（DATA_LABEL_NORMAL_1 + RETURN_TYPE=ALL）
    * 会返回错误码 24000017 "该子功能不支持"，即 ASSET API 虽然支持批量查询属性
    * （RETURN_TYPE=ATTRIBUTES），但不支持批量查询关键资产明文（SECRET）。

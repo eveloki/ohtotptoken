@@ -36,14 +36,25 @@ function genSymKeyByData(symKeyData: Uint8Array) {
   return symKey;
 }
 
-function doHmacBySync(steps: number, algorithm: HMACAlgorithm, message: string): Uint8Array {
+/**
+ * HOTP 计数器 → 8 字节大端。
+ *
+ * 旧实现用 `tmp >> 8`（有符号 32 位右移），counter > 2^31 时高位变成 0xFF，
+ * 与卡片端 `setUint32` 截断低 32 位得到的结果各不相同，且都不符合 RFC 4226。
+ */
+export function counterToBytes64(counter: number): Uint8Array {
   const byteLen = 8;
-  let byteArray = new Uint8Array(byteLen);
-  let tmp = steps; // wired TS feature
-  for (let i = 0; i < byteLen; i++) {
-    byteArray[byteLen - i-1] = tmp & 0xff;
-    tmp = tmp >> 8;
+  const byteArray = new Uint8Array(byteLen);
+  let value: bigint = BigInt(Math.floor(counter)) & 0xffffffffffffffffn;
+  for (let i = byteLen - 1; i >= 0; i--) {
+    byteArray[i] = Number(value & 0xffn);
+    value = value >> 8n;
   }
+  return byteArray;
+}
+
+function doHmacBySync(steps: number, algorithm: HMACAlgorithm, message: string): Uint8Array {
+  let byteArray = counterToBytes64(steps);
   let key = genSymKeyByData(base32Decode(message));
   let mac = cryptoFramework.createMac(algorithm);
   mac.initSync(key);
@@ -121,13 +132,6 @@ export function stringToIntArray(input: string): Uint8Array {
   // 原写法会导致数据中有中文（或其他由多字节编码的字符）时，截断
   // return Uint8Array.from(input, c => c.charCodeAt(0))
   return new Uint8Array(buffer.from(input).buffer)
-}
-/**
- * 字符串转字符数组
- *
- */
-export function stringToArray(input: string): Uint8Array {
-  return new Uint8Array(buffer.from(input, 'utf-8').buffer);
 }
 
 export function base32Encode(
@@ -213,7 +217,19 @@ export function base32Decode(input: string, variant: Base32Variant = 'RFC4648'):
       throw new Error(`Unknown base32 variant: ${variant as string}`);
   }
 
-  const length = cleanedInput.length;
+  // 与卡片端 CardOTPUtils.base32Decode 保持一致：
+  // 容忍粘贴带入的空格/连字符，并跳过不在字母表内的字符。
+  // 此前对非法字符直接抛错，导致 generateOTP 返回 0、界面显示 000000，
+  // 而同一 secret 在桌面卡片上却能出码（两端行为不一致）。
+  let filtered = '';
+  for (let i = 0; i < cleanedInput.length; i++) {
+    const ch = cleanedInput.charAt(i);
+    if (ch !== ' ' && ch !== '-' && alphabet.indexOf(ch) >= 0) {
+      filtered += ch;
+    }
+  }
+
+  const length = filtered.length;
 
   let bits = 0;
   let value = 0;
@@ -222,7 +238,7 @@ export function base32Decode(input: string, variant: Base32Variant = 'RFC4648'):
   const output = new Uint8Array(((length * 5) / 8) | 0);
 
   for (let i = 0; i < length; i++) {
-    value = (value << 5) | readChar(alphabet, cleanedInput[i]!);
+    value = (value << 5) | readChar(alphabet, filtered[i]!);
     bits += 5;
 
     if (bits >= 8) {

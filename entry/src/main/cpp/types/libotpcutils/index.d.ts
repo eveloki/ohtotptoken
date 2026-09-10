@@ -1,1 +1,0 @@
-export const decode_google_auth_pb: (b64str: string) => string;

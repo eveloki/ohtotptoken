@@ -8,8 +8,12 @@ import {
   SnackBarOperationType,
   SnackBarStyleOptions
 } from '@kit.UIDesignKit';
-import { AppWindowInfo, SnackBarNotifyType, SnackBarNotifyOptions, setSnackBarImpl } from 'common';
+import { AppWindowInfo, dialogSystemMaterial, SnackBarNotifyType, SnackBarNotifyOptions,
+  setSnackBarImpl } from 'common';
 import { common, ConfigurationConstant } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const TAG = 'HdsSnackBar';
 
 const SnackBarIconMap: Record<SnackBarNotifyType, ResourceStr | undefined> = {
   [SnackBarNotifyType.INFO]: $r('sys.symbol.info_circle'),
@@ -52,6 +56,7 @@ function showHdsSnackBar(
   const uiContext = getUiContext();
   const abilityContext = getUiAbilityContext();
   if (!uiContext) {
+    hilog.warn(0, TAG, 'uiContext 未就绪，提示被丢弃');
     return;
   }
 
@@ -82,7 +87,22 @@ function showHdsSnackBar(
     ? { duration: options.duration }
     : undefined;
 
-  snackBar.show(iconOptions, messageOptions, operationOptions, styleOptions);
+  try {
+    snackBar.show(iconOptions, messageOptions, operationOptions, styleOptions);
+  } catch (error) {
+    // 系统扫码页返回等窗口切换瞬间，HdsSnackBar 可能拒绝展示：
+    // 退回系统 toast，保证「成功/失败」提示一定送达
+    hilog.error(0, TAG, `hds show failed, fallback to toast: ${error}`);
+    try {
+      uiContext.getPromptAction().showToast({
+        systemMaterial: dialogSystemMaterial(),
+        message,
+        duration: options.duration ?? 2000
+      });
+    } catch (fallbackError) {
+      hilog.error(0, TAG, `fallback toast failed: ${fallbackError}`);
+    }
+  }
 }
 
 /**

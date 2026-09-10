@@ -23,6 +23,7 @@ import lazy { AddTotpTokenPage } from '../pages/AddTotpTokenPage';
 import lazy { AddFortiTokenPage } from '../pages/AddFortiTokenPage';
 import lazy { AddSteamTokenPage } from '../pages/AddSteamTokenPage';
 import lazy { IconPickerPage, IconPickerPageParams } from '../pages/IconPickerPage';
+import lazy { SteamConfirmationsPage, SteamConfirmationsPageParams } from '../pages/SteamConfirmationsPage';
 import lazy { SheetCoordinator } from './SheetCoordinator';
 import { AddTokenPageParams } from '../components/AddTokenForm';
 import { TokenConfig } from 'common';
@@ -232,7 +233,9 @@ export struct AppShell {
     } else if (name === ROUTE_NAMES.ShowCodePage) {
       ShowCodePage()
     } else if (name === ROUTE_NAMES.WebPage) {
-      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams })
+      // 路由栈里的网页是全屏页面（如「去 Steam 绑定手机号」），需自行避让安全区；
+      // 设置里的半模态网页走各自的 navDestinationBuilder，不传 fullScreen
+      WebPage({ scrollEffectType: this.scrollEffectType, pageParams: param as WebPageParams, fullScreen: true })
     } else if (name === ROUTE_NAMES.TokenCardConfigPage) {
       TokenCardConfigPage({ scrollEffectType: this.scrollEffectType })
 
@@ -281,6 +284,11 @@ export struct AppShell {
       })
     } else if (name === ROUTE_NAMES.WatchSyncPage) {
       WatchSyncPage({ scrollEffectType: this.scrollEffectType })
+    } else if (name === ROUTE_NAMES.SteamConfirmationsPage) {
+      SteamConfirmationsPage({
+        scrollEffectType: this.scrollEffectType,
+        pageParams: param as SteamConfirmationsPageParams
+      })
     } else if (name === ROUTE_NAMES.BleWatchSyncPage) {
       BleWatchSyncPage({ scrollEffectType: this.scrollEffectType })
     } else if (name.startsWith('setting/')) {

@@ -174,6 +174,314 @@
       "value": "透過二維碼、maFile 或手動輸入匯入 Steam Guard 帳戶。"
     },
     {
+      "name": "google_auth_migration_invalid",
+      "value": "無法解析此 Google Authenticator 二維碼"
+    },
+    {
+      "name": "google_auth_migration_empty",
+      "value": "二維碼中沒有可匯入的權杖"
+    },
+    {
+      "name": "google_auth_migration_batch",
+      "value": "已掃描第 %d/%d 張二維碼，請繼續掃描"
+    },
+    {
+      "name": "steam_login_entry",
+      "value": "登入 Steam 遷移權杖"
+    },
+    {
+      "name": "steam_login_section",
+      "value": "登入 Steam"
+    },
+    {
+      "name": "steam_login_intro",
+      "value": "登入後可將既有的 Steam 權杖遷移到本機。"
+    },
+    {
+      "name": "steam_login_account",
+      "value": "Steam 帳戶名稱"
+    },
+    {
+      "name": "steam_login_password",
+      "value": "密碼"
+    },
+    {
+      "name": "steam_login_password_hint",
+      "value": "密碼會使用 Steam 公開金鑰加密後傳送，不會保存在本機。"
+    },
+    {
+      "name": "steam_login_action",
+      "value": "登入"
+    },
+    {
+      "name": "steam_mfa_section",
+      "value": "兩步驟驗證"
+    },
+    {
+      "name": "steam_mfa_device_code_hint",
+      "value": "請輸入目前 Steam 權杖中的驗證碼。"
+    },
+    {
+      "name": "steam_mfa_email_code_hint",
+      "value": "請輸入寄送到電子郵件的驗證碼。"
+    },
+    {
+      "name": "steam_mfa_code",
+      "value": "驗證碼"
+    },
+    {
+      "name": "steam_mfa_submit",
+      "value": "驗證"
+    },
+    {
+      "name": "steam_mfa_wait_hint",
+      "value": "請在其他裝置或電子郵件中確認本次登入，並保持本頁面開啟。"
+    },
+    {
+      "name": "steam_link_section",
+      "value": "新增驗證器"
+    },
+    {
+      "name": "steam_link_hint",
+      "value": "如果該帳戶已綁定驗證器，將會改為遷移流程。"
+    },
+    {
+      "name": "steam_link_action",
+      "value": "新增 / 遷移"
+    },
+    {
+      "name": "steam_transfer_section",
+      "value": "遷移既有驗證器"
+    },
+    {
+      "name": "steam_transfer_warning",
+      "value": "遷移會取代其他裝置（例如 Steam 官方 App）上的驗證器，該裝置將不再產生有效的驗證碼。"
+    },
+    {
+      "name": "steam_transfer_phone_hint",
+      "value": "該 Steam 帳戶必須已綁定並驗證手機號碼，才能接收簡訊驗證碼。"
+    },
+    {
+      "name": "steam_bind_phone_action",
+      "value": "前往 Steam 綁定手機號碼"
+    },
+    {
+      "name": "steam_bind_phone_page_title",
+      "value": "Steam 帳號"
+    },
+    {
+      "name": "steam_transfer_action",
+      "value": "確認遷移"
+    },
+    {
+      "name": "steam_activation_section",
+      "value": "完成新增"
+    },
+    {
+      "name": "steam_activation_sms_hint",
+      "value": "請輸入 Steam 傳送到手機的簡訊驗證碼。"
+    },
+    {
+      "name": "steam_activation_email_hint",
+      "value": "請輸入 Steam 傳送到電子郵件的驗證碼。"
+    },
+    {
+      "name": "steam_activation_code",
+      "value": "驗證碼"
+    },
+    {
+      "name": "steam_activation_submit",
+      "value": "完成"
+    },
+    {
+      "name": "steam_transfer_sms_section",
+      "value": "確認遷移"
+    },
+    {
+      "name": "steam_transfer_sms_hint",
+      "value": "請輸入 Steam 傳送到手機的簡訊驗證碼。"
+    },
+    {
+      "name": "steam_transfer_sms_submit",
+      "value": "完成遷移"
+    },
+    {
+      "name": "steam_done_section",
+      "value": "完成"
+    },
+    {
+      "name": "steam_menu_qr_login",
+      "value": "Steam 掃碼登入"
+    },
+    {
+      "name": "steam_menu_confirmations",
+      "value": "交易確認"
+    },
+    {
+      "name": "steam_menu_revoke",
+      "value": "撤銷 Steam 驗證器"
+    },
+    {
+      "name": "steam_confirmations_title",
+      "value": "交易確認"
+    },
+    {
+      "name": "steam_confirmations_empty",
+      "value": "目前沒有待處理的確認。"
+    },
+    {
+      "name": "steam_confirmations_loading",
+      "value": "正在載入…"
+    },
+    {
+      "name": "steam_confirmations_approve",
+      "value": "批准"
+    },
+    {
+      "name": "steam_confirmations_deny",
+      "value": "拒絕"
+    },
+    {
+      "name": "steam_confirmations_refresh",
+      "value": "重新整理"
+    },
+    {
+      "name": "steam_confirmations_done",
+      "value": "已提交"
+    },
+    {
+      "name": "steam_qr_invalid",
+      "value": "這不是有效的 Steam 登入二維碼。"
+    },
+    {
+      "name": "steam_qr_success",
+      "value": "已批准登入。"
+    },
+    {
+      "name": "steam_qr_confirming",
+      "value": "正在確認登入…"
+    },
+    {
+      "name": "steam_revoke_confirm_title",
+      "value": "確定要撤銷驗證器？"
+    },
+    {
+      "name": "steam_revoke_confirm_message",
+      "value": "撤銷後該帳戶將不再綁定此驗證器，需要重新新增。"
+    },
+    {
+      "name": "steam_revoke_success",
+      "value": "已撤銷驗證器。"
+    },
+    {
+      "name": "steam_error_no_credentials",
+      "value": "此權杖沒有 Steam 登入資料，請先透過 maFile 匯入或登入取得。"
+    },
+    {
+      "name": "steam_status_logging_in",
+      "value": "正在登入 Steam…"
+    },
+    {
+      "name": "steam_status_verifying",
+      "value": "正在驗證…"
+    },
+    {
+      "name": "steam_status_wait_confirm",
+      "value": "已送出確認要求，請在其他裝置或電子郵件中完成確認…"
+    },
+    {
+      "name": "steam_status_adding",
+      "value": "正在向 Steam 新增驗證器…"
+    },
+    {
+      "name": "steam_status_transfer_request",
+      "value": "正在要求遷移，簡訊驗證碼即將送出…"
+    },
+    {
+      "name": "steam_status_finalizing",
+      "value": "正在完成新增…"
+    },
+    {
+      "name": "steam_status_transferring",
+      "value": "正在遷移驗證器…"
+    },
+    {
+      "name": "steam_status_success",
+      "value": "已成功取得 Steam 權杖"
+    },
+    {
+      "name": "steam_err_bad_credentials",
+      "value": "帳號或密碼錯誤"
+    },
+    {
+      "name": "steam_err_twofactor_disabled",
+      "value": "該帳號未啟用兩步驟驗證，無法新增驗證器"
+    },
+    {
+      "name": "steam_err_session_expired",
+      "value": "工作階段已失效，請重新登入"
+    },
+    {
+      "name": "steam_err_transfer_phone",
+      "value": "遷移需要 Steam 向帳號綁定的手機號碼傳送簡訊驗證碼，該帳號很可能未綁定手機號碼。請先在 Steam 綁定並驗證手機號碼，再回到此處重試。"
+    },
+    {
+      "name": "steam_err_finalize_incomplete",
+      "value": "新增未完成，請重新點選「完成」"
+    },
+    {
+      "name": "steam_err_transfer_code",
+      "value": "遷移失敗，請檢查簡訊驗證碼"
+    },
+    {
+      "name": "steam_err_no_secret",
+      "value": "未能解析出權杖密鑰，請重試"
+    },
+    {
+      "name": "steam_confirmations_retry",
+      "value": "重試"
+    },
+    {
+      "name": "steam_confirmations_slow",
+      "value": "網路較慢，仍在連線 Steam…"
+    },
+    {
+      "name": "steam_account_section",
+      "value": "Steam 帳戶"
+    },
+    {
+      "name": "steam_account_steamid",
+      "value": "SteamID"
+    },
+    {
+      "name": "steam_account_confirm_cap",
+      "value": "交易確認 / 掃碼登入"
+    },
+    {
+      "name": "steam_account_revoke_cap",
+      "value": "撤銷驗證器"
+    },
+    {
+      "name": "steam_status_available",
+      "value": "可用"
+    },
+    {
+      "name": "steam_status_unavailable",
+      "value": "需要重新登入"
+    },
+    {
+      "name": "steam_account_incomplete_hint",
+      "value": "此權杖缺少登入憑證（可能來自 maFile 匯入或雲端備份還原），重新登入並遷移後即可啟用交易確認與撤銷。"
+    },
+    {
+      "name": "steam_action_relogin",
+      "value": "重新登入 Steam（更換密鑰）"
+    },
+    {
+      "name": "steam_relogin_warning",
+      "value": "重新登入會再次遷移驗證器並更換密鑰，舊密鑰將失效。"
+    },
+    {
       "name": "add_forti_regenerate_device_id",
       "value": "產生新的裝置 ID"
     },

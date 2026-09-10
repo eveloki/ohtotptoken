@@ -23,12 +23,34 @@ function source(file) {
     .replace(/enum (\w+)\s*\{([^}]+)\}/g, lowerNumericEnum));
 }
 const code = [
+  'common/src/main/ets/utils/SteamAuth.ets',
   'common/src/main/ets/utils/TokenConfig.ets',
   'common/src/main/ets/utils/TokenBatchProgress.ets',
   'common/src/main/ets/utils/KvManager.ets',
   'common/src/main/ets/utils/TokenStore.ets',
   'common/src/main/ets/utils/OtpAuthParser.ets'
-].map(source).join('\n') + '\n({ KvManager, TokenStore, TokenConfig, TokenConfigVM, copyTokenConfig, otpType, parseOtpAuthUris, TokenBatchStage });';
+].map(source).join('\n') + `
+// SteamSecretStore 依赖 ASSET（@kit.AssetStoreKit），本 harness 不加载该边界，用桩替代。
+// TokenStore 仅对带 SteamAuth 的令牌调用它；本文件用到的令牌都没有 SteamAuth。
+class SteamSecretStore {
+  static getInstance() {
+    if (!SteamSecretStore.instance) SteamSecretStore.instance = new SteamSecretStore();
+    return SteamSecretStore.instance;
+  }
+  async save() {}
+  async load() {}
+  async remove() {}
+}
+// maFile 定义在 SteamUtils.ets（依赖 @kit.NetworkKit），此处只按字段形状补一个桩
+class maFile {
+  constructor() {
+    this.shared_secret = ''; this.serial_number = ''; this.revocation_code = '';
+    this.uri = ''; this.server_time = 0; this.account_name = ''; this.token_gid = '';
+    this.identity_secret = ''; this.secret_1 = ''; this.status = 0; this.device_id = '';
+    this.fully_enrolled = false; this.Session = null;
+  }
+}
+` + '\n({ KvManager, TokenStore, TokenConfig, TokenConfigVM, copyTokenConfig, otpType, parseOtpAuthUris, TokenBatchStage, SteamAuth });';
 const plain = value => JSON.parse(JSON.stringify(value));
 const prefix = '_token_uuid_';
 
@@ -535,4 +557,60 @@ test('rank changes are queued/atomic and maintain order on persistence failure',
   f.fail('commit');
   await assert.rejects(f.store.updateTokenRank(4, 0));
   assert.deepEqual(plain(await f.store.getTokens()), before);
+});
+
+test('steam high-privilege credentials are stripped from KV while TokenSecret is kept', async () => {
+  const f = await fixture(0);
+  const token = f.make('steam-1');
+  token.TokenType = f.otpType.Steam;
+  const auth = new f.SteamAuth();
+  auth.accountName = 'steamuser';
+  auth.steamid = '76561198000000000';
+  auth.deviceId = 'android:11111111-2222-3333-4444-555555555555';
+  auth.tokenGid = 'gid-1';
+  auth.identitySecret = 'identity-secret';
+  auth.revocationCode = 'revoke-code';
+  auth.refreshToken = 'refresh-token';
+  token.SteamAuth = auth;
+
+  await f.store.updateToken(token);
+  const [persisted] = f.persisted();
+
+  // 动态码密钥必须保留：手表显示与云备份恢复都依赖它
+  assert.equal(persisted.TokenSecret, 'JBSWY3DPEHPK3PXP');
+  assert.equal(persisted.TokenType, f.otpType.Steam);
+  // 高权限凭证不得进入加密 KV（KV 会被手表同步与云备份原样序列化）
+  assert.equal(persisted.SteamAuth.identitySecret, '');
+  assert.equal(persisted.SteamAuth.revocationCode, '');
+  assert.equal(persisted.SteamAuth.refreshToken, '');
+  // 非敏感元数据照常持久化
+  assert.equal(persisted.SteamAuth.steamid, '76561198000000000');
+  assert.equal(persisted.SteamAuth.deviceId, 'android:11111111-2222-3333-4444-555555555555');
+  assert.equal(persisted.SteamAuth.accountName, 'steamuser');
+
+  // 内存中的对象仍持有明文，供本机交易确认/撤销使用
+  const inMemory = await f.store.getTokens();
+  assert.equal(inMemory[0].SteamAuth.refreshToken, 'refresh-token');
+  assert.equal(inMemory[0].SteamAuth.identitySecret, 'identity-secret');
+});
+
+test('legacy mafile secrets are stripped from KV too', async () => {
+  const f = await fixture(0);
+  const token = f.make('steam-legacy');
+  token.TokenType = f.otpType.Steam;
+  const file = {
+    shared_secret: 'JBSWY3DPEHPK3PXP', serial_number: '1', revocation_code: 'R1',
+    uri: 'otpauth://totp/Steam:u?secret=JBSWY3DPEHPK3PXP&issuer=Steam', server_time: 1,
+    account_name: 'u', token_gid: 'g', identity_secret: 'identity-secret', secret_1: 's1',
+    status: 2, device_id: 'android:dev', fully_enrolled: true, Session: null
+  };
+  token.SteamMaFile = file;
+
+  await f.store.updateToken(token);
+  const [persisted] = f.persisted();
+  assert.equal(persisted.SteamMaFile.shared_secret, '');
+  assert.equal(persisted.SteamMaFile.identity_secret, '');
+  assert.equal(persisted.SteamMaFile.revocation_code, '');
+  assert.equal(persisted.SteamMaFile.secret_1, '');
+  assert.equal(persisted.SteamMaFile.account_name, 'u');
 });

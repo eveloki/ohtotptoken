@@ -3,7 +3,7 @@ import { abilityAccessCtrl, bundleManager, common, Permissions, PermissionReques
 import { BusinessError } from '@kit.BasicServicesKit';
 import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TokenConfig } from './TokenConfig';
+import { TokenConfig, sanitizedTokenForTransfer } from './TokenConfig';
 import { TokenStore } from './TokenStore';
 import { AppPreference, PREF_KEYS, SettingValue } from './AppPreference';
 import { PermissionManager } from './PermissionManager';
@@ -332,7 +332,11 @@ export class WearEngineClient {
    */
   public async sendTokens(randomId: string, tokens: TokenConfig[]): Promise<void> {
     const encoder = new util.TextEncoder();
-    await this.sendPayload(randomId, encoder.encodeInto(JSON.stringify(tokens)), tokens.length, MSG_TYPE_TOKENS);
+    // 与 BLE 通道一致：剥离 Steam 高权限凭证与 mafile 密钥，只下发可显示动态码所需字段
+    const sanitized: TokenConfig[] = tokens.map((token: TokenConfig): TokenConfig =>
+      sanitizedTokenForTransfer(token));
+    await this.sendPayload(randomId, encoder.encodeInto(JSON.stringify(sanitized)), sanitized.length,
+      MSG_TYPE_TOKENS);
   }
 
   /** 同步设置到手表(WEAR_SYNC_PREF_KEYS 白名单) */
