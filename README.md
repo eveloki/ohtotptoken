@@ -28,17 +28,25 @@ Open source OTP Authenticator for HarmonyOS NEXT.
 ---
 <b>Phone</b>
 <p float="left">
-  <img height="400px" alt="phone1" src="./screenshot/phone1.jpg" />
-  <img height="400px" alt="phone2" src="./screenshot/phone2.png" />
-  <img height="400px" alt="phone3" src="./screenshot/phone3.jpg" />
-  <img height="400px" alt="phone4" src="./screenshot/phone4.jpg" />
+  <img height="400px" alt="Token list" src="./screenshot/phone1.png" />
+  <img height="400px" alt="Add Steam token" src="./screenshot/phone2.png" />
+  <img height="400px" alt="Steam actions" src="./screenshot/phone3.png" />
+  <img height="400px" alt="Steam account status" src="./screenshot/phone4.png" />
+  <img height="400px" alt="Steam login" src="./screenshot/phone5.png" />
+  <img height="400px" alt="Settings" src="./screenshot/phone6.png" />
+</p>
+<b>Watch</b>
+<p float="left">
+  <img height="220px" alt="Watch token list" src="./screenshot/watch1.png" />
+  <img height="220px" alt="Watch codes" src="./screenshot/watch2.png" />
+  <img height="220px" alt="Watch codes near refresh" src="./screenshot/watch3.png" />
 </p>
 <b>PC</b>
 <p float="left">
-  <img height="300px" alt="pc1" src="./screenshot/pc1.jpg" />
-  <img height="300px" alt="pc2" src="./screenshot/pc2.jpg" />
-  <img height="300px" alt="pc3" src="./screenshot/pc3.png" />
-  <img height="300px" alt="pc4" src="./screenshot/pc4.png" />
+  <img height="300px" alt="Token list" src="./screenshot/pc1.png" />
+  <img height="300px" alt="Edit token" src="./screenshot/pc2.png" />
+  <img height="300px" alt="Steam token" src="./screenshot/pc3.png" />
+  <img height="300px" alt="Security settings" src="./screenshot/pc4.png" />
 </p>
 
 ---
