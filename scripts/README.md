@@ -6,15 +6,38 @@
 npm run check          # 字符串资源 + Steam 字段号 + 全部 node 回归（离线，无需设备）
 npm test               # 仅 node --test "scripts/*.test.mjs"
 npm run check:strings  # 字符串资源完整性
-npm run check:fields   # Steam 字段号三方交叉校验
+npm run check:fields   # Steam 字段号交叉校验（仓库内快照，干净 clone 可跑）
 npm run probe:steam    # 真实服务端编码探针（需网络）
 npm run golden:steam   # 重新生成 Steam 黄金向量（需 protobufjs）
 ```
+
+以上命令不需要 HarmonyOS SDK、不需要 `npm install`（仅用 node 内置模块），
+已接入 CI 的 `Node offline checks` 作业。
 
 ArkTS 侧单测/门禁仍走 DevEco：
 
 ```sh
 hvigorw test -p module=entry@default --no-daemon
+```
+
+## Steam 字段号交叉校验
+
+```sh
+node scripts/verify-steam-field-numbers.mjs
+```
+
+校验对象是本仓库 ArkTS 手写实现（`entry/src/main/ets/steam/proto/SteamMessages.ets`），
+参考来源是**仓库内快照** `scripts/reference/steam-field-numbers.json`
+（由官方 `.proto` + protobufjs 生成代码抽取的「字段号 + wireType」集合），
+因此干净 clone 上也能运行。
+
+可选增强：把 `STEAM_PROTO_REF` 指向参考工程的 `steamapi` 目录
+（默认 `.ai/Authenticator-main/entry/src/main/ets/pages/steamapi`），
+脚本会额外校验快照是否与上游一致（防止 `.proto` 更新后快照过期）：
+
+```sh
+STEAM_PROTO_REF=/path/to/steamapi node scripts/verify-steam-field-numbers.mjs
+node scripts/generate-steam-field-manifest.mjs   # 需要参考工程，重新生成快照
 ```
 
 ## 批量令牌操作回归
@@ -44,14 +67,6 @@ node scripts/steam-golden-vectors.mjs
 用独立实现（protobufjs + node:crypto）产出 Steam 消息字节、HMAC 签名、Steam 动态码与 RSA 密文的期望值，用于交叉验证 `entry/src/main/ets/steam/` 下的 ArkTS 手写实现。输出需要手工同步到 `entry/src/test/SteamMessages.test.ets`、`SteamCrypto.test.ets`、`SteamClient.test.ets` 的常量中；RSA 每次运行都会重新生成密钥对，必须成对更新。
 
 实现结构与协议说明见 [docs/STEAM_AUTHENTICATOR.md](../docs/STEAM_AUTHENTICATOR.md)。
-
-## Steam 字段号交叉校验
-
-```sh
-node scripts/verify-steam-field-numbers.mjs
-```
-
-只读脚本，比对三方：官方 `.proto`（权威）、参考工程生成的 protobufjs 代码（独立第二来源）、以及本仓库 `entry/src/main/ets/steam/proto/SteamMessages.ets` 手写实现（被校验对象）。比较「字段号 + wireType」集合，任一不一致即退出码 1。无需安装任何依赖。
 
 ## 字符串资源完整性校验
 

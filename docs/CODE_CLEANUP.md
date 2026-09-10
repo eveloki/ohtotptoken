@@ -90,8 +90,22 @@ npm run golden:steam   # 重新生成 Steam 黄金向量（需 protobufjs）
 | 字符串资源 `npm run check:strings` | 四语言齐全（`steam_*` 74 条） |
 | Steam 字段号 `npm run check:fields` | PASS，0 处不一致 |
 | 全模块构建 `hvigorw assembleHap` | BUILD SUCCESSFUL（entry/common/uikit/wearable） |
+| 真机 ohosTest `SteamSecretStoreDeviceTest` | **3/3 通过**（KV 剥离高权限凭证 / 旧 mafile 迁移 / 云备份 CSPRNG） |
 | 真机 Google Auth 解析 `aa test ... -s class GoogleAuthUtilsTest` | **2/2 通过**（设备运行时下 ArkTS codec 正常） |
 | 真机安装 | `test.yylx.totptoken` 安装成功 |
+
+### 5.1 校验入口的可移植性
+
+依赖参考工程（`.ai/`，不进仓库）的脚本在干净 clone 上会直接失败，因此：
+
+- **参考快照固化进仓库**：`scripts/reference/steam-field-numbers.json`
+  （官方 `.proto` + protobufjs 生成代码抽取出的「字段号/wireType」集合，
+  用 `scripts/generate-steam-field-manifest.mjs` 生成，勿手改）；
+- `scripts/verify-steam-field-numbers.mjs` **默认只读快照**，干净 clone 可运行；
+  设置 `STEAM_PROTO_REF=<steamapi 目录>` 时额外校验快照是否与上游一致（防过期）；
+  负向验证：把某字段号改错（13/2）脚本会 FAIL 并指出字段，证明校验非空转；
+- **node 回归已接入 CI**：`.github/workflows/quality.yml` 新增 `Node offline checks`
+  作业（字符串资源 / 字段号 / TokenStore-KvManager 套件，无需 SDK 与 npm 依赖）。
 
 ## 6. 仍待处理（未在本次范围内）
 
