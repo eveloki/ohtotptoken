@@ -9,17 +9,17 @@
 
 ## 1. 覆盖率基准
 
-### 当前基线（2026-09-12，Phase 2 存储与密钥解耦落地后）
+### 当前基线（2026-09-12，Phase 3 备份与传输协议落地后）
 
-| 指标 | Phase 1 后（2026-09-11） | **Phase 2 后（当前）** |
+| 指标 | Phase 2 后（2026-09-12 早） | **Phase 3 后（当前）** |
 |---|---|---|
-| 全局行覆盖 | 34.61%（2271 / 6561） | **51.18%（3611 / 7056）** |
-| 全局分支覆盖 | 30.29%（422 / 1393） | **47.72%（721 / 1511）** |
-| **逻辑层行覆盖（可测基数口径）** | 50.92%（2195 / 4311） | **72.73%（3545 / 4874）** |
-| **逻辑层分支覆盖（可测基数口径）** | 43.37%（396 / 913） | **66.60%（696 / 1045）** |
+| 全局行覆盖 | 51.29%（3626 / 7070） | **54.14%（3890 / 7185）** |
+| 全局分支覆盖 | 47.98%（725 / 1511） | **51.71%（802 / 1551）** |
+| **逻辑层行覆盖（可测基数口径）** | 72.73%（3545 / 4874） | **75.10%（3800 / 5060）** |
+| **逻辑层分支覆盖（可测基数口径）** | 66.60%（696 / 1045） | **70.28%（771 / 1097）** |
 
-- 逻辑层口径冻结在 `scripts/check-coverage.mjs`（58 个文件：common 全部 + entry 的 crypto/steam/oath/utils，剔除真机 only 与 UI 胶水），数字随 `scripts/coverage-baseline.json` 入库，CI 禁止回退。Phase 2 起 `SteamSecretStore` 解耦后移出真机剔除清单（新增 StoragePorts/TokenKvBatch 使基数 55→58）。
-- 测试规模：387 条 LocalUnit 用例（Phase 1 后 252 条，新增 135 条）。
+- 逻辑层口径冻结在 `scripts/check-coverage.mjs`（59 个文件：common 全部 + entry 的 crypto/steam/oath/utils，剔除真机 only 与 UI 胶水），数字随 `scripts/coverage-baseline.json` 入库，CI 禁止回退。Phase 3 新增 `TransferProtocol.ets`（手机↔手表传输协议纯类，行 100%、分支 97.7%）使基数 58→59。
+- 测试规模：420 条 LocalUnit 用例（Phase 2 后 387 条，新增 33 条）。ohosTest 新增 4 套件 16 条真机用例（见第 4 节 Phase 3 出口记录）。
 
 ### Phase 2 高风险清单去 0%（目标全部达成）
 
@@ -36,7 +36,7 @@
 | TokenGroupStore | 55/59 | 保持（Phase 1 已测） |
 | OathApplet（快速赢面 11 号移交） | 无数据（豁免清单） | **解耦（OathCryptoPort+TagTransport 脚本化），SELECT/VALIDATE/CALCULATE ALL/61xx 分片全测，移出豁免清单** |
 
-附带解耦并覆盖：TokenCardStore（KeyValueStore 端口）、FileUtils（分块读取/哈希防重写入可测核心）、CloudSyncTask/CommonUtils 共享助手。IconPackCloudBackup（FsGateway+IconPackArchiver+设备端口）覆盖状态机互斥/备份流程/去抖/清理/状态查询/enabledPacks 合并纯函数——**恢复成功链路（解压→deletedPacks 清理→refreshIconPackState→合并应用）0 覆盖**（依赖 TokenIconPacks 磁盘加载，归 Phase 3 或真机 ohosTest）。`StoragePorts.ets` 的 FileIoFsGateway 生产适配器（0/77）有意留在分母：fileIo/cloudSync 真机行为归 ohosTest 责任区（与 Phase 3 登记表一致）。
+附带解耦并覆盖：TokenCardStore（KeyValueStore 端口）、FileUtils（分块读取/哈希防重写入可测核心）、CloudSyncTask/CommonUtils 共享助手。IconPackCloudBackup（FsGateway+IconPackArchiver+设备端口）覆盖状态机互斥/备份流程/去抖/清理/状态查询/enabledPacks 合并纯函数——**恢复成功链路（解压→deletedPacks 清理→refreshIconPackState→合并应用）已在 Phase 3 经 `IconPackRegistry` 端口补齐覆盖**（deletedPacks 清理/未知 uuid 跳过/损坏包不中断/无 meta 降级/冷启动 auto-restore 门禁与整链路）。`StoragePorts.ets` 的 FileIoFsGateway 生产适配器（0/77）有意留在分母：fileIo/cloudSync 真机行为归 ohosTest 责任区（与 Phase 3 登记表一致）。
 
 ### Phase 1 前分目录（历史存档，行覆盖 = covered/total 插桩行）
 
@@ -64,6 +64,8 @@
 - `util.TextDecoder` 静默失效的连带影响（Phase 2 实测）：OathApplet 的凭据名解码经 `OathCryptoPort.utf8Decode` 注入后才可测；纯 TS UTF-8 编解码参考 `FakeCryptoEngine.utf8Encode/utf8Decode`。
 - `DeviceInfoHelper`（@ohos.deviceInfo）在 LocalUnit 抛异常：IconPackCloudBackup 备份流程经 `IconPackDevicePort` 注入后可测。
 - `@Concurrent`（TaskPool）函数**只能引用 import 进来的标识符**，同文件的模块级函数/常量不行（ArkTS lint 28079/variablesInFunctionCheck）：共享逻辑放 CommonUtils（其文件头注释即为此约定）再 import。
+- 管理器类 `useDepsForTest` 为**整体替换语义**（Phase 3 实测）：`testDeps` 是一个对象，只传单个端口会把其余端口打回生产适配器（真机 API → LocalUnit 下失败）。局部替换时必须传完整端口集（CloudBackupManager.test 的 Flaky 用例为此踩坑）。
+- hypium `Assert` 无 `assertNotNull`（有 `assertNull`）：非空断言用 `expect(x !== null).assertTrue()`。
 - ArkTS 标称类型注意点：测试假实现 `implements` 的是哪个接口必须与注入点参数类型同族（接口继承链任一祖先即可）；跨族传参会触发 arkts-no-structural-typing 编译错误——这正是端口族（KeyValueStore ← TokenGroupKvBackend ← TokenKvStore）要设计成继承链的原因。
 - 其余已知限制见 AGENTS.md 第 10 节（cryptoFramework、generateRandomUUID、TextDecoder 等）。
 
@@ -109,7 +111,7 @@ PermissionManager、DlpAntiPeepManager、PhotoPickerUtils、IconThumbnailTask、
 | **Phase 0 口径修正** | 固定基数 | 本文件剔除清单评审通过；无数据文件明确归入 UI 口径 | ✅ 完成 |
 | **Phase 1 快速赢面** | 行 27%→**40~45%**；分支 25%→**33~35%** | ✅ **完成（2026-09-11）**：行 **50.92%**、分支 **43.37%** 双双超额；清单 1~10、12 落地（11 号 OathApplet 移交 Phase 2 头）；CloudBackupCrypto/TokenGroupStore/AppPreference 脱离 0%；CI 门禁 `check-coverage.mjs` + `coverage-baseline.json` 已入 quality.yml。A 类纯函数路径全覆盖（TokenUtils 文件级 37.6% 因其余为真机 API 胶水，归 B/C 口径） | 实际 1 天 |
 | **Phase 2 存储与密钥解耦** | 行→**55~60%**；分支→**45%** | ✅ **完成（2026-09-12）**：行 **72.73%**、分支 **66.60%** 双双大幅超额。四端口族落地于 `StoragePorts.ets`（`KeyValueStore`/`TokenKvStore`、`SecretStore`/`NamedSecretStore`、`CryptoEngine`、`FsGateway`，另有 `TokenGroupKvBackend` 并入、`BackupTextIo`/`TransactionalKv`/`LegacyTokenKv`/`IconPackArchiver`/`DeviceMigrationKv`/`OathCryptoPort` 等伴生端口）；TokenStore 迁移决策（三重验证三分支/超限降级/双写/KV 失败回滚）穷举用例；高风险清单全部脱离 0%（见第 1 节表）；快速赢面 11 号 OathApplet 落地并移出豁免清单。实际工作量 1 天（计划 3~6 周为含评审/真机回归的保守估计；AES/PBKDF2/GCM 数值正确性仍归真机 ohosTest） | 实际 1 天 |
-| **Phase 3 备份与传输协议** | 行→**70~75%**；分支→**55~60%**（逻辑层基本到顶） | CloudBackupManager/CloudSyncTask/TokenBackup/IconPackCloudBackup 打包解析与状态机全测；BleFrameCodec/WearEngine 消息编解码纯类分支 ≥70%；ohosTest 补齐备份 round-trip、换机迁移、BLE/WearEngine 冒烟各 ≥3 条 | 4~8 周 |
+| **Phase 3 备份与传输协议** | 行→**70~75%**；分支→**55~60%**（逻辑层基本到顶） | ✅ **完成（2026-09-12）**：行 **75.10%**、分支 **70.28%** 双双超额（Phase 2 已提前越过全局目标，Phase 3 按出口清单收尾）。① 传输协议纯类 `TransferProtocol.ets` 落地（分帧构建/头解析/双模式接收状态机/纯 TS UTF-8/UUID 复用决策），BleTokenTransfer/WearEngineTransfer 生产类改委托，**行 161/163、分支 49/50（98%）**（目标 ≥70%）；② IconPackCloudBackup 恢复成功链路经 `IconPackRegistry` 端口补齐；③ CloudBackupManager 深分支（CloudBackupTokenError 路径/单文件 stat 失败隔离/同步故障容忍/清理粒度边界）补测；④ ohosTest 新增 4 套件 16 条真机用例（BackupRoundTrip 4 / DeviceMigration 4 / BleTransferSmoke 4 / WearEngineSmoke 4，已编译通过，待真机执行——设备当前不在线）。红方评审两路 P0 均为零；随评审落地的两处有意行为收口：WearEngine 非法头帧统一为"保留批次无副作用忽略"（旧实现 JSON 抛错会重置批次致传输挂死）、Wear 通道重组前增加 receivedBytes !== total 显式判失败（旧实现走越界异常）。待真机验证项：KvManager 换机迁移用 getEntries('^') 键前缀扫描，而令牌键以 _token_uuid_ 开头，若分布式 KV 内部键形态不含 '^' 前缀则迁移会静默空转——DeviceMigration 冒烟已加 backupCount > 0 硬护栏，真机执行即可暴露。实际工作量 1 天 | 实际 1 天 |
 
 **天花板**：75%/60%（行/分支）之后剩余基本是 API 调用胶水（await kvStore.put、asset.add、ble.write…），LocalUnit 永远测不了，强行 mock 只会产生"测 mock"的假覆盖。折算到当前全量 6,537 行口径约为 55~58% 行。
 
@@ -171,5 +173,5 @@ node scripts/check-coverage.mjs
 
 1. 合理终点：**逻辑层（可测基数 ≈5,000 行）三阶段 40% → 60% → 75% 行覆盖，分支 33% → 45% → 60%**；全局口径终态约 55%。UI 层不设行覆盖目标。
 2. 分 Phase 0 + 3 个实施阶段；UI 前两阶段零投入，Phase 3 可选黑盒冒烟。
-3. 最高优先级是高风险清单（TokenStore/CloudBackupCrypto/各 SecretStore/备份恢复路径）；Phase 3 前，真机备份 round-trip 用例必须存在。**Phase 2（2026-09-12）已把高风险清单的 LocalUnit 可测部分全部落地并大幅超额达标（72.63%/66.22%）；Phase 3 的重点因此收敛为：备份/恢复协议状态机（CloudBackupManager/TokenBackup/IconPackCloudBackup 深分支）、BLE/WearEngine 消息编解码纯类，以及真机 ohosTest 补齐备份 round-trip、换机迁移、BLE/WearEngine 冒烟各 ≥3 条。**
+3. 最高优先级是高风险清单（TokenStore/CloudBackupCrypto/各 SecretStore/备份恢复路径）。**三阶段已全部完成（2026-09-12）：逻辑层行 75.10%、分支 70.28%，接近 75%/60% 天花板口径的行上限；剩余基本是 API 调用胶水。后续重点转为真机回归：ohosTest 已备好备份 round-trip（4）/换机迁移（4）/BLE（4）/WearEngine（4）冒烟用例，待设备在线执行并纳入发版前检查清单（换机迁移用例自带 getEntries('^') 风险探测护栏）。**
 4. 解耦成本低：PureHash、HttpTransport、Sleeper、TagTransport、setSnackBarImpl 五个先例证明 B 类解耦是沿用既有模式；Phase 2 的 StoragePorts 端口族延续该模式并已沉淀为标准做法（新增 B 类文件先抽端口再写实现）；BLE/WearEngine/NFC/cloudSync/asset 真机部分明确剔除，交给 ohosTest。

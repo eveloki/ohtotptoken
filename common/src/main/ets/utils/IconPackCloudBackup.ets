@@ -3,7 +3,7 @@ import { cloudSync, fileUri } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { zlib } from '@kit.BasicServicesKit';
 import { AppPreference, PREF_KEYS, BUILTIN_DEFAULT_PACK_ID, EVENT_NAMES } from './AppPreference';
-import { TokenIconPacks } from './TokenUtils';
+import { TokenIconPacks, AegisIconPack } from './TokenUtils';
 import { SyncTimeHelper } from './SyncTimeHelper';
 import { HuaweiAccountManager } from './HuaweiAccountManager';
 import { DeviceInfoHelper } from './DeviceInfoHelper';
@@ -72,11 +72,64 @@ class DeviceInfoAdapter implements IconPackDevicePort {
   }
 }
 
+/**
+ * 图标包注册表端口（Phase 3，docs/TEST_PLAN.md 第 4 节）。
+ * 恢复成功链路（deletedPacks 清理 → 磁盘重载 → enabledPacks 合并应用）经此端口
+ * 访问 TokenIconPacks 静态状态，LocalUnit 注入内存假实现全测；
+ * 生产适配器保证真机行为不变（磁盘加载/偏好读写归 TokenIconPacks/AppPreference）。
+ */
+export interface IconPackRegistry {
+  /** 当前已加载的自定义图标包（含无效包） */
+  listPacks(): AegisIconPack[];
+  /** 从 user_icons 目录重载用户图标 */
+  loadUserIcons(userIconDir: string): Promise<void>;
+  /** 从设备目录加载图标包（pack.json 解析 + 磁盘读取） */
+  addPackFromDevice(path: string): Promise<void>;
+  /** 删除图标包（清理预览缓存、enabledPacks 过滤、磁盘目录删除） */
+  removePack(pack: AegisIconPack): Promise<void>;
+  getEnabledPacks(): string[];
+  setEnabledPacks(packs: string[]): void;
+  /** 从偏好重新加载 enabledPacks 到内存（恢复前的干净基线） */
+  reloadEnabledPacksFromPreference(): void;
+}
+
+/** {@link IconPackRegistry} 生产实现：委托 TokenIconPacks 静态接口。 */
+class TokenIconPacksRegistry implements IconPackRegistry {
+  listPacks(): AegisIconPack[] {
+    return TokenIconPacks.aegis_icon_packs;
+  }
+
+  async loadUserIcons(userIconDir: string): Promise<void> {
+    await TokenIconPacks.addUserIconPack(userIconDir);
+  }
+
+  async addPackFromDevice(path: string): Promise<void> {
+    await TokenIconPacks.addAegisIconPack(path);
+  }
+
+  async removePack(pack: AegisIconPack): Promise<void> {
+    await TokenIconPacks.removeAegisIconPack(pack);
+  }
+
+  getEnabledPacks(): string[] {
+    return TokenIconPacks.enabled_packs;
+  }
+
+  setEnabledPacks(packs: string[]): void {
+    TokenIconPacks.enabled_packs = packs;
+  }
+
+  reloadEnabledPacksFromPreference(): void {
+    TokenIconPacks.enabled_packs = AppPreference.loadEnabledPacks();
+  }
+}
+
 /** LocalUnit 测试注入项（目录就绪时跳过 init() 的 AppStorage 依赖）。 */
 export interface IconPackBackupTestDeps {
   fs?: FsGateway;
   archiver?: IconPackArchiver;
   device?: IconPackDevicePort;
+  registry?: IconPackRegistry;
   filesDir?: string;
   cloudDir?: string;
   cacheDir?: string;
@@ -182,6 +235,7 @@ export class IconPackCloudBackup {
   private syncState: IconPackSyncState = IconPackSyncState.IDLE;
   private testDeps: IconPackBackupTestDeps | null = null;
   private readonly productionFs: FsGateway = new FileIoFsGateway();
+  private readonly productionRegistry: IconPackRegistry = new TokenIconPacksRegistry();
 
   private constructor() {
   }
@@ -225,6 +279,10 @@ export class IconPackCloudBackup {
 
   private get devicePort(): IconPackDevicePort {
     return this.testDeps?.device !== undefined ? this.testDeps.device : new DeviceInfoAdapter();
+  }
+
+  private get registry(): IconPackRegistry {
+    return this.testDeps?.registry !== undefined ? this.testDeps.registry : this.productionRegistry;
   }
 
   async init(): Promise<void> {
@@ -318,7 +376,7 @@ export class IconPackCloudBackup {
 
     const now = Date.now();
     const packEntries: PackMetaEntry[] = [];
-    for (const p of TokenIconPacks.aegis_icon_packs) {
+    for (const p of this.registry.listPacks()) {
       const entry = new PackMetaEntry();
       entry.uuid = p.uuid;
       entry.name = p.name;
@@ -329,7 +387,7 @@ export class IconPackCloudBackup {
     const meta = new IconPackMetaRecord();
     meta.version = 1;
     meta.timestamp = now;
-    meta.enabledPacks = TokenIconPacks.enabled_packs;
+    meta.enabledPacks = this.registry.getEnabledPacks();
     meta.deletedPacks = [];
     meta.packs = packEntries;
 
@@ -376,7 +434,7 @@ export class IconPackCloudBackup {
       syncMeta.timestamp = now;
       syncMeta.deviceId = this.devicePort.deviceId();
       syncMeta.deviceName = this.devicePort.deviceName();
-      syncMeta.enabledPacks = TokenIconPacks.enabled_packs;
+      syncMeta.enabledPacks = this.registry.getEnabledPacks();
       syncMeta.deletedPacks = [];
       syncMeta.packs = packEntries;
       const syncMetaPath = this.cloudDir + '/' + SYNC_META_FILE;
@@ -520,10 +578,10 @@ export class IconPackCloudBackup {
         // 处理云端标记为已删除的图标包
         if (meta.deletedPacks && meta.deletedPacks.length > 0) {
           for (const deletedUuid of meta.deletedPacks) {
-            const pack = TokenIconPacks.aegis_icon_packs.find(p => p.uuid === deletedUuid);
+            const pack = this.registry.listPacks().find(p => p.uuid === deletedUuid);
             if (pack) {
               try {
-                await TokenIconPacks.removeAegisIconPack(pack);
+                await this.registry.removePack(pack);
               } catch (e) {
                 hilog.warn(DOMAIN, TAG, `restoreIconPacks: failed to delete pack ${deletedUuid}: ${JSON.stringify(e)}`);
               }
@@ -531,14 +589,14 @@ export class IconPackCloudBackup {
           }
         }
 
-        // 在 merge 前重新从磁盘加载图标包，使 TokenIconPacks 内存状态包含新拷贝的文件
+        // 在 merge 前重新从磁盘加载图标包，使注册表内存状态包含新拷贝的文件
         await this.refreshIconPackState();
 
         // 合并策略：以云端 enabledPacks 为基础，追加本地独有的包（不丢失本地新增包）
-        const localPacks = TokenIconPacks.aegis_icon_packs.map(p => p.uuid);
+        const localPacks = this.registry.listPacks().map(p => p.uuid);
         const merged = mergeEnabledPacks(meta.enabledPacks, localPacks);
 
-        TokenIconPacks.enabled_packs = merged;
+        this.registry.setEnabledPacks(merged);
         AppPreference.saveEnabledPacks(merged);
         AppPreference.setPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME, `${meta.timestamp}`);
 
@@ -556,23 +614,23 @@ export class IconPackCloudBackup {
   }
 
   /**
-   * 从磁盘重新加载图标包到 TokenIconPacks 内存（在 merge enabledPacks 前调用）
+   * 从磁盘重新加载图标包到注册表内存（在 merge enabledPacks 前调用）
    * 包含：user_icons 目录 + icon_packs 下所有子目录 + enabled_packs 偏好
    */
   private async refreshIconPackState(): Promise<void> {
     const iconPackDir = this.filesDir + '/icon_packs';
     const userIconDir = this.filesDir + '/user_icons';
 
-    await TokenIconPacks.addUserIconPack(userIconDir);
+    await this.registry.loadUserIcons(userIconDir);
     try {
       const paths = await this.fs.listFiles(iconPackDir);
       for (const path of paths) {
         const fullPath = iconPackDir + '/' + path;
-        if (TokenIconPacks.aegis_icon_packs.some(pack => pack.on_device_path === fullPath)) {
+        if (this.registry.listPacks().some(pack => pack.on_device_path === fullPath)) {
           continue;
         }
         try {
-          await TokenIconPacks.addAegisIconPack(fullPath);
+          await this.registry.addPackFromDevice(fullPath);
         } catch (err) {
           hilog.warn(DOMAIN, TAG, `refreshIconPackState: failed to load pack ${path}: ${JSON.stringify(err)}`);
         }
@@ -580,7 +638,7 @@ export class IconPackCloudBackup {
     } catch (err) {
       hilog.warn(DOMAIN, TAG, `refreshIconPackState: failed to list ${iconPackDir}: ${JSON.stringify(err)}`);
     }
-    TokenIconPacks.enabled_packs = AppPreference.loadEnabledPacks();
+    this.registry.reloadEnabledPacksFromPreference();
   }
 
   /** 查询云端图标包备份状态（是否存在、包数量、大小、来源设备等），供 UI 展示 */
@@ -618,7 +676,7 @@ export class IconPackCloudBackup {
       result.packs = meta.packs ?? [];
     } catch (_) {
       // 伴生文件不存在（旧版本备份），回退到本地内存
-      result.packCount = TokenIconPacks.aegis_icon_packs.length;
+      result.packCount = this.registry.listPacks().length;
     }
 
     return result;

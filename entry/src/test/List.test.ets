@@ -41,6 +41,7 @@ import fileUtilsTest from './FileUtils.test';
 import storagePortsTest from './StoragePorts.test';
 import oathAppletTest from './OathApplet.test';
 import iconPackCloudBackupTest from './IconPackCloudBackup.test';
+import transferProtocolTest from './TransferProtocol.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -86,4 +87,5 @@ export default function testsuite() {
   storagePortsTest();
   oathAppletTest();
   iconPackCloudBackupTest();
+  transferProtocolTest();
 }

@@ -1,11 +1,14 @@
 import { describe, it, expect } from '@ohos/hypium';
 import {
   AppPreference,
+  AegisIconPack,
   BUILTIN_DEFAULT_PACK_ID,
+  HuaweiAccountManager,
   IconPackArchiver,
   IconPackBackupStatus,
   IconPackCloudBackup,
   IconPackDevicePort,
+  IconPackRegistry,
   IconPackRestoreResult,
   IconPackSyncState,
   PREF_KEYS,
@@ -62,6 +65,105 @@ class FakeIconDevice implements IconPackDevicePort {
   deviceName(): string {
     return 'TestDevice';
   }
+}
+
+/**
+ * 假解压器：decompress 时把预置的"zip 内容"写入目标目录（模拟解压产物）。
+ * 键为相对路径，值为文件内容。直接写 MemoryFs 公共字段（与既有播种惯例一致），
+ * 并逐级登记父目录——真实解压产物包含目录，递归拷贝依赖 dirs 判定 isDirectory。
+ */
+class FakeUnpackArchiver implements IconPackArchiver {
+  contents: Map<string, string> = new Map();
+  decompressCalls: number = 0;
+  fs: MemoryFs;
+
+  constructor(fs: MemoryFs) {
+    this.fs = fs;
+  }
+
+  compress(_srcDir: string, _destZip: string): Promise<void> {
+    return Promise.resolve();
+  }
+
+  decompress(_zipPath: string, destDir: string): Promise<void> {
+    this.decompressCalls++;
+    this.contents.forEach((content: string, relPath: string) => {
+      // 逐级登记父目录（与真实解压一致，供递归拷贝识别子目录）
+      const segments = relPath.split('/');
+      let prefix = destDir;
+      for (let i = 0; i < segments.length - 1; i++) {
+        prefix = `${prefix}/${segments[i]}`;
+        this.fs.dirs.add(prefix);
+      }
+      this.fs.files.set(`${destDir}/${relPath}`, content);
+    });
+    return Promise.resolve();
+  }
+}
+
+/** 假图标包注册表：内存维护包列表与启用列表，记录全部调用供断言。 */
+class FakeIconRegistry implements IconPackRegistry {
+  packs: AegisIconPack[] = [];
+  enabledPacks: string[] = [];
+  removedPacks: string[] = [];
+  addedPackPaths: string[] = [];
+  loadUserIconsCalls: string[] = [];
+  reloadEnabledPacksCalls: number = 0;
+  lastAppliedPacks: string[] = [];
+  /** addPackFromDevice 对这些路径抛错（模拟损坏包） */
+  failAddFor: Set<string> = new Set();
+
+  listPacks(): AegisIconPack[] {
+    return this.packs;
+  }
+
+  async loadUserIcons(userIconDir: string): Promise<void> {
+    this.loadUserIconsCalls.push(userIconDir);
+  }
+
+  async addPackFromDevice(path: string): Promise<void> {
+    if (this.failAddFor.has(path)) {
+      throw new Error('corrupt pack');
+    }
+    this.addedPackPaths.push(path);
+    const pack = new AegisIconPack();
+    pack.uuid = 'dyn_' + path.split('/').pop();
+    pack.on_device_path = path;
+    this.packs.push(pack);
+  }
+
+  async removePack(pack: AegisIconPack): Promise<void> {
+    this.removedPacks.push(pack.uuid);
+    this.packs = this.packs.filter(p => p.on_device_path !== pack.on_device_path);
+  }
+
+  getEnabledPacks(): string[] {
+    return this.enabledPacks;
+  }
+
+  setEnabledPacks(packs: string[]): void {
+    this.enabledPacks = packs;
+    this.lastAppliedPacks = packs;
+  }
+
+  reloadEnabledPacksFromPreference(): void {
+    this.reloadEnabledPacksCalls++;
+    // 与生产语义一致：恢复前以偏好内容为干净基线
+    this.enabledPacks = AppPreference.loadEnabledPacks();
+  }
+}
+
+function bindDepsWithRegistry(fs: MemoryFs, archiver: IconPackArchiver,
+  registry: FakeIconRegistry): void {
+  IconPackCloudBackup.getInstance().useDepsForTest({
+    fs: fs,
+    archiver: archiver,
+    device: new FakeIconDevice(),
+    registry: registry,
+    filesDir: '/data/files',
+    cloudDir: '/cloud',
+    cacheDir: '/data/cache',
+  });
 }
 
 function bindDeps(fs: MemoryFs, archiver: IconPackArchiver): void {
@@ -264,6 +366,149 @@ export default function iconPackCloudBackupTest() {
       const result: IconPackRestoreResult = await IconPackCloudBackup.getInstance().restoreIconPacks();
       expect(result.restoredCount).assertEqual(0);
       expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
+    it('restore_full_chain_deletes_refreshes_merges_and_applies', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      // 本地已有 p1（将被云端 deletedPacks 标记删除）
+      const localPack = new AegisIconPack();
+      localPack.uuid = 'p1';
+      localPack.on_device_path = '/data/files/icon_packs/p1';
+      registry.packs.push(localPack);
+      registry.enabledPacks = ['p1'];
+      bindDepsWithRegistry(fs, archiver, registry);
+
+      // 云端：zip + "解压产物"（新包 packA + 元数据）
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      archiver.contents.set('icon_packs/packA/pack.json', '{"name":"PackA"}');
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":5000,"enabledPacks":["p2"],"deletedPacks":["p1"],' +
+        '"packs":[{"uuid":"p2","name":"Pack Two","version":1,"iconCount":3},{"uuid":"p3","name":"Pack Three","version":1,"iconCount":4}]}');
+
+      const result = await IconPackCloudBackup.getInstance().restoreIconPacks();
+      // 恢复结果计数
+      expect(result.restoredCount).assertEqual(2);
+      expect(result.restoredFiles).assertEqual(1);
+      // deletedPacks 清理：p1 被删除
+      expect(registry.removedPacks.join(',')).assertEqual('p1');
+      // 磁盘重载：user_icons 触达 + 新包 packA 按路径加载
+      expect(registry.loadUserIconsCalls.join(',')).assertEqual('/data/files/user_icons');
+      expect(registry.addedPackPaths.join(',')).assertEqual('/data/files/icon_packs/packA');
+      // 合并应用：云端 enabledPacks 为基础 + 本地新增 packA（dyn_packA）
+      expect(registry.lastAppliedPacks.join(',')).assertEqual('p2,dyn_packA');
+      // 偏好持久化 + 恢复时间戳更新（防抖基准）
+      const saved = AppPreference.getPreference(PREF_KEYS.APPEARANCE_ICON_PACK_ENABLED) as string;
+      expect(saved).assertEqual('["p2","dyn_packA"]');
+      const lastTime = AppPreference.getPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME) as string;
+      expect(lastTime).assertEqual('5000');
+      // 临时目录已清理（解压产物不残留）
+      expect(fs.files.has('/data/cache/icon_pack_restore/icon_packs_meta.json')).assertFalse();
+      // 拷贝确实发生：filesDir 出现解压出的包文件
+      expect(fs.files.has('/data/files/icon_packs/packA/pack.json')).assertTrue();
+      // 状态机复位
+      expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
+    it('restore_skips_unknown_deleted_uuid_and_broken_pack_load', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      bindDepsWithRegistry(fs, archiver, registry);
+      // deletedPacks 引用本地不存在的 uuid；解压出的包损坏（加载抛错）不得中断恢复
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      archiver.contents.set('icon_packs/broken/pack.json', 'not-json');
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":6000,"enabledPacks":["p2"],"deletedPacks":["ghost"],' +
+        '"packs":[{"uuid":"p2","name":"Pack Two","version":1,"iconCount":1}]}');
+      registry.failAddFor.add('/data/files/icon_packs/broken');
+
+      const result = await IconPackCloudBackup.getInstance().restoreIconPacks();
+      // 未知 uuid 不触发删除；损坏包跳过后恢复整体仍成功
+      expect(registry.removedPacks.length).assertEqual(0);
+      expect(result.restoredCount).assertEqual(1);
+      expect(registry.lastAppliedPacks.join(',')).assertEqual('p2');
+    });
+
+    it('restore_without_meta_copies_files_but_skips_registry_mutations', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      bindDepsWithRegistry(fs, archiver, registry);
+      // zip 存在但无元数据（旧版本备份）：文件拷贝仍执行，注册表不改写
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      archiver.contents.set('user_icons/custom.svg', 'svg-data');
+
+      const result = await IconPackCloudBackup.getInstance().restoreIconPacks();
+      expect(result.restoredCount).assertEqual(0);
+      expect(result.restoredFiles).assertEqual(1);
+      expect(registry.removedPacks.length).assertEqual(0);
+      expect(registry.lastAppliedPacks.length).assertEqual(0);
+      expect(registry.reloadEnabledPacksCalls).assertEqual(0);
+      // 拷贝发生：user_icons 内容落地 filesDir
+      expect(fs.files.has('/data/files/user_icons/custom.svg')).assertTrue();
+      expect(AppPreference.getPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME) as string).assertEqual('');
+    });
+
+    it('auto_restore_full_chain_gated_by_pref_login_and_fires', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      bindDepsWithRegistry(fs, archiver, registry);
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      // 去抖/较新判定读取的是伴生元数据文件（不解压 zip）
+      fs.files.set('/cloud/icon_packs_sync_meta.json', '{"version":1,"timestamp":9000,"deviceId":"d","deviceName":"M","enabledPacks":["cloud1"],"deletedPacks":[],"packs":[{"uuid":"cloud1","name":"C","version":1,"iconCount":1}]}');
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":9000,"enabledPacks":["cloud1"],"deletedPacks":[],"packs":[{"uuid":"cloud1","name":"C","version":1,"iconCount":1}]}');
+      // 账号门禁直接改单例布尔，finally 复位防跨套件泄漏
+      HuaweiAccountManager.getInstance().userLogin = false;
+      try {
+        // 云同步开关关闭 → 直接跳过
+        AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
+        expect(await IconPackCloudBackup.getInstance().checkAndAutoRestore()).assertFalse();
+
+        // 开关开启但账号未登录 → 跳过
+        AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, true);
+        expect(await IconPackCloudBackup.getInstance().checkAndAutoRestore()).assertFalse();
+
+        // 登录后整链路执行：恢复成功返回 true，状态机复位
+        HuaweiAccountManager.getInstance().userLogin = true;
+        expect(await IconPackCloudBackup.getInstance().checkAndAutoRestore()).assertTrue();
+        expect(registry.lastAppliedPacks.join(',')).assertEqual('cloud1');
+        expect(AppPreference.getPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME) as string).assertEqual('9000');
+        expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+      } finally {
+        HuaweiAccountManager.getInstance().userLogin = false;
+      }
+    });
+
+    it('auto_restore_skips_when_local_already_fresh', 0, async () => {
+      resetSingleton();
+      HuaweiAccountManager.getInstance().userLogin = true;
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      bindDepsWithRegistry(fs, archiver, registry);
+      AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, true);
+      // 刚刚恢复过（相对 stub 时钟 1 分钟前）→ 去抖内不自动恢复。
+      // 伴生元数据存在且时间戳更新，保证走的是去抖分支而非"缺 meta"分支
+      AppPreference.setPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME, `${Date.now() - 60000}`);
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      fs.files.set('/cloud/icon_packs_sync_meta.json', '{"version":1,"timestamp":9999999999999,"deviceId":"","deviceName":"","enabledPacks":[],"deletedPacks":[],"packs":[]}');
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":9999999999999,"enabledPacks":[],"deletedPacks":[],"packs":[]}');
+
+      try {
+        expect(await IconPackCloudBackup.getInstance().checkAndAutoRestore()).assertFalse();
+        expect(archiver.decompressCalls).assertEqual(0);
+      } finally {
+        HuaweiAccountManager.getInstance().userLogin = false;
+      }
     });
   });
 }

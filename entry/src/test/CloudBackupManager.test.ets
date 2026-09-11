@@ -12,6 +12,7 @@ import {
   CloudBackupManager,
   CloudBackupTokenPort,
   CloudSyncStarter,
+  FsStatInfo,
   PREF_KEYS,
   TokenConfig,
   TokenGroup,
@@ -166,6 +167,39 @@ class FakeSync implements CloudSyncStarter {
   start(): Promise<void> {
     this.startCalls++;
     return Promise.resolve();
+  }
+}
+
+/** 同步触发可失败：验证备份主流程对同步故障的容忍 */
+class FlakySync implements CloudSyncStarter {
+  fail: boolean = false;
+  startCalls: number = 0;
+
+  async start(): Promise<void> {
+    this.startCalls++;
+    if (this.fail) {
+      throw new Error('sync down');
+    }
+  }
+}
+
+/** 可注入单点故障的文件系统：验证记录扫描/清理对单文件 IO 异常的隔离 */
+class FlakyFs extends MemoryFs {
+  failStatFor: Set<string> = new Set();
+  failDeleteFor: Set<string> = new Set();
+
+  stat(path: string): Promise<FsStatInfo> {
+    if (this.failStatFor.has(path)) {
+      return Promise.reject(new Error('stat flake'));
+    }
+    return super.stat(path);
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    if (this.failDeleteFor.has(path)) {
+      throw new Error('delete flake');
+    }
+    await super.deleteFile(path);
   }
 }
 
@@ -486,6 +520,111 @@ export default function cloudBackupManagerTest() {
 
       await CloudBackupManager.getInstance().checkAndAutoBackup();
       expect(rig.fs.written.size).assertEqual(0);
+    });
+
+    it('restore_invalid_record_returns_false_without_writes', 0, async () => {
+      const rig = freshRig();
+      // 非 3 段格式 → decrypt 抛 CloudBackupTokenError → 恢复失败且异常被吞、零写入
+      rig.fs.files.set(`/cloud/${backupFileName(9500)}`, 'garbage-not-a-token');
+
+      const ok = await CloudBackupManager.getInstance().restoreFromCloud();
+      expect(ok).assertFalse();
+      expect(rig.tokens.updated.length).assertEqual(0);
+    });
+
+    it('backup_succeeds_even_when_cloud_sync_start_fails', 0, async () => {
+      const rig = freshRig();
+      const flakySync = new FlakySync();
+      flakySync.fail = true;
+      // useDepsForTest 为整体替换语义：必须传完整端口集，否则其余端口回退生产实现
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: rig.fs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: flakySync, cloudDir: '/cloud',
+      });
+      rig.tokens.list.push(makeToken('u1', 'SECRET'));
+
+      const ok = await CloudBackupManager.getInstance().backupToCloud();
+      // 同步触发失败不回滚备份结果（下次冷启动 FileSync 会补同步）
+      expect(ok).assertTrue();
+      expect(rig.fs.written.size).assertEqual(1);
+      expect(flakySync.startCalls).assertEqual(1);
+    });
+
+    it('clear_cloud_storage_tolerates_individual_delete_failures', 0, async () => {
+      const rig = freshRig();
+      const flaky = new FlakyFs();
+      // useDepsForTest 为整体替换语义：先注入再向同一个假文件系统种子备份
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: flaky, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cloudDir: '/cloud',
+      });
+      const crypto = CloudBackupCrypto.getInstance();
+      const content = await crypto.encrypt('{}', crypto.getMode(true), 'union-1', 1, 9100, 'odid-A', 'Mate60');
+      flaky.files.set(`/cloud/${backupFileName(9100)}`, content);
+      flaky.failDeleteFor.add(`/cloud/${backupFileName(9100)}`);
+
+      const ok = await CloudBackupManager.getInstance().clearCloudStorage();
+      // 现网行为：deleteBackupFile 内部吞错，单个文件删除失败不中断整体清理
+      // （红方评审关注点：清理"成功"反馈与云端实际状态可能不一致，归产品决策）
+      expect(ok).assertTrue();
+      expect(rig.icons.clearCalls).assertEqual(1);
+    });
+
+    it('clear_device_name_storage_noop_does_not_clear_icons', 0, async () => {
+      const rig = freshRig();
+      // 只有"同名不同 ODID"才算遗留备份；异名设备备份不受影响、不触发图标包清理
+      await seedBackup(rig, 9200, '{}', 'odid-B', 'Pixel8');
+
+      const ok = await CloudBackupManager.getInstance().clearDeviceNameCloudStorage();
+      expect(ok).assertTrue();
+      expect(rig.icons.clearCalls).assertEqual(0);
+      expect(rig.fs.deletedPaths.length).assertEqual(0);
+    });
+
+    it('list_records_skip_files_that_fail_stat_and_continue', 0, async () => {
+      const rig = freshRig();
+      const flaky = new FlakyFs();
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: flaky, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cloudDir: '/cloud',
+      });
+      const crypto = CloudBackupCrypto.getInstance();
+      const content1 = await crypto.encrypt('{"tokens":[]}', crypto.getMode(true), 'union-1', 1, 9300, 'odid-A', 'Mate60');
+      const content2 = await crypto.encrypt('{"tokens":[]}', crypto.getMode(true), 'union-1', 1, 9400, 'odid-A', 'Mate60');
+      flaky.files.set(`/cloud/${backupFileName(9300)}`, content1);
+      flaky.files.set(`/cloud/${backupFileName(9400)}`, content2);
+      flaky.failStatFor.add(`/cloud/${backupFileName(9300)}`);
+
+      const records = await CloudBackupManager.getInstance().listBackupHistory();
+      // 单文件 stat 失败只跳过该文件，其余记录正常返回（降序）
+      expect(records.length).assertEqual(1);
+      expect(records[0].timestamp).assertEqual(9400);
+    });
+
+    it('restore_new_payload_without_enabled_packs_keeps_current_setting', 0, async () => {
+      const rig = freshRig();
+      AppPreference.setPreference(PREF_KEYS.APPEARANCE_ICON_PACK_ENABLED, '["keep"]');
+      const payload = '{"tokens":[{"TokenUUID":"t1"}],"groups":[]}';
+      await seedBackup(rig, 9600, payload, 'odid-A');
+
+      const ok = await CloudBackupManager.getInstance().restoreFromCloud();
+      expect(ok).assertTrue();
+      // 载荷无 enabledPacks 字段 → 保留本地当前启用列表
+      expect(AppPreference.getPreference(PREF_KEYS.APPEARANCE_ICON_PACK_ENABLED) as string).assertEqual('["keep"]');
+      expect(rig.tokens.updated.length).assertEqual(1);
+      expect(rig.groups.mergedGroups !== null).assertTrue();
+    });
+
+    it('clear_methods_abort_when_not_logged_in', 0, async () => {
+      const rig = freshRig();
+      rig.account.login = false;
+      await seedBackup(rig, 9700, '{}', 'odid-A');
+
+      expect(await CloudBackupManager.getInstance().clearCloudStorage()).assertFalse();
+      expect(await CloudBackupManager.getInstance().clearDeviceCloudStorage()).assertFalse();
+      expect(await CloudBackupManager.getInstance().clearDeviceNameCloudStorage()).assertFalse();
+      expect(rig.fs.deletedPaths.length).assertEqual(0);
+      expect(rig.icons.clearCalls).assertEqual(0);
     });
   });
 }

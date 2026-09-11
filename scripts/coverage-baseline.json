@@ -1,7 +1,7 @@
 {
   "date": "2026-09-12",
-  "note": "Phase 2 存储与密钥解耦（docs/TEST_PLAN.md 第 4 节）落地并经红方评审加固后的逻辑层基线。四端口族（KeyValueStore/TokenKvStore、SecretStore/NamedSecretStore、CryptoEngine、FsGateway）入 StoragePorts.ets；TokenStore 迁移三重验证穷举、CryptoUtils 格式层、CloudBackupManager/IconPackCloudBackup 编排、OathApplet 协议层、SteamSecretStore 分片、TokenKvBatch 事务均 LocalUnit 可测。口径冻结于 check-coverage.mjs；SteamSecretStore 移出真机剔除清单。expectedAbsentFromReport = 报告不可见的口径内文件（只允许缩小）。",
-  "fileCount": 58,
+  "note": "Phase 3 备份与传输协议（docs/TEST_PLAN.md 第 4 节）落地并经红方评审加固后的逻辑层基线。传输协议纯类 TransferProtocol.ets（分帧构建/头解析/接收状态机/纯 TS UTF-8 含过度编码与代理区校验/UUID 复用决策）入口径，BleTokenTransfer/WearEngineTransfer 生产类改委托后仍留真机剔除清单；IconPackCloudBackup 经 IconPackRegistry 端口补齐恢复成功链路。口径冻结于 check-coverage.mjs。expectedAbsentFromReport = 报告不可见的口径内文件（只允许缩小）。",
+  "fileCount": 59,
   "expectedAbsentFromReport": [
     "common/src/main/ets/models/AppWindowInfo.ets",
     "common/src/main/ets/utils/AppFonts.ets",
@@ -13,25 +13,25 @@
     "entry/src/main/ets/utils/TokenBatchOperation.ets"
   ],
   "lines": {
-    "covered": 3545,
-    "total": 4874,
-    "pct": 72.73
+    "covered": 3800,
+    "total": 5060,
+    "pct": 75.1
   },
   "branches": {
-    "covered": 696,
-    "total": 1045,
-    "pct": 66.6
+    "covered": 771,
+    "total": 1097,
+    "pct": 70.28
   },
   "globalReference": {
     "lines": {
-      "covered": 3626,
-      "total": 7070,
-      "pct": 51.29
+      "covered": 3890,
+      "total": 7185,
+      "pct": 54.14
     },
     "branches": {
-      "covered": 725,
-      "total": 1511,
-      "pct": 47.98
+      "covered": 802,
+      "total": 1551,
+      "pct": 51.71
     }
   }
 }
