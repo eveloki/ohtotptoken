@@ -1,4 +1,4 @@
-import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType, hdsMaterial } from '@kit.UIDesignKit';
+import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import { MaterialTheme } from './MaterialTheme';
 import { ALL_TOKEN_GROUPS, FAVORITE_TOKEN_GROUP, TokenConfig, otpType, TokenGroup, TokenGroupState,
   TokenGroupStore, TokenStore, GenericDataSource, dialogSystemMaterial, showSnackBar, SnackBarNotifyType } from 'common';
@@ -277,21 +277,11 @@ export struct TokenGroupSidePanel {
       style: {
         originalStyle: {
           contentStyle: {
-            menuStyle: {
-              iconColor: $r('sys.color.icon_primary'),
-              backgroundColor: MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.NONE ?
-                $r('sys.color.comp_background_gray') : undefined
-            }
+            backIconStyle: MaterialTheme.navigationIconStyle(),
+            menuStyle: MaterialTheme.navigationIconStyle()
           }
         },
-        scrollEffectStyle: {
-          contentStyle: {
-            menuStyle: {
-              backgroundColor: MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.NONE ?
-                $r('sys.color.comp_background_gray') : undefined
-            }
-          }
-        },
+        scrollEffectStyle: MaterialTheme.navigationScrollStyle(),
         scrollEffectOpts: {
           enableScrollEffect: true,
           scrollEffectType: this.scrollEffectType

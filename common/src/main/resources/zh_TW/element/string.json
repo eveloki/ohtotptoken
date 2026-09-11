@@ -24,6 +24,7 @@
     { "name": "token_multi_delete_title", "value": "刪除選中的 %d 個權杖？" },
     { "name": "token_multi_success", "value": "已處理 %d 個權杖" },
     { "name": "token_multi_failed", "value": "%d 個權杖未完成，請重試。NFC 工作階段權杖不支援收藏和分組。" },
+    { "name": "token_group_manage", "value": "管理分組" },
     { "name": "token_group_open_sidebar", "value": "展開分組側欄" },
     { "name": "token_group_close_sidebar", "value": "收起分組側欄" },
     { "name": "token_group_all", "value": "全部權杖" },

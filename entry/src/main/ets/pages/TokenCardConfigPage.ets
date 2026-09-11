@@ -134,14 +134,11 @@ export struct TokenCardConfigPage {
               mainTitleColor: $r('sys.color.font_primary'),
               subTitleColor: $r('sys.color.font_secondary')
             },
-            menuStyle: {
-              iconColor: $r('sys.color.icon_primary')
-            },
-            backIconStyle: {
-              iconColor: $r('sys.color.icon_primary')
-            }
+            menuStyle: MaterialTheme.navigationIconStyle(),
+            backIconStyle: MaterialTheme.navigationIconStyle()
           },
         },
+        scrollEffectStyle: MaterialTheme.navigationScrollStyle(),
         scrollEffectOpts: {
           enableScrollEffect: true,
           scrollEffectType: this.scrollEffectType
