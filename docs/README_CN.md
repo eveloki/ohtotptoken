@@ -26,17 +26,25 @@
 ---
 <b>手机</b>
 <p float="left">
-  <img height="400px" alt="phone1" src="../screenshot/phone1.jpg" />
-  <img height="400px" alt="phone2" src="../screenshot/phone2.png" />
-  <img height="400px" alt="phone3" src="../screenshot/phone3.jpg" />
-  <img height="400px" alt="phone4" src="../screenshot/phone4.jpg" />
+  <img height="400px" alt="令牌列表" src="../screenshot/phone1.png" />
+  <img height="400px" alt="Steam 令牌添加" src="../screenshot/phone2.png" />
+  <img height="400px" alt="Steam 功能入口" src="../screenshot/phone3.png" />
+  <img height="400px" alt="Steam 账户状态" src="../screenshot/phone4.png" />
+  <img height="400px" alt="Steam 登录" src="../screenshot/phone5.png" />
+  <img height="400px" alt="设置" src="../screenshot/phone6.png" />
+</p>
+<b>手表</b>
+<p float="left">
+  <img height="220px" alt="手表令牌列表" src="../screenshot/watch1.png" />
+  <img height="220px" alt="手表动态码" src="../screenshot/watch2.png" />
+  <img height="220px" alt="手表动态码（临近刷新）" src="../screenshot/watch3.png" />
 </p>
 <b>PC</b>
 <p float="left">
-  <img height="300px" alt="pc1" src="../screenshot/pc1.jpg" />
-  <img height="300px" alt="pc2" src="../screenshot/pc2.jpg" />
-  <img height="300px" alt="pc3" src="../screenshot/pc3.png" />
-  <img height="300px" alt="pc4" src="../screenshot/pc4.png" />
+  <img height="300px" alt="令牌列表" src="../screenshot/pc1.png" />
+  <img height="300px" alt="编辑令牌" src="../screenshot/pc2.png" />
+  <img height="300px" alt="Steam 令牌" src="../screenshot/pc3.png" />
+  <img height="300px" alt="安全性设置" src="../screenshot/pc4.png" />
 </p>
 
 ---
