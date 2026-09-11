@@ -1672,7 +1672,7 @@
     },
     {
       "name": "setting_immersive_interactive_desc",
-      "value": "按压支持的原生材质控件时产生弹性形变，不影响 HDS 标题栏。"
+      "value": "按压支持的原生材质控件时产生弹性形变。"
     },
     {
       "name": "setting_immersive_light_effect",
@@ -1680,7 +1680,7 @@
     },
     {
       "name": "setting_immersive_light_effect_desc",
-      "value": "为支持的原生材质控件显示触摸光感反馈，与形变独立，不影响 HDS 标题栏。"
+      "value": "为支持的原生材质控件显示触摸光感反馈，与形变独立。"
     },
     {
       "name": "setting_material_reset_colors",
@@ -1692,7 +1692,7 @@
     },
     {
       "name": "setting_material_shadow_desc",
-      "value": "控制原生材质自带阴影，不影响组件单独设置的阴影或 HDS 标题栏。"
+      "value": "控制原生材质自带阴影。"
     },
     {
       "name": "setting_material_color",
@@ -1708,7 +1708,7 @@
     },
     {
       "name": "setting_light_color_desc",
-      "value": "默认白色，开启触摸光效后生效。需 API 26+ 支持光效的设备，不影响 HDS 标题栏。"
+      "value": "默认白色，开启触摸光效后生效。需 API 26+ 支持光效的设备。"
     },
     {
       "name": "setting_immersive_enable",
@@ -1724,7 +1724,7 @@
     },
     {
       "name": "setting_immersive_style_desc",
-      "value": "调节通透程度，不影响 HDS 导航与页签。"
+      "value": "调节通透程度。"
     },
     {
       "name": "setting_immersive_style_ultra_thin",

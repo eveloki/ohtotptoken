@@ -14,6 +14,7 @@ export struct TokenGroupSidePanel {
   @Local busy: boolean = false;
   @Event onSelect: (id: string) => void = () => {};
   @Event onAdd: () => void = () => {};
+  @Event onClose: () => void = () => {};
   private scroller: Scroller = new Scroller();
   private groupDataSource: GenericDataSource<TokenGroup> = new GenericDataSource<TokenGroup>([]);
 
@@ -254,12 +255,18 @@ export struct TokenGroupSidePanel {
     .mode(NavigationMode.Stack)
     .bindToScrollable([this.scroller])
     .titleMode(HdsNavigationTitleMode.MINI)
-    .hideBackButton(true)
+    .hideBackButton(false)
     .backgroundColor(Color.Transparent)
     .titleBar({
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: true,
       content: {
+        backIcon: {
+          icon: $r('sys.symbol.open_sidebar'),
+          label: $r('app.string.token_group_close_sidebar'),
+          componentId: 'token_group_sidebar_close',
+          action: () => this.onClose()
+        },
         menu: {
           value: [
             {

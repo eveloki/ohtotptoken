@@ -193,6 +193,7 @@ export struct AppShell {
         tokens: this.tokens,
         scrollEffectType: this.scrollEffectType,
         onAdd: () => this.openNewGroupDialog(),
+        onClose: () => this.$groupSidebarOpen(false),
         onSelect: (id: string) => {
           this.onSelectGroup(id);
           if (!this.embedGroupSidebar) {
@@ -449,18 +450,27 @@ export struct AppShell {
     })
     .width('100%')
     .height('100%')
-    .onClick((event: ClickEvent) => {
-      // 仅关闭悬浮侧边栏，侧栏内点击和宽屏嵌入模式保持原行为。
-      if (this.canShowGroupSidebar && this.groupSidebarOpen && !this.embedGroupSidebar &&
-        event.x >= Math.min(380, this.window.WidthVp * 0.78)) {
-        this.$groupSidebarOpen(false);
-      }
-    })
+
   }
 
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
       this.SidebarBuilder()
+      if (this.canShowGroupSidebar && this.groupSidebarOpen) {
+        // 独立命中区拦截侧栏外点击，避免底层控件消费事件或被误触。
+        Row() {
+          Blank()
+            .width(this.embedGroupSidebar ? 240 : Math.min(380, this.window.WidthVp * 0.78))
+            .hitTestBehavior(HitTestMode.None)
+          Column() {}
+            .layoutWeight(1)
+            .height('100%')
+            .onClick(() => this.$groupSidebarOpen(false))
+        }
+        .width('100%')
+        .height('100%')
+        .hitTestBehavior(HitTestMode.Transparent)
+      }
     }
     .width('100%')
     .height('100%')
