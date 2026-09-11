@@ -9,17 +9,34 @@
 
 ## 1. 覆盖率基准
 
-### 当前基线（2026-09-11，Phase 1 快速赢面落地后）
+### 当前基线（2026-09-12，Phase 2 存储与密钥解耦落地后）
 
-| 指标 | Phase 1 前（2026-09-11 晨） | **Phase 1 后（当前）** |
+| 指标 | Phase 1 后（2026-09-11） | **Phase 2 后（当前）** |
 |---|---|---|
-| 全局行覆盖 | 27.11%（1772 / 6537） | **34.61%（2271 / 6561）** |
-| 全局分支覆盖 | 25.13%（349 / 1389） | **30.29%（422 / 1393）** |
-| **逻辑层行覆盖（可测基数口径）** | ≈27% | **50.92%（2195 / 4311）** |
-| **逻辑层分支覆盖（可测基数口径）** | ≈25% | **43.37%（396 / 913）** |
+| 全局行覆盖 | 34.61%（2271 / 6561） | **51.18%（3611 / 7056）** |
+| 全局分支覆盖 | 30.29%（422 / 1393） | **47.72%（721 / 1511）** |
+| **逻辑层行覆盖（可测基数口径）** | 50.92%（2195 / 4311） | **72.73%（3545 / 4874）** |
+| **逻辑层分支覆盖（可测基数口径）** | 43.37%（396 / 913） | **66.60%（696 / 1045）** |
 
-- 逻辑层口径冻结在 `scripts/check-coverage.mjs`（46 个文件：common 全部 + entry 的 crypto/steam/oath/utils，剔除真机 only 与 UI 胶水），数字随 `scripts/coverage-baseline.json` 入库，CI 禁止回退。
-- 测试规模：252 条 LocalUnit 用例（Phase 1 前 ≈200 条）。
+- 逻辑层口径冻结在 `scripts/check-coverage.mjs`（58 个文件：common 全部 + entry 的 crypto/steam/oath/utils，剔除真机 only 与 UI 胶水），数字随 `scripts/coverage-baseline.json` 入库，CI 禁止回退。Phase 2 起 `SteamSecretStore` 解耦后移出真机剔除清单（新增 StoragePorts/TokenKvBatch 使基数 55→58）。
+- 测试规模：387 条 LocalUnit 用例（Phase 1 后 252 条，新增 135 条）。
+
+### Phase 2 高风险清单去 0%（目标全部达成）
+
+| 文件 | Phase 2 前现状 | Phase 2 后 |
+|---|---|---|
+| TokenStore | 0% | **解耦（TokenKvStore+SecretStore 端口），迁移三重验证/降级/双写穷举覆盖** |
+| CloudBackupManager | 0% | **解耦（FsGateway+账号/设备/令牌/分组/图标包/同步端口），编排全测** |
+| CloudSyncTask | 无数据（豁免清单） | 纯助手（文件名/时间戳/日期）入 CommonUtils 覆盖；@Concurrent 胶水留真机 |
+| CryptoUtils | 0% | **解耦（CryptoEngine 端口），V2/V0/BLE 帧格式与错误分支全测** |
+| AssetSecretStore / SteamSecretStore | 均 0%（剔除口径） | SteamSecretStore **解耦（NamedSecretStore 端口）全测**并入口径；AssetSecretStore 尺寸判定（utf8ByteLength）覆盖，asset 胶水留真机 |
+| TokenBackup | 0% | **解耦（BackupTextIo 端口），明文/加密往返与校验全测** |
+| BackupRestoreHelper | 0% | **解耦（DeviceMigrationKv 端口），恢复成功才清空的决策全测** |
+| KvManager | 0%（剔除口径） | 事务分块提交 + 旧版本迁移抽至 TokenKvBatch（口径内）全测 |
+| TokenGroupStore | 55/59 | 保持（Phase 1 已测） |
+| OathApplet（快速赢面 11 号移交） | 无数据（豁免清单） | **解耦（OathCryptoPort+TagTransport 脚本化），SELECT/VALIDATE/CALCULATE ALL/61xx 分片全测，移出豁免清单** |
+
+附带解耦并覆盖：TokenCardStore（KeyValueStore 端口）、FileUtils（分块读取/哈希防重写入可测核心）、CloudSyncTask/CommonUtils 共享助手。IconPackCloudBackup（FsGateway+IconPackArchiver+设备端口）覆盖状态机互斥/备份流程/去抖/清理/状态查询/enabledPacks 合并纯函数——**恢复成功链路（解压→deletedPacks 清理→refreshIconPackState→合并应用）0 覆盖**（依赖 TokenIconPacks 磁盘加载，归 Phase 3 或真机 ohosTest）。`StoragePorts.ets` 的 FileIoFsGateway 生产适配器（0/77）有意留在分母：fileIo/cloudSync 真机行为归 ohosTest 责任区（与 Phase 3 登记表一致）。
 
 ### Phase 1 前分目录（历史存档，行覆盖 = covered/total 插桩行）
 
@@ -40,10 +57,14 @@
 - 报告共 65 个文件条目；entry 的 pages(29)/dialogs(7)/components(20)/oath(4)/shell(3) **完全不在报告中（无数据 ≠ 0%）**，uikit/wearable 亦无条目。这些文件未来若进入插桩基数，全局百分比会被稀释。
 - 因此**所有目标按「逻辑层可测基数」定义，不以全局插桩行定义**；全局数字仅作防基数漂移的参考，与 `coverage-baseline.json` 的 `globalReference` 一致。
 
-### LocalUnit 运行时限制（2026-09-11 实测新增）
+### LocalUnit 运行时限制（2026-09-11 实测新增；Phase 2 补充）
 
 - `util.Base64Helper`（@ohos.util）：**静默返回空数据**（encodeToStringSync 返回 ''、decodeSync 返回空数组，不抛异常）。CloudBackupCrypto 已加 `Base64Codec` 注入；Base64Util 的用例固化了该行为，若 LocalUnit 未来支持会主动失败提醒迁移。
-- `systemDateTime.getTime()` 与 `Date.now()`：被 stub、不与真实时钟对齐——时间差/耗时段言不可写，只能断言返回有限数值。
+- `systemDateTime.getTime()` 与 `Date.now()`：被 stub、不与真实时钟对齐——时间差/耗时段言不可写，只能断言返回有限数值。注意 `new Date()`（无参）走真实时钟：跨时钟的"是否今天"类断言不可写（Phase 2 的 auto_backup 用例因此只测确定性的"昨日时间戳"分支）。
+- `util.TextDecoder` 静默失效的连带影响（Phase 2 实测）：OathApplet 的凭据名解码经 `OathCryptoPort.utf8Decode` 注入后才可测；纯 TS UTF-8 编解码参考 `FakeCryptoEngine.utf8Encode/utf8Decode`。
+- `DeviceInfoHelper`（@ohos.deviceInfo）在 LocalUnit 抛异常：IconPackCloudBackup 备份流程经 `IconPackDevicePort` 注入后可测。
+- `@Concurrent`（TaskPool）函数**只能引用 import 进来的标识符**，同文件的模块级函数/常量不行（ArkTS lint 28079/variablesInFunctionCheck）：共享逻辑放 CommonUtils（其文件头注释即为此约定）再 import。
+- ArkTS 标称类型注意点：测试假实现 `implements` 的是哪个接口必须与注入点参数类型同族（接口继承链任一祖先即可）；跨族传参会触发 arkts-no-structural-typing 编译错误——这正是端口族（KeyValueStore ← TokenGroupKvBackend ← TokenKvStore）要设计成继承链的原因。
 - 其余已知限制见 AGENTS.md 第 10 节（cryptoFramework、generateRandomUUID、TextDecoder 等）。
 
 ---
@@ -87,7 +108,7 @@ PermissionManager、DlpAntiPeepManager、PhotoPickerUtils、IconThumbnailTask、
 |---|---|---|---|
 | **Phase 0 口径修正** | 固定基数 | 本文件剔除清单评审通过；无数据文件明确归入 UI 口径 | ✅ 完成 |
 | **Phase 1 快速赢面** | 行 27%→**40~45%**；分支 25%→**33~35%** | ✅ **完成（2026-09-11）**：行 **50.92%**、分支 **43.37%** 双双超额；清单 1~10、12 落地（11 号 OathApplet 移交 Phase 2 头）；CloudBackupCrypto/TokenGroupStore/AppPreference 脱离 0%；CI 门禁 `check-coverage.mjs` + `coverage-baseline.json` 已入 quality.yml。A 类纯函数路径全覆盖（TokenUtils 文件级 37.6% 因其余为真机 API 胶水，归 B/C 口径） | 实际 1 天 |
-| **Phase 2 存储与密钥解耦** | 行→**55~60%**；分支→**45%** | 建立四个接口：`KeyValueStore`、`SecretStore`、`CryptoEngine`、`FsGateway`；TokenStore 迁移决策（三重验证/降级/双写）穷举用例；高风险清单全部脱离 0%。候选入手点（当前 0% 的最大块）：CloudBackupManager(330)、IconPackCloudBackup(368)、CryptoUtils(159)、TokenStore(256)、FileUtils(77)、TokenCardStore(77)、BackupRestoreHelper(19)、OathApplet 协议层 | 3~6 周 |
+| **Phase 2 存储与密钥解耦** | 行→**55~60%**；分支→**45%** | ✅ **完成（2026-09-12）**：行 **72.73%**、分支 **66.60%** 双双大幅超额。四端口族落地于 `StoragePorts.ets`（`KeyValueStore`/`TokenKvStore`、`SecretStore`/`NamedSecretStore`、`CryptoEngine`、`FsGateway`，另有 `TokenGroupKvBackend` 并入、`BackupTextIo`/`TransactionalKv`/`LegacyTokenKv`/`IconPackArchiver`/`DeviceMigrationKv`/`OathCryptoPort` 等伴生端口）；TokenStore 迁移决策（三重验证三分支/超限降级/双写/KV 失败回滚）穷举用例；高风险清单全部脱离 0%（见第 1 节表）；快速赢面 11 号 OathApplet 落地并移出豁免清单。实际工作量 1 天（计划 3~6 周为含评审/真机回归的保守估计；AES/PBKDF2/GCM 数值正确性仍归真机 ohosTest） | 实际 1 天 |
 | **Phase 3 备份与传输协议** | 行→**70~75%**；分支→**55~60%**（逻辑层基本到顶） | CloudBackupManager/CloudSyncTask/TokenBackup/IconPackCloudBackup 打包解析与状态机全测；BleFrameCodec/WearEngine 消息编解码纯类分支 ≥70%；ohosTest 补齐备份 round-trip、换机迁移、BLE/WearEngine 冒烟各 ≥3 条 | 4~8 周 |
 
 **天花板**：75%/60%（行/分支）之后剩余基本是 API 调用胶水（await kvStore.put、asset.add、ble.write…），LocalUnit 永远测不了，强行 mock 只会产生"测 mock"的假覆盖。折算到当前全量 6,537 行口径约为 55~58% 行。
@@ -104,7 +125,7 @@ PermissionManager、DlpAntiPeepManager、PhotoPickerUtils、IconThumbnailTask、
 8. ✅ SnackBar 注入点（注入记录函数验证分发与默认参数）
 9. ✅ Base64Util（**实测结论：util.Base64Helper 在 LocalUnit 静默返回空**——用例固化该行为并注释迁移路径；纯 TS base64 语义由 SteamCrypto 套件覆盖）
 10. ✅ UiUtils.throttle 窗口、TokenBatchProgress 观察者协议（含观察者抛异常不回滚）、CommonUtils（delay resolve、nowUnixSeconds 契约、padZero）
-11. ⬜ oath/OathApplet 协议层（519 行 TLV/指令构造；cryptoFramework 换 PureHash 注入后全测）— Phase 1 末或 Phase 2 头
+11. ✅ oath/OathApplet 协议层（**Phase 2 头落地 2026-09-12**：OathCryptoPort 注入 + 脚本化 TagTransport；SELECT 解析/锁定、VALIDATE 三分支、CALCULATE ALL 凭据分类（默认周期/HOTP 重算/非默认周期/touch 跳过）、61xx 分片链、TLV 边界与状态字映射全测；PBKDF2/HMAC-SHA1 数值归真机）
 12. ✅ ResponsiveLayoutPolicy（新增 `resolveVp(widthVp, heightVp)` 纯数值入口，`resolve` 委托换算；断点/宽高比边界全测）
 
 ### UI 层（pages/dialogs/components/shell/widget/uikit/wearable，约 1.76 万行）
@@ -140,7 +161,7 @@ node scripts/check-coverage.mjs
 
 ### 门禁盲区登记（2026-09-11 红方评审后加固）
 
-- **分母逃逸**：coverageReport.json 只含测试导入图可达的文件，未加载的口径内文件对覆盖率完全不可见。`check-coverage.mjs` 现将磁盘口径文件与报告路径求差集，豁免清单冻结于 `coverage-baseline.json` 的 `expectedAbsentFromReport`（当前 9 个，只允许缩小）：common 的 AppWindowInfo/AppFonts/CloudSyncTask/CommonConstants，entry 的 oath/NfcSessionTokens、oath/OathApplet、oath/TagTransport、utils/BackupImportOperation、utils/TokenBatchOperation。给文件补导入触达用例后应移除对应条目；OathApplet 随快速赢面 11 号（Phase 2 头）自然消除。
+- **分母逃逸**：coverageReport.json 只含测试导入图可达的文件，未加载的口径内文件对覆盖率完全不可见。`check-coverage.mjs` 现将磁盘口径文件与报告路径求差集，豁免清单冻结于 `coverage-baseline.json` 的 `expectedAbsentFromReport`（当前 8 个，只允许缩小）：common 的 AppWindowInfo/AppFonts/CloudSyncTask/CommonConstants，entry 的 oath/NfcSessionTokens、oath/TagTransport、utils/BackupImportOperation、utils/TokenBatchOperation。给文件补导入触达用例后应移除对应条目；OathApplet 已随 Phase 2 落地移出。
 - **baseline 防篡改**：baseline 含 `fileCount`（磁盘口径文件数），门禁对「删文件缩分母」「报告缺文件」双重拦截；覆盖率提升后重新生成 baseline 并随代码提交（同一提交内下调 baseline 属违反流程，review 时应拒绝）。
 - **未守护目录**（三分法有意排除，写入即不受门禁约束）：entry 的 pages/dialogs/components/shell/widget、entryability/entryformability 系、uikit/wearable 模块。gate 每次运行都会打印此提示。
 
@@ -150,5 +171,5 @@ node scripts/check-coverage.mjs
 
 1. 合理终点：**逻辑层（可测基数 ≈5,000 行）三阶段 40% → 60% → 75% 行覆盖，分支 33% → 45% → 60%**；全局口径终态约 55%。UI 层不设行覆盖目标。
 2. 分 Phase 0 + 3 个实施阶段；UI 前两阶段零投入，Phase 3 可选黑盒冒烟。
-3. 最高优先级是高风险清单（TokenStore/CloudBackupCrypto/各 SecretStore/备份恢复路径）；Phase 3 前，真机备份 round-trip 用例必须存在。
-4. 解耦成本低：PureHash、HttpTransport、Sleeper、TagTransport、setSnackBarImpl 五个先例证明 B 类解耦是沿用既有模式；BLE/WearEngine/NFC/cloudSync/asset 真机部分明确剔除，交给 ohosTest。
+3. 最高优先级是高风险清单（TokenStore/CloudBackupCrypto/各 SecretStore/备份恢复路径）；Phase 3 前，真机备份 round-trip 用例必须存在。**Phase 2（2026-09-12）已把高风险清单的 LocalUnit 可测部分全部落地并大幅超额达标（72.63%/66.22%）；Phase 3 的重点因此收敛为：备份/恢复协议状态机（CloudBackupManager/TokenBackup/IconPackCloudBackup 深分支）、BLE/WearEngine 消息编解码纯类，以及真机 ohosTest 补齐备份 round-trip、换机迁移、BLE/WearEngine 冒烟各 ≥3 条。**
+4. 解耦成本低：PureHash、HttpTransport、Sleeper、TagTransport、setSnackBarImpl 五个先例证明 B 类解耦是沿用既有模式；Phase 2 的 StoragePorts 端口族延续该模式并已沉淀为标准做法（新增 B 类文件先抽端口再写实现）；BLE/WearEngine/NFC/cloudSync/asset 真机部分明确剔除，交给 ohosTest。

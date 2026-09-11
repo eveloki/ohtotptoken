@@ -1,38 +1,37 @@
 {
-  "date": "2026-09-11",
-  "note": "Phase 1 快速赢面（docs/TEST_PLAN.md 清单 1-10、12）落地后的逻辑层基线。口径冻结于 check-coverage.mjs；全局口径仅作参考防基数漂移。expectedAbsentFromReport = 测试导入图未加载、报告不可见的口径内文件（分母逃逸盲区，只允许缩小；给新文件补导入触达用例后移除对应条目）。",
-  "fileCount": 55,
+  "date": "2026-09-12",
+  "note": "Phase 2 存储与密钥解耦（docs/TEST_PLAN.md 第 4 节）落地并经红方评审加固后的逻辑层基线。四端口族（KeyValueStore/TokenKvStore、SecretStore/NamedSecretStore、CryptoEngine、FsGateway）入 StoragePorts.ets；TokenStore 迁移三重验证穷举、CryptoUtils 格式层、CloudBackupManager/IconPackCloudBackup 编排、OathApplet 协议层、SteamSecretStore 分片、TokenKvBatch 事务均 LocalUnit 可测。口径冻结于 check-coverage.mjs；SteamSecretStore 移出真机剔除清单。expectedAbsentFromReport = 报告不可见的口径内文件（只允许缩小）。",
+  "fileCount": 58,
   "expectedAbsentFromReport": [
     "common/src/main/ets/models/AppWindowInfo.ets",
     "common/src/main/ets/utils/AppFonts.ets",
     "common/src/main/ets/utils/CloudSyncTask.ets",
     "common/src/main/ets/utils/CommonConstants.ets",
     "entry/src/main/ets/oath/NfcSessionTokens.ets",
-    "entry/src/main/ets/oath/OathApplet.ets",
     "entry/src/main/ets/oath/TagTransport.ets",
     "entry/src/main/ets/utils/BackupImportOperation.ets",
     "entry/src/main/ets/utils/TokenBatchOperation.ets"
   ],
   "lines": {
-    "covered": 2195,
-    "total": 4311,
-    "pct": 50.92
+    "covered": 3545,
+    "total": 4874,
+    "pct": 72.73
   },
   "branches": {
-    "covered": 396,
-    "total": 913,
-    "pct": 43.37
+    "covered": 696,
+    "total": 1045,
+    "pct": 66.6
   },
   "globalReference": {
     "lines": {
-      "covered": 2271,
-      "total": 6561,
-      "pct": 34.61
+      "covered": 3626,
+      "total": 7070,
+      "pct": 51.29
     },
     "branches": {
-      "covered": 422,
-      "total": 1393,
-      "pct": 30.29
+      "covered": 725,
+      "total": 1511,
+      "pct": 47.98
     }
   }
 }

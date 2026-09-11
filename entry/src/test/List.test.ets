@@ -29,6 +29,18 @@ import base64UtilTest from './Base64Util.test';
 import uiUtilsMiscTest from './UiUtilsMisc.test';
 import tokenImporterRegistryTest from './TokenImporter.test';
 import responsiveLayoutPolicyTest from './ResponsiveLayoutPolicy.test';
+import tokenStoreTest from './TokenStore.test';
+import cryptoUtilsTest from './CryptoUtils.test';
+import cloudBackupManagerTest from './CloudBackupManager.test';
+import backupRestoreHelperTest from './BackupRestoreHelper.test';
+import tokenBackupTest from './TokenBackup.test';
+import tokenCardStoreTest from './TokenCardStore.test';
+import steamSecretStoreTest from './SteamSecretStore.test';
+import tokenKvBatchTest from './TokenKvBatch.test';
+import fileUtilsTest from './FileUtils.test';
+import storagePortsTest from './StoragePorts.test';
+import oathAppletTest from './OathApplet.test';
+import iconPackCloudBackupTest from './IconPackCloudBackup.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -62,4 +74,16 @@ export default function testsuite() {
   uiUtilsMiscTest();
   tokenImporterRegistryTest();
   responsiveLayoutPolicyTest();
+  tokenStoreTest();
+  cryptoUtilsTest();
+  cloudBackupManagerTest();
+  backupRestoreHelperTest();
+  tokenBackupTest();
+  tokenCardStoreTest();
+  steamSecretStoreTest();
+  tokenKvBatchTest();
+  fileUtilsTest();
+  storagePortsTest();
+  oathAppletTest();
+  iconPackCloudBackupTest();
 }

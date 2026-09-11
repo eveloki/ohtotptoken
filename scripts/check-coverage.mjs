@@ -39,10 +39,11 @@ const LOGIC_ROOTS = [
 ];
 
 // 真机 only 责任区（docs/TEST_PLAN.md 第 2 节）+ UI 胶水，按文件名剔除。
+// Phase 2 起 SteamSecretStore 已解耦（NamedSecretStore 端口注入），逻辑可测，移出本清单。
 const DEVICE_ONLY_OR_UI = [
   'PermissionManager', 'DlpAntiPeepManager', 'PhotoPickerUtils', 'IconThumbnailTask',
   'RdbManager', 'HuaweiAccountManager', 'BleTokenTransfer', 'WearEngineTransfer',
-  'KvManager', 'AssetSecretStore', 'SteamSecretStore',
+  'KvManager', 'AssetSecretStore',
   'NfcOathReader', 'NfcTagTransport', 'NetworkHttpTransport', 'TokenSwitchPerf',
   'EntryAbility', 'HdsSnackBarUtils',
 ];

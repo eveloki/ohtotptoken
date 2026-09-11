@@ -1,15 +1,13 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { util } from '@kit.ArkTS';
 import { KvManager } from './KvManager';
+import { TokenGroupKvBackend } from './StoragePorts';
 
 export const ALL_TOKEN_GROUPS: string = '__all__';
 export const FAVORITE_TOKEN_GROUP: string = '__favorites__';
 
-/** 分组目录的 KV 后端接口：生产环境由 KvManager 实现，测试注入内存实现（Phase 2 将沉淀为 KeyValueStore）。 */
-export interface TokenGroupKvBackend {
-  getValue<T>(key: string): Promise<T | null>;
-  setValue<T>(key: string, value: T): Promise<void>;
-}
+// TokenGroupKvBackend 已并入 StoragePorts 端口族（Phase 2）；
+// 通过 common/Index 的 `export * from StoragePorts` 继续按原名导出。
 
 export class TokenGroup {
   id: string = '';

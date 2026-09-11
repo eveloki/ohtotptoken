@@ -33,6 +33,10 @@ class MemoryKv implements TokenGroupKvBackend {
     this.saved = JSON.parse(JSON.stringify(value)) as TokenGroup[];
     return Promise.resolve();
   }
+
+  deleteValue(_key: string): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 function group(id: string, name: string, color?: number): TokenGroup {
