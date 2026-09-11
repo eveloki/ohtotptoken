@@ -17,6 +17,7 @@ import { AppStorageV2 } from '@kit.ArkUI';
 import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import lazy { HuaweiAccountManager, HuaweiUserInfo, HuaweiAccountLoginError } from 'common';
 import { MaterialSheetStyle } from '../components/MaterialSheetStyle';
+import { MaterialTheme } from '../components/MaterialTheme';
 import { SettingItem } from '../components/SettingItem';
 import { SubItemButton } from '../components/SubItemButton';
 import { SubItemDivider } from '../components/SubItemDivider';
@@ -400,6 +401,15 @@ export struct SheetCoordinator {
     .titleBar({
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: true,
+      style: {
+        originalStyle: {
+          contentStyle: {
+            backIconStyle: MaterialTheme.navigationIconStyle(),
+            menuStyle: MaterialTheme.navigationIconStyle()
+          }
+        },
+        scrollEffectStyle: MaterialTheme.navigationScrollStyle()
+      },
       content: {
         title: {
           mainTitle: $r('app.string.huawei_account_current')

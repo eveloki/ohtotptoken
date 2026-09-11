@@ -1,5 +1,6 @@
 import { ble } from '@kit.ConnectivityKit';
 import { hdsMaterial, HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
+import { MaterialTheme } from '../components/MaterialTheme';
 import { ConfigurationConstant } from '@kit.AbilityKit';
 import { PageScaffold } from '../components/PageScaffold';
 import { SettingItem } from '../components/SettingItem';
@@ -557,17 +558,17 @@ export struct BleWatchSyncPage {
               mainTitleColor: $r('sys.color.font_primary'),
               subTitleColor: $r('sys.color.font_secondary')
             },
-            backIconStyle: {
-              iconColor: $r('sys.color.icon_primary')
-            }
+            backIconStyle: MaterialTheme.navigationIconStyle(),
+            menuStyle: MaterialTheme.navigationIconStyle()
           },
         },
+        scrollEffectStyle: MaterialTheme.navigationScrollStyle(),
         scrollEffectOpts: {
           enableScrollEffect: true,
           scrollEffectType: this.scrollEffectType
         },
         systemMaterialEffect: {
-          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialType: MaterialTheme.hdsMaterialType(),
           materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
         }
       },

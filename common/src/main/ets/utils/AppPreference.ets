@@ -413,7 +413,7 @@ export class MaterialPreference {
   /** 默认开启，仅在系统支持的区域应用 */
   @Trace app_appearance_immersive_enable: boolean = true;
   /** 沉浸材质厚度偏好（SettingImmersiveStyle 五档） */
-  @Trace app_appearance_immersive_style: number = SettingImmersiveStyle.REGULAR;
+  @Trace app_appearance_immersive_style: number = SettingImmersiveStyle.THICK;
   @Trace app_appearance_immersive_interactive: boolean = true;
   @Trace app_appearance_immersive_light_effect: boolean = true;
   @Trace app_appearance_material_shadow: boolean = true;
@@ -556,8 +556,8 @@ export class AppPreference {
     [PREF_KEYS.WANT_URI, ''],
     // 沉浸光感开关（默认开启）
     [PREF_KEYS.APPEARANCE_IMMERSIVE_ENABLE, true],
-    // 沉浸材质厚度偏好（默认常规）
-    [PREF_KEYS.APPEARANCE_IMMERSIVE_STYLE, SettingImmersiveStyle.REGULAR],
+    // 沉浸材质厚度偏好（默认厚）
+    [PREF_KEYS.APPEARANCE_IMMERSIVE_STYLE, SettingImmersiveStyle.THICK],
     [PREF_KEYS.APPEARANCE_IMMERSIVE_INTERACTIVE, true],
     [PREF_KEYS.APPEARANCE_IMMERSIVE_LIGHT_EFFECT, true],
     [PREF_KEYS.APPEARANCE_MATERIAL_SHADOW, true],

@@ -24,6 +24,7 @@
     { "name": "token_multi_delete_title", "value": "Delete %d selected tokens?" },
     { "name": "token_multi_success", "value": "Processed %d tokens" },
     { "name": "token_multi_failed", "value": "%d tokens could not be processed. Try again. NFC session tokens cannot be favorited or grouped." },
+    { "name": "token_group_manage", "value": "Manage groups" },
     { "name": "token_group_open_sidebar", "value": "Open groups sidebar" },
     { "name": "token_group_close_sidebar", "value": "Close groups sidebar" },
     { "name": "token_group_all", "value": "All tokens" },
@@ -1683,7 +1684,7 @@
     },
     {
       "name": "setting_immersive_interactive_desc",
-      "value": "Animate supported native material controls when pressed. Does not affect HDS title bars."
+      "value": "Animate supported native material controls when pressed."
     },
     {
       "name": "setting_immersive_light_effect",
@@ -1691,7 +1692,7 @@
     },
     {
       "name": "setting_immersive_light_effect_desc",
-      "value": "Show touch lighting on supported native material controls, independently of deformation. Does not affect HDS title bars."
+      "value": "Show touch lighting on supported native material controls, independently of deformation."
     },
     {
       "name": "setting_material_reset_colors",
@@ -1703,7 +1704,7 @@
     },
     {
       "name": "setting_material_shadow_desc",
-      "value": "Control native material shadows, not separately configured shadows or HDS title bars."
+      "value": "Control native material shadows."
     },
     {
       "name": "setting_material_color",
@@ -1719,7 +1720,7 @@
     },
     {
       "name": "setting_light_color_desc",
-      "value": "White by default. Requires touch lighting and a supported API 26+ device. Does not affect HDS title bars."
+      "value": "White by default. Requires touch lighting and a supported API 26+ device."
     },
     {
       "name": "setting_immersive_enable",
@@ -1735,7 +1736,7 @@
     },
     {
       "name": "setting_immersive_style_desc",
-      "value": "Adjust translucency; excludes HDS bars."
+      "value": "Adjust translucency."
     },
     {
       "name": "setting_immersive_style_ultra_thin",

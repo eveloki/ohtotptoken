@@ -101,12 +101,15 @@ export struct FeedbackSheet {
         style: {
           originalStyle: {
             contentStyle: {
+              backIconStyle: MaterialTheme.navigationIconStyle(),
+              menuStyle: MaterialTheme.navigationIconStyle(),
               titleStyle: {
                 mainTitleColor: $r('sys.color.font_primary'),
                 subTitleColor: $r('sys.color.font_secondary')
               }
             },
           },
+          scrollEffectStyle: MaterialTheme.navigationScrollStyle(),
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.scrollEffectType

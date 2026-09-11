@@ -147,11 +147,11 @@ export struct DataSyncSheet {
                 mainTitleColor: $r('sys.color.font_primary'),
                 subTitleColor: $r('sys.color.font_secondary')
               },
-              backIconStyle: {
-                iconColor: $r('sys.color.icon_primary')
-              }
+              backIconStyle: MaterialTheme.navigationIconStyle(),
+              menuStyle: MaterialTheme.navigationIconStyle()
             },
           },
+          scrollEffectStyle: MaterialTheme.navigationScrollStyle(),
           scrollEffectOpts: {
             enableScrollEffect: true,
             scrollEffectType: this.scrollEffectType

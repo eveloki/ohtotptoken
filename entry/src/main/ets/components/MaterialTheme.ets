@@ -1,7 +1,7 @@
 import { MaterialPreference, SettingImmersiveStyle } from 'common';
 import { AppStorageV2, uiMaterial } from '@kit.ArkUI';
 import { deviceInfo } from '@kit.BasicServicesKit';
-import { hdsMaterial } from '@kit.UIDesignKit';
+import { hdsMaterial, HdsNavigationIconItemStyle, HdsNavigationTitleBarStyle } from '@kit.UIDesignKit';
 import { MaterialPolicy } from '../utils/MaterialPolicy';
 
 /** 只提供材质实参，不包装组件；调用方必须处于官方允许的生效区域。 */
@@ -67,6 +67,28 @@ export class MaterialTheme {
     return MaterialTheme.materialPref().app_appearance_immersive_enable &&
       MaterialPolicy.getInstance().getTier() !== 'solid' ?
       hdsMaterial.MaterialType.IMMERSIVE : hdsMaterial.MaterialType.NONE;
+  }
+
+  /** 无光感时，标题栏图标在初始和滚动状态下使用相同的系统灰色背板。 */
+  static navigationIconStyle(): HdsNavigationIconItemStyle {
+    return {
+      iconColor: $r('sys.color.icon_primary'),
+      backgroundColor: MaterialTheme.hdsMaterialType() === hdsMaterial.MaterialType.NONE ?
+        $r('sys.color.comp_background_gray') : undefined
+    };
+  }
+
+  static navigationScrollStyle(): HdsNavigationTitleBarStyle {
+    return {
+      contentStyle: {
+        backIconStyle: {
+          backgroundColor: MaterialTheme.navigationIconStyle().backgroundColor
+        },
+        menuStyle: {
+          backgroundColor: MaterialTheme.navigationIconStyle().backgroundColor
+        }
+      }
+    };
   }
 
   /** HdsTabs 悬浮页签支持独立光效颜色；HDS 材质参数不支持 materialColor。 */

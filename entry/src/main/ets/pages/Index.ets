@@ -134,6 +134,9 @@ function TokenActionsMenuBuilder(host: Index) {
       .enabled(!host.multiSelectMode && host.displayTokens.length > 0)
       .onClick(() => host.openMultiSelectPage())
       .accessibilityText($r('app.string.menu_token_multi_select'))
+    MenuItem({ content: $r('app.string.token_group_manage') })
+      .onClick(() => host.openGroupManagement())
+      .accessibilityText($r('app.string.token_group_manage'))
   }
   .width(host.getTokenActionsMenuWidth())
   // 使用原生内嵌展开，让添加和排序选项在各自入口下方显示。
@@ -189,7 +192,6 @@ struct Index {
   @Local CurrentTokens: TokenConfig[] = [];
   @Local groupState: TokenGroupState = TokenGroupStore.getInstance().state;
   @Local groupSidebarOpen: boolean = false;
-  @Local tokenTitleCollapse: number = 0;
 
   onBackPress(): boolean {
     if (this.multiSelectMode && !this.isAppLockOverlayVisible) {
@@ -229,7 +231,6 @@ struct Index {
     }
     this.exitMultiSelect();
     this.groupState.selectedId = id;
-    this.tokenTitleCollapse = 0;
     this.tokenListScroller.scrollTo({ xOffset: 0, yOffset: 0 });
     if (this.selectedTokenUUID !== '' &&
       !this.displayTokens.some(token => token.TokenUUID === this.selectedTokenUUID)) {
@@ -1078,6 +1079,10 @@ struct Index {
     });
   }
 
+  openGroupManagement(): void {
+    this.groupSidebarOpen = true;
+  }
+
   getTokenActionsMenuWidth(): number | undefined {
     const uiContext = this.getUIContext();
     const measure = uiContext.getMeasureUtils();
@@ -1090,6 +1095,7 @@ struct Index {
       $r('app.string.menu_add_nfc_read'),
       $r('app.string.menu_token_sort_method'),
       $r('app.string.menu_token_multi_select'),
+      $r('app.string.token_group_manage'),
       $r('app.string.menu_token_sort_default'),
       $r('app.string.menu_token_sort_username_ascending'),
       $r('app.string.menu_token_sort_token_name_ascending'),
@@ -1314,11 +1320,6 @@ struct Index {
   @Builder
   HomeContentBuilder(multiSelect: boolean = false) {
     HomeTabs({
-      onTokenListScroll: (offset: number) => {
-        if (!multiSelect) {
-          this.tokenTitleCollapse = Math.min(1, Math.max(0, offset / 56));
-        }
-      },
       tokens: this.displayTokens,
       multiSelectMode: multiSelect,
       listStartOffset: multiSelect ? this.window.AvoidTopHeight + CommonConstants.AVOID_TOP_BASE_HEIGHT : 0,
@@ -1365,7 +1366,6 @@ struct Index {
         currentHomeTabIndex: this.currentHomeTabIndex,
         onSelectGroup: (id: string) => this.selectGroup(id),
         groupSidebarOpen: this.groupSidebarOpen,
-        tokenTitleCollapse: this.tokenTitleCollapse,
         $groupSidebarOpen: (open: boolean) => { this.groupSidebarOpen = open; },
         window: this.window,
         businessSplitEnabled: this.businessSplitEnabled,
