@@ -3,6 +3,7 @@ import smokeTest from './Smoke.test';
 import base32Test from './Base32.test';
 import cardOTPUtilsTest from './CardOTPUtils.test';
 import tokenUtilsExtraTest from './TokenUtilsExtra.test';
+import tokenUtilsIconPackTest from './TokenUtilsIconPack.test';
 import steamUtilsTest from './SteamUtils.test';
 import syncTimeHelperTest from './SyncTimeHelper.test';
 import colorUtilsTest from './ColorUtils.test';
@@ -14,11 +15,20 @@ import steamProtoTest from './SteamProto.test';
 import steamMessagesTest from './SteamMessages.test';
 import steamCryptoTest from './SteamCrypto.test';
 import steamClientTest from './SteamClient.test';
+import steamClientExtraTest from './SteamClientExtra.test';
 import steamAuthTest from './SteamAuth.test';
 import steamFlowTest from './SteamFlow.test';
 import steamActionsTest from './SteamActions.test';
 import steamHttpTest from './SteamHttp.test';
 import googleAuthMigrationTest from './GoogleAuthMigration.test';
+import cloudBackupCryptoTest from './CloudBackupCrypto.test';
+import tokenGroupStoreTest from './TokenGroupStore.test';
+import appPreferenceTest from './AppPreference.test';
+import snackBarTest from './SnackBar.test';
+import base64UtilTest from './Base64Util.test';
+import uiUtilsMiscTest from './UiUtilsMisc.test';
+import tokenImporterRegistryTest from './TokenImporter.test';
+import responsiveLayoutPolicyTest from './ResponsiveLayoutPolicy.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -26,6 +36,7 @@ export default function testsuite() {
   base32Test();
   cardOTPUtilsTest();
   tokenUtilsExtraTest();
+  tokenUtilsIconPackTest();
   steamUtilsTest();
   syncTimeHelperTest();
   colorUtilsTest();
@@ -37,9 +48,18 @@ export default function testsuite() {
   steamMessagesTest();
   steamCryptoTest();
   steamClientTest();
+  steamClientExtraTest();
   steamAuthTest();
   steamFlowTest();
   steamActionsTest();
   steamHttpTest();
   googleAuthMigrationTest();
+  cloudBackupCryptoTest();
+  tokenGroupStoreTest();
+  appPreferenceTest();
+  snackBarTest();
+  base64UtilTest();
+  uiUtilsMiscTest();
+  tokenImporterRegistryTest();
+  responsiveLayoutPolicyTest();
 }

@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-11",
+  "note": "Phase 1 快速赢面（docs/TEST_PLAN.md 清单 1-10、12）落地后的逻辑层基线。口径冻结于 check-coverage.mjs；全局口径仅作参考防基数漂移。expectedAbsentFromReport = 测试导入图未加载、报告不可见的口径内文件（分母逃逸盲区，只允许缩小；给新文件补导入触达用例后移除对应条目）。",
+  "fileCount": 55,
+  "expectedAbsentFromReport": [
+    "common/src/main/ets/models/AppWindowInfo.ets",
+    "common/src/main/ets/utils/AppFonts.ets",
+    "common/src/main/ets/utils/CloudSyncTask.ets",
+    "common/src/main/ets/utils/CommonConstants.ets",
+    "entry/src/main/ets/oath/NfcSessionTokens.ets",
+    "entry/src/main/ets/oath/OathApplet.ets",
+    "entry/src/main/ets/oath/TagTransport.ets",
+    "entry/src/main/ets/utils/BackupImportOperation.ets",
+    "entry/src/main/ets/utils/TokenBatchOperation.ets"
+  ],
+  "lines": {
+    "covered": 2195,
+    "total": 4311,
+    "pct": 50.92
+  },
+  "branches": {
+    "covered": 396,
+    "total": 913,
+    "pct": 43.37
+  },
+  "globalReference": {
+    "lines": {
+      "covered": 2271,
+      "total": 6561,
+      "pct": 34.61
+    },
+    "branches": {
+      "covered": 422,
+      "total": 1393,
+      "pct": 30.29
+    }
+  }
+}
