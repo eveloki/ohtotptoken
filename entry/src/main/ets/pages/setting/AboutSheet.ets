@@ -43,6 +43,12 @@ struct AboutInfoRow {
   }
 }
 
+/**
+ * 软件信息行的左右缩进：与行内文字留白一致（16/16），
+ * 即分隔线两端与文字两端对齐，不做图标对齐的左侧加大缩进。
+ */
+const INFO_ROW_DIVIDER_INSET: number = 16;
+
 @Preview
 @ComponentV2
 export struct AboutSheet {
@@ -136,9 +142,9 @@ export struct AboutSheet {
           ListItem() {
             SettingItem({ title: $r('app.string.about_software_info') }) {
               AboutInfoRow({ label: $r('app.string.about_bundle_name'), value: this.bundleName })
-              SubItemDivider()
+              SubItemDivider({ insetLeft: INFO_ROW_DIVIDER_INSET, insetRight: INFO_ROW_DIVIDER_INSET })
               AboutInfoRow({ label: $r('app.string.about_version_code'), value: this.versionCodeText })
-              SubItemDivider()
+              SubItemDivider({ insetLeft: INFO_ROW_DIVIDER_INSET, insetRight: INFO_ROW_DIVIDER_INSET })
               AboutInfoRow({ label: $r('app.string.about_contact_email'), value: this.contactEmail })
             }
           }
