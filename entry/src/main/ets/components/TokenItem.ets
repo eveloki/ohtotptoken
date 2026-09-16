@@ -521,12 +521,7 @@ export struct TokenItem {
                 .color(this.TokenLeftPeriod <= this.token_color_change_threshold ?
                   this.token_progress_color_near_next :
                   this.token_progress_color_normal)
-              // 线性进度没有右侧进度环, 剩余秒数补在进度条下方(与环内数字等价, 避免倒计时不可见)
-              Text(this.TokenLeftPeriod.toString())
-                .textAlign(TextAlign.End)
-                .width(this.tokenNumberWidth)
-                .fontColor($r('app.color.str_gray'))
-                .fontSize(10)
+              // 线性样式不显示倒计时数字: 进度条本身即为剩余时间的指示, 环内数字仅由环形/刻度环样式承担
             }
             if (this.Config.TokenType == otpType.HOTP) {
               Row() {
