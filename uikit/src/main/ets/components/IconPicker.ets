@@ -228,20 +228,6 @@ export struct IconPicker {
           })
         })
       }
-
-      if (this.selectedIconPath === path) {
-        Stack() {
-          SymbolGlyph($r('sys.symbol.checkmark'))
-            .fontSize(LengthMetrics.vp(12).value)
-            .fontWeight(FontWeight.Bold)
-            .fontColor([Color.White])
-        }
-        .width(LengthMetrics.vp(18).value)
-        .height(LengthMetrics.vp(18).value)
-        .borderRadius(LengthMetrics.vp(9).value)
-        .backgroundColor($r('app.color.button_blue'))
-        .align(Alignment.BottomEnd)
-      }
     }
     .width('100%')
     .height('100%')
@@ -268,7 +254,8 @@ export struct IconPicker {
             LengthMetrics.vp(20).value : 0)
       }
 
-      if (removable || this.selectedIconPath === path) {
+      // 选中态只由 IconChoice 的描边与底色表达，图标上不再叠加对勾角标。
+      if (removable) {
         this.ItemIconOverlay(path, removable)
       }
     }
