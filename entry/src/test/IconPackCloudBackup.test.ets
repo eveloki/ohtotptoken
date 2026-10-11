@@ -382,6 +382,7 @@ export default function iconPackCloudBackupTest() {
       const status = await icons.getCloudBackupStatus();
       expect(status.exists).assertTrue();
       expect(status.metadataKnown).assertFalse();
+      expect(status.metadataAbsent).assertFalse();
       expect(status.packCount).assertEqual(0);
       expect(status.packs.length).assertEqual(0);
       expect(status.sourceDeviceId).assertEqual('');
@@ -394,6 +395,66 @@ export default function iconPackCloudBackupTest() {
       expect(fs.deleteAttempts.length).assertEqual(0);
       expect(fs.files.size).assertEqual(2);
       expect(sync.calls).assertEqual(0);
+      expect(icons.isCleanupPending()).assertFalse();
+      expect(CloudBackupOperationGate.getInstance().isBusy()).assertFalse();
+    });
+
+    it('status_reports_definitive_absent_when_meta_and_zip_missing', 0, async () => {
+      // 云端目录从未写过元数据（无内容跳过）：应报告确定缺失，而非读取失败未知态。
+      resetSingleton();
+      const fs = new DownloadAwareFs();
+      const cache = new FakeFileCacher(fs);
+      const sync = new FakeIconSync();
+      bindCloudDeps(fs, cache, sync);
+
+      const icons = IconPackCloudBackup.getInstance();
+      const status = await icons.getCloudBackupStatus();
+      expect(status.exists).assertFalse();
+      expect(status.metadataKnown).assertFalse();
+      expect(status.metadataAbsent).assertTrue();
+      expect(status.packCount).assertEqual(0);
+      expect(status.packs.length).assertEqual(0);
+      expect(status.sourceDeviceId).assertEqual('');
+      expect(status.sourceDeviceName).assertEqual('');
+      expect(fs.statPaths.includes('/cloud/icon_packs_sync_meta.json')).assertTrue();
+      expect(fs.readPaths.length).assertEqual(0);
+      expect(cache.calls.length).assertEqual(0);
+      expect(icons.isCleanupPending()).assertFalse();
+      expect(CloudBackupOperationGate.getInstance().isBusy()).assertFalse();
+    });
+
+    it('status_keeps_unknown_when_zip_exists_without_meta', 0, async () => {
+      // zip 在而元数据缺失：有备份物但内容不明，仍是未知态而不是确定未备份。
+      resetSingleton();
+      const fs = new DownloadAwareFs();
+      const cache = new FakeFileCacher(fs);
+      const sync = new FakeIconSync();
+      bindCloudDeps(fs, cache, sync);
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+
+      const icons = IconPackCloudBackup.getInstance();
+      const status = await icons.getCloudBackupStatus();
+      expect(status.exists).assertTrue();
+      expect(status.metadataKnown).assertFalse();
+      expect(status.metadataAbsent).assertTrue();
+      expect(icons.isCleanupPending()).assertFalse();
+      expect(CloudBackupOperationGate.getInstance().isBusy()).assertFalse();
+    });
+
+    it('status_keeps_unknown_when_meta_stat_fails_without_missing_code', 0, async () => {
+      // stat 以非 ENOENT 错误失败：不能断定“从未备份”，保持未知态。
+      resetSingleton();
+      const fs = new DownloadAwareFs();
+      const cache = new FakeFileCacher(fs);
+      const sync = new FakeIconSync();
+      bindCloudDeps(fs, cache, sync);
+      fs.failStatFor.add('/cloud/icon_packs_sync_meta.json');
+
+      const icons = IconPackCloudBackup.getInstance();
+      const status = await icons.getCloudBackupStatus();
+      expect(status.metadataKnown).assertFalse();
+      expect(status.metadataAbsent).assertFalse();
+      expect(fs.readPaths.length).assertEqual(0);
       expect(icons.isCleanupPending()).assertFalse();
       expect(CloudBackupOperationGate.getInstance().isBusy()).assertFalse();
     });

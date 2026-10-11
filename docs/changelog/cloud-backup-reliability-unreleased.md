@@ -16,6 +16,12 @@
 - 云备份页面与详情复用现有沉浸材质，保留关闭光感、低版本、深浅色及大字体的兼容布局。
 - 增加默认关闭、本次启动最长十分钟的云备份诊断。诊断采用严格白名单，不记录账号、设备标识、密钥、备份内容、路径或原始异常；不自动上传。关闭详细诊断后仍可能记录同样受保护的限频失败摘要。
 
+- 图标包云端状态区分“从未备份”与“无法确认”：伴生元数据确定不存在（无图标包内容按设计跳过、从不写出）时显示“未备份”“从未”；仅文件存在但读取或校验失败才保留“元数据尚未确认”，避免无图标包设备永久显示未知态。
+
+- 图标包状态在未决时有界重试（含首次加载总共最多5次），打开瞬间的忙碌或守卫拦截不再让状态永久停留未知。
+
+- 修复图标包状态行的渲染冻结：@Builder 按值传参不随状态刷新，改为直接绑定后“未备份/从未”即时生效。
+
 ## 繁體中文
 
 - 修正雲端備份檔案寫入參數，加入完整寫入、讀回驗證與不覆蓋發佈；失敗產物不再當作正常的新備份顯示。
@@ -30,6 +36,12 @@
 - 雲端備份頁面與詳細資料沿用現有沉浸材質，保留關閉效果、舊版系統、深淺色及大字體的相容版面。
 - 新增預設關閉、僅本次啟動最多十分鐘的雲端備份診斷。診斷採用嚴格白名單，不記錄帳號、裝置識別、金鑰、備份內容、路徑或原始例外；不自動上傳。關閉詳細診斷後仍可能記錄同樣受保護且限頻的失敗摘要。
 
+- 圖示包雲端狀態區分「從未備份」與「無法確認」：伴生中繼資料確定不存在（無圖示包內容按設計跳過、從不寫出）時顯示「未備份」「從未」；僅檔案存在但讀取或校驗失敗才保留「中繼資料尚未確認」，避免無圖示包裝置永久顯示未知態。
+
+- 圖示包狀態未決時有界重試（含首次載入總共最多5次），開啟瞬間的忙碌或守衛攔截不再讓狀態永久停留未知。
+
+- 修復圖示包狀態行的渲染凍結：@Builder 按值傳參不隨狀態刷新，改為直接綁定後「未備份/從未」即時生效。
+
 ## English
 
 - Correct cloud-backup file writes with full-write handling, read-back verification and non-overwriting publication. Incomplete artifacts are not presented as successful new backups.
@@ -43,6 +55,12 @@
 - Add per-backup details and clearly labeled restore/delete actions. Backups from other or unidentified devices within the current account can be deleted individually after explicit confirmation, without deleting local tokens.
 - Reuse the existing immersive-material policy with solid-background fallbacks, dark/light themes, larger text and compatible-system layouts.
 - Add opt-in cloud-backup diagnostics lasting at most ten minutes per app process. Strict allowlists exclude account/device identifiers, keys, backup content, paths and raw exceptions. Nothing is uploaded automatically. Disabling detailed diagnostics still permits equally protected, rate-limited failure summaries.
+
+- Distinguish "never backed up" from "unconfirmed" in icon-pack cloud status. When the companion metadata file is definitively absent (the no-content path skips writing it by design), the panel shows "not backed up" and "never"; "metadata unconfirmed" applies only when the file exists but cannot be read or validated, so devices without icon packs no longer show a permanent unknown state.
+
+- Retry the unresolved icon-pack status a bounded number of times (at most five attempts in total, including the initial load), so a momentary busy or guard rejection at page open no longer leaves it stuck as unknown.
+
+- Fix the frozen icon-pack status rows: @Builder value parameters never refresh, so the rows now bind state directly and "not backed up / never" appears immediately.
 
 ## 验收边界 / Validation boundary
 

@@ -40,6 +40,7 @@ export struct ShowCloudSyncDetailsPage {
   @Local needsSyncRetry: boolean = false;
   @Local confirmationOpen: boolean = false;
   @Local iconPackStatusKnown: boolean = false;
+  @Local iconPackMetaAbsent: boolean = false;
   @Local iconPackBackupExists: boolean = false;
   @Local iconPackBackupCount: number = 0;
   @Local iconPackBackupSize: number = 0;
@@ -55,6 +56,7 @@ export struct ShowCloudSyncDetailsPage {
   private statePollTimer: number = -1;
   private isMounted: boolean = false;
   private iconStatusLoading: boolean = false;
+  private iconStatusAttempts: number = 0;
   private lastSyncTriggerTime: number = 0;
   private lastInitialSyncTime: number = 0;
   private readonly SYNC_COOLDOWN_MS: number = 60000;
@@ -75,8 +77,11 @@ export struct ShowCloudSyncDetailsPage {
       const oldIconState = this.iconPackSyncState;
       this.refreshOperationState();
       this.iconPackSyncState = IconPackCloudBackup.getInstance().getState();
+      // 状态未定（未读到、也未确认缺失）时补拉有限次数：打开瞬间的守卫拦截不致永久停留未知。
+      const iconUnresolved = !this.iconPackStatusKnown && !this.iconPackMetaAbsent &&
+        this.iconStatusAttempts < 5;
       if (!this.serviceBusy && !this.cleanupPending && !this.isLoading &&
-        (wasBusy || oldIconState !== this.iconPackSyncState)) {
+        (wasBusy || oldIconState !== this.iconPackSyncState || iconUnresolved)) {
         this.refreshLastBackupTime();
         this.loadIconPackBackupStatus();
       }
@@ -133,6 +138,7 @@ export struct ShowCloudSyncDetailsPage {
       return;
     }
     this.iconStatusLoading = true;
+    this.iconStatusAttempts++;
     try {
       const status = await IconPackCloudBackup.getInstance().getCloudBackupStatus();
       if (!this.isMounted) { return; }
@@ -142,8 +148,10 @@ export struct ShowCloudSyncDetailsPage {
       this.iconPackBackupTime = status.lastTime;
       this.iconPackSourceDevice = status.sourceDeviceName;
       this.iconPackStatusKnown = status.metadataKnown === true;
+      this.iconPackMetaAbsent = status.metadataAbsent === true;
     } catch (_) {
       this.iconPackStatusKnown = false;
+      this.iconPackMetaAbsent = false;
     } finally {
       this.iconStatusLoading = false;
       this.iconPackSyncState = IconPackCloudBackup.getInstance().getState();
@@ -219,14 +227,36 @@ export struct ShowCloudSyncDetailsPage {
           }
           ListItem() {
             SettingItem({ title: $r('app.string.cloud_sync_icon_pack_title') }) {
-              this.StatusValue($r('app.string.cloud_sync_icon_pack_status'), this.getIconPackStatusText())
+              // 图标包状态在首次构建后才确定：@Builder 按值传参不随状态刷新，须直接绑定。
+              Column({ space: 6 }) {
+                Text($r('app.string.cloud_sync_icon_pack_status'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body2')).fontColor($r('sys.color.font_secondary'))
+                Text(this.getIconPackStatusText())
+                  .fontSize($r('sys.float.ohos_id_text_size_body1')).fontWeight(FontWeight.Medium)
+                  .fontColor($r('sys.color.font_primary'))
+              }
+              .alignItems(HorizontalAlign.Start).width('100%').padding(16)
               SubItemDivider()
-              this.StatusValue($r('app.string.cloud_sync_icon_pack_last_time'), this.iconPackStatusKnown && this.iconPackBackupTime !== '' ?
-                this.iconPackBackupTime : $r('app.string.cloud_backup_value_unknown'))
+              Column({ space: 6 }) {
+                Text($r('app.string.cloud_sync_icon_pack_last_time'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body2')).fontColor($r('sys.color.font_secondary'))
+                Text(this.iconPackStatusKnown && this.iconPackBackupTime !== '' ?
+                  this.iconPackBackupTime : this.iconPackMetaAbsent && !this.iconPackBackupExists ?
+                    $r('app.string.cloud_sync_never') : $r('app.string.cloud_backup_value_unknown'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body1')).fontWeight(FontWeight.Medium)
+                  .fontColor($r('sys.color.font_primary'))
+              }
+              .alignItems(HorizontalAlign.Start).width('100%').padding(16)
               SubItemDivider()
-              this.StatusValue($r('app.string.cloud_sync_icon_pack_source_device'),
-                this.iconPackStatusKnown && this.iconPackSourceDevice.trim() !== '' ?
+              Column({ space: 6 }) {
+                Text($r('app.string.cloud_sync_icon_pack_source_device'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body2')).fontColor($r('sys.color.font_secondary'))
+                Text(this.iconPackStatusKnown && this.iconPackSourceDevice.trim() !== '' ?
                   this.iconPackSourceDevice : $r('app.string.cloud_backup_unknown_device'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body1')).fontWeight(FontWeight.Medium)
+                  .fontColor($r('sys.color.font_primary'))
+              }
+              .alignItems(HorizontalAlign.Start).width('100%').padding(16)
               Text($r('app.string.cloud_sync_icon_pack_hint'))
                 .fontSize($r('sys.float.ohos_id_text_size_caption')).fontColor($r('sys.color.font_secondary'))
                 .width('100%').padding(16)
@@ -320,7 +350,14 @@ export struct ShowCloudSyncDetailsPage {
       case IconPackSyncState.CLEARING: return $r('app.string.cloud_sync_icon_pack_state_clearing');
       case IconPackSyncState.CHECKING: return $r('app.string.cloud_sync_icon_pack_state_checking');
     }
-    if (!this.iconPackStatusKnown) { return $r('app.string.cloud_backup_metadata_unknown'); }
+    if (!this.iconPackStatusKnown) {
+      // 元数据与压缩包都确定不在云端 = 从未备份过图标包（无内容跳过从不写出文件）；
+      // 只有“文件在但读不了/校验不过”或“有 zip 无元数据”才如实显示无法确认。
+      if (this.iconPackMetaAbsent && !this.iconPackBackupExists) {
+        return $r('app.string.cloud_sync_icon_pack_status_none');
+      }
+      return $r('app.string.cloud_backup_metadata_unknown');
+    }
     if (!this.iconPackBackupExists) { return $r('app.string.cloud_sync_icon_pack_status_none'); }
     if (this.iconPackBackupCount === 0) { return $r('app.string.cloud_sync_icon_pack_status_empty'); }
     const size = this.iconPackBackupSize < 1024 ? `${this.iconPackBackupSize} B` : `${(this.iconPackBackupSize / 1024).toFixed(1)} KB`;

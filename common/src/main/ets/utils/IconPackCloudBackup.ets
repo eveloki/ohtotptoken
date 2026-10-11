@@ -12,7 +12,7 @@ import { TokenIconPacks, AegisIconPack } from './TokenUtils';
 import { SyncTimeHelper } from './SyncTimeHelper';
 import { HuaweiAccountManager } from './HuaweiAccountManager';
 import { DeviceInfoHelper } from './DeviceInfoHelper';
-import { FsGateway, FileIoFsGateway } from './StoragePorts';
+import { FsGateway, FileIoFsGateway, FsStatInfo } from './StoragePorts';
 
 const ICON_PACK_BACKUP_ZIP = 'icon_packs_backup.zip';
 const META_JSON_NAME = 'icon_packs_meta.json';
@@ -178,6 +178,8 @@ export class IconPackBackupStatus {
   exists: boolean = false;
   /** 为 false 时 packCount 的默认值不是已知的远端数量。 */
   metadataKnown: boolean = false;
+  /** 伴生元数据文件确定不存在（无内容短路从未写出），是确定状态而非读取失败。 */
+  metadataAbsent: boolean = false;
   packCount: number = 0;
   size: number = 0;
   lastTime: string = '';
@@ -716,8 +718,23 @@ export class IconPackCloudBackup {
 
     // 从伴生元数据文件读取详细信息（包列表、来源设备等）
     const syncMetaPath = this.cloudDir + '/' + SYNC_META_FILE;
+    // stat 单独判定“确定不存在”：读取/缓存阶段的 ENOENT（如 TOCTOU 被并发删除）仍归未知态。
+    let smStat: FsStatInfo;
     try {
-      const smStat = await this.fs.stat(syncMetaPath);
+      smStat = await this.fs.stat(syncMetaPath);
+    } catch (error) {
+      if (this.isMissingFile(error)) {
+        // 文件确定不存在：备份流程对无图标包内容按设计跳过、从不写出该文件，
+        // 与“文件在但读不了/校验不过”的未知态不同，是可展示的确定“未备份”。
+        // 诊断侧不产生任何行：ICON 批次类只让失败事件可见，成功与确定缺失同为零输出，
+        // 无法仅凭该操作的诊断流区分“已运行且确定缺失”与“未触发”。
+        result.metadataAbsent = true;
+        return result;
+      }
+      this.reportFsFailure(operation.context, DiagnosticStage.READ_END, error);
+      return result;
+    }
+    try {
       if (smStat.location === 2) {
         await this.cacheFile(syncMetaPath, operation);
       }
