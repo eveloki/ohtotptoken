@@ -39,7 +39,8 @@ import { ScrollEffectType } from '@kit.UIDesignKit';
 import lazy { decodeGoogleAuthMigration, GA_MIGRATION_EMPTY, GA_MIGRATION_PARSE_FAILED,
   GoogleAuthMigrationResult, resetGoogleAuthBatch } from 'common';
 // [冷启动优化] 华为账号管理器仅在 deferredInit 中初始化
-import lazy { HuaweiAccountManager } from 'common';
+import lazy { HuaweiAccountManager, CloudBackupDiagnostics, DiagnosticKind, DiagnosticStage,
+  DiagnosticResult, DiagnosticReason, DiagnosticErrorDomain } from 'common';
 import lazy { IconPackCloudBackup } from 'common';
 import { DlpAntiPeepManager } from 'common';
 import { AppShell } from '../shell/AppShell';
@@ -618,9 +619,12 @@ struct Index {
         this.appCtx.eventHub.emit(EVENT_NAMES.HUAWEI_ACCOUNT_STATE_CHANGED);
       }
       CloudBackupManager.getInstance().checkAndAutoBackup();
-    }).catch((err: BusinessError) => {
+    }).catch(() => {
       hiTraceMeter.finishTrace('H:deferredInit.accountInit', 1);
-      hilog.error(err.code, TAG, `deferredInit accountInit failed: ${err.message}`);
+      const diagnostic = CloudBackupDiagnostics.begin(DiagnosticKind.SYNC);
+      CloudBackupDiagnostics.mark(diagnostic, DiagnosticStage.ACCOUNT_INIT, DiagnosticResult.FAIL,
+        { reason: DiagnosticReason.UNAVAILABLE, errorDomain: DiagnosticErrorDomain.APP });
+      CloudBackupDiagnostics.end(diagnostic);
     });
 
     this.subscribeDistributedAccountLogout();

@@ -46,6 +46,12 @@ jobs:
         run: node scripts/verify-steam-field-numbers.mjs
         shell: bash
 
+      - name: Check cloud backup diagnostic privacy
+        run: node scripts/check-cloud-backup-diagnostic-privacy.mjs
+        shell: bash
+
+      # Includes collector limits/synthetic leak sentinels and privacy-gate regressions.
+      # Device collection is never run in CI and no raw hilog is uploaded as an artifact.
       - name: Run node regression suites
         run: node --test "scripts/*.test.mjs"
         shell: bash

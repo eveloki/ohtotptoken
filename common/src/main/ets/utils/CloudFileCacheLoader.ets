@@ -1,8 +1,9 @@
 import { cloudSync, fileUri } from '@kit.CoreFileKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-
-const DOMAIN = 0xFF00;
-const TAG = 'CloudFileCacheLoader';
+import { BusinessError } from '@kit.BasicServicesKit';
+import {
+  CloudBackupDiagnostics, DiagnosticContext, DiagnosticErrorDomain, DiagnosticKind, DiagnosticReason,
+  DiagnosticResult, DiagnosticStage, DiagnosticState,
+} from './CloudBackupDiagnostics';
 
 export enum CloudCacheState {
   RUNNING = 0,
@@ -36,8 +37,43 @@ export interface CloudCacheTimer {
   cancel(id: number): void;
 }
 
+/** 可选方法保持旧 fake/调用方兼容；生产共享 loader 提供真实清理屏障。 */
 export interface CloudFileCacher {
-  cache(filePath: string): Promise<void>;
+  cache(filePath: string, context?: DiagnosticContext): Promise<void>;
+  prepareForDelete?(filePath: string, context?: DiagnosticContext): Promise<boolean>;
+  retryCleanup?(): Promise<boolean>;
+  isCleanupPending?(): boolean;
+}
+
+/** 预缓存不是普通读取的许可条件；只有真实在途或未确认取消才阻止后续 I/O。 */
+export async function prepareCloudFileRead(cacher: CloudFileCacher | undefined, filePath: string,
+  location: number, context?: DiagnosticContext): Promise<boolean> {
+  let cacheFailed = false;
+  try {
+    if (cacher?.isCleanupPending?.()) return false;
+    if (location === 2 && cacher !== undefined) {
+      try {
+        await cacher.cache(filePath, context);
+      } catch (_) {
+        cacheFailed = true;
+        if (context !== undefined) {
+          CloudBackupDiagnostics.mark(context, DiagnosticStage.CACHE_END, DiagnosticResult.FAIL,
+            { reason: DiagnosticReason.UNKNOWN });
+        }
+      }
+    }
+    const pending = cacher?.isCleanupPending?.();
+    if (pending === true || (cacheFailed && pending !== false)) {
+      if (context !== undefined) {
+        CloudBackupDiagnostics.mark(context, DiagnosticStage.CACHE_DRAIN, DiagnosticResult.BLOCKED,
+          { reason: DiagnosticReason.INFLIGHT_UNCONFIRMED, drained: false });
+      }
+      return false;
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 class NativeCloudCacheClient implements CloudCacheClient {
@@ -87,132 +123,367 @@ class SystemCloudCacheTimer implements CloudCacheTimer {
   }
 }
 
-interface CloudCacheOperation {
-  result: Promise<void>;
-  drained: Promise<boolean>;
+function cacheFailure(context: DiagnosticContext, stage: DiagnosticStage, error: Object): void {
+  let code: number = -1;
+  try {
+    code = (error as BusinessError).code;
+  } catch (_) {
+    // 不转换原生异常；SDK 数值仍须由诊断 facade 按域白名单验证。
+  }
+  CloudBackupDiagnostics.mark(context, stage, DiagnosticResult.FAIL,
+    { errorDomain: DiagnosticErrorDomain.CACHE, code: code });
 }
 
-/** start() 只确认任务启动；内容可用须等待同一实例、同一 URI 的 COMPLETED。 */
-function beginCloudFileCache(client: CloudCacheClient, uri: string,
-  timer: CloudCacheTimer, timeoutMs: number): CloudCacheOperation {
-  let drain: (safe: boolean) => void = (_safe: boolean): void => {};
-  const drained = new Promise<boolean>((resolve: (safe: boolean) => void) => { drain = resolve; });
-  const result = new Promise<void>((resolve: () => void, reject: (error: Error) => void) => {
-    let settled = false;
-    let started = false;
-    let downloaded = false;
-    let needsStop = false;
-    let terminalFailure = false;
-    let subscribed = false;
-    let timerId = -1;
-    const stopAndDrain = async (): Promise<void> => {
-      try {
-        await client.stop(uri);
-        drain(true);
-      } catch (error) {
-        hilog.warn(DOMAIN, TAG, `stop failed: ${JSON.stringify(error)}`);
-        drain(false);
-      }
-    };
-    const finish = (error?: Error): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      if (timerId >= 0) {
-        timer.cancel(timerId);
-      }
-      if (subscribed) {
-        try {
-          client.offProgress();
-        } catch (offError) {
-          hilog.warn(DOMAIN, TAG, `offProgress failed: ${JSON.stringify(offError)}`);
-        }
-      }
-      if (!needsStop && !terminalFailure) {
-        drain(true);
-      }
-      if (error !== undefined) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    };
-    const listener: CloudCacheListener = (progress: CloudCacheProgress): void => {
-      if (settled || progress.uri !== uri) {
-        return;
-      }
-      if (progress.error !== 0 || progress.state === CloudCacheState.FAILED ||
-        progress.state === CloudCacheState.STOPPED) {
-        terminalFailure = progress.state === CloudCacheState.FAILED || progress.state === CloudCacheState.STOPPED;
-        needsStop = !terminalFailure;
-        finish(new Error(`Cloud cache failed: state=${progress.state}, error=${progress.error}`));
-        if (started) {
-          if (needsStop) {
-            stopAndDrain();
-          } else {
-            drain(true);
-          }
-        }
-      } else if (progress.state === CloudCacheState.COMPLETED) {
-        downloaded = true;
-        if (started) {
-          finish();
-        }
-      }
-    };
+function cacheDiagnosticState(state: CloudCacheState): DiagnosticState {
+  switch (state) {
+    case CloudCacheState.RUNNING: return DiagnosticState.RUNNING;
+    case CloudCacheState.COMPLETED: return DiagnosticState.COMPLETED;
+    case CloudCacheState.FAILED: return DiagnosticState.FAILED;
+    case CloudCacheState.STOPPED: return DiagnosticState.STOPPED;
+    default: return DiagnosticState.UNKNOWN;
+  }
+}
+
+enum CloudCacheFailure { FAILED, START_FAILED, TIMEOUT, CANCELLED }
+
+function cacheError(failure: CloudCacheFailure): Error {
+  switch (failure) {
+    case CloudCacheFailure.START_FAILED: return new Error('CLOUD_CACHE_START_FAILED');
+    case CloudCacheFailure.TIMEOUT: return new Error('CLOUD_CACHE_TIMEOUT');
+    case CloudCacheFailure.CANCELLED: return new Error('CLOUD_CACHE_CANCELLED');
+    default: return new Error('CLOUD_CACHE_FAILED');
+  }
+}
+
+/** 结果与真实 I/O 结束分离；失败后保留同一 client、URI、订阅和在途 stop。 */
+class CloudCacheOperation {
+  readonly result: Promise<void>;
+  readonly drained: Promise<void>;
+  private resolveResult: () => void = (): void => {};
+  private rejectResult: (error: Error) => void = (_error: Error): void => {};
+  private resolveDrain: () => void = (): void => {};
+  private resultSettled: boolean = false;
+  private safe: boolean = false;
+  private startInvoked: boolean = false;
+  private startSettled: boolean = false;
+  private accepted: boolean = false;
+  private completed: boolean = false;
+  private terminal: boolean = false;
+  private cancelRequested: boolean = false;
+  private stopAttempted: boolean = false;
+  private stopPending: boolean = false;
+  private subscribed: boolean = false;
+  private timerId: number = -1;
+  private mismatchReported: boolean = false;
+  private lastState: DiagnosticState | undefined = undefined;
+  private cleanupWaiters: Set<(safe: boolean) => void> = new Set();
+  private cancellationReported: boolean = false;
+
+  private client: CloudCacheClient;
+  private uri: string;
+  private timer: CloudCacheTimer;
+  private timeoutMs: number;
+  private cleanupTimeoutMs: number;
+  private context: DiagnosticContext;
+  private ownsContext: boolean;
+  private onCancellation: () => void;
+
+  constructor(client: CloudCacheClient, uri: string, timer: CloudCacheTimer,
+    timeoutMs: number, cleanupTimeoutMs: number, context: DiagnosticContext,
+    ownsContext: boolean, onCancellation: () => void = (): void => {}) {
+    this.client = client;
+    this.uri = uri;
+    this.timer = timer;
+    this.timeoutMs = timeoutMs;
+    this.cleanupTimeoutMs = cleanupTimeoutMs;
+    this.context = context;
+    this.ownsContext = ownsContext;
+    this.onCancellation = onCancellation;
+    this.result = new Promise<void>((resolve: () => void, reject: (error: Error) => void) => {
+      this.resolveResult = resolve;
+      this.rejectResult = reject;
+    });
+    this.drained = new Promise<void>((resolve: () => void) => { this.resolveDrain = resolve; });
+  }
+
+  start(): void {
     try {
-      timerId = timer.schedule(() => {
-        needsStop = true;
-        finish(new Error('Cloud cache timed out'));
-        if (started) {
-          stopAndDrain();
-        }
-      }, timeoutMs);
-      subscribed = true;
-      client.onProgress(listener);
-      client.start(uri).then(() => {
-        started = true;
-        if (needsStop) {
-          // 等启动确认后取消；清理屏障完成前，不允许另一个原生下载启动。
-          stopAndDrain();
-        } else if (terminalFailure) {
-          drain(true);
-        } else if (downloaded) {
-          finish();
-        }
-      }).catch((error: Error) => {
-        finish(error);
-        drain(true);
+      this.timerId = this.timer.schedule(() => {
+        this.cancelRequested = true;
+        this.finishFailure(CloudCacheFailure.TIMEOUT, DiagnosticReason.TIMEOUT);
+        this.stopIfNeeded(false);
+      }, this.timeoutMs);
+      this.subscribed = true;
+      this.client.onProgress((progress: CloudCacheProgress): void => { this.onProgress(progress); });
+      this.startInvoked = true;
+      this.client.start(this.uri).then(() => {
+        this.startSettled = true;
+        this.accepted = true;
+        CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_START, DiagnosticResult.OK);
+        this.afterStart();
+      }, (error: Object) => {
+        this.startSettled = true;
+        cacheFailure(this.context, DiagnosticStage.CACHE_START, error);
+        this.cancelRequested = true;
+        this.finishFailure(CloudCacheFailure.START_FAILED);
+        // IPC 拒绝不等于底层绝未启动；保留真实句柄直到 stop/终态确认。
+        this.afterStart();
       });
     } catch (error) {
-      finish(error as Error);
-      drain(true);
+      this.startSettled = true;
+      cacheFailure(this.context, DiagnosticStage.CACHE_START, error as Object);
+      this.cancelRequested = true;
+      this.finishFailure(CloudCacheFailure.START_FAILED);
+      if (!this.startInvoked) {
+        this.markDrained();
+      } else {
+        this.afterStart();
+      }
     }
-  });
-  return { result: result, drained: drained };
+  }
+
+  isDrained(): boolean {
+    return this.safe;
+  }
+
+  isCleanupPending(): boolean {
+    return !this.safe && (this.cancelRequested || this.resultSettled);
+  }
+
+  /** 每次显式调用最多发起一次 stop；已有在途 stop 只等待，不重复发送。 */
+  cancelAndDrain(): Promise<boolean> {
+    if (this.safe) {
+      return Promise.resolve(true);
+    }
+    this.cancelRequested = true;
+    this.finishFailure(CloudCacheFailure.CANCELLED, DiagnosticReason.CANCELLED);
+    return new Promise<boolean>((resolve: (safe: boolean) => void) => {
+      let settled = false;
+      let timerId = -1;
+      const finish = (safe: boolean): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.cleanupWaiters.delete(finish);
+        if (timerId >= 0) {
+          try { this.timer.cancel(timerId); } catch (_) {}
+        }
+        resolve(safe);
+      };
+      this.cleanupWaiters.add(finish);
+      try {
+        timerId = this.timer.schedule(() => { finish(this.safe); }, this.cleanupTimeoutMs);
+      } catch (_) {
+        finish(false);
+      }
+      this.stopIfNeeded(true);
+      if (this.safe) {
+        finish(true);
+      }
+    });
+  }
+
+  private afterStart(): void {
+    if (this.terminal && !this.stopPending) {
+      if (this.accepted && this.completed && !this.cancelRequested) {
+        this.finishSuccess();
+      }
+      this.markDrained();
+    } else if (this.cancelRequested) {
+      this.stopIfNeeded(false);
+    }
+  }
+
+  private onProgress(progress: CloudCacheProgress): void {
+    // on() 期间产生的初始事件不属于尚未调用的 start。
+    if (this.safe || !this.startInvoked) {
+      return;
+    }
+    if (progress.uri !== this.uri) {
+      if (!this.mismatchReported) {
+        this.mismatchReported = true;
+        CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_PROGRESS, DiagnosticResult.PENDING,
+          { uriMatches: false, reason: DiagnosticReason.URI_MISMATCH });
+      }
+      return;
+    }
+    const state = cacheDiagnosticState(progress.state);
+    if (state !== this.lastState) {
+      this.lastState = state;
+      CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_PROGRESS,
+        progress.error === 0 ? DiagnosticResult.PENDING : DiagnosticResult.FAIL,
+        { uriMatches: true, state: state, errorDomain: DiagnosticErrorDomain.CACHE, code: progress.error });
+    }
+    const terminal = progress.state === CloudCacheState.COMPLETED || progress.state === CloudCacheState.FAILED ||
+      progress.state === CloudCacheState.STOPPED;
+    if (terminal) {
+      this.terminal = true;
+    }
+    if (progress.error !== 0 || progress.state === CloudCacheState.FAILED || progress.state === CloudCacheState.STOPPED) {
+      this.cancelRequested = true;
+      this.finishFailure(CloudCacheFailure.FAILED);
+      if (this.startSettled) {
+        this.afterStart();
+      }
+    } else if (progress.state === CloudCacheState.COMPLETED) {
+      this.completed = true;
+      if (this.startSettled) {
+        this.afterStart();
+      }
+    }
+  }
+
+  private stopIfNeeded(explicitRetry: boolean): void {
+    if (this.safe || !this.startSettled || this.stopPending) {
+      return;
+    }
+    if (this.terminal) {
+      this.markDrained();
+      return;
+    }
+    if (this.stopAttempted && !explicitRetry) {
+      return;
+    }
+    this.stopAttempted = true;
+    this.stopPending = true;
+    CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_STOP, DiagnosticResult.BEGIN);
+    try {
+      this.client.stop(this.uri).then(() => {
+        this.stopPending = false;
+        CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_STOP, DiagnosticResult.OK);
+        this.markDrained();
+      }, (error: Object) => { this.stopFailed(error); });
+    } catch (error) {
+      this.stopFailed(error as Object);
+    }
+  }
+
+  private stopFailed(error: Object): void {
+    this.stopPending = false;
+    cacheFailure(this.context, DiagnosticStage.CACHE_STOP, error);
+    if (this.terminal) {
+      this.markDrained();
+    } else {
+      CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_DRAIN, DiagnosticResult.BLOCKED,
+        { drained: false, reason: DiagnosticReason.INFLIGHT_UNCONFIRMED });
+      this.notifyCleanup(false);
+    }
+  }
+
+  private clearTimer(): void {
+    if (this.timerId >= 0) {
+      try { this.timer.cancel(this.timerId); } catch (_) {}
+      this.timerId = -1;
+    }
+  }
+
+  private finishSuccess(): void {
+    if (!this.resultSettled) {
+      this.resultSettled = true;
+      this.clearTimer();
+      CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_END, DiagnosticResult.OK);
+      this.resolveResult();
+    }
+  }
+
+  private finishFailure(failure: CloudCacheFailure, reason: DiagnosticReason = DiagnosticReason.UNKNOWN): void {
+    if (this.cancelRequested && !this.cancellationReported &&
+      (!this.terminal || !this.startSettled)) {
+      this.cancellationReported = true;
+      this.onCancellation();
+    }
+    if (!this.resultSettled) {
+      this.resultSettled = true;
+      this.clearTimer();
+      CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_END, DiagnosticResult.FAIL, { reason: reason });
+      this.rejectResult(cacheError(failure));
+    }
+  }
+
+  private markDrained(): void {
+    if (this.safe || this.stopPending || !this.startSettled) {
+      return;
+    }
+    this.safe = true;
+    this.clearTimer();
+    if (this.subscribed) {
+      try {
+        this.client.offProgress();
+      } catch (error) {
+        cacheFailure(this.context, DiagnosticStage.CACHE_DRAIN, error as Object);
+      }
+      this.subscribed = false;
+    }
+    CloudBackupDiagnostics.mark(this.context, DiagnosticStage.CACHE_DRAIN, DiagnosticResult.OK, { drained: true });
+    if (this.ownsContext) {
+      CloudBackupDiagnostics.end(this.context);
+    }
+    this.resolveDrain();
+    this.notifyCleanup(true);
+  }
+
+  private notifyCleanup(safe: boolean): void {
+    for (const finish of Array.from(this.cleanupWaiters)) {
+      finish(safe);
+    }
+  }
 }
 
 export function waitForCloudFileCache(client: CloudCacheClient, uri: string,
-  timer: CloudCacheTimer, timeoutMs: number): Promise<void> {
-  return beginCloudFileCache(client, uri, timer, timeoutMs).result;
+  timer: CloudCacheTimer, timeoutMs: number, context?: DiagnosticContext): Promise<void> {
+  const trace = context === undefined ? CloudBackupDiagnostics.begin(DiagnosticKind.CACHE) : context;
+  const operation = new CloudCacheOperation(client, uri, timer, timeoutMs, timeoutMs, trace, context === undefined);
+  operation.start();
+  return operation.result;
 }
 
-/** 令牌与图标包共用串行队列；无法确认取消完成时拒绝后续请求，避免超出原生并发上限。 */
+class CloudCacheRequest {
+  readonly result: Promise<void>;
+  cancelled: boolean = false;
+  private settled: boolean = false;
+  private resolve: () => void = (): void => {};
+  private reject: (error: Error) => void = (_error: Error): void => {};
+
+  constructor() {
+    this.result = new Promise<void>((resolve: () => void, reject: (error: Error) => void) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
+
+  finish(error?: Error): void {
+    if (!this.settled) {
+      this.settled = true;
+      if (error === undefined) {
+        this.resolve();
+      } else {
+        this.reject(error);
+      }
+    }
+  }
+}
+
+/** 令牌/图标共用串行内容缓存；高层业务冲突由 operation gate 立即拒绝。 */
 export class CloudFileCacheLoader implements CloudFileCacher {
   private static instance: CloudFileCacheLoader | null = null;
   private queue: Promise<void> = Promise.resolve();
-  private pending: Map<string, Promise<void>> = new Map();
-  private cancellationPending: boolean = false;
+  private pending: Map<string, CloudCacheRequest> = new Map();
+  private active: CloudCacheOperation | undefined = undefined;
+  private activePath: string = '';
+
   private factory: CloudCacheFactory;
   private timer: CloudCacheTimer;
   private timeoutMs: number;
+  private cleanupTimeoutMs: number;
 
   constructor(factory: CloudCacheFactory = new NativeCloudCacheFactory(),
-    timer: CloudCacheTimer = new SystemCloudCacheTimer(), timeoutMs: number = 60000) {
+    timer: CloudCacheTimer = new SystemCloudCacheTimer(), timeoutMs: number = 60000,
+    cleanupTimeoutMs: number = 5000) {
     this.factory = factory;
     this.timer = timer;
     this.timeoutMs = timeoutMs;
+    this.cleanupTimeoutMs = cleanupTimeoutMs;
   }
 
   static getInstance(): CloudFileCacheLoader {
@@ -222,36 +493,115 @@ export class CloudFileCacheLoader implements CloudFileCacher {
     return CloudFileCacheLoader.instance;
   }
 
-  cache(filePath: string): Promise<void> {
-    if (this.cancellationPending) {
-      return Promise.reject(new Error('Cloud cache cancellation is pending; retry after cleanup or restart'));
+  cache(filePath: string, context?: DiagnosticContext): Promise<void> {
+    if (this.active !== undefined && this.active.isCleanupPending()) {
+      return Promise.reject(new Error('CLOUD_CACHE_CLEANUP_PENDING'));
     }
     const existing = this.pending.get(filePath);
     if (existing !== undefined) {
-      return existing;
+      return existing.result;
     }
-    const task = this.queue.then(() => {
-      if (this.cancellationPending) {
-        throw new Error('Cloud cache cancellation is pending');
-      }
-      const operation = beginCloudFileCache(this.factory.create(), this.factory.toUri(filePath), this.timer, this.timeoutMs);
-      return operation.result.catch((error: Error) => {
-        this.cancellationPending = true;
-        // 不阻塞错误返回；后续请求须等待原生任务确实停止。
-        operation.drained.then((safe: boolean) => {
-          if (safe) {
-            this.cancellationPending = false;
+    const request = new CloudCacheRequest();
+    this.pending.set(filePath, request);
+    const task = this.queue.then(async (): Promise<void> => {
+      const trace = context === undefined ? CloudBackupDiagnostics.begin(DiagnosticKind.CACHE) : context;
+      let operation: CloudCacheOperation | undefined = undefined;
+      try {
+        if (request.cancelled) {
+          request.finish(new Error('CLOUD_CACHE_CANCELLED'));
+          return;
+        }
+        if (this.active !== undefined && !this.active.isDrained()) {
+          CloudBackupDiagnostics.mark(trace, DiagnosticStage.CACHE_ADMIT, DiagnosticResult.BLOCKED,
+            { reason: DiagnosticReason.INFLIGHT_UNCONFIRMED });
+          request.finish(new Error('CLOUD_CACHE_CLEANUP_PENDING'));
+          return;
+        }
+        CloudBackupDiagnostics.mark(trace, DiagnosticStage.CACHE_ADMIT, DiagnosticResult.OK);
+        const uri = this.factory.toUri(filePath);
+        operation = new CloudCacheOperation(this.factory.create(), uri, this.timer, this.timeoutMs,
+          this.cleanupTimeoutMs, trace, context === undefined, (): void => { this.cancelQueuedRequests(request); });
+        const ownedOperation = operation;
+        this.active = ownedOperation;
+        this.activePath = filePath;
+        ownedOperation.drained.then(() => {
+          // 旧回调只解除自己的记录，不能覆盖新任务的真实句柄。
+          if (this.active === ownedOperation) {
+            this.active = undefined;
+            this.activePath = '';
           }
         });
-        throw error;
-      });
+        ownedOperation.start();
+        try {
+          await ownedOperation.result;
+          request.finish();
+        } catch (error) {
+          // operation.result 仅包含本模块固定错误常量。
+          request.finish(error as Error);
+        }
+      } catch (error) {
+        cacheFailure(trace, DiagnosticStage.CACHE_START, error as Object);
+        request.finish(new Error('CLOUD_CACHE_START_FAILED'));
+      } finally {
+        if (this.pending.get(filePath) === request) {
+          this.pending.delete(filePath);
+        }
+        if (operation === undefined && context === undefined) {
+          CloudBackupDiagnostics.end(trace);
+        }
+      }
     });
-    this.pending.set(filePath, task);
-    this.queue = task.then(() => {
-      this.pending.delete(filePath);
-    }, () => {
-      this.pending.delete(filePath);
-    });
-    return task;
+    // 队列只串行已接纳的内容请求；失败不自动补发，未确认 I/O 的后续请求直接失败。
+    this.queue = task.then(() => {}, () => {});
+    return request.result;
+  }
+
+  private cancelQueuedRequests(activeRequest?: CloudCacheRequest): void {
+    for (const request of Array.from(this.pending.values())) {
+      if (request !== activeRequest) {
+        request.cancelled = true;
+        request.finish(new Error('CLOUD_CACHE_CANCELLED'));
+      }
+    }
+  }
+
+  isCleanupPending(): boolean {
+    if (this.active !== undefined && !this.active.isDrained()) {
+      return true;
+    }
+    for (const request of Array.from(this.pending.values())) {
+      if (!request.cancelled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** 无任务时立即通过；取消目标排队请求/已有下载，绝不创建下载来删除文件。 */
+  async prepareForDelete(filePath: string, _context?: DiagnosticContext): Promise<boolean> {
+    const request = this.pending.get(filePath);
+    if (request !== undefined) {
+      request.cancelled = true;
+      request.finish(new Error('CLOUD_CACHE_CANCELLED'));
+    }
+    const operation = this.active;
+    if (operation === undefined || operation.isDrained()) {
+      return !this.isCleanupPending();
+    }
+    if (this.activePath !== filePath) {
+      return false;
+    }
+    return operation.cancelAndDrain();
+  }
+
+  /** 由仍持有 gate 许可的原操作显式调用；不重入 gate、不建立新 native client。 */
+  retryCleanup(): Promise<boolean> {
+    const operation = this.active;
+    if (operation === undefined || operation.isDrained()) {
+      // retry 只能排空已有工作；尚未启动的请求也不能在 retry 返回后偷偷下载。
+      this.cancelQueuedRequests();
+      return Promise.resolve(true);
+    }
+    return operation.cancelAndDrain();
   }
 }

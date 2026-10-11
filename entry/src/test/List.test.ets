@@ -43,6 +43,14 @@ import storagePortsTest from './StoragePorts.test';
 import oathAppletTest from './OathApplet.test';
 import iconPackCloudBackupTest from './IconPackCloudBackup.test';
 import transferProtocolTest from './TransferProtocol.test';
+import cloudBackupDiagnosticsTest from './CloudBackupDiagnostics.test';
+import cloudBackupMetadataTest from './CloudBackupMetadata.test';
+import cloudBackupResultTest from './CloudBackupResult.test';
+import deviceInfoHelperTest from './DeviceInfoHelper.test';
+import fileIoFsGatewayTest from './FileIoFsGateway.test';
+import cloudBackupOperationGateTest from './CloudBackupOperationGate.test';
+import cloudBackupSyncServiceTest from './CloudBackupSyncService.test';
+import cloudBackupStagingTest from './CloudBackupStaging.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -90,4 +98,12 @@ export default function testsuite() {
   oathAppletTest();
   iconPackCloudBackupTest();
   transferProtocolTest();
+  cloudBackupDiagnosticsTest();
+  cloudBackupMetadataTest();
+  cloudBackupResultTest();
+  deviceInfoHelperTest();
+  fileIoFsGatewayTest();
+  cloudBackupOperationGateTest();
+  cloudBackupSyncServiceTest();
+  cloudBackupStagingTest();
 }

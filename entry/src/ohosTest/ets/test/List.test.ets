@@ -8,6 +8,9 @@ import backupRoundTripTest from './BackupRoundTrip.test';
 import deviceMigrationTest from './DeviceMigration.test';
 import bleTransferSmokeTest from './BleTransferSmoke.test';
 import wearEngineSmokeTest from './WearEngineSmoke.test';
+import cloudBackupIoTest from './CloudBackupIo.test';
+import cloudBackupCloudLifecycleTest from './CloudBackupCloudLifecycle.test';
+import { abilityDelegatorRegistry } from '@kit.TestKit';
 
 export default function testsuite() {
   abilityTest();
@@ -20,4 +23,8 @@ export default function testsuite() {
   deviceMigrationTest();
   bleTransferSmokeTest();
   wearEngineSmokeTest();
+  cloudBackupIoTest();
+  if (abilityDelegatorRegistry.getArguments().parameters['cloudBackupOwnedFixture'] === 'true') {
+    cloudBackupCloudLifecycleTest();
+  }
 }
