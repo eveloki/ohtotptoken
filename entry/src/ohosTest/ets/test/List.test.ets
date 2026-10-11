@@ -5,6 +5,7 @@ import assetConcurrencyTest from './AssetConcurrency.test';
 import tokenProgressDialogTest from './TokenProgressDialog.test';
 import steamSecretStoreTest from './SteamSecretStore.test';
 import backupRoundTripTest from './BackupRoundTrip.test';
+import localBackupFileIoDeviceTest from './LocalBackupFileIo.test';
 import deviceMigrationTest from './DeviceMigration.test';
 import bleTransferSmokeTest from './BleTransferSmoke.test';
 import wearEngineSmokeTest from './WearEngineSmoke.test';
@@ -20,10 +21,12 @@ export default function testsuite() {
   tokenProgressDialogTest();
   steamSecretStoreTest();
   backupRoundTripTest();
+  localBackupFileIoDeviceTest();
   deviceMigrationTest();
   bleTransferSmokeTest();
   wearEngineSmokeTest();
   cloudBackupIoTest();
+  iconPackStatusProbeTest();
   if (abilityDelegatorRegistry.getArguments().parameters['cloudBackupOwnedFixture'] === 'true') {
     cloudBackupCloudLifecycleTest();
   }

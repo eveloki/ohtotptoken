@@ -16,6 +16,7 @@ import { SettingItem } from '../components/SettingItem';
 export struct ShowCloudBackupHistoryPage {
   pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  @Param inMaterialSheet: boolean = false;
   @Local backupRecords: CloudBackupRecord[] = [];
   @Local isLoading: boolean = false;
   @Local isActionRunning: boolean = false;
@@ -210,13 +211,19 @@ export struct ShowCloudBackupHistoryPage {
 
   private detailSheetOptions(): SheetOptions {
     const options = MaterialSheetStyle.options(SheetSize.MEDIUM);
+    options.backgroundColor = $r('app.color.window_background');
     options.detents = [SheetSize.MEDIUM, SheetSize.LARGE];
     return options;
   }
 
+  private pageBackground(): ResourceColor {
+    return this.inMaterialSheet ? MaterialTheme.surfaceBackground($r('app.color.window_background')) :
+      $r('app.color.window_background');
+  }
+
   build() {
     HdsNavDestination() {
-      PageScaffold() {
+      PageScaffold({ bgColor: this.pageBackground() }) {
         List({ space: 12, scroller: this.scroller }) {
           ListItem().height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
           ListItem() {
@@ -298,12 +305,13 @@ export struct ShowCloudBackupHistoryPage {
         .chainAnimation(AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .scrollBar(BarState.Off)
-        .backgroundColor($r('app.color.window_background'))
+        .backgroundColor(this.pageBackground())
         .width('100%').height('100%')
         .padding({ left: 16, right: 16 })
         .contentEndOffset(this.window.AvoidBottomHeight + 16)
       }
     }
+    .backgroundColor(this.pageBackground())
     .bindSheet($$this.isDetailVisible, this.BackupDetailSheet(), this.detailSheetOptions())
     .bindToScrollable([this.scroller])
     .titleMode(HdsNavDestinationTitleMode.MODAL)

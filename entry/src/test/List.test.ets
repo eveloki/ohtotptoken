@@ -52,7 +52,18 @@ import cloudBackupOperationGateTest from './CloudBackupOperationGate.test';
 import cloudBackupSyncServiceTest from './CloudBackupSyncService.test';
 import cloudBackupStagingTest from './CloudBackupStaging.test';
 
+import localBackupFormatTest from './LocalBackupFormat.test';
+import localBackupFileIoTest from './LocalBackupFileIo.test';
+import tokenBatchOperationTest from './TokenBatchOperation.test';
+import localBackupFlowTest from './LocalBackupFlow.test';
+import localBackupImportTest from './LocalBackupImport.test';
+
 export default function testsuite() {
+  localBackupFormatTest();
+  localBackupFileIoTest();
+  tokenBatchOperationTest();
+  localBackupFlowTest();
+  localBackupImportTest();
   localUnitTest();
   smokeTest();
   base32Test();

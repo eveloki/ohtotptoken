@@ -158,7 +158,7 @@ export interface FsGateway {
   copyFile(src: string, dest: string): Promise<void>;
 }
 
-/** 文本文件读写端口（本地备份管线用；生产实现走 FileUtils）。 */
+/** 本地备份文本端口；成功必须等待全部字节写入及 close，失败不得吞掉。 */
 export interface BackupTextIo {
   readText(uri: string): Promise<string>;
   writeText(uri: string, content: string): Promise<void>;

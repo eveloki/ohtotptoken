@@ -26,6 +26,9 @@ enum ClearCloudType {
 export struct ShowCloudSyncDetailsPage {
   pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
+  @Param inMaterialSheet: boolean = false;
+  @Param sheetRoot: boolean = false;
+  @Event onCloseSheet: () => void = () => {};
   @Local cloudSyncEnabled: boolean = false;
   @Local lastSyncTime: string = '';
   @Local isLoading: boolean = false;
@@ -159,9 +162,14 @@ export struct ShowCloudSyncDetailsPage {
     }
   }
 
+  private pageBackground(): ResourceColor {
+    return this.inMaterialSheet ? MaterialTheme.surfaceBackground($r('app.color.window_background')) :
+      $r('app.color.window_background');
+  }
+
   build() {
     HdsNavDestination() {
-      PageScaffold() {
+      PageScaffold({ bgColor: this.pageBackground() }) {
         List({ space: 12, scroller: this.scroller }) {
           ListItem().height(CommonConstants.AVOID_TOP_BASE_HEIGHT)
           if (this.isLoading || this.isRetryingCleanup || this.serviceBusy || this.cleanupPending || this.actionMessage !== '') {
@@ -310,11 +318,18 @@ export struct ShowCloudSyncDetailsPage {
         }
         .chainAnimation(AppPreference.getPreference(PREF_KEYS.APPEARANCE_CHAIN_ANIMATION_ENABLE) as boolean)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true }).scrollBar(BarState.Off)
-        .backgroundColor($r('app.color.window_background')).width('100%').height('100%')
+        .backgroundColor(this.pageBackground()).width('100%').height('100%')
         .padding({ left: 16, right: 16 }).contentEndOffset(this.window.AvoidBottomHeight + 24)
       }
     }
+    .backgroundColor(this.pageBackground())
     .bindToScrollable([this.scroller])
+    .hideBackButton(this.sheetRoot)
+    .onBackPressed(() => {
+      if (!this.sheetRoot) { return false; }
+      this.onCloseSheet();
+      return true;
+    })
     .titleMode(HdsNavDestinationTitleMode.MODAL)
     .titleBar({
       style: {
