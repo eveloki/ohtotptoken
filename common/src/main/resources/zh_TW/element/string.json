@@ -2570,6 +2570,90 @@
     {
       "name": "developer_test_tokens_failed",
       "value": "測試令牌操作失敗，請重試。"
+    },
+    {
+      "name": "cloud_backup_last_failure_title",
+      "value": "最近一次備份"
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback",
+      "value": "備份失敗，請回報開發者"
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback_entry",
+      "value": "前往問題回饋"
+    },
+    {
+      "name": "cloud_backup_failure_stage_unknown",
+      "value": "未知階段"
+    },
+    {
+      "name": "cloud_backup_failure_stage_device_info",
+      "value": "設備身分讀取"
+    },
+    {
+      "name": "cloud_backup_failure_stage_encrypt",
+      "value": "備份加密"
+    },
+    {
+      "name": "cloud_backup_failure_stage_write",
+      "value": "備份寫入"
+    },
+    {
+      "name": "cloud_backup_failure_stage_staged_verify",
+      "value": "暫存內容校驗"
+    },
+    {
+      "name": "cloud_backup_failure_stage_publish",
+      "value": "備份發布"
+    },
+    {
+      "name": "cloud_backup_failure_stage_post_verify",
+      "value": "發布後校驗"
+    },
+    {
+      "name": "cloud_backup_failure_stage_rotate",
+      "value": "輪換剪除"
+    },
+    {
+      "name": "cloud_backup_failure_stage_icon",
+      "value": "圖示包備份"
+    },
+    {
+      "name": "cloud_backup_failure_stage_sync",
+      "value": "同步提交"
+    },
+    {
+      "name": "cloud_backup_failure_reason_post_verify",
+      "value": "發布後校驗未通過，無效備份已清理"
+    },
+    {
+      "name": "cloud_backup_clear_result_deleted",
+      "value": "已清理 %d 份雲端備份"
+    },
+    {
+      "name": "cloud_backup_clear_result_skipped",
+      "value": "另有 %d 條無法確認歸屬的雲端記錄已保留"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_hint",
+      "value": "以下記錄無法確認來源設備，不參與任何設備的輪換保留策略。"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_entry",
+      "value": "清除來源未確認的記錄"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_confirm",
+      "value": "將逐條刪除 %d 條來源未確認的雲端備份記錄，刪除失敗的項目會保留。本地令牌不受影響。"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_done",
+      "value": "已刪除 %d 條記錄，%d 條刪除失敗已保留"
+    },
+    {
+      "name": "cloud_backup_failure_stage_snapshot",
+      "value": "權杖快照讀取"
     }
   ]
 }

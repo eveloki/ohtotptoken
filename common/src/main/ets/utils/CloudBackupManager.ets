@@ -16,6 +16,7 @@ import {
 } from './CloudBackupResult';
 import { CloudBackupSyncService } from './CloudBackupSyncService';
 import { CloudBackupStaging } from './CloudBackupStaging';
+import { CloudSyncFailureStage, CloudSyncFailureState } from './CloudSyncLastFailure';
 import { CloudFileCacher, CloudFileCacheLoader, prepareCloudFileRead } from './CloudFileCacheLoader';
 import { CloudBackupTaskHistory, loadBackupHistoryRecords, checkCloudBackupRecords } from './CloudSyncTask';
 import { TokenStore } from './TokenStore';
@@ -274,6 +275,7 @@ export class CloudBackupManager {
       case CloudBackupFailureReason.DELETE_FAILED: return DiagnosticReason.IO_ERROR;
       case CloudBackupFailureReason.SYNC_FAILED: return DiagnosticReason.SYNC_REJECTED;
       case CloudBackupFailureReason.ICON_FAILED: return DiagnosticReason.UNAVAILABLE;
+      case CloudBackupFailureReason.POST_VERIFY_FAILED: return DiagnosticReason.MISMATCH;
       default: return DiagnosticReason.UNKNOWN;
     }
   }
@@ -327,117 +329,214 @@ export class CloudBackupManager {
   async backupToCloudResult(): Promise<CloudBackupActionResult> {
     return this.runAction(CloudBackupOperationKind.BACKUP, DiagnosticKind.BACKUP, DiagnosticStage.BACKUP_END,
       async (owner: CloudBackupOperationLease, context: DiagnosticContext): Promise<CloudBackupActionResult> => {
-        CloudBackupDiagnostics.mark(context, DiagnosticStage.BACKUP_BEGIN, DiagnosticResult.BEGIN);
-        if (this.testDeps?.device === undefined) DeviceInfoHelper.getInstance().refreshRequiredInfo();
-        const deviceId = normalizeCloudBackupDeviceId(this.devicePort.deviceId());
-        const deviceName = this.devicePort.deviceName().trim();
-        CloudBackupDiagnostics.mark(context, DiagnosticStage.DEVICE_INFO, DiagnosticResult.OK,
-          { identityAvailable: deviceId.length > 0, nameAvailable: deviceName.length > 0 });
-        if (!deviceId) return cloudBackupFailure(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
-        const tokens = await this.tokenPort.getTokens();
-        const payload = new CloudBackupPayload();
-        payload.tokens = tokens.map((token: TokenConfig): TokenConfig => sanitizedTokenForBackup(token));
-        payload.groups = [...this.groupPort.currentGroups()];
-        payload.enabledPacks = [...TokenIconPacks.enabled_packs];
-        for (const pack of TokenIconPacks.aegis_icon_packs) {
-          const meta = new PackMetaEntry();
-          meta.uuid = pack.uuid;
-          meta.name = pack.name;
-          meta.version = pack.version;
-          meta.iconCount = pack.icons.length;
-          payload.packMeta.push(meta);
-        }
-        const now = Math.max(Date.now(), this.lastFileTimestamp + 1);
-        this.lastFileTimestamp = now;
-        let content: string;
-        try {
-          content = await this.crypto.encrypt(JSON.stringify(payload), this.crypto.getMode(true),
-            this.accountPort.unionId(), tokens.length, now, deviceId, deviceName, context);
-          CloudBackupDiagnostics.mark(context, DiagnosticStage.ENCRYPT_END, DiagnosticResult.OK);
-        } catch (_) {
-          CloudBackupDiagnostics.mark(context, DiagnosticStage.ENCRYPT_END, DiagnosticResult.FAIL);
-          return cloudBackupFailure(CloudBackupFailureReason.FORMAT_INVALID);
-        }
-        const fileName = `${BACKUP_FILE_PREFIX}${now}${BACKUP_FILE_EXT}`;
-        let tempPath = `${this.cloudDir}/.otp_backup_pending_${now}.tmp`;
-        let tempOwned = false;
-        let staged: CloudBackupStaging | undefined = undefined;
-        let published = false;
-        let cleanupFailed = false;
-        let phase = DiagnosticStage.WRITE_END;
-        let failureReason = DiagnosticReason.IO_ERROR;
-        try {
-          if (this.cacher?.isCleanupPending?.()) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
-          staged = await this.staging();
-          // 生产密文先登记本地凭据；测试旧端口仍只有成功返回后才获得精确目标所有权。
-          if (staged !== undefined) tempPath = await staged.create(content, context);
-          else await this.fsPort.writeNewTextFile(tempPath, content, context);
-          tempOwned = true;
-          CloudBackupDiagnostics.mark(context, DiagnosticStage.WRITE_END, DiagnosticResult.OK,
-            { contentNonEmpty: content.length > 0, writeComplete: true });
-          phase = DiagnosticStage.FS_VERIFY;
-          const actual = await this.fsPort.readTextFile(tempPath, context);
-          failureReason = DiagnosticReason.INVALID_FORMAT;
-          if (actual !== content || actual.length === 0) throw new Error('BACKUP_VERIFY_FAILED');
-          this.crypto.parseTokenHeader(actual, context);
-          CloudBackupDiagnostics.mark(context, DiagnosticStage.FS_VERIFY, DiagnosticResult.OK,
-            { contentNonEmpty: true, writeComplete: true, headerParsed: true });
-          phase = DiagnosticStage.PUBLISH_END;
-          failureReason = DiagnosticReason.IO_ERROR;
-          if (staged !== undefined) await staged.publish(tempPath, `${this.cloudDir}/${fileName}`, context);
-          else await this.fsPort.publishFile(tempPath, `${this.cloudDir}/${fileName}`, context);
-          published = true;
-          if (staged === undefined) tempOwned = false;
-          CloudBackupDiagnostics.mark(context, DiagnosticStage.PUBLISH_END, DiagnosticResult.OK);
-        } catch (_) {
-          // 原生详细错误由 StoragePorts 报告；此处只补准确阶段，不重复原始异常。
-          CloudBackupDiagnostics.mark(context, phase, DiagnosticResult.FAIL, { reason: failureReason });
-          return cloudBackupFailure(CloudBackupFailureReason.WRITE_FAILED);
-        } finally {
-          if (tempOwned) {
-            if (staged !== undefined) cleanupFailed = !await staged.discard(tempPath, context);
-            else {
-              try { await this.fsPort.deleteFile(tempPath); } catch (_) {
-                CloudBackupDiagnostics.mark(context, DiagnosticStage.TEMP_CLEANUP, DiagnosticResult.FAIL,
-                  { reason: DiagnosticReason.IO_ERROR });
-              }
-            }
-          }
-          if (!published && staged !== undefined) await staged.recover(context);
-        }
-        const result = new CloudBackupActionResult();
-        result.localComplete = true;
-        if (cleanupFailed) {
-          result.partialFailure = true;
-          result.reason = CloudBackupFailureReason.DELETE_FAILED;
-        }
-        const scan = await this.listBackupRecords(context, owner);
-        if (scan.blocked) {
-          result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
-          result.partialFailure = true;
-          return result;
-        }
-        const owned = scan.records.filter((record: CloudBackupRecord): boolean => record.deviceId === deviceId);
-        if (owned.length > MAX_BACKUP_COUNT) {
-          const prune = await this.deleteBackupFile(owned[owned.length - 1].id, context);
-          if (!prune.success) { result.partialFailure = true; result.reason = prune.reason; }
-        }
-        try {
-          if (!await this.iconPort.backupIconPacks(owner, true, context)) {
-            result.partialFailure = true;
-            result.reason = CloudBackupFailureReason.ICON_FAILED;
-          }
-        } catch (_) {
-          result.partialFailure = true;
-          result.reason = CloudBackupFailureReason.ICON_FAILED;
-        }
-        result.syncStartAccepted = await this.syncToCloud(context);
-        if (result.syncStartAccepted && staged !== undefined) await staged.acknowledgeSync(context);
-        if (!result.syncStartAccepted) result.reason = CloudBackupFailureReason.SYNC_FAILED;
-        result.success = !result.partialFailure && result.syncStartAccepted;
-        if (result.success) AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${now}`);
-        return result;
+        return this.performBackupToCloud(owner, context);
       });
+  }
+
+  /** 失败阶段 → 持久化失败状态键的阶段枚举映射。 */
+  private backupFailureStageOfPhase(phase: DiagnosticStage): CloudSyncFailureStage {
+    switch (phase) {
+      case DiagnosticStage.WRITE_END: return CloudSyncFailureStage.WRITE;
+      case DiagnosticStage.FS_VERIFY: return CloudSyncFailureStage.STAGED_VERIFY;
+      case DiagnosticStage.PUBLISH_END: return CloudSyncFailureStage.PUBLISH;
+      default: return CloudSyncFailureStage.UNKNOWN;
+    }
+  }
+
+  /** 汇总阶段原因 → 失败状态键的阶段枚举映射（轮换/图标/同步在发布之后收口）。 */
+  private backupFailureStageOfReason(reason: CloudBackupFailureReason): CloudSyncFailureStage {
+    switch (reason) {
+      case CloudBackupFailureReason.ICON_FAILED: return CloudSyncFailureStage.ICON;
+      case CloudBackupFailureReason.SYNC_FAILED: return CloudSyncFailureStage.SYNC;
+      case CloudBackupFailureReason.DELETE_FAILED:
+      case CloudBackupFailureReason.CLEANUP_PENDING: return CloudSyncFailureStage.ROTATE;
+      default: return CloudSyncFailureStage.UNKNOWN;
+    }
+  }
+
+  /**
+   * 单次备份尝试的完整管线。写入链路错误零容忍：失败出口都先落
+   * CLOUD_SYNC_LAST_FAILURE 失败状态键（详情页持久展示），再返回整体失败。
+   * 例外：管线开工前的环境阻断（cacher cleanup-pending 早退）与被门禁/登录态
+   * 阻断的尝试一样不落键——避免用环境状态覆盖既有真实失败记录。
+   */
+  private async performBackupToCloud(owner: CloudBackupOperationLease,
+    context: DiagnosticContext): Promise<CloudBackupActionResult> {
+    CloudBackupDiagnostics.mark(context, DiagnosticStage.BACKUP_BEGIN, DiagnosticResult.BEGIN);
+    if (this.testDeps?.device === undefined) DeviceInfoHelper.getInstance().refreshRequiredInfo();
+    const deviceId = normalizeCloudBackupDeviceId(this.devicePort.deviceId());
+    const deviceName = this.devicePort.deviceName().trim();
+    CloudBackupDiagnostics.mark(context, DiagnosticStage.DEVICE_INFO, DiagnosticResult.OK,
+      { identityAvailable: deviceId.length > 0, nameAvailable: deviceName.length > 0 });
+    if (!deviceId) {
+      CloudSyncFailureState.record(CloudSyncFailureStage.DEVICE_INFO, CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
+      return cloudBackupFailure(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
+    }
+    // 令牌/分组快照读取失败同样是备份失败，不向用户抛未处理异常。
+    const payload = new CloudBackupPayload();
+    let snapshotCount = 0;
+    try {
+      const tokens = await this.tokenPort.getTokens();
+      snapshotCount = tokens.length;
+      payload.tokens = tokens.map((token: TokenConfig): TokenConfig => sanitizedTokenForBackup(token));
+      payload.groups = [...this.groupPort.currentGroups()];
+      payload.enabledPacks = [...TokenIconPacks.enabled_packs];
+      for (const pack of TokenIconPacks.aegis_icon_packs) {
+        const meta = new PackMetaEntry();
+        meta.uuid = pack.uuid;
+        meta.name = pack.name;
+        meta.version = pack.version;
+        meta.iconCount = pack.icons.length;
+        payload.packMeta.push(meta);
+      }
+    } catch (_) {
+      CloudSyncFailureState.record(CloudSyncFailureStage.SNAPSHOT, CloudBackupFailureReason.READ_FAILED);
+      return cloudBackupFailure(CloudBackupFailureReason.READ_FAILED);
+    }
+    const now = Math.max(Date.now(), this.lastFileTimestamp + 1);
+    this.lastFileTimestamp = now;
+    let content: string;
+    try {
+      content = await this.crypto.encrypt(JSON.stringify(payload), this.crypto.getMode(true),
+        this.accountPort.unionId(), snapshotCount, now, deviceId, deviceName, context);
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.ENCRYPT_END, DiagnosticResult.OK);
+    } catch (_) {
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.ENCRYPT_END, DiagnosticResult.FAIL);
+      CloudSyncFailureState.record(CloudSyncFailureStage.ENCRYPT, CloudBackupFailureReason.FORMAT_INVALID);
+      return cloudBackupFailure(CloudBackupFailureReason.FORMAT_INVALID);
+    }
+    const fileName = `${BACKUP_FILE_PREFIX}${now}${BACKUP_FILE_EXT}`;
+    let tempPath = `${this.cloudDir}/.otp_backup_pending_${now}.tmp`;
+    let tempOwned = false;
+    let staged: CloudBackupStaging | undefined = undefined;
+    let published = false;
+    let cleanupFailed = false;
+    let phase = DiagnosticStage.WRITE_END;
+    let failureReason = DiagnosticReason.IO_ERROR;
+    try {
+      if (this.cacher?.isCleanupPending?.()) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
+      staged = await this.staging();
+      // 生产密文先登记本地凭据；测试旧端口仍只有成功返回后才获得精确目标所有权。
+      if (staged !== undefined) tempPath = await staged.create(content, context);
+      else await this.fsPort.writeNewTextFile(tempPath, content, context);
+      tempOwned = true;
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.WRITE_END, DiagnosticResult.OK,
+        { contentNonEmpty: content.length > 0, writeComplete: true });
+      phase = DiagnosticStage.FS_VERIFY;
+      const actual = await this.fsPort.readTextFile(tempPath, context);
+      failureReason = DiagnosticReason.INVALID_FORMAT;
+      if (actual !== content || actual.length === 0) throw new Error('BACKUP_VERIFY_FAILED');
+      this.crypto.parseTokenHeader(actual, context);
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.FS_VERIFY, DiagnosticResult.OK,
+        { contentNonEmpty: true, writeComplete: true, headerParsed: true });
+      phase = DiagnosticStage.PUBLISH_END;
+      failureReason = DiagnosticReason.IO_ERROR;
+      if (staged !== undefined) await staged.publish(tempPath, `${this.cloudDir}/${fileName}`, context);
+      else await this.fsPort.publishFile(tempPath, `${this.cloudDir}/${fileName}`, context);
+      published = true;
+      if (staged === undefined) tempOwned = false;
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.PUBLISH_END, DiagnosticResult.OK);
+    } catch (_) {
+      // 原生详细错误由 StoragePorts 报告；此处只补准确阶段，不重复原始异常。
+      CloudBackupDiagnostics.mark(context, phase, DiagnosticResult.FAIL, { reason: failureReason });
+      CloudSyncFailureState.record(this.backupFailureStageOfPhase(phase), CloudBackupFailureReason.WRITE_FAILED);
+      return cloudBackupFailure(CloudBackupFailureReason.WRITE_FAILED);
+    } finally {
+      if (tempOwned) {
+        if (staged !== undefined) cleanupFailed = !await staged.discard(tempPath, context);
+        else {
+          try { await this.fsPort.deleteFile(tempPath); } catch (_) {
+            CloudBackupDiagnostics.mark(context, DiagnosticStage.TEMP_CLEANUP, DiagnosticResult.FAIL,
+              { reason: DiagnosticReason.IO_ERROR });
+          }
+        }
+      }
+      if (!published && staged !== undefined) await staged.recover(context);
+    }
+    // 发布后一致性校验（守护核心）：以发起备份时的快照（令牌数量 + 写入 header 的
+    // deviceId）对正式文件重读比对；不动摇既有的暂存回读，也不新增抢闸。
+    if (!await this.verifyPublishedBackup(fileName, snapshotCount, deviceId, context)) {
+      // 校验失败不得留正式名残留：先删除（ENOENT 宽容），再提交同步让删除传播到云端。
+      const cleanup = await this.deleteBackupFile(fileName, context);
+      const propagated = await this.syncToCloud(context);
+      if (propagated && staged !== undefined) await staged.acknowledgeSync(context);
+      CloudSyncFailureState.record(CloudSyncFailureStage.POST_PUBLISH_VERIFY, CloudBackupFailureReason.POST_VERIFY_FAILED);
+      const failed = cloudBackupFailure(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      // 暂存清理失败与同步传播失败同样如实上报，不在整体失败里吞掉次要 IO 信号。
+      failed.partialFailure = !cleanup.success || !propagated || cleanupFailed;
+      return failed;
+    }
+    const result = new CloudBackupActionResult();
+    result.localComplete = true;
+    if (cleanupFailed) {
+      result.partialFailure = true;
+      result.reason = CloudBackupFailureReason.DELETE_FAILED;
+    }
+    const scan = await this.listBackupRecords(context, owner);
+    if (scan.blocked) {
+      result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+      result.partialFailure = true;
+      CloudSyncFailureState.record(CloudSyncFailureStage.ROTATE, CloudBackupFailureReason.CLEANUP_PENDING);
+      return result;
+    }
+    // 轮换剪除仅统计归属本机且 header 通过的记录；无归属/他机记录不入选也不被剪除。
+    const owned = scan.records.filter((record: CloudBackupRecord): boolean => record.deviceId === deviceId);
+    if (owned.length > MAX_BACKUP_COUNT) {
+      const prune = await this.deleteBackupFile(owned[owned.length - 1].id, context);
+      if (!prune.success) { result.partialFailure = true; result.reason = prune.reason; }
+    }
+    try {
+      if (!await this.iconPort.backupIconPacks(owner, true, context)) {
+        result.partialFailure = true;
+        result.reason = CloudBackupFailureReason.ICON_FAILED;
+      }
+    } catch (_) {
+      result.partialFailure = true;
+      result.reason = CloudBackupFailureReason.ICON_FAILED;
+    }
+    result.syncStartAccepted = await this.syncToCloud(context);
+    if (result.syncStartAccepted && staged !== undefined) await staged.acknowledgeSync(context);
+    if (!result.syncStartAccepted) result.reason = CloudBackupFailureReason.SYNC_FAILED;
+    result.success = !result.partialFailure && result.syncStartAccepted;
+    if (result.success) {
+      AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, `${now}`);
+      CloudSyncFailureState.clear();
+    } else {
+      CloudSyncFailureState.record(this.backupFailureStageOfReason(result.reason), result.reason);
+    }
+    return result;
+  }
+
+  /**
+   * 发布后快速一致性校验：重读正式文件并只解析 header 的令牌数量与设备标识，
+   * 与发起备份时的快照比对。不解密正文、不展开令牌列表。
+   * 重读抛错、文件缺失、header 非法三种情况都收敛为校验失败，不向用户抛未处理异常。
+   */
+  private async verifyPublishedBackup(fileName: string, expectedCount: number, expectedDeviceId: string,
+    context: DiagnosticContext): Promise<boolean> {
+    try {
+      const content = await this.fsPort.readTextFile(`${this.cloudDir}/${fileName}`, context);
+      const header = this.crypto.parseTokenHeader(content, context);
+      if (header.tokenCount !== expectedCount ||
+        normalizeCloudBackupDeviceId(header.deviceId) !== expectedDeviceId) {
+        // 只记比对结论，不输出数量、文件名或路径。
+        CloudBackupDiagnostics.mark(context, DiagnosticStage.POST_PUBLISH_VERIFY, DiagnosticResult.FAIL,
+          { reason: DiagnosticReason.MISMATCH, headerParsed: true });
+        return false;
+      }
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.POST_PUBLISH_VERIFY, DiagnosticResult.OK,
+        { headerParsed: true });
+      return true;
+    } catch (error) {
+      // code 1/2 为可信格式/完整性失败；code 3（Base64/JSON 解码不可用）归解密类，其余读取异常归 IO。
+      const tokenError = error instanceof CloudBackupTokenError ? error.code : 0;
+      const invalid = tokenError === 1 || tokenError === 2;
+      const undecodable = tokenError === 3;
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.POST_PUBLISH_VERIFY, DiagnosticResult.FAIL,
+        { reason: invalid ? DiagnosticReason.INVALID_FORMAT :
+          undecodable ? DiagnosticReason.DECRYPT_FAILED : DiagnosticReason.IO_ERROR });
+      return false;
+    }
   }
 
   async restoreFromCloud(): Promise<boolean> {
@@ -580,7 +679,6 @@ export class CloudBackupManager {
         const result = new CloudBackupActionResult();
         let targets: string[] = [];
         let devices: string[] = [];
-        let unresolved = false;
         try {
           if (scope === DiagnosticScope.ALL) {
             targets = (await this.fsPort.listFiles(this.cloudDir)).filter(isSafeCloudBackupId);
@@ -593,20 +691,26 @@ export class CloudBackupManager {
             const scan = await this.listBackupRecords(context, owner);
             if (scan.blocked) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
             if (!scan.complete) return cloudBackupFailure(CloudBackupFailureReason.READ_FAILED);
-            unresolved = scan.records.some((record: CloudBackupRecord): boolean =>
-              !record.deviceId || (scope === DiagnosticScope.SAME_NAME && !record.deviceName));
-            const selected = scan.records.filter((record: CloudBackupRecord): boolean =>
-              scope === DiagnosticScope.DEVICE ? record.deviceId === id :
-                record.deviceId !== '' && record.deviceName === name && record.deviceId !== id);
-            targets = selected.map((record: CloudBackupRecord): string => record.id);
-            devices = selected.map((record: CloudBackupRecord): string => record.deviceId);
+            // 无归属（deviceId 缺失）或同名范围无法确认的记录：跳过并计数上报，
+            // 不再阻断设备级清理，也绝不自动认领（归错设备的删除不可逆）。
+            for (const record of scan.records) {
+              if (!record.deviceId || (scope === DiagnosticScope.SAME_NAME && !record.deviceName)) {
+                result.skippedUnowned++;
+                continue;
+              }
+              const matched = scope === DiagnosticScope.DEVICE ? record.deviceId === id :
+                record.deviceId !== id && record.deviceName === name;
+              if (matched) {
+                targets.push(record.id);
+                devices.push(record.deviceId);
+              }
+            }
             if (scope === DiagnosticScope.DEVICE && !devices.includes(id)) devices.push(id);
           }
         } catch (error) {
           this.logFileError(context, DiagnosticStage.READ_END, error);
           return cloudBackupFailure(CloudBackupFailureReason.READ_FAILED);
         }
-        if (unresolved) return cloudBackupFailure(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
         let iconsOk = true;
         // 设备范围须先保留归属证据，图标无法确认清理时不能先删除这些令牌文件。
         if (scope !== DiagnosticScope.ALL && devices.length > 0) {
@@ -621,8 +725,10 @@ export class CloudBackupManager {
         let deletedAny = false;
         for (const target of targets) {
           const deletion = await this.deleteBackupFile(target, context);
-          if (deletion.success) deletedAny = true;
-          else { result.reason = deletion.reason; result.partialFailure = true; }
+          if (deletion.success) {
+            deletedAny = true;
+            result.deletedCount++;
+          } else { result.reason = deletion.reason; result.partialFailure = true; }
         }
         if (scope === DiagnosticScope.ALL) {
           iconsOk = await this.clearIcons(owner, context);

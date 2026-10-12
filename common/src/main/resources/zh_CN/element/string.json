@@ -2570,6 +2570,90 @@
     {
       "name": "developer_test_tokens_failed",
       "value": "测试令牌操作失败，请重试。"
+    },
+    {
+      "name": "cloud_backup_last_failure_title",
+      "value": "最近一次备份"
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback",
+      "value": "备份失败，请反馈开发者"
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback_entry",
+      "value": "前往问题反馈"
+    },
+    {
+      "name": "cloud_backup_failure_stage_unknown",
+      "value": "未知阶段"
+    },
+    {
+      "name": "cloud_backup_failure_stage_device_info",
+      "value": "设备身份读取"
+    },
+    {
+      "name": "cloud_backup_failure_stage_encrypt",
+      "value": "备份加密"
+    },
+    {
+      "name": "cloud_backup_failure_stage_write",
+      "value": "备份写入"
+    },
+    {
+      "name": "cloud_backup_failure_stage_staged_verify",
+      "value": "暂存内容校验"
+    },
+    {
+      "name": "cloud_backup_failure_stage_publish",
+      "value": "备份发布"
+    },
+    {
+      "name": "cloud_backup_failure_stage_post_verify",
+      "value": "发布后校验"
+    },
+    {
+      "name": "cloud_backup_failure_stage_rotate",
+      "value": "轮换剪除"
+    },
+    {
+      "name": "cloud_backup_failure_stage_icon",
+      "value": "图标包备份"
+    },
+    {
+      "name": "cloud_backup_failure_stage_sync",
+      "value": "同步提交"
+    },
+    {
+      "name": "cloud_backup_failure_reason_post_verify",
+      "value": "发布后校验未通过，无效备份已清理"
+    },
+    {
+      "name": "cloud_backup_clear_result_deleted",
+      "value": "已清理 %d 份云端备份"
+    },
+    {
+      "name": "cloud_backup_clear_result_skipped",
+      "value": "另有 %d 条无法确认归属的云端记录已保留"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_hint",
+      "value": "以下记录无法确认来源设备，不参与任何设备的轮换保留策略。"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_entry",
+      "value": "清除来源未确认的记录"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_confirm",
+      "value": "将逐条删除 %d 条来源未确认的云端备份记录，删除失败的条目会保留。本地令牌不受影响。"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_done",
+      "value": "已删除 %d 条记录，%d 条删除失败已保留"
+    },
+    {
+      "name": "cloud_backup_failure_stage_snapshot",
+      "value": "令牌快照读取"
     }
   ]
 }

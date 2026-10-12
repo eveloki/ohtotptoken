@@ -11,6 +11,7 @@ export * from './src/main/ets/utils/CloudBackupMetadata';
 export * from './src/main/ets/utils/CloudBackupOperationGate';
 export * from './src/main/ets/utils/CloudBackupSyncService';
 export * from './src/main/ets/utils/CloudBackupResult';
+export * from './src/main/ets/utils/CloudSyncLastFailure';
 export * from './src/main/ets/utils/CloudFileCacheLoader';
 export * from './src/main/ets/utils/CloudSyncTask';
 export * from './src/main/ets/utils/ColorUtils';

@@ -289,6 +289,18 @@ export struct ShowCloudBackupHistoryPage {
             ForEach(this.getUnknownSourceRecords(), (record: CloudBackupRecord) => {
               ListItem() { this.BackupRecordItem(record) }
             }, (record: CloudBackupRecord) => record.id)
+            ListItem() {
+              Column({ space: 8 }) {
+                Text($r('app.string.cloud_backup_unknown_cleanup_hint'))
+                  .fontSize($r('sys.float.ohos_id_text_size_body2')).fontColor($r('sys.color.font_secondary')).width('100%')
+                Button($r('app.string.cloud_backup_unknown_cleanup_entry'))
+                  .fontColor($r('sys.color.ohos_id_color_warning')).backgroundColor($r('sys.color.comp_background_gray'))
+                  .width('100%').labelStyle({ maxLines: 4 }).constraintSize({ minHeight: 48 })
+                  .enabled(!this.interactionBlocked())
+                  .onClick(() => this.showUnknownCleanupConfirmDialog())
+              }
+              .width('100%')
+            }
           }
           ListItem() {
             Column({ space: 8 }) {
@@ -522,6 +534,81 @@ export struct ShowCloudBackupHistoryPage {
     } catch (_) {
       this.confirmationOpen = false;
       showSnackBar($r('app.string.cloud_backup_delete_failed'), SnackBarNotifyType.WARNING);
+    }
+  }
+
+  /** 聚合清理入口的二次确认：明确范围为"来源未确认"记录，本地令牌不受影响。 */
+  private showUnknownCleanupConfirmDialog(): void {
+    if (!this.canStartAction()) {
+      return;
+    }
+    const targets = this.getUnknownSourceRecords();
+    if (targets.length === 0) {
+      return;
+    }
+    this.confirmationOpen = true;
+    try {
+      this.getUIContext().showAlertDialog({
+        systemMaterial: dialogSystemMaterial(),
+        title: $r('app.string.cloud_backup_unknown_cleanup_entry'),
+        message: $r('app.string.cloud_backup_unknown_cleanup_confirm', targets.length),
+        autoCancel: true, alignment: DialogAlignment.Bottom, gridCount: 4,
+        offset: { dx: 0, dy: -20 }, buttonDirection: DialogButtonDirection.VERTICAL,
+        buttons: [
+          { value: $r('app.string.cloud_backup_unknown_cleanup_entry'), fontColor: $r('sys.color.ohos_id_color_warning'),
+            action: () => {
+              this.confirmationOpen = false;
+              this.triggerUnknownSourceCleanup(targets);
+            } },
+          { value: $r('app.string.dialog_btn_cancel'), action: () => { this.confirmationOpen = false; } }
+        ],
+        cancel: () => { this.confirmationOpen = false; }
+      });
+    } catch (_) {
+      this.confirmationOpen = false;
+      showSnackBar($r('app.string.cloud_backup_delete_failed'), SnackBarNotifyType.WARNING);
+    }
+  }
+
+  /** 逐条复用单条删除（各自持许可、各自提交同步）；失败条目保留在列表中等待重试。 */
+  private async triggerUnknownSourceCleanup(targets: CloudBackupRecord[]): Promise<void> {
+    if (!this.canStartAction() || targets.length === 0) {
+      return;
+    }
+    this.isActionRunning = true;
+    let deleted = 0;
+    let failed = 0;
+    try {
+      for (const record of targets) {
+        const result = await this.backupManager.deleteBackupRecordResult(record.id);
+        if (!this.isMounted) { return; }
+        if (result.syncStartAccepted) {
+          this.needsSyncRetry = false;
+        } else if (result.localComplete || result.partialFailure) {
+          this.needsSyncRetry = true;
+        }
+        if (result.localComplete || result.success) {
+          deleted++;
+        } else {
+          failed++;
+        }
+      }
+      if (this.isMounted) {
+        this.actionMessage = $r('app.string.cloud_backup_unknown_cleanup_done', deleted, failed);
+        showSnackBar(this.actionMessage, failed === 0 ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
+      }
+    } catch (_) {
+      failed = targets.length - deleted;
+      if (this.isMounted) {
+        this.actionMessage = $r('app.string.cloud_backup_unknown_cleanup_done', deleted, failed);
+        showSnackBar(this.actionMessage, SnackBarNotifyType.WARNING);
+      }
+    } finally {
+      this.isActionRunning = false;
+      this.refreshOperationState();
+    }
+    if (deleted > 0 && this.isMounted) {
+      await this.loadBackupHistory();
     }
   }
 

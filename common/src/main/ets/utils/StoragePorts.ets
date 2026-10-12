@@ -151,6 +151,8 @@ export interface FsGateway {
   writeNewTextFile(path: string, content: string, context?: DiagnosticContext): Promise<void>;
   /** 同目录、不覆盖发布；调用方先关闭、读回并校验源文件。 */
   publishFile(source: string, destination: string, context?: DiagnosticContext): Promise<void>;
+  /** 同目录覆盖式移动（暂存产物校验通过后原子替换正式文件）。 */
+  moveFileToReplace(source: string, destination: string): Promise<void>;
   makeDir(path: string): Promise<void>;
   /** 递归删除目录及其内容（fs.rmdir 语义）；调用方必须确认目录所有权。 */
   removeDir(path: string): Promise<void>;
@@ -421,6 +423,14 @@ export class FileIoFsGateway implements FsGateway {
       }
       throw error as Error;
     }
+  }
+
+  async moveFileToReplace(source: string, destination: string): Promise<void> {
+    if (source === destination || publicationParent(source) !== publicationParent(destination)) {
+      throw new Error('Replace requires distinct files in the same directory');
+    }
+    // SDK mode=0：完全覆盖目标文件（rename 语义）；失败时目标保持原内容。
+    await fs.moveFile(source, destination, 0);
   }
 
   async makeDir(path: string): Promise<void> {

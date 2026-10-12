@@ -5,6 +5,7 @@ import { HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from 
 import {
   AppPreference, AppWindowInfo, CloudBackupActionResult, CloudBackupFailureReason, CloudBackupManager,
   CloudBackupSyncError, CloudBackupSyncService, CloudBackupSyncSnapshot, CloudBackupSyncState,
+  CloudSyncFailureStage, CloudSyncFailureState, CloudSyncFailureView, cloudSyncFailureView,
   CommonConstants, dialogSystemMaterial, HuaweiAccountManager, IconPackCloudBackup, IconPackSyncState,
   PREF_KEYS, ROUTE_NAMES, showSnackBar, SnackBarNotifyType, SyncTimeHelper
 } from 'common';
@@ -31,12 +32,14 @@ export struct ShowCloudSyncDetailsPage {
   @Event onCloseSheet: () => void = () => {};
   @Local cloudSyncEnabled: boolean = false;
   @Local lastSyncTime: string = '';
+  @Local lastFailure: CloudSyncFailureView | null = null;
   @Local isLoading: boolean = false;
   @Local isHuaweiLoggedIn: boolean = false;
   @Local syncState: CloudBackupSyncState = CloudBackupSyncState.UNKNOWN;
   @Local syncError: CloudBackupSyncError = CloudBackupSyncError.NO_ERROR;
   @Local loadingText: ResourceStr = '';
   @Local actionMessage: ResourceStr = '';
+  @Local skippedMessage: ResourceStr = '';
   @Local serviceBusy: boolean = false;
   @Local cleanupPending: boolean = false;
   @Local isRetryingCleanup: boolean = false;
@@ -69,6 +72,7 @@ export struct ShowCloudSyncDetailsPage {
     this.isMounted = true;
     this.cloudSyncEnabled = AppPreference.getPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE) as boolean;
     this.refreshLastBackupTime();
+    this.refreshLastBackupFailure();
     this.refreshOperationState();
     this.applySyncSnapshot(this.syncService.getSnapshot());
     // 与管理器提交同步使用同一实例；初始 COMPLETED 只表示全局状态，不证明本次上传完成。
@@ -86,6 +90,7 @@ export struct ShowCloudSyncDetailsPage {
       if (!this.serviceBusy && !this.cleanupPending && !this.isLoading &&
         (wasBusy || oldIconState !== this.iconPackSyncState || iconUnresolved)) {
         this.refreshLastBackupTime();
+        this.refreshLastBackupFailure();
         this.loadIconPackBackupStatus();
       }
     }, 2000) as number;
@@ -113,6 +118,35 @@ export struct ShowCloudSyncDetailsPage {
   private refreshLastBackupTime(): void {
     const rawTime = AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string ?? '';
     this.lastSyncTime = SyncTimeHelper.formatTimestamp(SyncTimeHelper.parseStoredTimestamp(rawTime));
+  }
+
+  /** 失败状态键 → 视图模型；成功清除后为 null，重启后仍可读回（AppPreference 持久化）。 */
+  private refreshLastBackupFailure(): void {
+    this.lastFailure = cloudSyncFailureView(CloudSyncFailureState.read());
+  }
+
+  /** 失败阶段文案；未知枚举（跨版本脏数据）落通用"未知阶段"。 */
+  private lastFailureStageText(view: CloudSyncFailureView): ResourceStr {
+    if (!view.knownStage) { return $r('app.string.cloud_backup_failure_stage_unknown'); }
+    switch (view.stage) {
+      case CloudSyncFailureStage.DEVICE_INFO: return $r('app.string.cloud_backup_failure_stage_device_info');
+      case CloudSyncFailureStage.SNAPSHOT: return $r('app.string.cloud_backup_failure_stage_snapshot');
+      case CloudSyncFailureStage.ENCRYPT: return $r('app.string.cloud_backup_failure_stage_encrypt');
+      case CloudSyncFailureStage.WRITE: return $r('app.string.cloud_backup_failure_stage_write');
+      case CloudSyncFailureStage.STAGED_VERIFY: return $r('app.string.cloud_backup_failure_stage_staged_verify');
+      case CloudSyncFailureStage.PUBLISH: return $r('app.string.cloud_backup_failure_stage_publish');
+      case CloudSyncFailureStage.POST_PUBLISH_VERIFY: return $r('app.string.cloud_backup_failure_stage_post_verify');
+      case CloudSyncFailureStage.ROTATE: return $r('app.string.cloud_backup_failure_stage_rotate');
+      case CloudSyncFailureStage.ICON: return $r('app.string.cloud_backup_failure_stage_icon');
+      case CloudSyncFailureStage.SYNC: return $r('app.string.cloud_backup_failure_stage_sync');
+      default: return $r('app.string.cloud_backup_failure_stage_unknown');
+    }
+  }
+
+  /** 失败原因文案：复用既有 reason 映射，POST_VERIFY_FAILED/UNKNOWN 落专用兜底。 */
+  private lastFailureReasonText(view: CloudSyncFailureView): ResourceStr {
+    if (!view.knownReason) { return $r('app.string.cloud_backup_unknown_error'); }
+    return this.failureText(view.reason, $r('app.string.cloud_backup_unknown_error'));
   }
 
   private refreshOperationState(): void {
@@ -195,6 +229,10 @@ export struct ShowCloudSyncDetailsPage {
                   Text(this.actionMessage).fontSize($r('sys.float.ohos_id_text_size_body2'))
                     .fontColor($r('sys.color.font_secondary')).width('100%')
                 }
+                if (this.skippedMessage !== '') {
+                  Text(this.skippedMessage).fontSize($r('sys.float.ohos_id_text_size_body2'))
+                    .fontColor($r('sys.color.ohos_id_color_warning')).width('100%')
+                }
                 if (this.needsSyncRetry && !this.cleanupPending) {
                   Button($r('app.string.cloud_backup_retry_sync'))
                     .width('100%').labelStyle({ maxLines: 4 }).constraintSize({ minHeight: 48 }).enabled(!this.interactionBlocked())
@@ -230,6 +268,30 @@ export struct ShowCloudSyncDetailsPage {
               if (this.syncError !== CloudBackupSyncError.NO_ERROR) {
                 SubItemDivider()
                 this.StatusValue($r('app.string.cloud_sync_sync_error'), this.getSyncErrorText(), true)
+              }
+              if (this.lastFailure !== null) {
+                SubItemDivider()
+                // 最近一次备份失败行：内联响应式绑定（@Builder 按值传参不随状态刷新，规避 §15 教训）。
+                Column({ space: 6 }) {
+                  Text($r('app.string.cloud_backup_last_failure_title'))
+                    .fontSize($r('sys.float.ohos_id_text_size_body2')).fontColor($r('sys.color.font_secondary'))
+                  Text(this.lastFailureStageText(this.lastFailure))
+                    .fontSize($r('sys.float.ohos_id_text_size_body1')).fontWeight(FontWeight.Medium)
+                    .fontColor($r('sys.color.ohos_id_color_warning'))
+                  Text(this.lastFailureReasonText(this.lastFailure))
+                    .fontSize($r('sys.float.ohos_id_text_size_body2'))
+                    .fontColor($r('sys.color.ohos_id_color_warning'))
+                  Text($r('app.string.cloud_backup_last_failure_feedback'))
+                    .fontSize($r('sys.float.ohos_id_text_size_caption'))
+                    .fontColor($r('sys.color.ohos_id_color_warning'))
+                  SubItemButton({
+                    symbol: $r('sys.symbol.envelope'), text: $r('app.string.app_issue_feedback'),
+                    description: $r('app.string.cloud_backup_last_failure_feedback_entry'), descriptionMaxLines: 0
+                  })
+                    .enabled(!this.interactionBlocked())
+                    .onClick(() => { this.pageInfos?.pushPathByName(ROUTE_NAMES.SettingFeedback, null); })
+                }
+                .alignItems(HorizontalAlign.Start).width('100%').padding(16)
               }
             }
           }
@@ -408,6 +470,7 @@ export struct ShowCloudSyncDetailsPage {
 
   private async triggerFileSync(): Promise<void> {
     if (!this.canStartAction() || !this.cloudSyncEnabled) { return; }
+    this.skippedMessage = '';
     const now = Date.now();
     if (this.lastSyncTriggerTime > 0 && now - this.lastSyncTriggerTime < this.SYNC_COOLDOWN_MS) {
       showSnackBar($r('app.string.cloud_sync_cooldown'), SnackBarNotifyType.WARNING);
@@ -482,6 +545,7 @@ export struct ShowCloudSyncDetailsPage {
   /** false、拒绝及同步提交失败分别消费，任何出口均恢复 loading。 */
   private async triggerCloudSync(): Promise<void> {
     if (!this.canStartAction() || !this.cloudSyncEnabled) { return; }
+    this.skippedMessage = '';
     this.loadingText = $r('app.string.cloud_sync_backing_up');
     this.isLoading = true;
     try {
@@ -492,6 +556,7 @@ export struct ShowCloudSyncDetailsPage {
         this.actionFailureText(result, $r('app.string.cloud_backup_create_failed'));
       showSnackBar(this.actionMessage, result.success ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
       this.refreshLastBackupTime();
+      this.refreshLastBackupFailure();
     } catch (_) {
       if (this.isMounted) {
         this.actionMessage = $r('app.string.cloud_backup_create_failed');
@@ -508,6 +573,7 @@ export struct ShowCloudSyncDetailsPage {
     if (!this.canStartAction()) { return; }
     this.loadingText = $r('app.string.cloud_sync_clearing');
     this.isLoading = true;
+    this.skippedMessage = '';
     try {
       const result = clearType === ClearCloudType.ALL ? await this.backupManager.clearCloudStorageResult() :
         clearType === ClearCloudType.DEVICE_NAME ? await this.backupManager.clearDeviceNameCloudStorageResult() :
@@ -516,8 +582,15 @@ export struct ShowCloudSyncDetailsPage {
       this.updateSyncRetryState(result);
       this.actionMessage = result.success ? $r('app.string.cloud_sync_clear_storage_success') :
         this.actionFailureText(result, $r('app.string.cloud_sync_clear_storage_failed'));
+      // 无归属记录跳过数如实上报：既不冒充已删除，也不当作失败。
+      this.skippedMessage = result.skippedUnowned > 0 ?
+        $r('app.string.cloud_backup_clear_result_skipped', result.skippedUnowned) : '';
+      if (result.success && result.deletedCount > 0) {
+        this.actionMessage = $r('app.string.cloud_backup_clear_result_deleted', result.deletedCount);
+      }
       showSnackBar(this.actionMessage, result.success ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
       this.refreshLastBackupTime();
+      this.refreshLastBackupFailure();
     } catch (_) {
       if (this.isMounted) {
         this.actionMessage = $r('app.string.cloud_sync_clear_storage_failed');
@@ -643,6 +716,7 @@ export struct ShowCloudSyncDetailsPage {
       case CloudBackupFailureReason.DELETE_FAILED: return $r('app.string.cloud_backup_delete_failed');
       case CloudBackupFailureReason.ICON_FAILED: return $r('app.string.cloud_backup_icon_failed');
       case CloudBackupFailureReason.SYNC_FAILED: return $r('app.string.cloud_backup_sync_submit_failed');
+      case CloudBackupFailureReason.POST_VERIFY_FAILED: return $r('app.string.cloud_backup_failure_reason_post_verify');
       default: return fallback;
     }
   }

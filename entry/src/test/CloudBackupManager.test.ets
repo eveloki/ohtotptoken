@@ -20,6 +20,8 @@ import {
   CloudBackupIconPort,
   CloudBackupManager,
   CloudBackupTokenPort,
+  CloudSyncFailureStage,
+  CloudSyncFailureState,
   CloudSyncStarter,
   PREF_KEYS,
   TokenConfig,
@@ -161,9 +163,12 @@ class FakeTokens implements CloudBackupTokenPort {
   /** 0 起，失败发生在该次写入之前；先前已成功的写入不能当作已回滚。 */
   failUpdateAt: number = -1;
   readCalls: number = 0;
+  /** 快照读取失败（模拟 TokenStore/RDB 拒绝），不得向用户抛未处理异常。 */
+  failGet: boolean = false;
 
   getTokens(): Promise<TokenConfig[]> {
     this.readCalls++;
+    if (this.failGet) return Promise.reject(new Error('token store unavailable'));
     return Promise.resolve(this.list);
   }
 
@@ -316,6 +321,28 @@ class PublicationRaceFs extends DownloadAwareFs {
   }
 }
 
+/** 发布后校验注入：正式文件被替换为不一致内容，或正式文件不可读。 */
+class PostPublishFaultFs extends DownloadAwareFs {
+  /** 发布成功后把正式文件替换为该内容（构造数量不一致的合法备份头）。 */
+  mismatchFormal: string = '';
+  /** 正式文件（otp_backup_*.enc）普通读取失败，模拟重读 IO 故障/缺失。 */
+  unreadableFormal: boolean = false;
+
+  async publishFile(source: string, destination: string): Promise<void> {
+    await super.publishFile(source, destination);
+    if (this.mismatchFormal !== '') {
+      this.files.set(destination, this.mismatchFormal);
+    }
+  }
+
+  async readTextFile(path: string): Promise<string> {
+    if (this.unreadableFormal && /^\/cloud\/otp_backup_-?\d+\.enc(?![\s\S])/.test(path)) {
+      throw new Error('formal read unavailable');
+    }
+    return super.readTextFile(path);
+  }
+}
+
 function makeToken(uuid: string, secret: string): TokenConfig {
   const token = new TokenConfig(secret, otpType.TOTP);
   token.TokenUUID = uuid;
@@ -337,6 +364,7 @@ interface TestRig {
 function freshRig(): TestRig {
   CloudBackupCrypto.useEngineForTest(new XorBackupEngine(), new PureTsCodec());
   AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '');
+  AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_FAILURE, '');
   // 复位静态偏好与单例，隔离套件间污染
   AppPreference.setPreference(PREF_KEYS.APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE, false);
   AppPreference.setPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME, '');
@@ -504,6 +532,190 @@ export default function cloudBackupManagerTest() {
       expect(AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME)).assertEqual('');
     });
 
+    it('post_publish_verify_pass_clears_failure_key_and_updates_time', 0, async () => {
+      const rig = freshRig();
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      // 预置一次历史失败状态：备份成功（含发布后校验通过）后必须清除。
+      CloudSyncFailureState.record(CloudSyncFailureStage.SYNC, CloudBackupFailureReason.SYNC_FAILED);
+
+      const result = await CloudBackupManager.getInstance().backupToCloudResult();
+      expect(result.success).assertTrue();
+      expect((AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME) as string).length > 0).assertTrue();
+      expect(CloudSyncFailureState.read()).assertNull();
+    });
+
+    it('post_publish_verify_count_mismatch_fails_cleans_formal_and_propagates', 0, async () => {
+      const rig = freshRig();
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      const fs = new PostPublishFaultFs();
+      const crypto = CloudBackupCrypto.getInstance();
+      // 发布后被偷换为"合法但令牌数量不一致"的备份头（0 vs 本机 1）。
+      fs.mismatchFormal = await crypto.encrypt('{}', crypto.getMode(true), 'union-1', 0, 999, 'odid-A', 'Mate60');
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: fs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cache: rig.cache, cloudDir: '/cloud',
+      });
+
+      const result = await CloudBackupManager.getInstance().backupToCloudResult();
+      expect(result.success).assertFalse();
+      expect(result.reason).assertEqual(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      // 正式目录无本次备份残留；删除已随同步提交传播。
+      expect(formalPaths(fs).length).assertEqual(0);
+      expect(fs.deletedPaths.length).assertEqual(1);
+      expect(rig.sync.startCalls).assertEqual(1);
+      expect(rig.icons.backupCalls).assertEqual(0);
+      expect(AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME)).assertEqual('');
+      const failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.POST_PUBLISH_VERIFY);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      }
+    });
+
+    it('post_publish_verify_read_failure_fails_without_time_update', 0, async () => {
+      const rig = freshRig();
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      const fs = new PostPublishFaultFs();
+      fs.unreadableFormal = true;
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: fs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cache: rig.cache, cloudDir: '/cloud',
+      });
+
+      const result = await CloudBackupManager.getInstance().backupToCloudResult();
+      expect(result.success).assertFalse();
+      expect(result.reason).assertEqual(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      // 重读失败也收敛为校验失败：文件被尝试清理并传播，时间与失败键如实落库。
+      expect(formalPaths(fs).length).assertEqual(0);
+      expect(rig.sync.startCalls).assertEqual(1);
+      expect(AppPreference.getPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME)).assertEqual('');
+      const failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.POST_PUBLISH_VERIFY);
+      }
+    });
+
+    it('backup_failure_records_persistent_failure_key_by_stage', 0, async () => {
+      // 设备身份不可用 → 阶段 DEVICE_INFO
+      let rig = freshRig();
+      rig.device.id = '';
+      expect((await CloudBackupManager.getInstance().backupToCloudResult()).reason)
+        .assertEqual(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
+      let failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.DEVICE_INFO);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
+      }
+
+      // 写入失败 → 阶段 WRITE / WRITE_FAILED，正式目录无残留
+      rig = freshRig();
+      rig.fs.failWrite = true;
+      expect(await CloudBackupManager.getInstance().backupToCloud()).assertFalse();
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.WRITE);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.WRITE_FAILED);
+      }
+      expect(formalPaths(rig.fs).length).assertEqual(0);
+
+      // 发布失败 → 阶段 PUBLISH（同一 WRITE_FAILED 原因码下的细分阶段）
+      rig = freshRig();
+      rig.fs.failPublish = true;
+      expect(await CloudBackupManager.getInstance().backupToCloud()).assertFalse();
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.PUBLISH);
+      }
+      expect(formalPaths(rig.fs).length).assertEqual(0);
+
+      // 加密失败 → 阶段 ENCRYPT / FORMAT_INVALID
+      rig = freshRig();
+      const faultEngine = new FaultInjectingBackupEngine();
+      faultEngine.failHash = true;
+      CloudBackupCrypto.useEngineForTest(faultEngine, new PureTsCodec());
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      expect((await CloudBackupManager.getInstance().backupToCloudResult()).reason)
+        .assertEqual(CloudBackupFailureReason.FORMAT_INVALID);
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.ENCRYPT);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.FORMAT_INVALID);
+      }
+      expect(formalPaths(rig.fs).length).assertEqual(0);
+
+      // 令牌快照读取失败 → 阶段 SNAPSHOT / READ_FAILED（零容忍，异常不外泄）
+      rig = freshRig();
+      rig.tokens.failGet = true;
+      expect((await CloudBackupManager.getInstance().backupToCloudResult()).reason)
+        .assertEqual(CloudBackupFailureReason.READ_FAILED);
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.SNAPSHOT);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.READ_FAILED);
+      }
+      expect(rig.fs.newWriteCalls.length).assertEqual(0);
+
+      // 暂存回读损坏 → 阶段 STAGED_VERIFY（phase=FS_VERIFY 映射），发布未发生
+      rig = freshRig();
+      const raceFs = new PublicationRaceFs();
+      raceFs.corruptReadback = true;
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      CloudBackupManager.getInstance().useDepsForTest({
+        fs: raceFs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cache: rig.cache, cloudDir: '/cloud',
+      });
+      expect((await CloudBackupManager.getInstance().backupToCloudResult()).reason)
+        .assertEqual(CloudBackupFailureReason.WRITE_FAILED);
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.STAGED_VERIFY);
+      }
+      expect(raceFs.publishAttempts.length).assertEqual(0);
+
+      // 同步提交失败 → 阶段 SYNC / SYNC_FAILED（本地文件已发布并校验通过）
+      rig = freshRig();
+      rig.tokens.list = [makeToken('u1', 'secret1')];
+      rig.sync.fail = true;
+      const syncFail = await CloudBackupManager.getInstance().backupToCloudResult();
+      expect(syncFail.success).assertFalse();
+      expect(syncFail.reason).assertEqual(CloudBackupFailureReason.SYNC_FAILED);
+      failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.SYNC);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.SYNC_FAILED);
+      }
+      expect(formalPaths(rig.fs).length).assertEqual(1);
+    });
+
+    it('rotation_prune_failure_is_partial_failure_and_persisted', 0, async () => {
+      const rig = freshRig();
+      const manager = CloudBackupManager.getInstance();
+      for (let i = 0; i < manager.maxBackupCount; i++) {
+        expect(await manager.backupToCloud()).assertTrue();
+      }
+      // 最老有效本机记录删除失败：不静默标记完全成功，失败计入并持久展示。
+      rig.fs.failDeleteFor.add(formalPaths(rig.fs)[0]);
+      const result = await manager.backupToCloudResult();
+      expect(result.success).assertFalse();
+      expect(result.partialFailure).assertTrue();
+      expect(result.reason).assertEqual(CloudBackupFailureReason.DELETE_FAILED);
+      const failure = CloudSyncFailureState.read();
+      expect(failure !== null).assertTrue();
+      if (failure !== null) {
+        expect(failure.stage).assertEqual(CloudSyncFailureStage.ROTATE);
+        expect(failure.reason).assertEqual(CloudBackupFailureReason.DELETE_FAILED);
+      }
+    });
+
     it('backup_prunes_oldest_only_beyond_max_count', 0, async () => {
       const rig = freshRig();
       const manager = CloudBackupManager.getInstance();
@@ -644,23 +856,28 @@ export default function cloudBackupManagerTest() {
       expect(rig.sync.startCalls).assertEqual(1);
     });
 
-    it('device_scoped_clears_fail_when_identity_unresolved', 0, async () => {
+    it('device_scoped_clear_skips_unresolved_and_reports_counts', 0, async () => {
       const rig = freshRig();
       await seedBackup(rig, 9340, '{"tokens":[]}', 'odid-A');
-      // header 不可解析（如离线未缓存成功的云端文件）：设备归属无法确认
+      // header 不可解析（如事故孤儿）：设备归属无法确认 → 跳过保留，不再阻断本设备清理
       rig.fs.files.set('/cloud/otp_backup_9350.enc', 'junk');
 
-      // 范围未核实，图标清理尚未确认；已知归属证据也必须保留供重启后重试。
-      const byDevice = await CloudBackupManager.getInstance().clearDeviceCloudStorage();
-      expect(byDevice).assertFalse();
-      expect(rig.fs.files.has('/cloud/otp_backup_9340.enc')).assertTrue();
+      const byDevice = await CloudBackupManager.getInstance().clearDeviceCloudStorageResult();
+      expect(byDevice.success).assertTrue();
+      expect(byDevice.deletedCount).assertEqual(1);
+      expect(byDevice.skippedUnowned).assertEqual(1);
+      expect(rig.fs.files.has('/cloud/otp_backup_9340.enc')).assertFalse();
       expect(rig.fs.files.has('/cloud/otp_backup_9350.enc')).assertTrue();
-      expect(rig.icons.clearCalls).assertEqual(0);
+      // 无归属记录绝不自动认领：图标清理只覆盖归属明确的设备。
+      expect(rig.icons.clearDeviceIds[0].join(',')).assertEqual('odid-A');
 
-      // 同名旧安装清理：未解析记录可能是本机 location=2 遗留（主场景）→ 不报成功
-      const byName = await CloudBackupManager.getInstance().clearDeviceNameCloudStorage();
-      expect(byName).assertFalse();
-      expect(rig.icons.clearCalls).assertEqual(0);
+      // 同名旧安装清理：无法确认设备名的记录同样跳过并计数（本机记录不属于同名旧安装范围）。
+      const byName = await CloudBackupManager.getInstance().clearDeviceNameCloudStorageResult();
+      expect(byName.success).assertTrue();
+      expect(byName.skippedUnowned).assertEqual(1);
+      expect(byName.deletedCount).assertEqual(0);
+      expect(rig.fs.files.has('/cloud/otp_backup_9350.enc')).assertTrue();
+      expect(rig.icons.clearCalls).assertEqual(1);
     });
 
     it('cache_cloud_only_backups_scans_backup_files_only', 0, async () => {
@@ -1883,19 +2100,22 @@ export default function cloudBackupManagerTest() {
       }
     });
 
-    it('unresolved_scoped_scan_retains_known_ownership_until_identity_can_be_confirmed', 0, async () => {
+    it('unresolved_records_are_skipped_and_kept_during_scoped_clear', 0, async () => {
       for (const scope of [1, 2]) {
         const rig = freshRig();
         const owner = scope === 1 ? 'odid-A' : 'odid-OLD';
         await seedBackup(rig, 170, '{}', owner);
         rig.fs.files.set('/cloud/otp_backup_171.enc', 'unknown-owner');
         const manager = CloudBackupManager.getInstance();
+        // 无归属记录跳过并计数；归属明确的目标照常清理（P1-1：不再整体失败）。
         const result = await clearScope(manager, scope);
-        expect(result.success).assertFalse();
-        expect(result.reason).assertEqual(CloudBackupFailureReason.IDENTITY_UNAVAILABLE);
-        expect(rig.fs.files.size).assertEqual(2);
-        expect(rig.fs.deleteAttempts.length).assertEqual(0);
-        expect(rig.icons.clearCalls).assertEqual(0);
+        expect(result.success).assertTrue();
+        expect(result.skippedUnowned).assertEqual(1);
+        expect(result.deletedCount).assertEqual(1);
+        expect(rig.fs.files.has('/cloud/otp_backup_171.enc')).assertTrue();
+        expect(rig.fs.files.has('/cloud/otp_backup_170.enc')).assertFalse();
+        expect(rig.icons.clearDeviceIds[0].join(',')).assertEqual(owner);
+        expect(rig.icons.clearAllCalls).assertEqual(0);
         manager.resetForTest();
         bindRig(rig);
         await seedBackup(rig, 171, '{}', 'odid-B', 'Other');

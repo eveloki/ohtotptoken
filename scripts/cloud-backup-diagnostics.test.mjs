@@ -252,6 +252,35 @@ test('new stages retain only compatible domains and reviewed boolean fields', ()
   assertWire(lines);
 });
 
+test('post-publish verify stage carries only reviewed fields and round-trips through the collector', () => {
+  // 校验失败三态只允许 reason/headerParsed；数量、文件名、路径无出口。
+  const { recorder, lines } = setup(); recorder.enable();
+  const context = recorder.begin(Kind.BACKUP);
+  recorder.mark(context, Stage.POST_PUBLISH_VERIFY, Result.FAIL,
+    { reason: Reason.MISMATCH, headerParsed: true, item: 1, location: 'CLOUD', truncated: true });
+  recorder.mark(context, Stage.POST_PUBLISH_VERIFY, Result.FAIL,
+    { reason: Reason.INVALID_FORMAT, errorDomain: Domain.FS, code: 13900020 });
+  recorder.mark(context, Stage.POST_PUBLISH_VERIFY, Result.OK, { headerParsed: true, contentNonEmpty: true });
+  assert.ok(lines[0].includes('stage=POST_PUBLISH_VERIFY'));
+  assert.ok(lines[0].includes('reason=MISMATCH'));
+  assert.ok(lines[0].includes('headerParsed=true'));
+  assert.ok(!lines[0].includes('item='));
+  assert.ok(!lines[0].includes('location='));
+  assert.ok(lines[1].includes('code=13900020'));
+  assert.equal(lines.length, 3); // 两个失败指纹各一条 + 校验通过的 OK 事件。
+  assert.ok(lines[2].includes('result=OK'));
+  assertWire(lines);
+  const wire = `CloudBackupDiag: v=1 op=1 kind=BACKUP stage=POST_PUBLISH_VERIFY result=FAIL reason=MISMATCH elapsed=LT_1S headerParsed=true`;
+  const parsed = parseDiagnosticLine(wire);
+  assert.ok(parsed);
+  assert.equal(serializeDiagnosticEvent(parsed), wire);
+  // 隐私越界字段必须被整体拒绝，而不是静默剥除后被误信为已审查。
+  assert.equal(parseDiagnosticLine(`${wire} reason=MISMATCH`), null);
+  assert.equal(parseDiagnosticLine(wire.replace('headerParsed=true', 'writeComplete=true')), null);
+  // POST_PUBLISH_VERIFY 未列入 FS 码白名单：具体错误码收敛为 UNKNOWN。
+  assert.equal(parseDiagnosticLine(wire.replace('headerParsed=true', 'errorDomain=FS code=13900002')), null);
+});
+
 test('SYNC_STATE zero means NONE and no other domain or stage allows zero', () => {
   assert.equal(classifyDiagnosticError(Stage.SYNC_STATE, Domain.SYNC, 0).reason, Reason.NONE);
   const safe = normalizeDiagnosticSummary(Stage.SYNC_STATE, Result.OK,

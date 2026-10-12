@@ -2544,6 +2544,90 @@
     {
       "name": "developer_test_tokens_failed",
       "value": "The test-token operation failed. Please retry."
+    },
+    {
+      "name": "cloud_backup_last_failure_title",
+      "value": "Last backup"
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback",
+      "value": "Backup failed. Please report this to the developers."
+    },
+    {
+      "name": "cloud_backup_last_failure_feedback_entry",
+      "value": "Open Issue Feedback"
+    },
+    {
+      "name": "cloud_backup_failure_stage_unknown",
+      "value": "Unknown stage"
+    },
+    {
+      "name": "cloud_backup_failure_stage_device_info",
+      "value": "Device identity check"
+    },
+    {
+      "name": "cloud_backup_failure_stage_encrypt",
+      "value": "Backup encryption"
+    },
+    {
+      "name": "cloud_backup_failure_stage_write",
+      "value": "Backup write"
+    },
+    {
+      "name": "cloud_backup_failure_stage_staged_verify",
+      "value": "Staged content verification"
+    },
+    {
+      "name": "cloud_backup_failure_stage_publish",
+      "value": "Backup publish"
+    },
+    {
+      "name": "cloud_backup_failure_stage_post_verify",
+      "value": "Post-publish verification"
+    },
+    {
+      "name": "cloud_backup_failure_stage_rotate",
+      "value": "Rotation pruning"
+    },
+    {
+      "name": "cloud_backup_failure_stage_icon",
+      "value": "Icon pack backup"
+    },
+    {
+      "name": "cloud_backup_failure_stage_sync",
+      "value": "Sync submission"
+    },
+    {
+      "name": "cloud_backup_failure_reason_post_verify",
+      "value": "Post-publish verification failed; the invalid backup was removed"
+    },
+    {
+      "name": "cloud_backup_clear_result_deleted",
+      "value": "Removed %d cloud backup files"
+    },
+    {
+      "name": "cloud_backup_clear_result_skipped",
+      "value": "%d cloud records with unconfirmed ownership were kept"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_hint",
+      "value": "These records have no verifiable source device and never count toward the per-device rotation limit."
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_entry",
+      "value": "Clear records with unverified source"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_confirm",
+      "value": "This deletes %d cloud backup records with unverified source one by one. Items that fail to delete are kept. Local tokens are not affected."
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_done",
+      "value": "Deleted %d records; %d failed and were kept"
+    },
+    {
+      "name": "cloud_backup_failure_stage_snapshot",
+      "value": "Token snapshot read"
     }
   ]
 }

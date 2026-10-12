@@ -80,6 +80,7 @@ class FakeIconDevice implements IconPackDevicePort {
 class FakeUnpackArchiver implements IconPackArchiver {
   contents: Map<string, string> = new Map();
   decompressCalls: number = 0;
+  compressCalls: number = 0;
   fs: MemoryFs;
 
   constructor(fs: MemoryFs) {
@@ -87,6 +88,7 @@ class FakeUnpackArchiver implements IconPackArchiver {
   }
 
   compress(_srcDir: string, _destZip: string): Promise<void> {
+    this.compressCalls++;
     return Promise.resolve();
   }
 
@@ -111,6 +113,29 @@ class ReadCheckingUnpackArchiver extends FakeUnpackArchiver {
   async decompress(zipPath: string, destDir: string): Promise<void> {
     await this.fs.readTextFile(zipPath);
     await super.decompress(zipPath, destDir);
+  }
+}
+
+/** 可门控且可产出解压产物的假压缩器：兼具备份并发门控与发布校验产物。 */
+class GatedUnpackArchiver extends FakeUnpackArchiver {
+  hang: boolean = false;
+  private release: (() => void) | null = null;
+
+  compress(_srcDir: string, _destZip: string): Promise<void> {
+    this.compressCalls++;
+    if (this.hang) {
+      return new Promise<void>((resolve: () => void) => {
+        this.release = resolve;
+      });
+    }
+    return Promise.resolve();
+  }
+
+  releaseGate(): void {
+    if (this.release !== null) {
+      this.release();
+      this.release = null;
+    }
   }
 }
 
@@ -240,7 +265,10 @@ export default function iconPackCloudBackupTest() {
     it('backup_full_flow_writes_zip_meta_and_timestamp', 0, async () => {
       resetSingleton();
       const fs = new MemoryFs();
-      const archiver = new GatedArchiver();
+      const archiver = new FakeUnpackArchiver(fs);
+      // 备份端发布校验要求暂存 zip 可解压且内部元数据可解析
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":1,"enabledPacks":["p1"],"deletedPacks":[],"packs":[]}');
       bindDeps(fs, archiver);
       // 本地有图标包内容；假压缩器不产 zip，预置供 copyFile 到 cloudDir
       fs.files.set('/data/files/icon_packs/pack1.json', '{}');
@@ -259,6 +287,9 @@ export default function iconPackCloudBackupTest() {
       // 时间戳记录（防抖基准）
       const lastTime = AppPreference.getPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME) as string;
       expect(lastTime.length > 0).assertTrue();
+      // 发布走"暂存名 → 校验 → 原子替换"，暂存残片已回收
+      expect(fs.replacedPairs.join(',')).assertEqual('/cloud/.icon_packs_backup_pending.zip->/cloud/icon_packs_backup.zip');
+      expect(fs.files.has('/cloud/.icon_packs_backup_pending.zip')).assertFalse();
       // staging 目录清理
       expect(fs.files.has('/data/cache/icon_pack_staging/icon_packs_meta.json')).assertFalse();
     });
@@ -289,12 +320,97 @@ export default function iconPackCloudBackupTest() {
       expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
     });
 
+    it('publish_verify_failure_keeps_existing_zip_and_old_meta', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      // GatedArchiver.decompress 不产内容 → 暂存 zip 校验失败
+      const archiver = new GatedArchiver();
+      bindDeps(fs, archiver);
+      fs.files.set('/data/files/icon_packs/pack1.json', '{}');
+      fs.files.set('/data/cache/icon_packs_backup.zip', 'new-zip');
+      // 云端既有好 zip（含不可再生自定义图标）与旧 meta
+      fs.files.set('/cloud/icon_packs_backup.zip', 'old-good-zip');
+      fs.files.set('/cloud/icon_packs_sync_meta.json', '{"version":1,"timestamp":100}');
+
+      const ok = await IconPackCloudBackup.getInstance().backupIconPacks();
+      expect(ok).assertFalse();
+      // 旧 zip 与旧 meta 原样保留；未提交同步
+      expect(fs.files.get('/cloud/icon_packs_backup.zip')).assertEqual('old-good-zip');
+      expect(fs.files.get('/cloud/icon_packs_sync_meta.json')).assertEqual('{"version":1,"timestamp":100}');
+      expect(fs.replacedPairs.length).assertEqual(0);
+      // 暂存残片已回收，状态机复位
+      expect(fs.files.has('/cloud/.icon_packs_backup_pending.zip')).assertFalse();
+      expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
+    it('collection_copy_failure_aborts_backup_before_publish', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      bindDeps(fs, archiver);
+      fs.files.set('/data/files/icon_packs/a.json', 'a');
+      fs.files.set('/data/files/icon_packs/b.json', 'b');
+      fs.files.set('/data/cache/icon_packs_backup.zip', 'zip');
+      fs.failCopyFor.add('/data/files/icon_packs/b.json');
+
+      const ok = await IconPackCloudBackup.getInstance().backupIconPacks();
+      expect(ok).assertFalse();
+      // 收集不完整：不压缩、不发布、不写伴生元数据（缺文件不得假成功）
+      expect(archiver.compressCalls).assertEqual(0);
+      expect(fs.files.has('/cloud/icon_packs_backup.zip')).assertFalse();
+      expect(fs.files.has('/cloud/icon_packs_sync_meta.json')).assertFalse();
+      expect(fs.replacedPairs.length).assertEqual(0);
+      // staging 残留已回收
+      expect((await fs.listFiles('/data/cache/icon_pack_staging')).length).assertEqual(0);
+      expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
+    it('directory_listing_failure_is_not_silently_treated_as_no_content', 0, async () => {
+      resetSingleton();
+      const fs = new DownloadAwareFs();
+      const archiver = new GatedArchiver();
+      bindCloudDeps(fs, new FakeFileCacher(fs), new FakeIconSync(), archiver);
+
+      // listFiles 故障（非 ENOENT）不得当作"无内容"按成功跳过
+      fs.failList = true;
+      expect(await IconPackCloudBackup.getInstance().backupIconPacks()).assertFalse();
+      expect(archiver.compressCalls).assertEqual(0);
+      expect(fs.files.size).assertEqual(0);
+      expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
+    it('restore_reports_failed_files_instead_of_silent_success', 0, async () => {
+      resetSingleton();
+      const fs = new MemoryFs();
+      const archiver = new FakeUnpackArchiver(fs);
+      const registry = new FakeIconRegistry();
+      bindDepsWithRegistry(fs, archiver, registry);
+      fs.files.set('/cloud/icon_packs_backup.zip', 'zip');
+      archiver.contents.set('icon_packs/a.json', 'a');
+      archiver.contents.set('icon_packs/b.json', 'b');
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":10,"enabledPacks":["x"],"deletedPacks":[],"packs":[{"uuid":"x","name":"X","version":1,"iconCount":1}]}');
+      fs.failCopyFor.add('/data/cache/icon_pack_restore/icon_packs/b.json');
+
+      const result: IconPackRestoreResult = await IconPackCloudBackup.getInstance().restoreIconPacks();
+      // 失败文件计入结果：成功 1、失败 1，不再静默吞错或硬编码计数
+      expect(result.failedFiles).assertEqual(1);
+      expect(result.restoredFiles).assertEqual(1);
+      expect(result.restoredCount).assertEqual(1);
+      expect(fs.files.has('/data/files/icon_packs/a.json')).assertTrue();
+      expect(fs.files.has('/data/files/icon_packs/b.json')).assertFalse();
+      expect(IconPackCloudBackup.getInstance().getState()).assertEqual(IconPackSyncState.IDLE);
+    });
+
     it('operations_are_mutually_exclusive_via_state_machine', 0, async () => {
       resetSingleton();
       const fs = new MemoryFs();
       fs.files.set('/data/files/icon_packs/pack1.json', '{}');
       fs.files.set('/data/cache/icon_packs_backup.zip', 'zip');
-      const archiver = new GatedArchiver();
+      const archiver = new GatedUnpackArchiver(fs);
+      // 发布校验要求暂存 zip 解压出可解析元数据
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":1,"enabledPacks":[],"deletedPacks":[],"packs":[]}');
       archiver.hang = true;
       bindDeps(fs, archiver);
 
@@ -618,7 +734,10 @@ export default function iconPackCloudBackupTest() {
       const fs = new DownloadAwareFs();
       const cache = new FakeFileCacher(fs);
       const sync = new FakeIconSync();
-      bindCloudDeps(fs, cache, sync);
+      const archiver = new FakeUnpackArchiver(fs);
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":1,"enabledPacks":[],"deletedPacks":[],"packs":[]}');
+      bindCloudDeps(fs, cache, sync, archiver);
       fs.files.set('/data/files/icon_packs/pack.json', '{}');
       fs.files.set('/data/cache/icon_packs_backup.zip', 'zip');
       const gate = CloudBackupOperationGate.getInstance();
@@ -973,7 +1092,10 @@ export default function iconPackCloudBackupTest() {
       const fs = new DownloadAwareFs();
       const cache = new FakeFileCacher(fs);
       const sync = new FakeIconSync();
-      bindCloudDeps(fs, cache, sync);
+      const archiver = new FakeUnpackArchiver(fs);
+      archiver.contents.set('icon_packs_meta.json',
+        '{"version":1,"timestamp":1,"enabledPacks":[],"deletedPacks":[],"packs":[]}');
+      bindCloudDeps(fs, cache, sync, archiver);
       fs.files.set('/data/files/icon_packs/pack.json', '{}');
       fs.files.set('/data/cache/icon_packs_backup.zip', 'zip');
       AppPreference.setPreference(PREF_KEYS.ICON_PACK_CLOUD_SYNC_TIME, '1234');
@@ -1050,7 +1172,8 @@ export default function iconPackCloudBackupTest() {
       const fs = new DownloadAwareFs();
       const cache = new FakeFileCacher(fs);
       const sync = new FakeIconSync();
-      const archiver = new GatedArchiver();
+      const archiver = new FakeUnpackArchiver(fs);
+      archiver.contents.set('user_icons/restored.svg', 'icon');
       IconPackCloudBackup.getInstance().useDepsForTest({
         fs: fs, cache: cache, sync: sync, archiver: archiver, device: new FakeIconDevice(),
         registry: new FakeIconRegistry(), filesDir: '/data/files', cloudDir: '/cloud', cacheDir: '/data/cache',

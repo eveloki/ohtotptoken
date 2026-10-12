@@ -50,6 +50,7 @@
 | FS_OPEN / FS_WRITE / FS_CLOSE / FS_VERIFY | 文件打开、参数种类、完整写入、关闭及读回校验 |
 | TEMP_CLEANUP | 仅本操作确知拥有或本安装登记产物的清理结果，不输出凭据或账号绑定 |
 | WRITE_END / PUBLISH_END | 本地完整内容与正式发布是否成功 |
+| POST_PUBLISH_VERIFY | 发布后一致性校验：正式文件重读解析与快照比对（通过/数量或设备不匹配/读取失败），只输出比对结论布尔值，不含数量、文件名或路径 |
 | CACHE_START / CACHE_PROGRESS / CACHE_END | 启动与匹配终态分开；不含 URI/进度量 |
 | CACHE_STOP / CACHE_DRAIN | 在途任务是否可靠停止 |
 | READ_END / HEADER_PARSE | 读取失败和格式异常分开；后台摘要保留同一白名单的数值码，未知数量不等于零 |
@@ -218,3 +219,37 @@
 修复：图标包“备份状态/上次备份/来源设备”三行改为直接绑定状态的内联 Column/Text（与 StatusValue 同样式），状态变化即时刷新。仅改图标区；页面其他 StatusValue 行（如全局云同步状态）存在同类冻结，属 fac0af6 既有问题，未在本修复扩大范围，留待后续单独处理。
 
 **真机验收（Mate 90 Pro Max，修复构建保留数据安装）**：打开华为云备份详情页，图标包备份显示 **“未备份 / 从未备份”**（修复前：元数据尚未确认/未知），页面其余区域正常。当日第三、四轮设备操作：2 次 ohosTest 只读探针（各启动一次应用）、1 次追踪构建安装、1 次修复构建安装与 UI 复验；探针与追踪代码已从工作树移除，未进入提交。
+
+## 16. 写入守护：发布后校验、失败状态键与轮换归属（2026-10-13）
+
+对应 OpenSpec 变更 `guard-against-zero-byte-orphan`。事故根因记录：6987c67（2026-09-12）把云写入改为 `writeSync(fd, Uint8Array 池化视图)` 违反 SDK 契约 → NAPI 参数解析 EINVAL → `openSync(CREATE)` 先建出的 0 字节文件成为云端孤儿（三版本真机矩阵 + 1.2.5 对照实验定案，fac0af6 修复写入本身）。本节制度化守护，防同类事故再次产生、堆积或挤占配额。
+
+### 发布后一致性校验（POST_PUBLISH_VERIFY）
+
+- 时机：`staged.publish`/`publishFile` 成功之后、`syncToCloud` 之前；在既有备份操作租约内执行，不新增抢闸。
+- 基准：**发起备份时的快照**（构造 payload 时 `TokenStore` 令牌数量 + 写入 header 的同一 deviceId 来源）。不取校验时刻实时值，备份期间用户增删令牌的合法竞态不会被误判为校验失败。
+- 方式：普通 `readTextFile(正式文件)` + `parseTokenHeader`，只比较 header 的 tokenCount 与 deviceId；不解密正文、不展开令牌列表。
+- 失败收敛：重读抛错、文件缺失、header 非法（code 1/2）三种情况均判校验失败；失败即 `deleteBackupFile`（ENOENT 宽容）→ 提交同步让删除传播 → 整体失败（`POST_VERIFY_FAILED`），不更新最近成功备份时间。诊断事件只含阶段/结果/reason（IO_ERROR / INVALID_FORMAT / MISMATCH）与 `headerParsed` 布尔，无数量、文件名、路径或原始码出口。
+
+### 失败状态持久化（CLOUD_SYNC_LAST_FAILURE）
+
+- 键 `app_cloud_sync_last_failure`，固定结构 JSON `{ failedAt, stage, reason }`，字段全部为枚举/时间戳；不落文件名、数量、错误文本。由 `CloudSyncFailureState` 统一读写，结构非法一律按无记录处理。
+- 记录规则：备份尝试进入管线后的任何非成功收口都记录（身份/快照读取/加密/写入/暂存校验/发布/发布后校验/轮换/图标/同步）；被门禁、登录态或忙碌阻断的尝试，以及管线开工前缓存清理未排空的环境阻断，不写也不清（避免用环境状态覆盖既有真实失败记录）。备份整体成功时清除；重启后仍可见（AppPreference 持久化）。
+- 展示：`ShowCloudSyncDetailsPage` 备份状态卡内“最近一次备份”失败行（阶段+原因文案+“备份失败，请反馈开发者”+反馈入口）。行采用内联响应式绑定——@Builder 按值传参不随状态刷新（第 15 节教训）。
+
+### 轮换归属规则（规格化，行为不变）
+
+- 每设备 5 份轮换剪除仅统计 header 解析通过且 deviceId 等于本机的记录；无归属/他机记录不入选、不挤占配额、不因轮换被删除（既有 `owned` 过滤，本轮补测试锁定）。
+- 剪除删除失败如实上报：`partialFailure=true` + 原因码 + 失败状态键（阶段 ROTATE），不静默标记完全成功。
+- 按设备/同名清理不再因存在 deviceId 缺失记录整体返回 IDENTITY_UNAVAILABLE：跳过并计数（`skippedUnowned`），随结果上报（页面展示“已保留 N 条无法确认归属的记录”）；绝不自动认领无归属记录。历史页“来源未确认”区提供聚合清理入口（逐条复用单条删除，失败条目保留并列出）。
+
+### 图标包发布原子性
+
+- `icon_packs_backup.zip` 发布改为与令牌备份一致的“拷贝到云端暂存名 `.icon_packs_backup_pending.zip` → 校验（解压试读 + zip 内 `icon_packs_meta.json` 可解析）→ `moveFile(mode=0)` 原子替换”；任何失败保留云端既有 zip 与旧 meta（sync meta 仍在 zip 发布成功后写）。
+- 目录收集 `copyDirRecursive` 逐文件吞错改为失败计数：备份端非零失败即整体失败（不压缩、不发布）；恢复端缺失/失败文件计入 `IconPackRestoreResult.failedFiles`，`restoredFiles` 改为实际拷贝计数。目录列举故障（非 ENOENT）不再当作“无内容”按成功跳过。
+
+### 本轮验证记录（2026-10-13，无真机阶段）
+
+- Node 离线：诊断/采集 29/29 通过（含新增 POST_PUBLISH_VERIFY 字段白名单与往返用例）；隐私门禁通过；采集端 STAGES/REASONS 与生产枚举契约由既有测试强制同步。
+- LocalUnit：本轮新增发布后校验三态、失败状态键分阶段记录、轮换剪除失败上报、按设备清理跳过无归属并计数、图标包发布校验失败保留旧 zip、收集失败不假成功、恢复失败计数等用例；结果见提交前回归记录。
+- 真机验收（故障注入演练、孤儿处置、1.2.5 兼容抽测、图标包中断演练）尚未执行，对应任务保持未勾选；不能以 LocalUnit 或构建通过替代。

@@ -212,6 +212,10 @@ export class MemoryFs implements FsGateway {
   publishedPairs: string[] = [];
   publishAttempts: string[] = [];
   locationOverride: Map<string, number> = new Map();
+  /** 对这些源路径注入 copyFile 失败（模拟图标目录收集/发布的 IO 故障）。 */
+  failCopyFor: Set<string> = new Set();
+  /** moveFileToReplace 成功替换记录（源->目标），供发布原子性断言。 */
+  replacedPairs: string[] = [];
 
   stat(path: string): Promise<FsStatInfo> {
     const info = new FsStatInfo();
@@ -367,6 +371,9 @@ export class MemoryFs implements FsGateway {
   }
 
   copyFile(src: string, dest: string): Promise<void> {
+    if (this.failCopyFor.has(src)) {
+      return Promise.reject(new MemoryFsError(13900005));
+    }
     const content = this.files.get(src);
     if (content === undefined) {
       return Promise.reject(new Error(`copy: no such file ${src}`));
@@ -374,6 +381,26 @@ export class MemoryFs implements FsGateway {
     this.copiedPairs.push(`${src}->${dest}`);
     this.files.set(dest, content);
     return Promise.resolve();
+  }
+
+  async moveFileToReplace(source: string, destination: string): Promise<void> {
+    if (source === destination || source.substring(0, source.lastIndexOf('/')) !==
+      destination.substring(0, destination.lastIndexOf('/'))) {
+      throw new MemoryFsError(13900020);
+    }
+    const content = this.files.get(source);
+    if (content === undefined) {
+      throw new MemoryFsError(13900002);
+    }
+    // 与 fs.moveFile(mode=0) 一致：完全覆盖目标，失败时目标保持原内容。
+    this.files.set(destination, content);
+    this.files.delete(source);
+    const location = this.locationOverride.get(source);
+    if (location !== undefined) {
+      this.locationOverride.set(destination, location);
+      this.locationOverride.delete(source);
+    }
+    this.replacedPairs.push(`${source}->${destination}`);
   }
 }
 

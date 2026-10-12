@@ -11,6 +11,7 @@ export enum DiagnosticKind {
 export enum DiagnosticStage {
   UNKNOWN = 'UNKNOWN', DEVICE_INFO = 'DEVICE_INFO', BACKUP_BEGIN = 'BACKUP_BEGIN',
   ENCRYPT_END = 'ENCRYPT_END', WRITE_END = 'WRITE_END', PUBLISH_END = 'PUBLISH_END', BACKUP_END = 'BACKUP_END',
+  POST_PUBLISH_VERIFY = 'POST_PUBLISH_VERIFY',
   FS_OPEN = 'FS_OPEN', FS_WRITE = 'FS_WRITE', FS_CLOSE = 'FS_CLOSE', FS_VERIFY = 'FS_VERIFY',
   HISTORY_BEGIN = 'HISTORY_BEGIN', CACHE_ADMIT = 'CACHE_ADMIT', CACHE_START = 'CACHE_START',
   CACHE_PROGRESS = 'CACHE_PROGRESS', CACHE_END = 'CACHE_END', CACHE_STOP = 'CACHE_STOP', CACHE_DRAIN = 'CACHE_DRAIN',
@@ -36,7 +37,8 @@ export enum DiagnosticReason {
   EMPTY_CONTENT = 'EMPTY_CONTENT', IDENTITY_UNAVAILABLE = 'IDENTITY_UNAVAILABLE', NAME_UNAVAILABLE = 'NAME_UNAVAILABLE',
   URI_MISMATCH = 'URI_MISMATCH', SHORT_WRITE = 'SHORT_WRITE', SYNC_REJECTED = 'SYNC_REJECTED',
   PARTIAL_FAILURE = 'PARTIAL_FAILURE', UNAVAILABLE = 'UNAVAILABLE', TRUNCATED = 'TRUNCATED',
-  DECRYPT_FAILED = 'DECRYPT_FAILED', NOT_READY = 'NOT_READY', NOT_SIGNED_IN = 'NOT_SIGNED_IN', ENCODING_FAILED = 'ENCODING_FAILED'
+  DECRYPT_FAILED = 'DECRYPT_FAILED', NOT_READY = 'NOT_READY', NOT_SIGNED_IN = 'NOT_SIGNED_IN', ENCODING_FAILED = 'ENCODING_FAILED',
+  MISMATCH = 'MISMATCH'
 }
 export enum DiagnosticErrorDomain {
   UNKNOWN = 'UNKNOWN', FS = 'FS', CACHE = 'CACHE', SYNC = 'SYNC', CRYPTO = 'CRYPTO', APP = 'APP'
@@ -105,6 +107,7 @@ const KINDS: DiagnosticKind[] = [DiagnosticKind.UNKNOWN, DiagnosticKind.BACKUP, 
   DiagnosticKind.ICON, DiagnosticKind.DEVICE_INFO, DiagnosticKind.CRYPTO, DiagnosticKind.UI];
 const STAGES: DiagnosticStage[] = [DiagnosticStage.UNKNOWN, DiagnosticStage.DEVICE_INFO, DiagnosticStage.BACKUP_BEGIN,
   DiagnosticStage.ENCRYPT_END, DiagnosticStage.WRITE_END, DiagnosticStage.PUBLISH_END, DiagnosticStage.BACKUP_END,
+  DiagnosticStage.POST_PUBLISH_VERIFY,
   DiagnosticStage.FS_OPEN, DiagnosticStage.FS_WRITE, DiagnosticStage.FS_CLOSE, DiagnosticStage.FS_VERIFY,
   DiagnosticStage.HISTORY_BEGIN, DiagnosticStage.CACHE_ADMIT, DiagnosticStage.CACHE_START, DiagnosticStage.CACHE_PROGRESS,
   DiagnosticStage.CACHE_END, DiagnosticStage.CACHE_STOP, DiagnosticStage.CACHE_DRAIN, DiagnosticStage.READ_END,
@@ -124,7 +127,8 @@ const REASONS: DiagnosticReason[] = [DiagnosticReason.UNKNOWN, DiagnosticReason.
   DiagnosticReason.EMPTY_CONTENT, DiagnosticReason.IDENTITY_UNAVAILABLE, DiagnosticReason.NAME_UNAVAILABLE,
   DiagnosticReason.URI_MISMATCH, DiagnosticReason.SHORT_WRITE, DiagnosticReason.SYNC_REJECTED,
   DiagnosticReason.PARTIAL_FAILURE, DiagnosticReason.UNAVAILABLE, DiagnosticReason.TRUNCATED,
-  DiagnosticReason.DECRYPT_FAILED, DiagnosticReason.NOT_READY, DiagnosticReason.NOT_SIGNED_IN, DiagnosticReason.ENCODING_FAILED];
+  DiagnosticReason.DECRYPT_FAILED, DiagnosticReason.NOT_READY, DiagnosticReason.NOT_SIGNED_IN, DiagnosticReason.ENCODING_FAILED,
+  DiagnosticReason.MISMATCH];
 const LOCATIONS: DiagnosticLocation[] = [DiagnosticLocation.UNKNOWN, DiagnosticLocation.LOCAL, DiagnosticLocation.CLOUD, DiagnosticLocation.BOTH];
 const STATES: DiagnosticState[] = [DiagnosticState.UNKNOWN, DiagnosticState.IDLE, DiagnosticState.RUNNING,
   DiagnosticState.COMPLETED, DiagnosticState.FAILED, DiagnosticState.STOPPED];
@@ -137,6 +141,7 @@ const IO_MODES: DiagnosticMode[] = [DiagnosticMode.UNKNOWN, DiagnosticMode.STRIN
 const FORMAT_MODES: DiagnosticMode[] = [DiagnosticMode.UNKNOWN, DiagnosticMode.LEGACY, DiagnosticMode.ENCRYPTED];
 const FS_STAGES: DiagnosticStage[] = [DiagnosticStage.FS_OPEN, DiagnosticStage.FS_WRITE, DiagnosticStage.FS_CLOSE,
   DiagnosticStage.FS_VERIFY, DiagnosticStage.WRITE_END, DiagnosticStage.PUBLISH_END, DiagnosticStage.READ_END,
+  DiagnosticStage.POST_PUBLISH_VERIFY,
   DiagnosticStage.UNLINK_BEGIN, DiagnosticStage.UNLINK_END, DiagnosticStage.ICON_IO, DiagnosticStage.ICON_CLEAR,
   DiagnosticStage.HISTORY_END, DiagnosticStage.FS_PREPARE, DiagnosticStage.FS_STAGE,
   DiagnosticStage.FS_STAGE_MOVE, DiagnosticStage.TEMP_CLEANUP];
@@ -296,7 +301,7 @@ function normalizeDetails(stage: DiagnosticStage, input?: DiagnosticDetails): Di
     output.writeComplete = input.writeComplete;
   }
   if ((CRYPTO_STAGES.indexOf(stage) >= 0 || stage === DiagnosticStage.FS_VERIFY || stage === DiagnosticStage.READ_END ||
-    stage === DiagnosticStage.ICON_CLEAR) &&
+    stage === DiagnosticStage.ICON_CLEAR || stage === DiagnosticStage.POST_PUBLISH_VERIFY) &&
     typeof input.headerParsed === 'boolean') { output.headerParsed = input.headerParsed; }
   if (stage === DiagnosticStage.CLEAR_BEGIN || stage === DiagnosticStage.DELETE_GUARD || stage === DiagnosticStage.UNLINK_BEGIN ||
     stage === DiagnosticStage.UNLINK_END || stage === DiagnosticStage.CLEAR_END || stage === DiagnosticStage.DELETE_END ||

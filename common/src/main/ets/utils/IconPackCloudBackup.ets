@@ -15,6 +15,8 @@ import { DeviceInfoHelper } from './DeviceInfoHelper';
 import { FsGateway, FileIoFsGateway, FsStatInfo } from './StoragePorts';
 
 const ICON_PACK_BACKUP_ZIP = 'icon_packs_backup.zip';
+/** 云端暂存 zip 名（发布中转，成功即被 moveFileToReplace 消费，失败由清理回收）。 */
+const ICON_PACK_STAGING_ZIP = '.icon_packs_backup_pending.zip';
 const META_JSON_NAME = 'icon_packs_meta.json';
 /**
  * 云端伴生元数据文件名（放在 cloudDir，与 zip 同级）。
@@ -171,7 +173,16 @@ export enum IconPackSyncState {
 
 export class IconPackRestoreResult {
   restoredCount: number = 0;
+  /** 实际拷贝落地的文件数（不再硬编码）。 */
   restoredFiles: number = 0;
+  /** 拷贝失败的文件数；非 0 表示本次恢复不完整，调用方可据此提示。 */
+  failedFiles: number = 0;
+}
+
+/** 目录递归拷贝的结果计数；failed > 0 表示收集不完整，不得宣称完整备份。 */
+class IconPackDirCopyResult {
+  copied: number = 0;
+  failed: number = 0;
 }
 
 export class IconPackBackupStatus {
@@ -397,21 +408,33 @@ export class IconPackCloudBackup {
     }
   }
 
-  /** 实际备份逻辑：staging 目录构建 → zip 压缩 → 复制到 cloudDir → 触发同步 */
+  /** 实际备份逻辑：staging 目录构建 → zip 压缩 → 暂存+校验+原子发布 → 触发同步 */
   private async doBackupIconPacks(operation: IconPackOperation, deferSync: boolean): Promise<boolean> {
     const iconPackDir = this.filesDir + '/icon_packs';
     const userIconDir = this.filesDir + '/user_icons';
     let hasContent = false;
+    let listingFailed = false;
 
     try {
       const packFiles = await this.fs.listFiles(iconPackDir);
       if (packFiles.length > 0) hasContent = true;
-    } catch (_) {}
+    } catch (error) {
+      // 目录确实不存在视为无内容；其他列举失败不得当作"无内容"跳过——那是假成功。
+      if (!this.isMissingFile(error)) listingFailed = true;
+    }
 
     try {
       const userFiles = await this.fs.listFiles(userIconDir);
       if (userFiles.length > 0) hasContent = true;
-    } catch (_) {}
+    } catch (error) {
+      if (!this.isMissingFile(error)) listingFailed = true;
+    }
+
+    if (listingFailed) {
+      CloudBackupDiagnostics.mark(operation.context, DiagnosticStage.ICON_IO, DiagnosticResult.FAIL,
+        { artifact: DiagnosticArtifact.ICON, reason: DiagnosticReason.IO_ERROR });
+      return false;
+    }
 
     if (!hasContent) {
       CloudBackupDiagnostics.mark(operation.context, DiagnosticStage.ICON_IO, DiagnosticResult.OK,
@@ -439,6 +462,8 @@ export class IconPackCloudBackup {
     const stagingDir = this.cacheDir + '/icon_pack_staging';
     const metaPath = stagingDir + '/' + META_JSON_NAME;
     const tempZipPath = this.cacheDir + '/' + ICON_PACK_BACKUP_ZIP;
+    const cloudZipPath = this.cloudDir + '/' + ICON_PACK_BACKUP_ZIP;
+    const stagedZipPath = this.cloudDir + '/' + ICON_PACK_STAGING_ZIP;
 
     try {
       // 1. 清理并创建 staging 目录（防止上次中断残留旧文件污染本次备份）
@@ -450,30 +475,27 @@ export class IconPackCloudBackup {
       // 2. 写入元数据文件
       await this.fs.writeTextFile(metaPath, JSON.stringify(meta));
 
-      // 3. 递归拷贝 icon_packs 和 user_icons 到 staging（fs.copyFile 不支持目录）
-      try {
-        const destIconDir = stagingDir + '/icon_packs';
-        try {
-          await this.fs.makeDir(destIconDir);
-        } catch (_) {}
-        await this.copyDirRecursive(iconPackDir, destIconDir, operation.context);
-      } catch (_) {}
-      try {
-        const destUserDir = stagingDir + '/user_icons';
-        try {
-          await this.fs.makeDir(destUserDir);
-        } catch (_) {}
-        await this.copyDirRecursive(userIconDir, destUserDir, operation.context);
-      } catch (_) {}
+      // 3. 递归拷贝 icon_packs 和 user_icons 到 staging（fs.copyFile 不支持目录）；
+      //    任一文件失败都使本次备份失败，不得缺文件仍宣称成功。
+      const iconCopy = await this.copyDirInto(iconPackDir, stagingDir + '/icon_packs', operation.context);
+      const userCopy = await this.copyDirInto(userIconDir, stagingDir + '/user_icons', operation.context);
+      if (iconCopy.failed + userCopy.failed > 0) {
+        CloudBackupDiagnostics.mark(operation.context, DiagnosticStage.ICON_IO, DiagnosticResult.FAIL,
+          { artifact: DiagnosticArtifact.ICON, reason: DiagnosticReason.PARTIAL_FAILURE });
+        return false;
+      }
 
       // 4. 压缩 staging 目录为 zip
       await this.archiver.compress(stagingDir, tempZipPath);
 
-      // 5. 将 zip 复制到 cloudDir
-      const cloudZipPath = this.cloudDir + '/' + ICON_PACK_BACKUP_ZIP;
-      await this.fs.copyFile(tempZipPath, cloudZipPath);
+      // 5. 发布：拷贝到云端暂存名 → 校验（zip 可打开 + 内部元数据可解析）→ 原子替换正式
+      //    zip。发布失败/中断时云端既有 zip 保持不变（含不可再生的自定义图标）。
+      if (!await this.publishStagedZip(tempZipPath, stagedZipPath, cloudZipPath, operation)) {
+        return false;
+      }
 
-      // 6. 写入伴生元数据文件（~1-2KB，含设备信息、时间戳、图标包列表）
+      // 6. 写入伴生元数据文件（~1-2KB，含设备信息、时间戳、图标包列表）。
+      //    只在 zip 发布成功后写：发布失败不得先动旧 meta，避免"新 zip + 旧 meta"窗口。
       const syncMeta = new SyncMetaRecord();
       syncMeta.version = 1;
       syncMeta.timestamp = now;
@@ -500,6 +522,65 @@ export class IconPackCloudBackup {
       try {
         await this.fs.deleteFile(tempZipPath);
       } catch (_) {}
+      // 暂存 zip 无论成功（已被 move 消费）或失败都必须回收，不在云端目录残留。
+      try {
+        await this.fs.deleteFile(stagedZipPath);
+      } catch (_) {}
+    }
+  }
+
+  /** makeDir + 递归拷贝的组合步骤；目标父目录创建失败由逐文件失败计数兜底。 */
+  private async copyDirInto(srcDir: string, destDir: string,
+    ctx: DiagnosticContext): Promise<IconPackDirCopyResult> {
+    try {
+      await this.fs.makeDir(destDir);
+    } catch (_) {}
+    return this.copyDirRecursive(srcDir, destDir, ctx);
+  }
+
+  /**
+   * 暂存 zip 发布：copy 到暂存名 → 解压试读 + 内部元数据可解析 → moveFileToReplace 原子替换。
+   * 任何失败都返回 false 并保留云端既有正式 zip；暂存残片由调用方 finally 回收。
+   */
+  private async publishStagedZip(tempZipPath: string, stagedZipPath: string, cloudZipPath: string,
+    operation: IconPackOperation): Promise<boolean> {
+    try {
+      await this.fs.copyFile(tempZipPath, stagedZipPath);
+      if (!await this.verifyStagedZip(stagedZipPath, operation)) {
+        return false;
+      }
+      await this.fs.moveFileToReplace(stagedZipPath, cloudZipPath);
+      return true;
+    } catch (error) {
+      this.reportFsFailure(operation.context, DiagnosticStage.ICON_IO, error);
+      return false;
+    }
+  }
+
+  /** 暂存 zip 校验：解压试读 + zip 内元数据可解析（备份端生成的 zip 必含 META_JSON_NAME）。 */
+  private async verifyStagedZip(stagedZipPath: string, operation: IconPackOperation): Promise<boolean> {
+    const verifyDir = this.cacheDir + '/icon_pack_publish_verify';
+    try {
+      await this.removeDirRecursive(verifyDir, operation.context);
+      try {
+        await this.fs.makeDir(verifyDir);
+      } catch (_) {}
+      await this.archiver.decompress(stagedZipPath, verifyDir);
+      const metaContent = await this.fs.readTextFile(verifyDir + '/' + META_JSON_NAME);
+      const meta = JSON.parse(metaContent) as IconPackMetaRecord;
+      // 刻意只做结构级校验（packs 为数组）：zip 由本进程刚从逐文件计数通过的 staging
+      // 目录压出，解压试读本身即完整性检查；逐包字段校验（isValidStatusMeta）属于
+      // 读取不可信远端元数据的展示路径，二者信任级别不同。
+      if (meta === null || typeof meta !== 'object' || !Array.isArray(meta.packs) ||
+        (meta.enabledPacks !== undefined && !Array.isArray(meta.enabledPacks))) {
+        throw new Error('ICON_PACK_META_INVALID');
+      }
+      return true;
+    } catch (error) {
+      this.reportFsFailure(operation.context, DiagnosticStage.ICON_IO, error);
+      return false;
+    } finally {
+      await this.removeDirRecursive(verifyDir, operation.context);
     }
   }
 
@@ -596,15 +677,16 @@ export class IconPackCloudBackup {
         await this.fs.makeDir(userIconDir);
       } catch (_) {}
 
-      // 选择性拷贝：只还原 icon_packs 和 user_icons 子目录
+      // 选择性拷贝：只还原 icon_packs 和 user_icons 子目录；缺失/失败计入结果，不再静默吞错。
       const tempIconPacks = tempDir + '/icon_packs';
       const tempUserIcons = tempDir + '/user_icons';
-      try {
-        await this.copyDirRecursive(tempIconPacks, iconPackDir, operation.context);
-      } catch (_) {}
-      try {
-        await this.copyDirRecursive(tempUserIcons, userIconDir, operation.context);
-      } catch (_) {}
+      const iconCopy = await this.copyDirInto(tempIconPacks, iconPackDir, operation.context);
+      const userCopy = await this.copyDirInto(tempUserIcons, userIconDir, operation.context);
+      const failedFiles = iconCopy.failed + userCopy.failed;
+      if (failedFiles > 0) {
+        CloudBackupDiagnostics.mark(operation.context, DiagnosticStage.ICON_IO, DiagnosticResult.FAIL,
+          { artifact: DiagnosticArtifact.ICON, reason: DiagnosticReason.PARTIAL_FAILURE });
+      }
 
       // 读取元数据
       let meta: IconPackMetaRecord | null = null;
@@ -648,7 +730,9 @@ export class IconPackCloudBackup {
 
       const result = new IconPackRestoreResult();
       result.restoredCount = meta?.packs?.length ?? 0;
-      result.restoredFiles = 1;
+      // 实际拷贝计数替代历史硬编码；部分失败如实上报，不再伪装完整恢复。
+      result.restoredFiles = iconCopy.copied + userCopy.copied;
+      result.failedFiles = failedFiles;
       return result;
     } catch (e) {
       this.reportFsFailure(operation.context, DiagnosticStage.ICON_IO, e);
@@ -1071,28 +1155,42 @@ export class IconPackCloudBackup {
     }
   }
 
-  private async copyDirRecursive(srcDir: string, destDir: string, ctx: DiagnosticContext): Promise<void> {
+  /** 逐文件拷贝并计数：失败不静默，由调用方决定整体成败（备份失败/恢复部分上报）。 */
+  private async copyDirRecursive(srcDir: string, destDir: string, ctx: DiagnosticContext):
+    Promise<IconPackDirCopyResult> {
+    const result = new IconPackDirCopyResult();
+    let files: string[];
     try {
-      const files = await this.fs.listFiles(srcDir);
-      for (const file of files) {
-        const srcPath = srcDir + '/' + file;
-        const destPath = destDir + '/' + file;
-        try {
-          const stat = await this.fs.stat(srcPath);
-          if (stat.isDirectory) {
-            try {
-              await this.fs.makeDir(destPath);
-            } catch (_) {}
-            await this.copyDirRecursive(srcPath, destPath, ctx);
-          } else {
-            await this.fs.copyFile(srcPath, destPath);
-          }
-        } catch (e) {
-          this.reportFsFailure(ctx, DiagnosticStage.ICON_IO, e);
-        }
+      files = await this.fs.listFiles(srcDir);
+    } catch (error) {
+      // 源目录不存在视为空目录（兼容无 user_icons 的旧 zip/新装机）；其他列举失败计入失败。
+      if (!this.isMissingFile(error)) {
+        this.reportFsFailure(ctx, DiagnosticStage.ICON_IO, error);
+        result.failed++;
       }
-    } catch (e) {
-      this.reportFsFailure(ctx, DiagnosticStage.ICON_IO, e);
+      return result;
     }
+    for (const file of files) {
+      const srcPath = srcDir + '/' + file;
+      const destPath = destDir + '/' + file;
+      try {
+        const stat = await this.fs.stat(srcPath);
+        if (stat.isDirectory) {
+          try {
+            await this.fs.makeDir(destPath);
+          } catch (_) {}
+          const nested = await this.copyDirRecursive(srcPath, destPath, ctx);
+          result.copied += nested.copied;
+          result.failed += nested.failed;
+        } else {
+          await this.fs.copyFile(srcPath, destPath);
+          result.copied++;
+        }
+      } catch (error) {
+        this.reportFsFailure(ctx, DiagnosticStage.ICON_IO, error);
+        result.failed++;
+      }
+    }
+    return result;
   }
 }

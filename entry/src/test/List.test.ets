@@ -51,6 +51,7 @@ import fileIoFsGatewayTest from './FileIoFsGateway.test';
 import cloudBackupOperationGateTest from './CloudBackupOperationGate.test';
 import cloudBackupSyncServiceTest from './CloudBackupSyncService.test';
 import cloudBackupStagingTest from './CloudBackupStaging.test';
+import cloudSyncLastFailureTest from './CloudSyncLastFailure.test';
 
 import localBackupFormatTest from './LocalBackupFormat.test';
 import localBackupFileIoTest from './LocalBackupFileIo.test';
@@ -117,4 +118,5 @@ export default function testsuite() {
   cloudBackupOperationGateTest();
   cloudBackupSyncServiceTest();
   cloudBackupStagingTest();
+  cloudSyncLastFailureTest();
 }
