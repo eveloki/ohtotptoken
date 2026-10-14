@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
-import { runInNewContext } from 'node:vm';
+import { createContext, runInContext } from 'node:vm';
 import { createHash, createCipheriv, createDecipheriv, pbkdf2Sync } from 'node:crypto';
 
 // 执行当前生产 Crypto/Metadata/Manager/Result/Gate/Diagnostics，不替换 decrypt 或恢复验证。
@@ -10,11 +10,14 @@ import { createHash, createCipheriv, createDecipheriv, pbkdf2Sync } from 'node:c
 const root = new URL('../common/src/main/ets/utils/', import.meta.url);
 async function transpile(name) {
   const source = await readFile(new URL(name, root), 'utf8');
-  return stripTypeScriptTypes(source.replace(/^import\s[\s\S]*?;\r?\n/gm, ''), { mode: 'transform' })
-    .replace(/\bexport\s+/g, '');
+  const exports = [...source.matchAll(/^export\s+(?:async\s+)?(?:class|enum|function|const)\s+(\w+)/gm)].map(match => match[1]);
+  return { exports, code: stripTypeScriptTypes(source.replace(/^import\s[\s\S]*?;\r?\n/gm, ''), { mode: 'transform' })
+    .replace(/\bexport\s+/g, '') };
 }
+// Each module gets its own lexical scope (Diagnostics and LastFailure both declare STAGES/REASONS).
 const sources = await Promise.all(['CloudBackupDiagnostics.ets', 'CloudBackupMetadata.ets', 'CloudBackupCrypto.ets',
-  'CloudBackupResult.ets', 'CloudBackupOperationGate.ets', 'CloudBackupStaging.ets', 'CloudBackupManager.ets'].map(transpile));
+  'CloudBackupResult.ets', 'CloudSyncLastFailure.ets', 'CloudBackupOperationGate.ets', 'CloudBackupStaging.ets',
+  'CloudBackupPublicationGuard.ets', 'CloudBackupManager.ets'].map(transpile));
 const ID = 'otp_backup_1745385600000.enc';
 const CLOUD = '/synthetic/cloud';
 const KEY = 'SYNTHETIC_ACCOUNT_KEY';
@@ -76,12 +79,13 @@ function oldBackup(text, version = 2, mode = 1, omitIdentity = false) {
   return seal(header, version === 1 ? b64(text) : cipherBytes(Buffer.from(text), KEY, salt, iv).toString('base64'));
 }
 
-function setup() {
-  const files = new Map(), lines = [], contexts = [];
+export function setup() {
+  const files = new Map(), lines = [], contexts = [], preferences = new Map();
   const captures = { tokens: [], attempts: 0, groups: [], packs: [], sync: 0, icons: 0,
     reads: 0, stats: 0, lists: 0, writes: 0, publishes: 0, deletes: 0 };
   const behavior = { failWrite: false, failRead: false, corruptRead: false, failPublish: false,
-    failDelete: false, failSync: false, failTokenAt: -1, cleanup: false };
+    failDelete: false, failSync: false, failTokenAt: -1, cleanup: false,
+    formalReadFailure: false, formalOverride: undefined, collideFormal: false, deletedPaths: [] };
   const account = { login: true, key: KEY, isUserLogin() { return this.login; }, unionId() { return this.key; } };
   const fs = {
     async stat(path) {
@@ -93,7 +97,7 @@ function setup() {
     async listFiles() { captures.lists++; return [...files.keys()].map(path => path.slice(CLOUD.length + 1)); },
     async readTextFile(path, context) {
       captures.reads++; contexts.push(context);
-      if (behavior.failRead) throw nativeError();
+      if (behavior.failRead || (behavior.formalReadFailure && /\/otp_backup_-?\d+\.enc$/.test(path))) throw nativeError();
       return behavior.corruptRead ? '' : files.get(path);
     },
     async writeNewTextFile(path, content, context) {
@@ -103,12 +107,14 @@ function setup() {
     },
     async publishFile(source, destination, context) {
       captures.publishes++; contexts.push(context);
+      if (behavior.collideFormal) files.set(destination, 'SYNTH_FOREIGN_BACKUP');
       if (behavior.failPublish || files.has(destination)) throw nativeError();
-      files.set(destination, files.get(source)); files.delete(source);
+      files.set(destination, behavior.formalOverride ?? files.get(source)); files.delete(source);
     },
     async deleteFile(path) {
       captures.deletes++;
       if (behavior.failDelete) throw nativeError();
+      behavior.deletedPaths.push(path);
       files.delete(path);
     },
   };
@@ -122,17 +128,22 @@ function setup() {
     hilog: { info: (_domain, _tag, _format, line) => lines.push(line) },
     AppStorage: { get: () => undefined }, FileIoFsGateway: class {},
     fileIoDiagnosticCode: error => typeof error?.code === 'number' ? error.code : undefined,
-    AppPreference: { getPreference: () => '', setPreference: () => {},
+    AppPreference: { getPreference: key => preferences.get(key) ?? '', setPreference: (key, value) => preferences.set(key, value),
       saveEnabledPacks: packs => captures.packs.push(packs) },
-    PREF_KEYS: { CLOUD_SYNC_LAST_TIME: 'last', APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE: 'enable' },
+    PREF_KEYS: { CLOUD_SYNC_LAST_TIME: 'last', CLOUD_SYNC_LAST_FAILURE: 'failure', APPEARANCE_HUAWEI_CLOUD_SYNC_ENABLE: 'enable' },
     SyncTimeHelper: { formatTimestamp: () => 'Synthetic date' },
     parseBackupTimestamp: name => Number(name.slice('otp_backup_'.length, -4)),
     BACKUP_FILE_PREFIX: 'otp_backup_', BACKUP_FILE_EXT: '.enc',
     TokenIconPacks: { enabled_packs: [], aegis_icon_packs: [] }, sanitizedTokenForBackup: value => value,
     prepareCloudFileRead: async cache => !cache.isCleanupPending(),
   };
-  const api = runInNewContext(`${sources.join('\n')}\n({CloudBackupCrypto, CloudBackupManager, CloudBackupDiagnostics,
-    CloudBackupTokenError, CloudBackupOperationGate, CloudBackupOperationKind, CloudBackupStaging});`, sdk);
+  const api = {};
+  const runtime = createContext(sdk);
+  for (const source of sources) {
+    const module = runInContext(`(() => { ${source.code}\nreturn {${source.exports.join(',')}}; })();`, runtime);
+    Object.assign(api, module);
+    Object.assign(sdk, module);
+  }
   api.CloudBackupDiagnostics.enable();
   const cryptoEngine = engine();
   const crypto = api.CloudBackupCrypto.useEngineForTest(cryptoEngine, codec);
@@ -147,9 +158,12 @@ function setup() {
     sync: { start: async () => { captures.sync++; if (behavior.failSync) throw nativeError(); } },
     cache: { isCleanupPending: () => behavior.cleanup }, cloudDir: CLOUD,
   };
+  const publication = new api.MemoryCloudBackupPublicationPort(fs);
+  deps.publication = publication;
   const manager = api.CloudBackupManager.getInstance();
   manager.useDepsForTest(deps);
   return { api, manager, crypto, cryptoEngine, captures, behavior, account, files, lines, contexts, deps,
+    publication, preferences,
     put: content => files.set(`${CLOUD}/${ID}`, content),
     restore: () => manager.restoreFromBackupRecordResult(ID),
     async encrypted(text = JSON.stringify(payload())) {
@@ -428,7 +442,7 @@ test('production success paths reuse their operation context without per-file di
   privateDiagnostics(fixture);
 });
 
-function withStaging(fixture) {
+export function withStaging(fixture) {
   const receipts = new Map(), directories = new Set(), events = [];
   let sequence = 0;
   const scope = 'a'.repeat(64);
@@ -460,7 +474,8 @@ function withStaging(fixture) {
   const highLevelSync = fixture.deps.sync.start;
   fixture.deps.sync.start = async () => { events.push('operationSync'); await highLevelSync(); };
   const staging = new fixture.api.CloudBackupStaging(CLOUD, scope, port);
-  fixture.manager.useDepsForTest({ ...fixture.deps, staging });
+  fixture.deps.staging = staging;
+  fixture.manager.useDepsForTest(fixture.deps);
   return { receipts, directories, events, scope, port, staging };
 }
 

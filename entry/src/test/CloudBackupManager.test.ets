@@ -20,6 +20,7 @@ import {
   CloudBackupIconPort,
   CloudBackupManager,
   CloudBackupTokenPort,
+  MemoryCloudBackupPublicationPort,
   CloudSyncFailureStage,
   CloudSyncFailureState,
   CloudSyncStarter,
@@ -343,6 +344,13 @@ class PostPublishFaultFs extends DownloadAwareFs {
   }
 }
 
+class PublicationRejectedDeleteFs extends PostPublishFaultFs {
+  async publishFile(source: string, destination: string): Promise<void> {
+    await super.publishFile(source, destination);
+    this.failDeleteFor.add(destination);
+  }
+}
+
 function makeToken(uuid: string, secret: string): TokenConfig {
   const token = new TokenConfig(secret, otpType.TOTP);
   token.TokenUUID = uuid;
@@ -595,6 +603,39 @@ export default function cloudBackupManagerTest() {
       if (failure !== null) {
         expect(failure.stage).assertEqual(CloudSyncFailureStage.POST_PUBLISH_VERIFY);
       }
+    });
+
+    it('publication_manager_compound_unlink_sync_failure_survives_restart_and_blocks_restore', 0, async () => {
+      const rig = freshRig();
+      rig.tokens.list = [makeToken('guard-synthetic', 'guard-secret')];
+      const manager = CloudBackupManager.getInstance();
+      const rejectFs = new PublicationRejectedDeleteFs();
+      rejectFs.unreadableFormal = true;
+      const rejectedPublication = new MemoryCloudBackupPublicationPort(rejectFs);
+      manager.useDepsForTest({ fs: rejectFs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cloudDir: '/cloud', publication: rejectedPublication });
+      const failed = await manager.backupToCloudResult();
+      expect(failed.reason).assertEqual(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      expect(failed.partialFailure).assertTrue();
+      expect(rejectedPublication.receipts.size).assertEqual(1);
+      const id = formalPaths(rejectFs)[0].substring('/cloud/'.length);
+      manager.resetForTest();
+      manager.useDepsForTest({ fs: rejectFs, account: rig.account, device: rig.device, tokens: rig.tokens,
+        groups: rig.groups, icons: rig.icons, sync: rig.sync, cloudDir: '/cloud', publication: rejectedPublication });
+      rejectFs.unreadableFormal = false;
+      const history = await manager.listBackupHistoryResult();
+      expect(history.records[0].metadataStatus).assertEqual(CloudBackupMetadataStatus.INVALID);
+      expect(history.records[0].tokenCountKnown).assertFalse();
+      expect((await manager.restoreFromBackupRecordResult(id)).reason).assertEqual(CloudBackupFailureReason.POST_VERIFY_FAILED);
+      expect(rig.tokens.updated.length).assertEqual(0);
+      rejectFs.failDeleteFor.clear();
+      rig.sync.fail = true;
+      expect(await manager.retryPendingCleanup()).assertFalse();
+      expect(formalPaths(rejectFs).length).assertEqual(0);
+      expect(rejectedPublication.receipts.size).assertEqual(1);
+      rig.sync.fail = false;
+      expect(await manager.retryPendingCleanup()).assertTrue();
+      expect(rejectedPublication.receipts.size).assertEqual(0);
     });
 
     it('backup_failure_records_persistent_failure_key_by_stage', 0, async () => {

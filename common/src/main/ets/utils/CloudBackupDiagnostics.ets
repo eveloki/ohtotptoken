@@ -12,6 +12,7 @@ export enum DiagnosticStage {
   UNKNOWN = 'UNKNOWN', DEVICE_INFO = 'DEVICE_INFO', BACKUP_BEGIN = 'BACKUP_BEGIN',
   ENCRYPT_END = 'ENCRYPT_END', WRITE_END = 'WRITE_END', PUBLISH_END = 'PUBLISH_END', BACKUP_END = 'BACKUP_END',
   POST_PUBLISH_VERIFY = 'POST_PUBLISH_VERIFY',
+  PUBLICATION_GUARD = 'PUBLICATION_GUARD', PUBLICATION_CLEANUP = 'PUBLICATION_CLEANUP',
   FS_OPEN = 'FS_OPEN', FS_WRITE = 'FS_WRITE', FS_CLOSE = 'FS_CLOSE', FS_VERIFY = 'FS_VERIFY',
   HISTORY_BEGIN = 'HISTORY_BEGIN', CACHE_ADMIT = 'CACHE_ADMIT', CACHE_START = 'CACHE_START',
   CACHE_PROGRESS = 'CACHE_PROGRESS', CACHE_END = 'CACHE_END', CACHE_STOP = 'CACHE_STOP', CACHE_DRAIN = 'CACHE_DRAIN',
@@ -54,6 +55,7 @@ export enum DiagnosticMode {
 export enum DiagnosticScope { UNKNOWN = 'UNKNOWN', ALL = 'ALL', DEVICE = 'DEVICE', SAME_NAME = 'SAME_NAME', SINGLE = 'SINGLE' }
 export enum DiagnosticArtifact { UNKNOWN = 'UNKNOWN', TOKEN = 'TOKEN', ICON = 'ICON' }
 export enum DiagnosticSource { UNKNOWN = 'UNKNOWN', INITIAL = 'INITIAL', CACHED = 'CACHED', RETRY = 'RETRY', FALLBACK = 'FALLBACK' }
+export enum DiagnosticUiAction { UNKNOWN = 'UNKNOWN', FEEDBACK = 'FEEDBACK', UNKNOWN_SOURCE_CLEANUP = 'UNKNOWN_SOURCE_CLEANUP' }
 export enum DiagnosticElapsed {
   LT_100MS = 'LT_100MS', LT_1S = 'LT_1S', LT_10S = 'LT_10S', LT_60S = 'LT_60S', GE_60S = 'GE_60S', UNAVAILABLE = 'UNAVAILABLE'
 }
@@ -69,6 +71,7 @@ export interface DiagnosticDetails {
   scope?: DiagnosticScope;
   artifact?: DiagnosticArtifact;
   source?: DiagnosticSource;
+  uiAction?: DiagnosticUiAction;
   identityAvailable?: boolean;
   nameAvailable?: boolean;
   uriMatches?: boolean;
@@ -107,7 +110,7 @@ const KINDS: DiagnosticKind[] = [DiagnosticKind.UNKNOWN, DiagnosticKind.BACKUP, 
   DiagnosticKind.ICON, DiagnosticKind.DEVICE_INFO, DiagnosticKind.CRYPTO, DiagnosticKind.UI];
 const STAGES: DiagnosticStage[] = [DiagnosticStage.UNKNOWN, DiagnosticStage.DEVICE_INFO, DiagnosticStage.BACKUP_BEGIN,
   DiagnosticStage.ENCRYPT_END, DiagnosticStage.WRITE_END, DiagnosticStage.PUBLISH_END, DiagnosticStage.BACKUP_END,
-  DiagnosticStage.POST_PUBLISH_VERIFY,
+  DiagnosticStage.POST_PUBLISH_VERIFY, DiagnosticStage.PUBLICATION_GUARD, DiagnosticStage.PUBLICATION_CLEANUP,
   DiagnosticStage.FS_OPEN, DiagnosticStage.FS_WRITE, DiagnosticStage.FS_CLOSE, DiagnosticStage.FS_VERIFY,
   DiagnosticStage.HISTORY_BEGIN, DiagnosticStage.CACHE_ADMIT, DiagnosticStage.CACHE_START, DiagnosticStage.CACHE_PROGRESS,
   DiagnosticStage.CACHE_END, DiagnosticStage.CACHE_STOP, DiagnosticStage.CACHE_DRAIN, DiagnosticStage.READ_END,
@@ -137,11 +140,13 @@ const SCOPES: DiagnosticScope[] = [DiagnosticScope.UNKNOWN, DiagnosticScope.ALL,
 const ARTIFACTS: DiagnosticArtifact[] = [DiagnosticArtifact.UNKNOWN, DiagnosticArtifact.TOKEN, DiagnosticArtifact.ICON];
 const SOURCES: DiagnosticSource[] = [DiagnosticSource.UNKNOWN, DiagnosticSource.INITIAL, DiagnosticSource.CACHED,
   DiagnosticSource.RETRY, DiagnosticSource.FALLBACK];
+const UI_ACTIONS: DiagnosticUiAction[] = [DiagnosticUiAction.UNKNOWN, DiagnosticUiAction.FEEDBACK,
+  DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP];
 const IO_MODES: DiagnosticMode[] = [DiagnosticMode.UNKNOWN, DiagnosticMode.STRING, DiagnosticMode.ARRAY_BUFFER, DiagnosticMode.TYPED_ARRAY];
 const FORMAT_MODES: DiagnosticMode[] = [DiagnosticMode.UNKNOWN, DiagnosticMode.LEGACY, DiagnosticMode.ENCRYPTED];
 const FS_STAGES: DiagnosticStage[] = [DiagnosticStage.FS_OPEN, DiagnosticStage.FS_WRITE, DiagnosticStage.FS_CLOSE,
   DiagnosticStage.FS_VERIFY, DiagnosticStage.WRITE_END, DiagnosticStage.PUBLISH_END, DiagnosticStage.READ_END,
-  DiagnosticStage.POST_PUBLISH_VERIFY,
+  DiagnosticStage.POST_PUBLISH_VERIFY, DiagnosticStage.PUBLICATION_GUARD, DiagnosticStage.PUBLICATION_CLEANUP,
   DiagnosticStage.UNLINK_BEGIN, DiagnosticStage.UNLINK_END, DiagnosticStage.ICON_IO, DiagnosticStage.ICON_CLEAR,
   DiagnosticStage.HISTORY_END, DiagnosticStage.FS_PREPARE, DiagnosticStage.FS_STAGE,
   DiagnosticStage.FS_STAGE_MOVE, DiagnosticStage.TEMP_CLEANUP];
@@ -191,6 +196,7 @@ function fileCodeAllowed(stage: DiagnosticStage, code: number): boolean {
     case DiagnosticStage.FS_STAGE:
       return [13900001, 13900002, 13900008, 13900011, 13900012, 13900013, 13900015,
         13900018, 13900025, 13900028, 13900030, 13900033, 13900041].indexOf(code) >= 0;
+    case DiagnosticStage.PUBLICATION_GUARD:
     case DiagnosticStage.FS_PREPARE:
       return [13900001, 13900002, 13900005, 13900008, 13900011, 13900012, 13900013, 13900015,
         13900018, 13900023, 13900025, 13900028, 13900030, 13900033, 13900041].indexOf(code) >= 0;
@@ -213,6 +219,7 @@ function fileCodeAllowed(stage: DiagnosticStage, code: number): boolean {
       // Aggregated open/read/close (+ list/stat or icon write) boundaries.
       return [13900001, 13900002, 13900004, 13900005, 13900008, 13900012, 13900018,
         13900025, 13900041].indexOf(code) >= 0;
+    case DiagnosticStage.PUBLICATION_CLEANUP:
     case DiagnosticStage.TEMP_CLEANUP:
     case DiagnosticStage.UNLINK_BEGIN:
     case DiagnosticStage.UNLINK_END:
@@ -278,6 +285,10 @@ function normalizeDetails(stage: DiagnosticStage, input?: DiagnosticDetails): Di
   if (stage === DiagnosticStage.DEVICE_INFO && input.source !== undefined) {
     output.source = SOURCES.indexOf(input.source) >= 0 ? input.source : DiagnosticSource.UNKNOWN;
   }
+  if ((stage === DiagnosticStage.UI_ACTION || stage === DiagnosticStage.UI_RESULT || stage === DiagnosticStage.UI_REFRESH) &&
+    input.uiAction !== undefined) {
+    output.uiAction = UI_ACTIONS.indexOf(input.uiAction) >= 0 ? input.uiAction : DiagnosticUiAction.UNKNOWN;
+  }
   if (ITEM_STAGES.indexOf(stage) >= 0 && input.location !== undefined) {
     output.location = LOCATIONS.indexOf(input.location) >= 0 ? input.location : DiagnosticLocation.UNKNOWN;
   }
@@ -291,7 +302,8 @@ function normalizeDetails(stage: DiagnosticStage, input?: DiagnosticDetails): Di
   }
   if (CACHE_STAGES.indexOf(stage) >= 0 && typeof input.uriMatches === 'boolean') { output.uriMatches = input.uriMatches; }
   if ((stage === DiagnosticStage.CACHE_DRAIN || stage === DiagnosticStage.CACHE_STOP || stage === DiagnosticStage.DELETE_GUARD ||
-    stage === DiagnosticStage.ICON_IO) &&
+    stage === DiagnosticStage.ICON_IO || stage === DiagnosticStage.PUBLICATION_GUARD ||
+    stage === DiagnosticStage.PUBLICATION_CLEANUP) &&
     typeof input.drained === 'boolean') { output.drained = input.drained; }
   if ((FS_STAGES.indexOf(stage) >= 0 || CRYPTO_STAGES.indexOf(stage) >= 0) && typeof input.contentNonEmpty === 'boolean') {
     output.contentNonEmpty = input.contentNonEmpty;
@@ -311,12 +323,14 @@ function normalizeDetails(stage: DiagnosticStage, input?: DiagnosticDetails): Di
     if (typeof input.alreadyAbsent === 'boolean') { output.alreadyAbsent = input.alreadyAbsent; }
   }
   if (stage === DiagnosticStage.SYNC_START || stage === DiagnosticStage.PUBLISH_END || stage === DiagnosticStage.BACKUP_END ||
-    stage === DiagnosticStage.CLEAR_END || stage === DiagnosticStage.DELETE_END) {
+    stage === DiagnosticStage.CLEAR_END || stage === DiagnosticStage.DELETE_END || stage === DiagnosticStage.UI_RESULT ||
+    stage === DiagnosticStage.PUBLICATION_CLEANUP) {
     if (typeof input.syncStartAccepted === 'boolean') { output.syncStartAccepted = input.syncStartAccepted; }
   }
   if (stage === DiagnosticStage.BACKUP_END || stage === DiagnosticStage.HISTORY_END || stage === DiagnosticStage.CLEAR_END ||
     stage === DiagnosticStage.DELETE_END || stage === DiagnosticStage.ICON_CLEAR || stage === DiagnosticStage.UI_RESULT ||
-    stage === DiagnosticStage.RESTORE_END) {
+    stage === DiagnosticStage.RESTORE_END || stage === DiagnosticStage.PUBLICATION_GUARD ||
+    stage === DiagnosticStage.PUBLICATION_CLEANUP) {
     if (typeof input.partialFailure === 'boolean') { output.partialFailure = input.partialFailure; }
   }
   if (stage === DiagnosticStage.ICON_IO || stage === DiagnosticStage.ICON_CLEAR || stage === DiagnosticStage.SYNC_START ||
@@ -376,6 +390,7 @@ function detailFields(details: DiagnosticDetails): string[] {
   if (details.scope !== undefined) { fields.push(`scope=${details.scope}`); }
   if (details.artifact !== undefined) { fields.push(`artifact=${details.artifact}`); }
   if (details.source !== undefined) { fields.push(`source=${details.source}`); }
+  if (details.uiAction !== undefined) { fields.push(`uiAction=${details.uiAction}`); }
   if (details.identityAvailable !== undefined) { fields.push(`identityAvailable=${details.identityAvailable}`); }
   if (details.nameAvailable !== undefined) { fields.push(`nameAvailable=${details.nameAvailable}`); }
   if (details.uriMatches !== undefined) { fields.push(`uriMatches=${details.uriMatches}`); }

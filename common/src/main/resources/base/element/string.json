@@ -2625,7 +2625,7 @@
     },
     {
       "name": "cloud_backup_failure_reason_post_verify",
-      "value": "Post-publish verification failed; the invalid backup was removed"
+      "value": "Post-publish verification failed; the backup is unavailable"
     },
     {
       "name": "cloud_backup_clear_result_deleted",
@@ -2654,6 +2654,62 @@
     {
       "name": "cloud_backup_failure_stage_snapshot",
       "value": "Token snapshot read"
+    },
+    {
+      "name": "icon_pack_import_reject_not_zip",
+      "value": "Not a valid ZIP archive, or the file is damaged"
+    },
+    {
+      "name": "icon_pack_import_reject_too_large",
+      "value": "Icon pack exceeds the size limit"
+    },
+    {
+      "name": "icon_pack_import_reject_missing_meta",
+      "value": "pack.json is missing; not an Aegis icon pack"
+    },
+    {
+      "name": "icon_pack_import_reject_entry_overflow",
+      "value": "Icon pack contains too many files"
+    },
+    {
+      "name": "icon_pack_import_reject_file_too_large",
+      "value": "Icon pack contains an oversized file"
+    },
+    {
+      "name": "icon_pack_import_reject_unsafe_path",
+      "value": "Icon pack contains unsafe file paths"
+    },
+    {
+      "name": "icon_pack_import_reject_io",
+      "value": "Failed to read the icon pack"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_sync_failed",
+      "value": "Deleted %d records, kept %d failed deletions; sync submission was rejected"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_sync_pending",
+      "value": "Deleted %d records, kept %d failed deletions; sync pending completion"
+    },
+    {
+      "name": "cloud_backup_feedback_back",
+      "value": "Back"
+    },
+    {
+      "name": "icon_pack_import_reject_invalid_meta",
+      "value": "pack.json could not be parsed"
+    },
+    {
+      "name": "icon_pack_import_reject_duplicate",
+      "value": "An icon pack with the same name and version is already installed"
+    },
+    {
+      "name": "cloud_sync_icon_pack_publication_unresolved",
+      "value": "发布状态未定，请重试；持续失败时可清除云端备份"
+    },
+    {
+      "name": "icon_pack_rematch_failed",
+      "value": "重新匹配图标失败"
     }
   ]
 }

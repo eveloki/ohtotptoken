@@ -122,7 +122,7 @@ class MemoryPort {
   }
 }
 
-function setup(port = new MemoryPort(), native = false) {
+export function setup(port = new MemoryPort(), native = false) {
   const lines = [];
   const diagnosticCalls = [];
   const diagnostics = runInNewContext(`${diagnosticCode}\n({CloudBackupDiagnosticRecorder, DiagnosticKind,
@@ -148,7 +148,7 @@ function setup(port = new MemoryPort(), native = false) {
     { ...sdk, ...storage });
   const io = native ? new api.NativeCloudBackupStagingPort(FILES) : port;
   const context = recorder.begin(diagnostics.DiagnosticKind.BACKUP);
-  return { port, api, context, lines, diagnosticCalls, io,
+  return { port, api, context, lines, diagnosticCalls, io, sdk: { ...sdk, ...storage },
     staging: new api.CloudBackupStaging(ROOT, SCOPE, io),
     newInstance: (root = ROOT, scope = SCOPE) => new api.CloudBackupStaging(root, scope, io) };
 }

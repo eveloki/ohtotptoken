@@ -17,12 +17,24 @@ export const SCOPED_FILES = Object.freeze([
   'common/src/main/ets/utils/CloudBackupOperationGate.ets',
   'common/src/main/ets/utils/CloudBackupSyncService.ets',
   'common/src/main/ets/utils/CloudBackupStaging.ets',
+  'common/src/main/ets/utils/CloudBackupPublicationGuard.ets',
+  'common/src/main/ets/utils/CloudSyncLastFailure.ets',
+  'common/src/main/ets/utils/IconPackZipGate.ets',
+  // Icon-pack cloud publication protocol (previous-keep-old + intent/commit): scoped with the
+  // default rules only — its receipt persistence legitimately serializes JSON, so it must NOT
+  // join IMPORT_BOUNDARY's blanket JSON ban; diagnostics still must use the facade, never a sink.
+  'common/src/main/ets/utils/IconPackPublication.ets',
   'common/src/main/ets/utils/HuaweiAccountManager.ets',
   'common/src/main/ets/utils/SyncTimeHelper.ets',
   'entry/src/main/ets/pages/Index.ets', // Partial: HuaweiAccountManager.init() promise chain only.
   'entry/src/main/ets/pages/ShowCloudSyncDetailsPage.ets',
   'entry/src/main/ets/pages/ShowCloudBackupHistoryPage.ets',
   'entry/src/main/ets/entryability/EntryAbility.ets',
+  // Icon-pack import boundary: SubItemIconManager must converge on the fixed-enum diag helper;
+  // the zip reader stays zero-output and the gate file stays pure (2026-10-13 audit P2-1).
+  'entry/src/main/ets/components/SubItemIconManager.ets',
+  'entry/src/main/ets/components/IconPackZipReader.ts',
+  'entry/src/main/ets/utils/IconPackImportDiag.ets',
 ]);
 const SINK = SCOPED_FILES[0];
 const TASK = 'common/src/main/ets/utils/CloudSyncTask.ets';
@@ -30,6 +42,15 @@ const ENTRY = 'entry/src/main/ets/entryability/EntryAbility.ets';
 const INDEX = 'entry/src/main/ets/pages/Index.ets';
 const ACCOUNT = 'common/src/main/ets/utils/HuaweiAccountManager.ets';
 const TIME = 'common/src/main/ets/utils/SyncTimeHelper.ets';
+const SUBITEM = 'entry/src/main/ets/components/SubItemIconManager.ets';
+const ZIP_READER = 'entry/src/main/ets/components/IconPackZipReader.ts';
+const DIAG_LOG = 'entry/src/main/ets/utils/IconPackImportDiag.ets';
+const ZIP_GATE = 'common/src/main/ets/utils/IconPackZipGate.ets';
+// New icon-import files: no raw exception text at all, and error codes may never be
+// masked with a `?? 0`/`?? ''` placeholder (that is how an unknown code masquerades
+// as a real one in fixed-enum diagnostics). unlike the account wrapper, which owns a
+// reviewed fixed `0` fallback in its business error contract.
+const IMPORT_BOUNDARY = new Set([SUBITEM, ZIP_READER, DIAG_LOG, ZIP_GATE]);
 
 // Comments are ignored but literal tokens retain their positions. This catches aliases at the import,
 // destructuring or member reference, rather than relying on the subsequent call's spelling.
@@ -79,7 +100,8 @@ export function checkSource(source, filename) {
   };
   const entry = filename === ENTRY;
   const sink = filename === SINK;
-  const strictBoundary = filename === ACCOUNT || filename === TIME || filename === INDEX;
+  const importBoundary = IMPORT_BOUNDARY.has(filename);
+  const strictBoundary = filename === ACCOUNT || filename === TIME || filename === INDEX || importBoundary;
   if (filename === INDEX && tokens.length === 0) add('INDEX_ACCOUNT_SCOPE_MISSING', 0);
   // If the page imports an alternate sink name, partial token checks cannot establish safe account-init use.
   if (filename === INDEX) {
@@ -135,6 +157,14 @@ export function checkSource(source, filename) {
     }
     if (strictBoundary && value === 'JSON' && tokens[index + 1]?.value === '.' &&
       tokens[index + 2]?.value === 'stringify') add('RAW_ERROR_SERIALIZATION', token.at);
+    // Unknown-code placeholder: `code ?? 0` / `code ?? ''` turns an unreadable or hostile
+    // getter into a plausible code. Import boundary must surface it as the facade's UNKNOWN.
+    // The scanner yields `??` as two separate `?` tokens, hence the pair check.
+    if (importBoundary && value === 'code' && tokens[index + 1]?.value === '?' &&
+      tokens[index + 2]?.value === '?' &&
+      (tokens[index + 3]?.literal === true || /^\d/.test(tokens[index + 3]?.value ?? ''))) {
+      add('UNKNOWN_CODE_FALLBACK', token.at);
+    }
     if (filename === ACCOUNT && value === 'super' && tokens[index + 1]?.value === '(') {
       const end = endOfCall(tokens, index + 1);
       const args = tokens.slice(index + 2, end);
@@ -159,6 +189,11 @@ export function checkSource(source, filename) {
     // A raw interpolation inside a template token would otherwise evade the token scanner.
     if (token.literal && value.startsWith('`') && /\$\{[^}]*\b(?:JSON\s*\.\s*stringify\s*\(|(?:message|stack|cause)\b)/.test(value)) {
       add('RAW_ERROR_INTERPOLATION', token.at);
+    }
+    // Template literals hide `code ?? 0` from the token stream; scan the literal text too.
+    if (importBoundary && token.literal && value.startsWith('`') &&
+      /\$\{[^}]*\bcode\b\s*\?\?\s*(?:\d|['"`])/.test(value)) {
+      add('UNKNOWN_CODE_FALLBACK', token.at);
     }
   }
   if (sink) {

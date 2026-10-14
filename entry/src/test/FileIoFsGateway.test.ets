@@ -21,6 +21,7 @@ class FixtureWritePort implements FileIoWritePort {
   failClose: boolean = false;
   failMove: boolean = false;
   failCleanup: boolean = false;
+  failDeleteCode: number = 0;
   nextFd: number = 1;
   nextDirectory: number = 1;
 
@@ -83,6 +84,7 @@ class FixtureWritePort implements FileIoWritePort {
 
   async deleteFile(path: string): Promise<void> {
     this.deleted.push(path);
+    if (this.failDeleteCode !== 0) { throw new FixtureDeleteError(this.failDeleteCode); }
     if (this.failCleanup) { throw new Error('synthetic cleanup failure'); }
     this.files.delete(path);
   }
@@ -114,6 +116,15 @@ class FileIoDiagnosticThread implements DiagnosticThread {
 class FileIoSyntheticError extends Error {
   code: number = 13900020;
   constructor() { super('SYNTH_PRIVATE_PATH_AND_CONTENT'); }
+}
+
+/** 携带 SDK fs 错误码的合成删除失败（ENOENT 宽容与如实传播的分界用例）。 */
+class FixtureDeleteError extends Error {
+  code: number;
+  constructor(code: number) {
+    super('synthetic delete failure');
+    this.code = code;
+  }
 }
 
 class FileIoHostileError {
@@ -370,6 +381,53 @@ export default function fileIoFsGatewayTest(): void {
       expect(bytesEqual(port.files.get('/fixture/pending.tmp'), [120])).assertTrue();
       expect(port.directories.size).assertEqual(1);
       expect(port.deleted.length).assertEqual(0);
+    });
+
+    it('replace_unlinks_destination_first_then_moves_without_replace', 0, async () => {
+      const port = new FixtureWritePort();
+      port.files.set('/fixture/formal.zip', [1, 1]);
+      port.files.set('/fixture/staged.zip', [7, 8, 9]);
+      await new FileIoFsGateway(port).moveFileToReplace('/fixture/staged.zip', '/fixture/formal.zip');
+      expect(port.deleted.length).assertEqual(1);
+      expect(port.deleted[0]).assertEqual('/fixture/formal.zip');
+      expect(port.moves).assertEqual(1);
+      expect(bytesEqual(port.files.get('/fixture/formal.zip'), [7, 8, 9])).assertTrue();
+      expect(port.files.has('/fixture/staged.zip')).assertFalse();
+    });
+
+    it('replace_tolerates_absent_destination_and_still_moves', 0, async () => {
+      const port = new FixtureWritePort();
+      port.failDeleteCode = 13900002;
+      port.files.set('/fixture/staged.zip', [7, 8, 9]);
+      await new FileIoFsGateway(port).moveFileToReplace('/fixture/staged.zip', '/fixture/formal.zip');
+      expect(port.moves).assertEqual(1);
+      expect(bytesEqual(port.files.get('/fixture/formal.zip'), [7, 8, 9])).assertTrue();
+    });
+
+    it('replace_unlink_failure_propagates_and_never_moves', 0, async () => {
+      const port = new FixtureWritePort();
+      port.failDeleteCode = 13900012;
+      port.files.set('/fixture/staged.zip', [7, 8, 9]);
+      let failed = false;
+      try { await new FileIoFsGateway(port).moveFileToReplace('/fixture/staged.zip', '/fixture/formal.zip'); }
+      catch (_) { failed = true; }
+      expect(failed).assertTrue();
+      expect(port.moves).assertEqual(0);
+      expect(port.files.has('/fixture/staged.zip')).assertTrue();
+    });
+
+    it('replace_move_failure_propagates_without_copy_fallback', 0, async () => {
+      const port = new FixtureWritePort();
+      port.failMove = true;
+      port.files.set('/fixture/formal.zip', [1, 1]);
+      port.files.set('/fixture/staged.zip', [7, 8, 9]);
+      let failed = false;
+      try { await new FileIoFsGateway(port).moveFileToReplace('/fixture/staged.zip', '/fixture/formal.zip'); }
+      catch (_) { failed = true; }
+      expect(failed).assertTrue();
+      expect(port.opens).assertEqual(0);
+      expect(port.deleted.length).assertEqual(1);
+      expect(port.files.has('/fixture/staged.zip')).assertTrue();
     });
   });
 }

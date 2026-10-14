@@ -11,9 +11,15 @@ import bleTransferSmokeTest from './BleTransferSmoke.test';
 import wearEngineSmokeTest from './WearEngineSmoke.test';
 import cloudBackupIoTest from './CloudBackupIo.test';
 import cloudBackupCloudLifecycleTest from './CloudBackupCloudLifecycle.test';
+import iconPackPublicationDeviceTest from './IconPackPublication.test';
 import { abilityDelegatorRegistry } from '@kit.TestKit';
 
 export default function testsuite() {
+  const parameters = abilityDelegatorRegistry.getArguments().parameters;
+  if (parameters['iconPackPublicationFixture'] === 'true' || parameters['-s iconPackPublicationFixture'] === 'true') {
+    iconPackPublicationDeviceTest();
+    return;
+  }
   abilityTest();
   GoogleAuthUtilsTest()
   tokenBatchTest();
@@ -26,7 +32,6 @@ export default function testsuite() {
   bleTransferSmokeTest();
   wearEngineSmokeTest();
   cloudBackupIoTest();
-  iconPackStatusProbeTest();
   if (abilityDelegatorRegistry.getArguments().parameters['cloudBackupOwnedFixture'] === 'true') {
     cloudBackupCloudLifecycleTest();
   }

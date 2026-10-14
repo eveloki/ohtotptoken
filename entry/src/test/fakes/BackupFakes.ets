@@ -214,8 +214,13 @@ export class MemoryFs implements FsGateway {
   locationOverride: Map<string, number> = new Map();
   /** 对这些源路径注入 copyFile 失败（模拟图标目录收集/发布的 IO 故障）。 */
   failCopyFor: Set<string> = new Set();
-  /** moveFileToReplace 成功替换记录（源->目标），供发布原子性断言。 */
+  /** 仅注入移动修改目标之前的失败；不能证明 SDK 移动失败或真机进程中断时保旧。 */
+  failReplace: boolean = false;
+  replaceAttempts: string[] = [];
+  /** moveFileToReplace 成功替换记录（源->目标），供发布顺序断言。 */
   replacedPairs: string[] = [];
+  /** 专用临时目录清理故障注入，默认不改变既有行为。 */
+  failRemoveDirFor: Set<string> = new Set();
 
   stat(path: string): Promise<FsStatInfo> {
     const info = new FsStatInfo();
@@ -310,6 +315,15 @@ export class MemoryFs implements FsGateway {
     }
   }
 
+  syncedPaths: string[] = [];
+  failSyncFor: Set<string> = new Set();
+
+  async syncFile(path: string): Promise<void> {
+    if (!this.files.has(path)) throw new MemoryFsError(13900002);
+    if (this.failSyncFor.has(path)) throw new MemoryFsError(13900005);
+    this.syncedPaths.push(path);
+  }
+
   async publishFile(source: string, destination: string): Promise<void> {
     const pair = `${source}->${destination}`;
     this.publishAttempts.push(pair);
@@ -337,6 +351,16 @@ export class MemoryFs implements FsGateway {
     this.publishedPairs.push(pair);
   }
 
+  private tempSequence: number = 0;
+
+  async makeTempDir(prefix: string): Promise<string> {
+    this.tempSequence++;
+    const path = prefix.replace('XXXXXX', ('000000' + this.tempSequence).slice(-6));
+    if (this.dirs.has(path) || this.files.has(path)) throw new MemoryFsError(13900015);
+    this.dirs.add(path);
+    return path;
+  }
+
   makeDir(path: string): Promise<void> {
     this.dirs.add(path);
     return Promise.resolve();
@@ -344,6 +368,9 @@ export class MemoryFs implements FsGateway {
 
   removeDir(path: string): Promise<void> {
     // fs.rmdir 递归删除；所有权保护必须由调用方负责，不能由 fake 的空目录假设代替。
+    if (this.failRemoveDirFor.has(path)) {
+      return Promise.reject(new MemoryFsError(13900005));
+    }
     if (!this.dirs.has(path)) {
       return Promise.reject(new MemoryFsError(13900002));
     }
@@ -384,6 +411,7 @@ export class MemoryFs implements FsGateway {
   }
 
   async moveFileToReplace(source: string, destination: string): Promise<void> {
+    this.replaceAttempts.push(`${source}->${destination}`);
     if (source === destination || source.substring(0, source.lastIndexOf('/')) !==
       destination.substring(0, destination.lastIndexOf('/'))) {
       throw new MemoryFsError(13900020);
@@ -392,7 +420,10 @@ export class MemoryFs implements FsGateway {
     if (content === undefined) {
       throw new MemoryFsError(13900002);
     }
-    // 与 fs.moveFile(mode=0) 一致：完全覆盖目标，失败时目标保持原内容。
+    if (this.failReplace) {
+      throw new MemoryFsError(13900012);
+    }
+    // 只模拟正常覆盖与移动前失败，不模拟原生实现中途出错/进程终止的状态。
     this.files.set(destination, content);
     this.files.delete(source);
     const location = this.locationOverride.get(source);

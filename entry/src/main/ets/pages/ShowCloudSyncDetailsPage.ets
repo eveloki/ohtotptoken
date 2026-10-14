@@ -3,10 +3,11 @@ import { AppStorageV2, promptAction } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import {
-  AppPreference, AppWindowInfo, CloudBackupActionResult, CloudBackupFailureReason, CloudBackupManager,
+  AppPreference, AppWindowInfo, CloudBackupActionResult, CloudBackupDiagnostics, CloudBackupFailureReason, CloudBackupManager,
   CloudBackupSyncError, CloudBackupSyncService, CloudBackupSyncSnapshot, CloudBackupSyncState,
   CloudSyncFailureStage, CloudSyncFailureState, CloudSyncFailureView, cloudSyncFailureView,
-  CommonConstants, dialogSystemMaterial, HuaweiAccountManager, IconPackCloudBackup, IconPackSyncState,
+  CommonConstants, DiagnosticKind, DiagnosticReason, DiagnosticResult, DiagnosticStage, DiagnosticUiAction,
+  dialogSystemMaterial, HuaweiAccountManager, IconPackCloudBackup, IconPackSyncState,
   PREF_KEYS, ROUTE_NAMES, showSnackBar, SnackBarNotifyType, SyncTimeHelper
 } from 'common';
 import { MaterialTheme } from '../components/MaterialTheme';
@@ -47,6 +48,7 @@ export struct ShowCloudSyncDetailsPage {
   @Local confirmationOpen: boolean = false;
   @Local iconPackStatusKnown: boolean = false;
   @Local iconPackMetaAbsent: boolean = false;
+  @Local iconPackPublicationUnresolved: boolean = false;
   @Local iconPackBackupExists: boolean = false;
   @Local iconPackBackupCount: number = 0;
   @Local iconPackBackupSize: number = 0;
@@ -186,6 +188,7 @@ export struct ShowCloudSyncDetailsPage {
       this.iconPackSourceDevice = status.sourceDeviceName;
       this.iconPackStatusKnown = status.metadataKnown === true;
       this.iconPackMetaAbsent = status.metadataAbsent === true;
+      this.iconPackPublicationUnresolved = status.publicationUnresolved === true;
     } catch (_) {
       this.iconPackStatusKnown = false;
       this.iconPackMetaAbsent = false;
@@ -289,7 +292,7 @@ export struct ShowCloudSyncDetailsPage {
                     description: $r('app.string.cloud_backup_last_failure_feedback_entry'), descriptionMaxLines: 0
                   })
                     .enabled(!this.interactionBlocked())
-                    .onClick(() => { this.pageInfos?.pushPathByName(ROUTE_NAMES.SettingFeedback, null); })
+                    .onClick(() => this.openFeedback())
                 }
                 .alignItems(HorizontalAlign.Start).width('100%').padding(16)
               }
@@ -427,6 +430,9 @@ export struct ShowCloudSyncDetailsPage {
       case IconPackSyncState.CLEARING: return $r('app.string.cloud_sync_icon_pack_state_clearing');
       case IconPackSyncState.CHECKING: return $r('app.string.cloud_sync_icon_pack_state_checking');
     }
+    if (this.iconPackPublicationUnresolved) {
+      return $r('app.string.cloud_sync_icon_pack_publication_unresolved');
+    }
     if (!this.iconPackStatusKnown) {
       // 元数据与压缩包都确定不在云端 = 从未备份过图标包（无内容跳过从不写出文件）；
       // 只有“文件在但读不了/校验不过”或“有 zip 无元数据”才如实显示无法确认。
@@ -465,6 +471,27 @@ export struct ShowCloudSyncDetailsPage {
       case CloudBackupSyncError.REMOTE_SERVER_ABNORMAL: return $r('app.string.cloud_sync_error_server_error');
       case CloudBackupSyncError.NO_ERROR: return $r('app.string.cloud_sync_error_no_error');
       default: return $r('app.string.cloud_backup_unknown_error');
+    }
+  }
+
+  private openFeedback(): void {
+    const context = CloudBackupDiagnostics.begin(DiagnosticKind.UI);
+    CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_ACTION, DiagnosticResult.BEGIN,
+      { uiAction: DiagnosticUiAction.FEEDBACK });
+    try {
+      if (!this.isMounted || this.interactionBlocked() || this.lastFailure === null || this.pageInfos === null) {
+        CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, DiagnosticResult.BLOCKED,
+          { uiAction: DiagnosticUiAction.FEEDBACK, reason: DiagnosticReason.UNAVAILABLE });
+        return;
+      }
+      this.pageInfos.pushPathByName(ROUTE_NAMES.SettingFeedback, null);
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, DiagnosticResult.OK,
+        { uiAction: DiagnosticUiAction.FEEDBACK, reason: DiagnosticReason.NONE });
+    } catch (_) {
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, DiagnosticResult.FAIL,
+        { uiAction: DiagnosticUiAction.FEEDBACK, reason: DiagnosticReason.UNAVAILABLE });
+    } finally {
+      CloudBackupDiagnostics.end(context);
     }
   }
 

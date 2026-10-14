@@ -2625,7 +2625,7 @@
     },
     {
       "name": "cloud_backup_failure_reason_post_verify",
-      "value": "發布後校驗未通過，無效備份已清理"
+      "value": "發布後校驗未通過，備份暫不可用"
     },
     {
       "name": "cloud_backup_clear_result_deleted",
@@ -2654,6 +2654,62 @@
     {
       "name": "cloud_backup_failure_stage_snapshot",
       "value": "權杖快照讀取"
+    },
+    {
+      "name": "icon_pack_import_reject_not_zip",
+      "value": "不是有效的 ZIP 壓縮包，或檔案已損壞"
+    },
+    {
+      "name": "icon_pack_import_reject_too_large",
+      "value": "圖標包超出大小限制"
+    },
+    {
+      "name": "icon_pack_import_reject_missing_meta",
+      "value": "缺少 pack.json，不是 Aegis 圖標包"
+    },
+    {
+      "name": "icon_pack_import_reject_entry_overflow",
+      "value": "圖標包檔案數量超出限制"
+    },
+    {
+      "name": "icon_pack_import_reject_file_too_large",
+      "value": "圖標包含有超過大小限制的檔案"
+    },
+    {
+      "name": "icon_pack_import_reject_unsafe_path",
+      "value": "圖標包含有不安全的檔案路徑"
+    },
+    {
+      "name": "icon_pack_import_reject_io",
+      "value": "讀取圖標包失敗"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_sync_failed",
+      "value": "已刪除 %d 條記錄，%d 條刪除失敗已保留，同步提交被拒絕"
+    },
+    {
+      "name": "cloud_backup_unknown_cleanup_sync_pending",
+      "value": "已刪除 %d 條記錄，%d 條刪除失敗已保留，同步等待完成"
+    },
+    {
+      "name": "cloud_backup_feedback_back",
+      "value": "返回"
+    },
+    {
+      "name": "icon_pack_import_reject_invalid_meta",
+      "value": "pack.json 無法解析"
+    },
+    {
+      "name": "icon_pack_import_reject_duplicate",
+      "value": "已安裝同名同版本的圖標包"
+    },
+    {
+      "name": "cloud_sync_icon_pack_publication_unresolved",
+      "value": "發佈狀態未定，請重試；持續失敗時可清除雲端備份"
+    },
+    {
+      "name": "icon_pack_rematch_failed",
+      "value": "重新配對圖示失敗"
     }
   ]
 }

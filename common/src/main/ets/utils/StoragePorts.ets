@@ -149,11 +149,14 @@ export interface FsGateway {
   writeBinaryFile(path: string, data: Uint8Array, context?: DiagnosticContext): Promise<void>;
   /** 新建文件，目标存在时失败；调用方只传密文。失败不获得目标所有权。 */
   writeNewTextFile(path: string, content: string, context?: DiagnosticContext): Promise<void>;
+  /** 对已关闭的精确文件提交 fsync；发布保旧凭据必须在破坏性动作前落盘。 */
+  syncFile(path: string): Promise<void>;
   /** 同目录、不覆盖发布；调用方先关闭、读回并校验源文件。 */
   publishFile(source: string, destination: string, context?: DiagnosticContext): Promise<void>;
-  /** 同目录覆盖式移动（暂存产物校验通过后原子替换正式文件）。 */
+  /** 同目录覆盖式移动；调用方先校验暂存产物，移动异常向上传播，不承诺原子性或失败保旧。 */
   moveFileToReplace(source: string, destination: string): Promise<void>;
   makeDir(path: string): Promise<void>;
+  makeTempDir(prefix: string): Promise<string>;
   /** 递归删除目录及其内容（fs.rmdir 语义）；调用方必须确认目录所有权。 */
   removeDir(path: string): Promise<void>;
   deleteFile(path: string): Promise<void>;
@@ -245,6 +248,16 @@ function publicationParent(path: string): string {
     throw new Error('Invalid publication path');
   }
   return path.substring(0, path.lastIndexOf('/'));
+}
+
+/** 仅文件不存在（ENOENT 13900002）视为替换目标本就缺失；其余删除失败如实传播。 */
+function isFileAbsentError(error: BusinessError): boolean {
+  try {
+    return error.code === 13900002;
+  } catch (_) {
+    // code 读取失败按非 ENOENT 处理：宁可让备份如实失败，不进入删除后移动。
+    return false;
+  }
 }
 
 /** {@link FsGateway} 的生产实现：包装 @kit.CoreFileKit fileIo。 */
@@ -410,6 +423,23 @@ export class FileIoFsGateway implements FsGateway {
     }
   }
 
+  async syncFile(path: string): Promise<void> {
+    const file = await fs.open(path, fs.OpenMode.READ_WRITE);
+    let failed = false;
+    try {
+      await fs.fsync(file.fd);
+    } catch (error) {
+      failed = true;
+      throw error as Error;
+    } finally {
+      try {
+        await fs.close(file);
+      } catch (error) {
+        if (!failed) throw error as Error;
+      }
+    }
+  }
+
   async publishFile(source: string, destination: string, context?: DiagnosticContext): Promise<void> {
     try {
       if (source === destination || publicationParent(source) !== publicationParent(destination)) {
@@ -429,8 +459,22 @@ export class FileIoFsGateway implements FsGateway {
     if (source === destination || publicationParent(source) !== publicationParent(destination)) {
       throw new Error('Replace requires distinct files in the same directory');
     }
-    // SDK mode=0：完全覆盖目标文件（rename 语义）；失败时目标保持原内容。
-    await fs.moveFile(source, destination, 0);
+    // 真机云目录已验证：目标已存在时 SDK fs.moveFile(mode=0) 抛 EINVAL(13900020)，覆盖移动不可用。
+    // 改为精确删除旧目标（仅 ENOENT 宽容）后 moveFile(mode=1)；mode=1 在删除与移动之间出现
+    // 同名目标时拒绝而非静默覆盖。中断窗口：删除后、移动完成前进程终止会失去旧正式文件，
+    // 下次完整备份可重建；SDK 无原子替换原语，此窗口只能收窄为相邻两个原生调用。
+    try {
+      await this.writer.deleteFile(destination);
+    } catch (error) {
+      if (!isFileAbsentError(error as BusinessError)) {
+        throw error as Error;
+      }
+    }
+    await this.writer.moveFileNoReplace(source, destination);
+  }
+
+  async makeTempDir(prefix: string): Promise<string> {
+    return this.writer.makeTempDir(prefix);
   }
 
   async makeDir(path: string): Promise<void> {

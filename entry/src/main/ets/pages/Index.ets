@@ -741,6 +741,9 @@ struct Index {
    */
   private async checkAndRestoreIconPacks(): Promise<void> {
     try {
+      // 冷启动时 deferredInit 并行触发账号 init 与本入口：userLogin 由 init 的
+      // 异步偏好读取写回，不等它则登录态检查恒为 false，自动恢复被静默跳过。
+      await HuaweiAccountManager.getInstance().init();
       await IconPackCloudBackup.getInstance().checkAndAutoRestore();
     } catch (err) {
       hilog.error(0xFF00, 'Index', `checkAndRestoreIconPacks failed: ${JSON.stringify(err)}`);

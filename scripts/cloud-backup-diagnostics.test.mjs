@@ -8,7 +8,7 @@ import { runInNewContext } from 'node:vm';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import {
-  DiagnosticCollector, LIMITS, REPORT_BASENAME, STAGES, KINDS, REASONS, parseDiagnosticLine,
+  DiagnosticCollector, LIMITS, REPORT_BASENAME, STAGES, KINDS, REASONS, UI_ACTIONS, parseDiagnosticLine,
   serializeDiagnosticEvent, collectFromHdc, writeReport,
 } from './collect-cloud-backup-diagnostics.mjs';
 import { checkSource, SCOPED_FILES } from './check-cloud-backup-diagnostic-privacy.mjs';
@@ -45,6 +45,7 @@ test('producer and collector use the same closed enum contract', () => {
   assert.deepEqual([...KINDS].sort(), Object.values(Kind).sort());
   assert.deepEqual([...STAGES].sort(), Object.values(Stage).sort());
   assert.deepEqual([...REASONS].sort(), Object.values(Reason).sort());
+  assert.deepEqual([...UI_ACTIONS].sort(), Object.values(api.DiagnosticUiAction).sort());
   const { recorder, lines } = setup();
   recorder.enable();
   for (const stage of Object.values(Stage)) {
@@ -279,6 +280,59 @@ test('post-publish verify stage carries only reviewed fields and round-trips thr
   assert.equal(parseDiagnosticLine(wire.replace('headerParsed=true', 'writeComplete=true')), null);
   // POST_PUBLISH_VERIFY 未列入 FS 码白名单：具体错误码收敛为 UNKNOWN。
   assert.equal(parseDiagnosticLine(wire.replace('headerParsed=true', 'errorDomain=FS code=13900002')), null);
+});
+
+test('publication guard events use the existing modes without leaking journal identifiers', () => {
+  for (const enabled of [false, true]) {
+    const { recorder, lines } = setup();
+    if (enabled) recorder.enable();
+    const context = recorder.begin(Kind.BACKUP);
+    for (const stage of [Stage.PUBLICATION_GUARD, Stage.PUBLICATION_CLEANUP]) {
+      recorder.mark(context, stage, Result.FAIL, {
+        reason: Reason.IO_ERROR, errorDomain: Domain.FS, code: 13900012,
+        drained: false, partialFailure: true, syncStartAccepted: false,
+        item: 1, location: 'LOCAL', fileName: SENTINELS[0], cloudRoot: SENTINELS[8],
+        scopeDigest: SENTINELS[1], source: SENTINELS[4], tokenCount: 42,
+      });
+    }
+    assert.equal(lines.length, 2);
+    assertWire(lines);
+    assertNoSentinels(lines.join('\n'));
+    for (const line of lines) {
+      const event = parseDiagnosticLine(`CloudBackupDiag: ${line}`);
+      assert.equal(Object.hasOwn(event, 'op'), enabled);
+      assert.equal(Object.hasOwn(event, 'drained'), enabled);
+      assert.equal(Object.hasOwn(event, 'item'), false);
+      assert.equal(Object.hasOwn(event, 'location'), false);
+      if (!enabled) assert.deepEqual(Object.keys(event), ['v', 'kind', 'stage', 'result', 'reason']);
+    }
+    recorder.end(context);
+  }
+  const wire = 'CloudBackupDiag: v=1 op=1 kind=BACKUP stage=PUBLICATION_CLEANUP result=FAIL reason=IO_ERROR elapsed=LT_1S drained=false';
+  for (const field of ['fileName=PRIVATE', 'scopeDigest=PRIVATE', 'item=1', 'location=LOCAL', 'uiAction=FEEDBACK']) {
+    assert.equal(parseDiagnosticLine(`${wire} ${field}`), null);
+  }
+});
+
+test('UI actions admit only fixed enums and never a route, user label or free text', () => {
+  const { recorder, lines } = setup(); recorder.enable();
+  const context = recorder.begin(Kind.UI);
+  for (const stage of [Stage.UI_ACTION, Stage.UI_RESULT, Stage.UI_REFRESH]) {
+    recorder.mark(context, stage, Result.FAIL, {
+      uiAction: api.DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP, reason: Reason.SYNC_REJECTED,
+      partialFailure: true, syncStartAccepted: false, route: SENTINELS[8], count: 17,
+    });
+  }
+  recorder.mark(context, Stage.UI_RESULT, Result.FAIL, { uiAction: SENTINELS[2] });
+  recorder.mark(context, Stage.FS_WRITE, Result.FAIL, { uiAction: api.DiagnosticUiAction.FEEDBACK });
+  assertNoSentinels(lines.join('\n'));
+  assertWire(lines);
+  for (const line of lines.slice(0, 3)) assert.ok(line.includes('uiAction=UNKNOWN_SOURCE_CLEANUP'));
+  assert.ok(lines[3].includes('uiAction=UNKNOWN'));
+  assert.equal(lines[4].includes('uiAction='), false);
+  const wire = `CloudBackupDiag: ${lines[1]}`;
+  assert.equal(parseDiagnosticLine(wire.replace('uiAction=UNKNOWN_SOURCE_CLEANUP', 'uiAction=PRIVATE')), null);
+  assert.equal(parseDiagnosticLine(`${wire} route=PRIVATE`), null);
 });
 
 test('SYNC_STATE zero means NONE and no other domain or stage allows zero', () => {
@@ -676,6 +730,94 @@ test('native account/time sources and staging journal are explicitly scoped, wit
     "HuaweiAccountManager.getInstance().init().catch(err => { const x = () => {}; console.log(err); });",
     'const manager = HuaweiAccountManager.getInstance(); manager.init().catch(err => console.log(err));',
   ]) assert.ok(checkSource(value, indexFile).length > 0);
+});
+
+test('publication journal and failure state cannot introduce alternate sensitive sinks', async () => {
+  for (const name of ['CloudBackupPublicationGuard', 'CloudSyncLastFailure']) {
+    const file = `common/src/main/ets/utils/${name}.ets`;
+    assert.ok(SCOPED_FILES.includes(file));
+    const text = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+    assert.deepEqual(checkSource(text, file), []);
+    for (const injected of ["console.error(error);", "hilog.error(0xFF00, 'Guard', '%{public}s', cloudRoot);",
+      "const rejected = JSON.stringify(error);"]) {
+      assert.ok(checkSource(`${text}\ntry {} catch (error) { ${injected} }`, file).length > 0);
+    }
+  }
+});
+
+// 2026-10-13 audit P2-1: the icon import path must converge on the fixed-enum diag facade.
+// Scope pins four files; the reader stays zero-output, the gate file stays pure, SubItemIconManager
+// must lose every direct sink and raw-exception channel, and the diag helper accepts numbers only.
+const subItemFile = 'entry/src/main/ets/components/SubItemIconManager.ets';
+const zipGateFile = 'common/src/main/ets/utils/IconPackZipGate.ets';
+const zipReaderFile = 'entry/src/main/ets/components/IconPackZipReader.ts';
+const diagLogFile = 'entry/src/main/ets/utils/IconPackImportDiag.ets';
+const publicationFile = 'common/src/main/ets/utils/IconPackPublication.ets';
+test('icon import boundary is pinned and bans raw exceptions, unknown-code masks and alternate sinks', async () => {
+  for (const file of [subItemFile, zipGateFile, zipReaderFile, diagLogFile, publicationFile]) {
+    assert.ok(SCOPED_FILES.includes(file), file);
+  }
+  // Receipt persistence serializes JSON by design; only caught-variable serialization is banned here.
+  assert.deepEqual(
+    checkSource('saveReceipt({ get name() { return "r"; } });\nconst text = JSON.stringify(receipt);', publicationFile),
+    []);
+  assert.ok(checkSource('try {} catch (error) { const text = JSON.stringify(error); }', publicationFile).length > 0);
+  assert.ok(checkSource("hilog.error(0, 'Publication', '%{public}s', receiptName);", publicationFile).length > 0);
+  // The audited incident pattern: raw exception text into a direct sink.
+  const invalid = [
+    [subItemFile, "hilog.error(0, 'SubItemIconManager', 'Icon pack import failed: ' + JSON.stringify(err));"],
+    [subItemFile, "hilog.error(0, 'SubItemIconManager', 'rematch token failed: ' + JSON.stringify(e));"],
+    // Raw message/stack text, including into user-facing snackbars and via bracket access.
+    [subItemFile, "showSnackBar((err as BusinessError).message ?? `fallback`, type);"],
+    [subItemFile, "const text = err['stack'];"],
+    [subItemFile, "const text = error.cause;"],
+    // Unknown-code mask: an unreadable getter must not become a plausible numeric code.
+    [subItemFile, 'const detail = `code=${(err as BusinessError).code ?? 0}`;'],
+    [subItemFile, "const code = err.code ?? '';"],
+    [diagLogFile, 'const code = code ?? 0;'],
+    // Throwing-getter sentinel: the member read itself is banned, sink or no sink.
+    [subItemFile, "const hostile = { get message() { return 'SYNTH_PACK_CACHE/x.zip'; } };\nconst leaked = hostile.message;"],
+    [subItemFile, "const hostile = { get message() { return 'SYNTH_PACK_CACHE/x.zip'; } };\nhilog.error(0, 'T', hostile.message);"],
+    // Reader/gate/helper must not grow sinks.
+    [zipGateFile, 'console.error(error);'],
+    [zipGateFile, "hilog.error(0, 'Gate', '%{public}s', relativePath);"],
+    [zipReaderFile, "hilog.info(0, 'ZipReader', 'entries');"],
+    [diagLogFile, 'const text = error.message;'],
+    [diagLogFile, 'const text = JSON.stringify(error);'],
+  ];
+  for (const [file, snippet] of invalid) {
+    assert.ok(checkSource(snippet, file).length > 0, `${file}: ${snippet}`);
+  }
+  // Throwing getter classification stays explicit in the issues, not silent:
+  const getter = checkSource(
+    "const hostile = { get message() { return 'SYNTH_PACK_CACHE/x.zip'; } };\nhilog.error(0, 'T', hostile.message);",
+    subItemFile).map(issue => issue.rule).sort();
+  assert.deepEqual(getter, ['RAW_ERROR_MEMBER', 'UNAPPROVED_SINK']);
+  const mask = checkSource('const detail = `code=${(err as BusinessError).code ?? 0}`;', subItemFile)
+    .map(issue => issue.rule);
+  assert.deepEqual(mask, ['UNKNOWN_CODE_FALLBACK']);
+  // Intended end state passes: facade-only helper, numeric-only code extraction.
+  const cleanHelper = [
+    "import { CloudBackupDiagnostics, DiagnosticKind, DiagnosticStage, DiagnosticResult, DiagnosticReason, " +
+      "DiagnosticErrorDomain } from 'common';",
+    'export function iconPackImportDiagFail(code: number | undefined): void {',
+    '  const context = CloudBackupDiagnostics.begin(DiagnosticKind.ICON);',
+    '  CloudBackupDiagnostics.fail(context, DiagnosticStage.ICON_IO, DiagnosticErrorDomain.FS, code);',
+    '  CloudBackupDiagnostics.end(context);',
+    '}',
+  ].join('\n');
+  assert.deepEqual(checkSource(cleanHelper, diagLogFile), []);
+  const cleanCatch = 'try {} catch (err) { ' +
+    "const code = typeof (err as BusinessError).code === 'number' ? (err as BusinessError).code as number : undefined; " +
+    'iconPackImportDiagFail(code); }';
+  assert.deepEqual(checkSource(cleanCatch, subItemFile), []);
+  // Gate file keeps its pure enum verdicts; codes compared, never masked.
+  const cleanGate = 'export function map(error: BusinessError): string { ' +
+    "return error.code === 900003 ? 'NOT_ZIP_OR_DAMAGED' : 'IO_ERROR'; }";
+  assert.deepEqual(checkSource(cleanGate, zipGateFile), []);
+  // Already-committed pure files must keep passing the widened scope.
+  assert.deepEqual(checkSource(await readFile(new URL(`../${zipGateFile}`, import.meta.url), 'utf8'), zipGateFile), []);
+  assert.deepEqual(checkSource(await readFile(new URL(`../${zipReaderFile}`, import.meta.url), 'utf8'), zipReaderFile), []);
 });
 
 test('EntryAbility static scope covers cloud/device logging, not unrelated application logs', () => {

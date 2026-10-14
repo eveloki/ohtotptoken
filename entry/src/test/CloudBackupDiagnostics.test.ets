@@ -2,7 +2,7 @@ import { describe, it, expect } from '@ohos/hypium';
 import {
   CloudBackupDiagnosticRecorder, DiagnosticSink, DiagnosticClock, DiagnosticThread,
   DiagnosticKind, DiagnosticStage, DiagnosticResult, DiagnosticReason, DiagnosticErrorDomain,
-  DiagnosticMode, DiagnosticState, DiagnosticDetails, DiagnosticSummary,
+  DiagnosticMode, DiagnosticState, DiagnosticDetails, DiagnosticSummary, DiagnosticUiAction,
   normalizeDiagnosticCode, normalizeDiagnosticSummary, appendDiagnosticSummary, classifyDiagnosticError,
   HuaweiAccountManager, HuaweiAccountErrorCode, normalizeHuaweiAccountLoginError
 } from 'common';
@@ -203,6 +203,32 @@ export default function CloudBackupDiagnosticsTest() {
         { headerParsed: false }).details.headerParsed).assertFalse();
       expect(normalizeDiagnosticSummary(DiagnosticStage.ICON_IO, DiagnosticResult.BLOCKED,
         { drained: false }).details.drained).assertFalse();
+    });
+
+    it('publication_guard_and_ui_actions_keep_closed_fields', 0, () => {
+      const test = new DiagnosticFixture();
+      test.recorder.enable();
+      const context = test.recorder.begin(DiagnosticKind.BACKUP);
+      for (const stage of [DiagnosticStage.PUBLICATION_GUARD, DiagnosticStage.PUBLICATION_CLEANUP]) {
+        const safe = normalizeDiagnosticSummary(stage, DiagnosticResult.FAIL,
+          { reason: DiagnosticReason.IO_ERROR, errorDomain: DiagnosticErrorDomain.FS, code: 13900012,
+            drained: false, partialFailure: true, uiAction: DiagnosticUiAction.FEEDBACK });
+        expect(safe.details.code).assertEqual(13900012);
+        expect(safe.details.drained).assertFalse();
+        expect(safe.details.uiAction === undefined).assertTrue();
+        test.recorder.mark(context, stage, DiagnosticResult.FAIL, safe.details);
+      }
+      const ui = normalizeDiagnosticSummary(DiagnosticStage.UI_RESULT, DiagnosticResult.FAIL,
+        { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP, reason: DiagnosticReason.SYNC_REJECTED,
+          syncStartAccepted: false, partialFailure: true });
+      expect(ui.details.uiAction).assertEqual(DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP);
+      expect(ui.details.syncStartAccepted).assertFalse();
+      expect(ui.details.partialFailure).assertTrue();
+      const invalid = normalizeDiagnosticSummary(DiagnosticStage.UI_ACTION, DiagnosticResult.FAIL,
+        { uiAction: 'SYNTH_PRIVATE_ROUTE' as DiagnosticUiAction });
+      expect(invalid.details.uiAction).assertEqual(DiagnosticUiAction.UNKNOWN);
+      test.recorder.mark(context, DiagnosticStage.UI_ACTION, DiagnosticResult.FAIL, invalid.details);
+      expect(test.sink.lines.every((line: string) => line.indexOf('SYNTH_') < 0)).assertTrue();
     });
 
     it('sync_zero_is_none_but_other_domains_and_stages_reject_zero', 0, () => {

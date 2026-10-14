@@ -16,6 +16,10 @@ import {
 } from './CloudBackupResult';
 import { CloudBackupSyncService } from './CloudBackupSyncService';
 import { CloudBackupStaging } from './CloudBackupStaging';
+import {
+  CloudBackupPublicationGuard, CloudBackupPublicationPort, MemoryCloudBackupPublicationPort,
+  applyCloudPublicationIsolation,
+} from './CloudBackupPublicationGuard';
 import { CloudSyncFailureStage, CloudSyncFailureState } from './CloudSyncLastFailure';
 import { CloudFileCacher, CloudFileCacheLoader, prepareCloudFileRead } from './CloudFileCacheLoader';
 import { CloudBackupTaskHistory, loadBackupHistoryRecords, checkCloudBackupRecords } from './CloudSyncTask';
@@ -27,7 +31,7 @@ import { HuaweiAccountManager } from './HuaweiAccountManager';
 import { SyncTimeHelper } from './SyncTimeHelper';
 import { TokenIconPacks } from './TokenUtils';
 import { IconPackCloudBackup, PackMetaEntry } from './IconPackCloudBackup';
-import { FsGateway, FileIoFsGateway } from './StoragePorts';
+import { FsGateway, FileIoFsGateway, fileIoDiagnosticCode } from './StoragePorts';
 import { BACKUP_FILE_EXT, BACKUP_FILE_PREFIX, parseBackupTimestamp } from './CommonUtils';
 
 const MAX_BACKUP_COUNT = 5;
@@ -74,6 +78,9 @@ export interface CloudBackupTestDeps {
   cache?: CloudFileCacher;
   cloudDir?: string;
   staging?: CloudBackupStaging;
+  publication?: CloudBackupPublicationPort;
+  /** Test the production TaskPool branch without calling native filesystem APIs. */
+  historyTask?: (root: string, context: DiagnosticContext) => Promise<CloudBackupTaskHistory>;
 }
 
 class HuaweiAccountAdapter implements CloudBackupAccountPort {
@@ -128,6 +135,12 @@ class BackupScanResult {
   blocked: boolean = false;
 }
 
+class PublicationCleanupResult {
+  drained: boolean = true;
+  syncAttempted: boolean = false;
+  syncStartAccepted: boolean = false;
+}
+
 /** 文件名是目录枚举的边界，不接受路径、额外后缀或部分可解析的时间戳。 */
 export function isSafeCloudBackupId(id: string): boolean {
   return /^otp_backup_-?\d+\.enc(?![\s\S])/.test(id) && Number.isSafeInteger(parseBackupTimestamp(id));
@@ -145,6 +158,12 @@ export class CloudBackupManager {
   private readonly productionFs: FsGateway = new FileIoFsGateway();
   private pendingCleanupLease: CloudBackupOperationLease | undefined = undefined;
   private lastFileTimestamp: number = -1;
+  private testPublication: MemoryCloudBackupPublicationPort | undefined = undefined;
+  private publicationGuard: CloudBackupPublicationGuard | undefined = undefined;
+  private publicationAccount: string = '';
+  private publicationRoot: string = '';
+  private publicationUnavailable: boolean = false;
+  private publicationPending: boolean = false;
 
   private constructor() {}
 
@@ -154,6 +173,11 @@ export class CloudBackupManager {
   }
 
   useDepsForTest(deps: CloudBackupTestDeps): void {
+    if (this.testDeps?.fs !== deps.fs || this.testDeps?.publication !== deps.publication) {
+      this.testPublication = deps.publication === undefined && deps.fs !== undefined ?
+        new MemoryCloudBackupPublicationPort(deps.fs) : undefined;
+    }
+    this.publicationGuard = undefined;
     this.testDeps = deps;
     if (deps.cloudDir !== undefined && deps.cloudDir.length > 0) {
       this.context = new Object() as common.UIAbilityContext;
@@ -171,6 +195,12 @@ export class CloudBackupManager {
     this.context = undefined;
     this.cloudDir = '';
     this.lastFileTimestamp = -1;
+    this.testPublication = undefined;
+    this.publicationGuard = undefined;
+    this.publicationAccount = '';
+    this.publicationRoot = '';
+    this.publicationUnavailable = false;
+    this.publicationPending = false;
   }
 
   private get fsPort(): FsGateway { return this.testDeps?.fs ?? this.productionFs; }
@@ -185,6 +215,76 @@ export class CloudBackupManager {
     if (this.context === undefined) throw new Error('STAGING_CONTEXT_UNAVAILABLE');
     return CloudBackupStaging.production(this.cloudDir, this.context.filesDir, this.accountPort.unionId());
   }
+  private async publication(): Promise<CloudBackupPublicationGuard> {
+    const account = this.accountPort.unionId();
+    if (!account && this.testDeps === null) throw new Error('PUBLICATION_ACCOUNT_UNAVAILABLE');
+    if (this.publicationGuard !== undefined && this.publicationAccount === account &&
+      this.publicationRoot === this.cloudDir) return this.publicationGuard;
+    const port = this.testDeps?.publication ?? this.testPublication;
+    const guard = this.testDeps !== null ?
+      new CloudBackupPublicationGuard(this.cloudDir, account || 'test-no-account', port!) :
+      await CloudBackupPublicationGuard.production(this.cloudDir, this.context!.filesDir, account);
+    if (this.testDeps !== null && port === undefined) throw new Error('PUBLICATION_PORT_UNAVAILABLE');
+    this.publicationGuard = guard;
+    this.publicationAccount = account;
+    this.publicationRoot = this.cloudDir;
+    return guard;
+  }
+
+  /** Must precede staging.create/recover: staging cleanup would destroy non-publication evidence. */
+  private async preparePublication(context: DiagnosticContext): Promise<boolean> {
+    if (this.cacher?.isCleanupPending?.()) return false;
+    try {
+      const guard = await this.publication();
+      if (!await guard.recover(context)) {
+        this.publicationUnavailable = true;
+        return false;
+      }
+      this.publicationUnavailable = false;
+      this.publicationPending = guard.hasRejectedCleanup();
+      return true;
+    } catch (error) {
+      this.publicationUnavailable = true;
+      CloudBackupDiagnostics.fail(context, DiagnosticStage.PUBLICATION_GUARD,
+        DiagnosticErrorDomain.FS, fileIoDiagnosticCode(error));
+      return false;
+    }
+  }
+
+  /** Only a durable confirmed-move REJECTED receipt authorizes automatic unlink. */
+  private async cleanupPublications(context: DiagnosticContext): Promise<PublicationCleanupResult> {
+    const result = new PublicationCleanupResult();
+    try {
+      const guard = await this.publication();
+      const cleaned: string[] = [];
+      for (const receipt of guard.rejected()) {
+        const deletion = await this.deleteBackupFile(receipt.fileName, context);
+        if (deletion.success) cleaned.push(receipt.id);
+        else result.drained = false;
+      }
+      // Never acknowledge failed unlinks merely because unrelated sync was accepted.
+      if (cleaned.length > 0) {
+        result.syncAttempted = true;
+        result.syncStartAccepted = await this.syncToCloud(context);
+        if (result.syncStartAccepted) {
+          for (const id of cleaned) await guard.acknowledgeRejected(id, context);
+        } else result.drained = false;
+      }
+      this.publicationPending = guard.hasRejectedCleanup();
+      result.drained = result.drained && !this.publicationPending;
+    } catch (error) {
+      result.drained = false;
+      this.publicationUnavailable = true;
+      CloudBackupDiagnostics.fail(context, DiagnosticStage.PUBLICATION_CLEANUP,
+        DiagnosticErrorDomain.FS, fileIoDiagnosticCode(error));
+    }
+    CloudBackupDiagnostics.mark(context, DiagnosticStage.PUBLICATION_CLEANUP,
+      result.drained ? DiagnosticResult.OK : DiagnosticResult.FAIL,
+      { drained: result.drained, partialFailure: !result.drained, syncStartAccepted: result.syncStartAccepted,
+        reason: result.drained ? DiagnosticReason.NONE : DiagnosticReason.IO_ERROR });
+    return result;
+  }
+
   private get cacher(): CloudFileCacher | undefined {
     return this.testDeps !== null ? this.testDeps.cache : CloudFileCacheLoader.getInstance();
   }
@@ -214,24 +314,33 @@ export class CloudBackupManager {
   isBusy(): boolean { return CloudBackupOperationGate.getInstance().isBusy(); }
 
   isCleanupPending(): boolean {
-    return this.cacher?.isCleanupPending?.() === true || this.pendingCleanupLease !== undefined ||
+    return this.publicationUnavailable ||
+      this.cacher?.isCleanupPending?.() === true || this.pendingCleanupLease !== undefined ||
       (this.testDeps === null && IconPackCloudBackup.getInstance().isCleanupPending());
   }
 
   async retryPendingCleanup(): Promise<boolean> {
     const cache = this.cacher;
     const context = CloudBackupDiagnostics.begin(DiagnosticKind.CACHE);
+    let recoveryOwner: CloudBackupOperationLease | undefined = this.pendingCleanupLease;
+    if (recoveryOwner === undefined) recoveryOwner = CloudBackupOperationGate.getInstance().tryEnter(CloudBackupOperationKind.HISTORY);
+    if (recoveryOwner === undefined) {
+      CloudBackupDiagnostics.end(context);
+      return false;
+    }
     try {
       if (cache?.isCleanupPending?.()) {
         if (cache.retryCleanup === undefined || !await cache.retryCleanup()) return false;
       }
       if (this.testDeps === null && !await IconPackCloudBackup.getInstance().retryPendingCleanup()) return false;
-      const owner = this.pendingCleanupLease;
-      if (owner !== undefined) {
-        owner.resolveUnknownIo();
-        owner.release();
-        this.pendingCleanupLease = undefined;
-      }
+      recoveryOwner.resolveUnknownIo();
+      this.pendingCleanupLease = undefined;
+      if (await this.ready() !== CloudBackupFailureReason.NONE || !await this.preparePublication(context)) return false;
+      const cleanup = await this.cleanupPublications(context);
+      if (!(await this.publication()).isAvailable()) return false;
+      const staged = await this.staging();
+      const stageCleaned = staged === undefined || await staged.recover(context);
+      if (!cleanup.drained || !stageCleaned) return false;
       CloudBackupDiagnostics.mark(context, DiagnosticStage.CACHE_DRAIN, DiagnosticResult.OK, { drained: true });
       return true;
     } catch (_) {
@@ -239,6 +348,7 @@ export class CloudBackupManager {
         { reason: DiagnosticReason.INFLIGHT_UNCONFIRMED, drained: false });
       return false;
     } finally {
+      this.finishLease(recoveryOwner);
       CloudBackupDiagnostics.end(context);
     }
   }
@@ -306,6 +416,12 @@ export class CloudBackupManager {
         CloudBackupDiagnostics.mark(context, terminal, DiagnosticResult.BLOCKED, { reason: this.diagnosticReason(readiness) });
         return cloudBackupFailure(readiness);
       }
+      if (!await this.preparePublication(context)) {
+        if (this.cacher?.isCleanupPending?.()) owner.retainUnknownIo();
+        CloudBackupDiagnostics.mark(context, terminal, DiagnosticResult.BLOCKED,
+          { reason: DiagnosticReason.UNAVAILABLE });
+        return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
+      }
       const result = await action(owner, context);
       if (owner.isCleanupPending() || this.cacher?.isCleanupPending?.()) {
         result.success = false;
@@ -338,7 +454,8 @@ export class CloudBackupManager {
     switch (phase) {
       case DiagnosticStage.WRITE_END: return CloudSyncFailureStage.WRITE;
       case DiagnosticStage.FS_VERIFY: return CloudSyncFailureStage.STAGED_VERIFY;
-      case DiagnosticStage.PUBLISH_END: return CloudSyncFailureStage.PUBLISH;
+      case DiagnosticStage.PUBLISH_END:
+      case DiagnosticStage.PUBLICATION_GUARD: return CloudSyncFailureStage.PUBLISH;
       default: return CloudSyncFailureStage.UNKNOWN;
     }
   }
@@ -363,6 +480,9 @@ export class CloudBackupManager {
   private async performBackupToCloud(owner: CloudBackupOperationLease,
     context: DiagnosticContext): Promise<CloudBackupActionResult> {
     CloudBackupDiagnostics.mark(context, DiagnosticStage.BACKUP_BEGIN, DiagnosticResult.BEGIN);
+    const guard = await this.publication();
+    await this.cleanupPublications(context);
+    if (!guard.isAvailable()) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
     if (this.testDeps?.device === undefined) DeviceInfoHelper.getInstance().refreshRequiredInfo();
     const deviceId = normalizeCloudBackupDeviceId(this.devicePort.deviceId());
     const deviceName = this.devicePort.deviceName().trim();
@@ -410,6 +530,8 @@ export class CloudBackupManager {
     let tempOwned = false;
     let staged: CloudBackupStaging | undefined = undefined;
     let published = false;
+    let candidate = '';
+    let preserveSource = false;
     let cleanupFailed = false;
     let phase = DiagnosticStage.WRITE_END;
     let failureReason = DiagnosticReason.IO_ERROR;
@@ -429,20 +551,35 @@ export class CloudBackupManager {
       this.crypto.parseTokenHeader(actual, context);
       CloudBackupDiagnostics.mark(context, DiagnosticStage.FS_VERIFY, DiagnosticResult.OK,
         { contentNonEmpty: true, writeComplete: true, headerParsed: true });
-      phase = DiagnosticStage.PUBLISH_END;
+      phase = DiagnosticStage.PUBLICATION_GUARD;
       failureReason = DiagnosticReason.IO_ERROR;
+      // Durable candidate precedes the formal move, so process death is fail-closed.
+      preserveSource = true;
+      candidate = await guard.register(tempPath, fileName, context);
+      preserveSource = false;
+      phase = DiagnosticStage.PUBLISH_END;
       if (staged !== undefined) await staged.publish(tempPath, `${this.cloudDir}/${fileName}`, context);
       else await this.fsPort.publishFile(tempPath, `${this.cloudDir}/${fileName}`, context);
       published = true;
       if (staged === undefined) tempOwned = false;
       CloudBackupDiagnostics.mark(context, DiagnosticStage.PUBLISH_END, DiagnosticResult.OK);
+      phase = DiagnosticStage.PUBLICATION_GUARD;
+      await guard.published(candidate, context);
     } catch (_) {
       // 原生详细错误由 StoragePorts 报告；此处只补准确阶段，不重复原始异常。
       CloudBackupDiagnostics.mark(context, phase, DiagnosticResult.FAIL, { reason: failureReason });
+      if (!published && candidate !== '') {
+        // A collision must be cancelled while the source still proves no publication.
+        try { await guard.cancelUnpublished(candidate, context); } catch (_) { preserveSource = true; }
+      }
+      this.publicationUnavailable = !guard.isAvailable();
+      this.publicationPending = guard.hasRejectedCleanup();
       CloudSyncFailureState.record(this.backupFailureStageOfPhase(phase), CloudBackupFailureReason.WRITE_FAILED);
-      return cloudBackupFailure(CloudBackupFailureReason.WRITE_FAILED);
+      const failed = cloudBackupFailure(CloudBackupFailureReason.WRITE_FAILED);
+      failed.partialFailure = published || preserveSource;
+      return failed;
     } finally {
-      if (tempOwned) {
+      if (tempOwned && !preserveSource) {
         if (staged !== undefined) cleanupFailed = !await staged.discard(tempPath, context);
         else {
           try { await this.fsPort.deleteFile(tempPath); } catch (_) {
@@ -451,19 +588,35 @@ export class CloudBackupManager {
           }
         }
       }
-      if (!published && staged !== undefined) await staged.recover(context);
+      if (!published && !preserveSource && staged !== undefined) await staged.recover(context);
     }
     // 发布后一致性校验（守护核心）：以发起备份时的快照（令牌数量 + 写入 header 的
     // deviceId）对正式文件重读比对；不动摇既有的暂存回读，也不新增抢闸。
     if (!await this.verifyPublishedBackup(fileName, snapshotCount, deviceId, context)) {
-      // 校验失败不得留正式名残留：先删除（ENOENT 宽容），再提交同步让删除传播到云端。
-      const cleanup = await this.deleteBackupFile(fileName, context);
-      const propagated = await this.syncToCloud(context);
-      if (propagated && staged !== undefined) await staged.acknowledgeSync(context);
+      // Rejection proof is durable before unlink. Failure leaves the candidate isolated, never auto-deleted.
+      let cleanup = new PublicationCleanupResult();
+      cleanup.drained = false;
+      try {
+        await guard.reject(candidate, context);
+        cleanup = await this.cleanupPublications(context);
+        if (cleanup.syncStartAccepted && staged !== undefined) await staged.acknowledgeSync(context);
+      } catch (_) { this.publicationUnavailable = true; }
+      this.publicationPending = guard.hasRejectedCleanup();
       CloudSyncFailureState.record(CloudSyncFailureStage.POST_PUBLISH_VERIFY, CloudBackupFailureReason.POST_VERIFY_FAILED);
       const failed = cloudBackupFailure(CloudBackupFailureReason.POST_VERIFY_FAILED);
-      // 暂存清理失败与同步传播失败同样如实上报，不在整体失败里吞掉次要 IO 信号。
-      failed.partialFailure = !cleanup.success || !propagated || cleanupFailed;
+      failed.syncStartAccepted = cleanup.syncStartAccepted;
+      failed.partialFailure = !cleanup.drained || cleanupFailed;
+      return failed;
+    }
+    try {
+      // Postverify success alone is insufficient: durable release must also succeed.
+      await guard.verified(candidate, context);
+      this.publicationPending = guard.hasRejectedCleanup();
+    } catch (_) {
+      this.publicationUnavailable = true;
+      CloudSyncFailureState.record(CloudSyncFailureStage.PUBLISH, CloudBackupFailureReason.WRITE_FAILED);
+      const failed = cloudBackupFailure(CloudBackupFailureReason.WRITE_FAILED);
+      failed.partialFailure = true;
       return failed;
     }
     const result = new CloudBackupActionResult();
@@ -480,7 +633,8 @@ export class CloudBackupManager {
       return result;
     }
     // 轮换剪除仅统计归属本机且 header 通过的记录；无归属/他机记录不入选也不被剪除。
-    const owned = scan.records.filter((record: CloudBackupRecord): boolean => record.deviceId === deviceId);
+    const owned = scan.records.filter((record: CloudBackupRecord): boolean =>
+      record.metadataStatus === CloudBackupMetadataStatus.VALID && record.tokenCountKnown === true && record.deviceId === deviceId);
     if (owned.length > MAX_BACKUP_COUNT) {
       const prune = await this.deleteBackupFile(owned[owned.length - 1].id, context);
       if (!prune.success) { result.partialFailure = true; result.reason = prune.reason; }
@@ -545,8 +699,10 @@ export class CloudBackupManager {
       async (owner: CloudBackupOperationLease, context: DiagnosticContext): Promise<CloudBackupActionResult> => {
         const scan = await this.listBackupRecords(context, owner);
         if (scan.blocked) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
-        if (scan.records.length === 0) return cloudBackupFailure(CloudBackupFailureReason.READ_FAILED);
-        return this.restoreRecord(scan.records[0].id, context, owner);
+        const restorable = scan.records.filter((record: CloudBackupRecord): boolean =>
+          record.metadataStatus === CloudBackupMetadataStatus.VALID);
+        if (restorable.length === 0) return cloudBackupFailure(CloudBackupFailureReason.READ_FAILED);
+        return this.restoreRecord(restorable[0].id, context, owner);
       });
     return result.success;
   }
@@ -565,6 +721,13 @@ export class CloudBackupManager {
   private async restoreRecord(id: string, context: DiagnosticContext,
     owner: CloudBackupOperationLease): Promise<CloudBackupActionResult> {
     if (!isSafeCloudBackupId(id)) return cloudBackupFailure(CloudBackupFailureReason.INVALID_TARGET);
+    const guard = await this.publication();
+    if (!guard.isAvailable()) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
+    if (guard.isolatedFileNames().includes(id)) {
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.PUBLICATION_GUARD, DiagnosticResult.BLOCKED,
+        { reason: DiagnosticReason.MISMATCH });
+      return cloudBackupFailure(CloudBackupFailureReason.POST_VERIFY_FAILED);
+    }
     let content: string;
     try {
       const path = `${this.cloudDir}/${id}`;
@@ -723,10 +886,12 @@ export class CloudBackupManager {
           }
         }
         let deletedAny = false;
+        const deletedTargets: string[] = [];
         for (const target of targets) {
           const deletion = await this.deleteBackupFile(target, context);
           if (deletion.success) {
             deletedAny = true;
+            deletedTargets.push(target);
             result.deletedCount++;
           } else { result.reason = deletion.reason; result.partialFailure = true; }
         }
@@ -736,10 +901,21 @@ export class CloudBackupManager {
         }
         result.localComplete = !result.partialFailure && iconsOk;
         result.syncStartAccepted = await this.syncToCloud(context);
+        if (result.syncStartAccepted) {
+          try {
+            const guard = await this.publication();
+            for (const target of deletedTargets) await guard.acknowledgeExplicitDeletion(target, context);
+            this.publicationPending = guard.hasRejectedCleanup();
+          } catch (_) {
+            this.publicationUnavailable = true;
+            result.partialFailure = true;
+            result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+          }
+        }
         if (!result.syncStartAccepted && result.reason === CloudBackupFailureReason.NONE) {
           result.reason = CloudBackupFailureReason.SYNC_FAILED;
         }
-        result.success = result.localComplete && result.syncStartAccepted;
+        result.success = result.localComplete && result.syncStartAccepted && !result.partialFailure;
         if (result.success && scope !== DiagnosticScope.SAME_NAME) {
           AppPreference.setPreference(PREF_KEYS.CLOUD_SYNC_LAST_TIME, '0');
         }
@@ -771,6 +947,18 @@ export class CloudBackupManager {
         result.syncStartAccepted = await this.syncToCloud(context);
         result.success = result.syncStartAccepted;
         if (!result.success) result.reason = CloudBackupFailureReason.SYNC_FAILED;
+        else {
+          try {
+            const guard = await this.publication();
+            await guard.acknowledgeExplicitDeletion(id, context);
+            this.publicationPending = guard.hasRejectedCleanup();
+          } catch (_) {
+            this.publicationUnavailable = true;
+            result.success = false;
+            result.partialFailure = true;
+            result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+          }
+        }
         return result;
       });
   }
@@ -830,6 +1018,23 @@ export class CloudBackupManager {
         return result;
       }
       CloudBackupDiagnostics.mark(context, DiagnosticStage.HISTORY_BEGIN, DiagnosticResult.BEGIN);
+      if (!await this.preparePublication(context)) {
+        if (this.cacher?.isCleanupPending?.()) owner.retainUnknownIo();
+        result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+        return result;
+      }
+      // Startup/history retries only durable confirmed-and-rejected publication ownership.
+      await this.cleanupPublications(context);
+      if (!(await this.publication()).isAvailable()) {
+        result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+        return result;
+      }
+      if (this.cacher?.isCleanupPending?.()) {
+        owner.retainUnknownIo();
+        result.reason = CloudBackupFailureReason.CLEANUP_PENDING;
+        return result;
+      }
+      // Guard source inspection must finish before staging recovery removes any source evidence.
       // 当前许可排除本进程写入；仅恢复本安装登记产物，失败不隐藏仍可读的正式历史。
       if (!this.cacher?.isCleanupPending?.()) {
         try { await (await this.staging())?.recover(context); } catch (_) {
@@ -837,7 +1042,7 @@ export class CloudBackupManager {
             { reason: DiagnosticReason.UNAVAILABLE });
         }
       }
-      if (this.testDeps !== null) {
+      if (this.testDeps !== null && this.testDeps.historyTask === undefined) {
         const scan = await this.listBackupRecords(context, owner);
         result.records = scan.records;
         result.success = scan.complete;
@@ -849,11 +1054,13 @@ export class CloudBackupManager {
             { reason: DiagnosticReason.INFLIGHT_UNCONFIRMED });
           return result;
         }
-        const task = await taskpool.execute(loadBackupHistoryRecords, this.cloudDir, false, context) as CloudBackupTaskHistory;
+        const task = this.testDeps?.historyTask !== undefined ? await this.testDeps.historyTask(this.cloudDir, context) :
+          await taskpool.execute(loadBackupHistoryRecords, this.cloudDir, false, context) as CloudBackupTaskHistory;
         result.records = task.records;
         result.success = task.complete;
         CloudBackupDiagnostics.replay(context, task.diagnostics);
       }
+      applyCloudPublicationIsolation(result.records, (await this.publication()).isolatedFileNames());
       if (!result.success) result.reason = CloudBackupFailureReason.READ_FAILED;
       if (owner.isCleanupPending() || this.cacher?.isCleanupPending?.()) {
         result.success = false;
@@ -886,9 +1093,10 @@ export class CloudBackupManager {
   }
 
   private async precache(context: DiagnosticContext): Promise<boolean> {
+    const isolated = (await this.publication()).isolatedFileNames();
     const files = await this.fsPort.listFiles(this.cloudDir);
     for (const name of files) {
-      if (!isSafeCloudBackupId(name)) continue;
+      if (!isSafeCloudBackupId(name) || isolated.includes(name)) continue;
       try {
         const path = `${this.cloudDir}/${name}`;
         const stat = await this.fsPort.stat(path);
@@ -903,6 +1111,9 @@ export class CloudBackupManager {
 
   private async listBackupRecords(context: DiagnosticContext, owner: CloudBackupOperationLease): Promise<BackupScanResult> {
     const result = new BackupScanResult();
+    const guard = await this.publication();
+    if (!guard.isAvailable()) { result.blocked = true; result.complete = false; return result; }
+    const isolated = guard.isolatedFileNames();
     let files: string[];
     try { files = await this.fsPort.listFiles(this.cloudDir); } catch (error) {
       this.logFileError(context, DiagnosticStage.READ_END, error);
@@ -921,6 +1132,11 @@ export class CloudBackupManager {
           metadataStatus: stat.location === 2 ? CloudBackupMetadataStatus.PENDING : CloudBackupMetadataStatus.READ_FAILED,
           identityStatus: CloudBackupIdentityStatus.ID_MISSING, tokenCountKnown: false,
         };
+        if (isolated.includes(name)) {
+          applyCloudPublicationIsolation([record], isolated);
+          result.records.push(record);
+          continue;
+        }
         let content: string | undefined = undefined;
         if (!await this.prepareRead(path, stat.location, context)) {
           owner.retainUnknownIo();
@@ -982,6 +1198,10 @@ export class CloudBackupManager {
         return undefined;
       }
       CloudBackupDiagnostics.mark(context, DiagnosticStage.HISTORY_BEGIN, DiagnosticResult.BEGIN);
+      if (!await this.preparePublication(context)) {
+        if (this.cacher?.isCleanupPending?.()) owner.retainUnknownIo();
+        return undefined;
+      }
       const count = this.testDeps !== null ? ((await this.fsPort.listFiles(this.cloudDir)).some(isSafeCloudBackupId) ? 1 : 0)
         : await taskpool.execute(checkCloudBackupRecords, this.cloudDir) as number;
       CloudBackupDiagnostics.mark(context, DiagnosticStage.HISTORY_END, count < 0 ? DiagnosticResult.FAIL : DiagnosticResult.OK,
@@ -1000,9 +1220,13 @@ export class CloudBackupManager {
     const result = await this.runAction(CloudBackupOperationKind.HISTORY, DiagnosticKind.SYNC, DiagnosticStage.SYNC_START,
       async (_owner: CloudBackupOperationLease, context: DiagnosticContext): Promise<CloudBackupActionResult> => {
         const result = new CloudBackupActionResult();
-        result.syncStartAccepted = await this.syncToCloud(context);
-        result.success = result.syncStartAccepted;
-        result.reason = result.success ? CloudBackupFailureReason.NONE : CloudBackupFailureReason.SYNC_FAILED;
+        const cleanup = await this.cleanupPublications(context);
+        if (!(await this.publication()).isAvailable()) return cloudBackupFailure(CloudBackupFailureReason.CLEANUP_PENDING);
+        result.syncStartAccepted = cleanup.syncAttempted ? cleanup.syncStartAccepted : await this.syncToCloud(context);
+        result.success = cleanup.drained && result.syncStartAccepted;
+        result.partialFailure = !cleanup.drained;
+        result.reason = !cleanup.drained ? CloudBackupFailureReason.CLEANUP_PENDING :
+          result.success ? CloudBackupFailureReason.NONE : CloudBackupFailureReason.SYNC_FAILED;
         return result;
       });
     return result.success;

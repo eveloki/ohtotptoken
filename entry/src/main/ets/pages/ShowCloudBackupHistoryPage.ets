@@ -1,9 +1,10 @@
 import { AppStorageV2 } from '@kit.ArkUI';
 import { HdsNavDestination, HdsNavDestinationTitleMode, ScrollEffectType } from '@kit.UIDesignKit';
 import {
-  AppPreference, AppWindowInfo, CloudBackupActionResult, CloudBackupFailureReason,
+  AppPreference, AppWindowInfo, CloudBackupActionResult, CloudBackupDiagnostics, CloudBackupFailureReason,
   CloudBackupIdentityStatus, CloudBackupManager, CloudBackupMetadataStatus, CloudBackupRecord,
-  CommonConstants, DeviceInfoHelper, dialogSystemMaterial, PREF_KEYS, showSnackBar, SnackBarNotifyType
+  CommonConstants, DeviceInfoHelper, DiagnosticKind, DiagnosticReason, DiagnosticResult, DiagnosticStage,
+  DiagnosticUiAction, dialogSystemMaterial, PREF_KEYS, showSnackBar, SnackBarNotifyType
 } from 'common';
 import { MaterialSheetStyle } from '../components/MaterialSheetStyle';
 import { MaterialTheme } from '../components/MaterialTheme';
@@ -570,45 +571,79 @@ export struct ShowCloudBackupHistoryPage {
     }
   }
 
-  /** 逐条复用单条删除（各自持许可、各自提交同步）；失败条目保留在列表中等待重试。 */
+  /** 本地删除与同步提交分别汇总；已删除项立即移除，失败项保留，同步重试不重删。 */
   private async triggerUnknownSourceCleanup(targets: CloudBackupRecord[]): Promise<void> {
-    if (!this.canStartAction() || targets.length === 0) {
-      return;
-    }
-    this.isActionRunning = true;
+    const context = CloudBackupDiagnostics.begin(DiagnosticKind.UI);
+    CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_ACTION, DiagnosticResult.BEGIN,
+      { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP });
     let deleted = 0;
     let failed = 0;
+    let syncRejected = false;
+    let syncSubmitted = false;
     try {
-      for (const record of targets) {
-        const result = await this.backupManager.deleteBackupRecordResult(record.id);
-        if (!this.isMounted) { return; }
-        if (result.syncStartAccepted) {
-          this.needsSyncRetry = false;
-        } else if (result.localComplete || result.partialFailure) {
-          this.needsSyncRetry = true;
-        }
-        if (result.localComplete || result.success) {
-          deleted++;
-        } else {
-          failed++;
-        }
+      if (!this.canStartAction() || targets.length === 0) {
+        CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, DiagnosticResult.BLOCKED,
+          { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP, reason: DiagnosticReason.UNAVAILABLE });
+        return;
       }
-      if (this.isMounted) {
-        this.actionMessage = $r('app.string.cloud_backup_unknown_cleanup_done', deleted, failed);
-        showSnackBar(this.actionMessage, failed === 0 ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
+      this.isActionRunning = true;
+      try {
+        for (const record of targets) {
+          const result = await this.backupManager.deleteBackupRecordResult(record.id);
+          if (!this.isMounted) {
+            CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, DiagnosticResult.CANCELLED,
+              { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP, reason: DiagnosticReason.CANCELLED });
+            return;
+          }
+          if (result.syncStartAccepted) {
+            syncSubmitted = true;
+            if (!syncRejected) { this.needsSyncRetry = false; }
+          } else if (result.localComplete || result.partialFailure || result.reason === CloudBackupFailureReason.SYNC_FAILED) {
+            syncRejected = true;
+            this.needsSyncRetry = true;
+          }
+          if (result.localComplete || result.success) {
+            deleted++;
+            // 后续删除或历史刷新失败不能让已删除记录继续可恢复。
+            this.backupRecords = this.backupRecords.filter((item: CloudBackupRecord) => item.id !== record.id);
+            if (this.selectedRecord?.id === record.id) {
+              this.selectedRecord = null;
+              this.isDetailVisible = false;
+            }
+          } else {
+            failed++;
+          }
+        }
+      } catch (_) {
+        // 未完成及尚未尝试的项目仍在列表中，不伪称已经删除。
+        failed = targets.length - deleted;
+      } finally {
+        this.isActionRunning = false;
+        this.refreshOperationState();
       }
-    } catch (_) {
-      failed = targets.length - deleted;
-      if (this.isMounted) {
-        this.actionMessage = $r('app.string.cloud_backup_unknown_cleanup_done', deleted, failed);
-        showSnackBar(this.actionMessage, SnackBarNotifyType.WARNING);
+      if (!this.isMounted) { return; }
+      this.actionMessage = syncRejected ?
+        $r('app.string.cloud_backup_unknown_cleanup_sync_failed', deleted, failed) : syncSubmitted ?
+          $r('app.string.cloud_backup_unknown_cleanup_sync_pending', deleted, failed) :
+          $r('app.string.cloud_backup_unknown_cleanup_done', deleted, failed);
+      showSnackBar(this.actionMessage, failed > 0 || syncRejected || syncSubmitted ?
+        SnackBarNotifyType.WARNING : SnackBarNotifyType.SUCCESS);
+      CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_RESULT, failed > 0 || syncRejected ?
+        DiagnosticResult.FAIL : syncSubmitted ? DiagnosticResult.PENDING : DiagnosticResult.OK,
+        { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP,
+          reason: syncRejected ? DiagnosticReason.SYNC_REJECTED : failed > 0 ? DiagnosticReason.PARTIAL_FAILURE : DiagnosticReason.NONE,
+          partialFailure: failed > 0, syncStartAccepted: syncSubmitted && !syncRejected });
+      if (deleted > 0) {
+        await this.loadBackupHistory();
+        if (this.isMounted) {
+          CloudBackupDiagnostics.mark(context, DiagnosticStage.UI_REFRESH, this.historyError !== '' ?
+            DiagnosticResult.FAIL : this.serviceBusy || this.cleanupPending ? DiagnosticResult.PENDING : DiagnosticResult.OK,
+            { uiAction: DiagnosticUiAction.UNKNOWN_SOURCE_CLEANUP,
+              reason: this.historyError !== '' ? DiagnosticReason.UNAVAILABLE : DiagnosticReason.NONE });
+        }
       }
     } finally {
-      this.isActionRunning = false;
-      this.refreshOperationState();
-    }
-    if (deleted > 0 && this.isMounted) {
-      await this.loadBackupHistory();
+      CloudBackupDiagnostics.end(context);
     }
   }
 

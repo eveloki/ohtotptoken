@@ -10,8 +10,12 @@
 |---|---|---|
 | `fileIo.writeSync` | 参数为 `ArrayBuffer \| string`；返回写入长度 | `Uint8Array` 必须转换有效视图；短写须继续补齐，零进展失败 |
 | `WriteOptions.offset` | 文件偏移，不是输入 buffer 的视图偏移 | 不能把 byteOffset 错当文件 offset |
-| `fileIo.moveFile(src,dest,1)` | 目标存在时报错，API 9 起可用 | 不支持分布式目录，未承诺云目录原子性；云环境必须真机验证，失败不回退成覆盖写入 |
-| `fileIo.mkdtemp` | 创建唯一目录 | 用于持有本次创建文件的所有权，不用不存在于 SDK 的 EXCL 常量 |
+| `fileIo.moveFile(src,dest,1)` | 目标存在时报错，API 9 起可用 | 不支持分布式目录，未承诺云目录原子性；云环境必须真机验证，失败不回退成覆盖写入。真机云目录验证可用（令牌链路 FS_STAGE_MOVE OK） |
+| `fileIo.moveFile(src,dest,0)` | SDK 声明覆盖同名目标；**真机云目录验证：目标已存在时抛 EINVAL(13900020)，覆盖移动不可用**（2026-10-13）；目标不存在时纯 rename 可用 | 现行图标发布创建唯一不可变 generation，不覆盖、不移动旧 ZIP；2026-10-14 单机原生验收见第 17 节，不据此承诺远端原子性 |
+| `fileIo.fsync` | SDK 声明对文件描述符提交持久写入；现行图标协议在独占代 ZIP、metadata 和 commit 上使用 | 2026-10-14 真机自有云目录上 READ_WRITE + fsync 成功，六个发布检查点强停后新进程回读通过；不等于断电持久性或远端上传完成。注入的 post-fsync 异常不是内核 fsync 失败 |
+| `Context.tempDir / cacheDir` | 官方《存储空间使用与文件生命周期管理》：temp 可在退出／空间紧张时随时删除，cache 受配额及空间清理 | 收集、压缩、解压校验属于可再生中间产物；上一代保留及发布恢复记录不能依赖 temp/cache 存续 |
+| `fileIo.unlink` | 删除文件 | 真机云目录验证可用（令牌链路 UNLINK_END OK） |
+| `fileIo.mkdtemp` | 创建唯一目录 | 用于持有本次创建文件的所有权，不用不存在于 SDK 的 EXCL 常量；2026-10-14 真机云目录创建及进程重建回读已通过，尚未证明跨设备唯一性 |
 | `CloudFileCache.start` | 仅确认任务启动 | 主动缓存需同实例/目标确认终态；终态失败且无在途工作时仍允许普通读取，不把缓存成功当作读取硬前置 |
 | `CloudFileCache.stop` | 取消当前下载 | 取消失败或未结算须保留在途保护，不能通过新实例绕过 |
 | `FileSync.start` | 接受同步请求 | 不是本次备份或删除在云端完成的证明 |
@@ -51,6 +55,8 @@
 | TEMP_CLEANUP | 仅本操作确知拥有或本安装登记产物的清理结果，不输出凭据或账号绑定 |
 | WRITE_END / PUBLISH_END | 本地完整内容与正式发布是否成功 |
 | POST_PUBLISH_VERIFY | 发布后一致性校验：正式文件重读解析与快照比对（通过/数量或设备不匹配/读取失败），只输出比对结论布尔值，不含数量、文件名或路径 |
+| PUBLICATION_GUARD / PUBLICATION_CLEANUP | 本地候选凭据登记、隔离/解禁与精确清理重试；仅固定原因、错误码及技术布尔，不输出凭据、账号绑定或文件标识 |
+| UI_ACTION / UI_RESULT / UI_REFRESH | 反馈和来源未确认聚合清理；详细模式仅固定 uiAction 枚举，默认摘要不携带动作字段，不打印路由、数量或用户标签 |
 | CACHE_START / CACHE_PROGRESS / CACHE_END | 启动与匹配终态分开；不含 URI/进度量 |
 | CACHE_STOP / CACHE_DRAIN | 在途任务是否可靠停止 |
 | READ_END / HEADER_PARSE | 读取失败和格式异常分开；后台摘要保留同一白名单的数值码，未知数量不等于零 |
@@ -229,27 +235,123 @@
 - 时机：`staged.publish`/`publishFile` 成功之后、`syncToCloud` 之前；在既有备份操作租约内执行，不新增抢闸。
 - 基准：**发起备份时的快照**（构造 payload 时 `TokenStore` 令牌数量 + 写入 header 的同一 deviceId 来源）。不取校验时刻实时值，备份期间用户增删令牌的合法竞态不会被误判为校验失败。
 - 方式：普通 `readTextFile(正式文件)` + `parseTokenHeader`，只比较 header 的 tokenCount 与 deviceId；不解密正文、不展开令牌列表。
-- 失败收敛：重读抛错、文件缺失、header 非法（code 1/2）三种情况均判校验失败；失败即 `deleteBackupFile`（ENOENT 宽容）→ 提交同步让删除传播 → 整体失败（`POST_VERIFY_FAILED`），不更新最近成功备份时间。诊断事件只含阶段/结果/reason（IO_ERROR / INVALID_FORMAT / MISMATCH）与 `headerParsed` 布尔，无数量、文件名、路径或原始码出口。
+- 失败收敛：重读抛错、文件缺失、header 非法（code 1/2）三种情况均判校验失败；先保留持久隔离凭据，再 `deleteBackupFile`（ENOENT 宽容）并提交同步传播删除，整体失败（`POST_VERIFY_FAILED`），不更新最近成功备份时间。删除失败或同步提交失败不能撤销隔离，历史不得重新显示为 VALID 或允许恢复。文案只称“校验未通过，备份不可用”，不无条件宣称已清理。当前校验调用点只传阶段/结果/reason（IO_ERROR / INVALID_FORMAT / MISMATCH）与 `headerParsed` 布尔；FS 类白名单同时允许固定 I/O mode 与 `contentNonEmpty` 技术布尔，但该调用点不传。无数量、文件名、路径或原始异常出口。
+
+### 正式文件持久隔离（PUBLICATION_GUARD / PUBLICATION_CLEANUP）
+
+- 发布前在本安装私有目录持久登记候选，绑定当前账号 scope、云目录、精确文件名和源暂存文件；候选登记、发布归属和校验通过标记必须写入完成并 fsync/close，不能用 fire-and-forget 偏好写入代替。
+- candidate 未完成校验时默认隔离。发布明确成功但校验失败才具有拒绝文件的可靠归属；删除失败、同步提交拒绝或进程重建后保留拒绝凭据，在已有操作许可内重试精确文件清理。
+- guard 恢复先于 staging 回收：源仍存在证明未发布，取消候选而不认领外来碰撞目标；源已消失但无成功归属证明时只隔离，不自动删除。凭据损坏或 I/O 不可用 fail-closed，不能忽略后继续恢复/轮换。
+- 单个隔离凭据与全局在途 I/O 忙碌分离：隔离文件自身不能恢复，不永久禁用其他健康备份、新建或历史；可信拒绝清理尚未提交（如离线）仍允许手动删除/同步重试。用户明确确认精确删除后，unlink 与同步提交成功才能撤销对应凭据，全部范围清理也对账已删记录。
+- 生产 TaskPool 历史结果也应用同一 Manager 隔离过滤，拒绝文件不能重新成为 VALID、不能恢复且不参与本机 5 条配额。旧版本文件没有本次候选凭据，沿用原读取与恢复契约；已校验通过但同步提交失败的完整本地备份保留供同步重试。
+- 凭据字段只用于本地所有权判断，不进入诊断事件。默认模式仍仅最小失败摘要，详细模式只有固定阶段、白名单码与技术布尔；无账号绑定摘要、文件名、路径、令牌数量、异常文本出口。
 
 ### 失败状态持久化（CLOUD_SYNC_LAST_FAILURE）
 
 - 键 `app_cloud_sync_last_failure`，固定结构 JSON `{ failedAt, stage, reason }`，字段全部为枚举/时间戳；不落文件名、数量、错误文本。由 `CloudSyncFailureState` 统一读写，结构非法一律按无记录处理。
 - 记录规则：备份尝试进入管线后的任何非成功收口都记录（身份/快照读取/加密/写入/暂存校验/发布/发布后校验/轮换/图标/同步）；被门禁、登录态或忙碌阻断的尝试，以及管线开工前缓存清理未排空的环境阻断，不写也不清（避免用环境状态覆盖既有真实失败记录）。备份整体成功时清除；重启后仍可见（AppPreference 持久化）。
-- 展示：`ShowCloudSyncDetailsPage` 备份状态卡内“最近一次备份”失败行（阶段+原因文案+“备份失败，请反馈开发者”+反馈入口）。行采用内联响应式绑定——@Builder 按值传参不随状态刷新（第 15 节教训）。
+- 展示：`ShowCloudSyncDetailsPage` 备份状态卡内“最近一次备份”失败行（阶段+原因文案+“备份失败，请反馈开发者”+反馈入口）。行采用内联响应式绑定——@Builder 按值传参不随状态刷新（第 15 节教训）。详情面板私栈注册反馈目标，反馈自身网页内栈独立，网页自身返回控件回退反馈首页，外层明确返回控件回到备份详情，避免推入无目标或同一栈双绑定。
 
 ### 轮换归属规则（规格化，行为不变）
 
 - 每设备 5 份轮换剪除仅统计 header 解析通过且 deviceId 等于本机的记录；无归属/他机记录不入选、不挤占配额、不因轮换被删除（既有 `owned` 过滤，本轮补测试锁定）。
 - 剪除删除失败如实上报：`partialFailure=true` + 原因码 + 失败状态键（阶段 ROTATE），不静默标记完全成功。
-- 按设备/同名清理不再因存在 deviceId 缺失记录整体返回 IDENTITY_UNAVAILABLE：跳过并计数（`skippedUnowned`），随结果上报（页面展示“已保留 N 条无法确认归属的记录”）；绝不自动认领无归属记录。历史页“来源未确认”区提供聚合清理入口（逐条复用单条删除，失败条目保留并列出）。
+- 按设备/同名清理不再因存在 deviceId 缺失记录整体返回 IDENTITY_UNAVAILABLE：跳过并计数（`skippedUnowned`），随结果上报（页面展示“已保留 N 条无法确认归属的记录”）；绝不自动认领无归属记录。历史页“来源未确认”区提供聚合清理入口（逐条复用单条删除，本地已删记录即时移除，删除失败保留并列出；同步拒绝单独警告，重试只提交同步不重删）。
 
-### 图标包发布原子性
+### 图标包临时生成、保留上一代与发布恢复
 
-- `icon_packs_backup.zip` 发布改为与令牌备份一致的“拷贝到云端暂存名 `.icon_packs_backup_pending.zip` → 校验（解压试读 + zip 内 `icon_packs_meta.json` 可解析）→ `moveFile(mode=0)` 原子替换”；任何失败保留云端既有 zip 与旧 meta（sync meta 仍在 zip 发布成功后写）。
-- 目录收集 `copyDirRecursive` 逐文件吞错改为失败计数：备份端非零失败即整体失败（不压缩、不发布）；恢复端缺失/失败文件计入 `IconPackRestoreResult.failedFiles`，`restoredFiles` 改为实际拷贝计数。目录列举故障（非 ENOENT）不再当作“无内容”按成功跳过。
+- 官方依据：[存储空间使用与文件生命周期管理](https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/storage-usage-file-lifecycle)。临时收集、压缩、解压校验目录放 `Context.tempDir`；任务成功或失败清理精确中间产物，异常退出后下次使用该业务目录时重扫清理。系统回收临时文件只导致本次失败，不能破坏云端旧备份。旧版 cache 专用目录暂不按通用前缀扫除，避免扩大用户数据清理范围。
+- 最终 `IconPackPublication` 不使用固定 previous／intent 事务槽：独立评审已在两实例生产控制流模型复现过期回滚与过期清理均能删光 ZIP，该中间方案已撤换。现每次 `mkdtemp(cloudDir/.icon_packs_generations/generation-XXXXXX)` 写独占 ZIP 与对应 metadata，fsync、解压验证并比对 timestamp/packs/enabledPacks/deletedPacks 后写 committed.json。开始 commit 写入后关闭／fsync／同步提交失败也不删该代。没有移动或覆盖任何已存在云备份。
+- 读取统一选择完整验证的已提交不可变代；commit先到、ZIP／metadata未齐时跳过该代，读另一完整代或旧 fixed-name ZIP／metadata。读取不回滚、不清理。marker 读入前1MB限制。不存在可用代但有发布目录时明确“发布状态未定”，不假称从未备份。location=2 普通读／解压前可选缓存，安全 FAILED 允许普通读取，取消未确认仍保留操作许可。
+- 自动 GC 只在本次完整提交并复核后执行：保留最新两代，仅删除总序（timestamp+id）严格早于本次自身的精确有效代；最大有效代不会被自动选中，过期 GC 不触后来者。旧 fixed-name 文件只读兼容，不自动 GC。未提交强停残留不按前缀自动认领，目录总量上限128；达到上限如实失败，用户明确云清理可回收残留。精确代中含陌生文件拒绝递归回收，永不 rmdir 共享根。设备范围 metadata 最后删除，commit unlink失败／空目录rmdir失败仍可重启后原范围重试。
+- 旧版应用不认识新 generation，升级后仍可读旧备份，但不声称降级旧应用能恢复新备份。多文件云同步非事务，读取最新代由时间戳+id全序决定，时钟偏差可能影响新旧判定。cloudDir mkdtemp/fsync 与六个单机发布强停检查点已于 2026-10-14 在专用合成目录验收（第 17 节）；真实双设备传播／并发、断电持久性仍未验证，不以离线模型或单机读回代替远端保证。
+- 目录收集 `copyDirRecursive` 逐文件吞错改为失败计数：备份端非零失败即整体失败（不压缩、不发布）；恢复端缺失/失败文件计入 `IconPackRestoreResult.failedFiles`，`restoredFiles` 改为实际拷贝计数。文件复制、注册表刷新或临时清理失败均不推进成功水位，也不发完整成功终态；自动恢复消费失败字段，故障解除后同一云时间戳仍可重试。目录列举故障（非 ENOENT）不再当作“无内容”按成功跳过。
 
 ### 本轮验证记录（2026-10-13，无真机阶段）
 
+代码审核修复后的整合回归：
+
+- 已确认的 P1/P2 修复：发布候选持久隔离与可信清理重试、Node VM 依赖加载、私栈反馈路由、聚合同步拒绝的准确警告；同时收口图标部分恢复水位和清理失败。
+- LocalUnit 本轮新生成结果 **692/692，Failure=0、Error=0、Ignore=0**；逻辑层行 **77.19%**、分支 **71.22%**，基线门禁通过，新 guard 模块已纳入分母与报告。此前审核轮的 679/679 不作为本轮证据。
+- 完整 Node 当前 **388/388**，恢复链 VM 缺依赖造成的 5 项失败已消除；图标、UI、持久候选及复合故障使用生产控制流回归，不复制算法；诊断/采集专项 **32/32** 与隐私门禁通过。
+- glm 三路独立评审已实际执行并同上下文复验通过：日志隐私 PASS（最后定向 147/147 与隐私门禁由评审代理独立复跑）；图标/旧存档兼容性 PASS（图标 79/79 独立复跑，候选与显式删除尾差异复核）；整体行为 PASS。首轮整体发现单文件隔离误作全局忙碌的 P1、离线拒绝文件锁 UI 和显式清理凭据对账问题，已修复并由同一代理确认闭环；本轮 Node 回归覆盖隔离不全局锁、健康备份恢复/创建、离线重试与明确删除后的精确凭据撤销。
+- 全模块 Debug 和 unsigned Release 构建通过，静态检查无错误但仍有异常传播和既有兼容性建议级警告。未做设备安装、真实备份删除/恢复、原生移动中断演练；真机任务 5.4/6.1–6.4 仍未勾选。
+- 非阻塞跟进已明确保留：`hasBackupRecords()` 的存在性信号仍包含隔离文件（不因此允许恢复）；跨账号/云目录的本地凭据共用 128 条容量上限；损坏已提交 journal 的 fail-closed 恢复出口、原生 `mkdtemp` 后缀/目录持久性和反馈内层网页返回体验须真机补验。图标发布后伴生 meta 写失败窗口和初始临时清理重复计数已补回归并关闭。
+
+### 真机验收记录（2026-10-13，5.4/6.1–6.4）
+
+环境：无线连接真机，debug 构建（工作区含发布守护改动）；诊断开关临时开启并用采集脚本取证。云目录宿主侧受 MAC 策略保护不可直读，文件级结论来自 UI 状态、诊断事件与云盘服务日志；恢复用例以重置 `ICON_PACK_CLOUD_SYNC_TIME` 水位模拟新设备（其余链路真实）。
+
+5.4 图标包备份/恢复往返与中断演练：
+
+- 备份发布：手动备份后图标包状态由"从未备份"变为 1 包约 1MB（记录的元数据），云盘服务同秒接受上传；暂存与临时产物清理干净。
+- 恢复往返：删除本地图标包目录并重置同步水位后冷启动，自动恢复逐文件还原 1008 个文件、0 字节文件为 0，水位写回云端时间戳，UI 计数与图标映射正常，恢复临时目录清理。
+- 中断演练：备份进行中强停进程，`icon_pack_staging` 与临时 zip 残留符合"进程终止可能残留"边界声明；重启后读取路径不误认残留；删除本地并重置水位后冷启动从旧 zip 完整恢复（旧 zip 仍可恢复成立）；下次备份操作启动时回收全部残留。
+
+6.1 故障注入：调试构建在 `verifyPublishedBackup` 入口强制 MISMATCH（验收后已回退重建）。结果：诊断 `POST_PUBLISH_VERIFY FAIL`→`BACKUP_END FAIL`，失败状态键记录 `stage=POST_PUBLISH_VERIFY/POST_VERIFY_FAILED`，详情页失败横幅与"问题反馈"入口可达（反馈页可打开），强停重启后失败状态保持可见。
+
+6.2/6.3/6.4 于同日稍早由前一会话完成（正常路径含 POST_PUBLISH_VERIFY 全绿、孤儿聚合清理与单条删除、1.2.5 备份校验与恢复二次确认取消），本轮未重复执行。
+
+本轮新发现（按严重度）：
+
+1. **P1：图标包第二次及以后备份必败（已修复并真机复验通过，2026-10-13 20:48/20:50）**。云目录已存在 `icon_packs_backup.zip` 时，`moveFile(mode=0)` 覆盖移动抛 FS 13900020（诊断 `ICON_IO FAIL reason=INVALID_ARGUMENT`），备份以 `ICON_FAILED` 收口且水位不推进；目标不存在时（首次备份）纯 rename 成功。令牌备份不受影响（唯一文件名 + `moveFile(mode=1)`）。修复：`StoragePorts.moveFileToReplace` 改为「精确 unlink（仅 ENOENT 宽容）→ moveFile(mode=1)」，unlink 后移动前的进程终止窗口已在 `docs` 与代码注释如实声明（见上文破坏窗口）。真机复验：修复构建上连续两次"目标已存在"备份均成功（图标包水位 18:48→20:48→20:50 两度推进、失败状态键清空、暂存清理干净），可重复性成立。
+2. **冷启动自动恢复竞态（已修复待评审）**：`deferredInit` 并行触发账号 `init()` 与图标包自动恢复，`userLogin` 在异步偏好读取完成前恒为 false，恢复被静默跳过（多次冷启动零云盘活动佐证）；`checkAndRestoreIconPacks` 增加 `await init()` 后恢复链路正常。该竞态先于本变更存在，意味着图标包自动恢复此前在真机上从未生效。
+3. **无效图标包导入静默注册孤儿（已修复并真机复验通过；2026-10-13 晚升级为 @ohos/jszip 中央目录门）**：无 `pack.json` 的 zip 导入时 `addAegisIconPack` 注册 `invalid=true` 条目并正常返回，不抛错、不触发清理，解压产物（实测约 12MB）永久残留于 `icon_packs`，"已安装"计数随之虚高。先于本变更存在，但与本变更孤儿防护主题直接相关。修复：新增 `IconPackZipGate` 门控并接入三方库 `@ohos/jszip`（entry 模块依赖；common 保持零 jszip 依赖以隔离 LocalUnit）——**三段门控**：解压前 `zlib.getOriginalSize` 拦格式与总量 64MB、压缩体积 ≤32MB（jszip 需整文件入内存）；解压前 jszip 中央目录门（`IconPackZipReader.ts` 薄封装读 `_data.uncompressedSize` 与根级 pack.json 文本，零写入）拦 pack.json 缺失/不可解析、单文件 8MB（含 pack.json 自身 >1MB 拒读防解压炸弹）、文件数 4096、路径逃逸与**同名同版本重复导入**（DUPLICATE_NAME_VERSION，原"同路径已安装"警告预检由其涵盖，重复导入从警告改为报错）；解压后落盘复扫拦符号链接与真实落地偏差。拒绝时整目录递归回收，仅回收本操作创建的目录。真机复验（jszip 版构建）：同名同版本重导入被 DUPLICATE_NAME_VERSION 报错、专利 zip 被中央目录门 FILE_TOO_LARGE 拒绝（对比旧路径的解压后拒绝，本次零解压零落盘）、合法旧格式包正常过闸注册、删除干净还原。当时的残余在本轮审核中继续修正：JSZip 归一化名称不足以审计原始路径，现直接解析全部原始中央目录条目（含目录）；pack.json 声明 1MB 拒读不构成实际展开限，现以流式真实字节累计截停。多选／重复点击／不同面板共享进程级导入互斥，不能同时绕过同名同版本拒绝；未知异常与清理失败仅固定文案／白名单诊断，不再输出原始 EEXIST 文本。其余文件的中央目录声明仍可能撒谎，原生解压阶段的实际资源上限须真机核验；解压后门不是零资源消耗证明。密码保护 zip 仍按损坏／不支持拒绝（fail-closed）。
+4. **旧格式图标包导入/注册不一致**：旧版本 Aegis 包可导入并在列表显示名称与图标数，但注册表严格校验拒绝（编辑模式显示"无效的图标包"、勾选禁用）；删除该包文件与注册表条目均干净回收。
+5. **图标包管理页渲染冻结（既有同类）**：导入/删除后列表与"已安装"计数不即时刷新，重开面板后一致；与第 15 节 @Builder 按值传参冻结同族。
+
+推荐图标包下载入口仅在 0 包状态展示，为保留设备状态未演练；重复导入同一包经内容去重不重复落盘，不同版本包可共存并可整包干净移除。
+
+### 本轮复审修正（2026-10-13，未执行新真机用例）
+
+- 修复范围：图标发布上一代保留与跨重启恢复；`.cloud-backup-publications` 六种系统备份／迁移排除；ZIP 原始路径与 metadata 真实展开限额；进程级并发导入保护；导入／清理／重匹配诊断隐私门禁。OpenSpec 初轮的 move0 任务与“恢复确认取消等于完整恢复”表述已经校正。
+- 最终回归直接执行生产控制流：独占新代失败、commit 已可见后的关闭／fsync异常、进程重建跳过未提交代、临时产物被系统回收、较新 commit 先到但内容未齐、GC 过期交错、原设备范围清理失败重试、独立清理同步收口、原始 ZIP 目录／文件路径、metadata 实际展开限额、并发重复及敌对异常 getter。最终 LocalUnit **730/730，Failure=0、Error=0、Ignore=0**；完整 Node **422/422**。逻辑行覆盖 **76.89%**、分支 **70.84%**，高于已提交基线 **75.10%／70.28%**，未降低门禁；导入诊断 helper 已纳入分母，行／分支100%。全模块 Debug／Release 构建成功，隐私／资源／严格规格／差异格式门禁通过。曾因新增测试使用 ArkTS 禁止的 method 重赋值／bind 导致编译失败，已改为类型化 fixture 子类并复跑通过，不使用旧报告冒充结果。
+- 重新评审：ZIP／日志隐私 glm 独立复审 PASS；固定槽方案的两项共享路径数据丢失 P1 被通用代理独立生产流反例确认后撤换，不沿用中间方案 PASS。最终不可变代的有限两实例 GC、commit乱序与写完关闭异常验证，加代码层静态尾复审无剩余已确认 P1/P2；两项新清理 P2（原范围重试／漏同步）已修复并补回归。一个 glm 尾审因额度中止没有最终结论；另一次通用代理运行因提供方误报中止，恢复后仅完成静态尾复核，未冒称全部动态检查通过。真机约束不因此放宽。
+- 当时未执行的新真机优先项：云目录 mkdtemp、READ_WRITE/fsync 支持；独占目录创建、ZIP／meta 写入、commit 写入／fsync及旧代清理定点强停；系统临时文件清理；仅云端恢复、范围清理、双设备最终传播与并发冲突。2026-10-14 新协议的单机实测与仍未覆盖项见第 17 节，不挪用旧正常路径或旧杀进程记录勾选。
+
+原实现轮记录：
+
 - Node 离线：诊断/采集 29/29 通过（含新增 POST_PUBLISH_VERIFY 字段白名单与往返用例）；隐私门禁通过；采集端 STAGES/REASONS 与生产枚举契约由既有测试强制同步。
 - LocalUnit：本轮新增发布后校验三态、失败状态键分阶段记录、轮换剪除失败上报、按设备清理跳过无归属并计数、图标包发布校验失败保留旧 zip、收集失败不假成功、恢复失败计数等用例；结果见提交前回归记录。
-- 真机验收（故障注入演练、孤儿处置、1.2.5 兼容抽测、图标包中断演练）尚未执行，对应任务保持未勾选；不能以 LocalUnit 或构建通过替代。
+- 原实现轮当时未执行故障注入、孤儿处置、1.2.5 入口抽测和图标包中断演练；后续旧协议验收记录见上文 2026-10-13 小节，现协议验收见第 17 节。不同版本证据不得混用。
+
+## 17. 不可变代与导入门控单机原生验收（2026-10-14）
+
+### 环境与隔离入口
+
+- Mate 90 Pro Max 单台真机，无线连接；主应用为当前工作树 Debug 1.3.0（1003004），主 HAP 和 `entry_test` 使用保留数据覆盖安装。未执行卸载、清应用数据、真实用户“清空所有”、真实备份恢复或真实令牌导入。
+- 发布使用 `IconPackPublicationTestRunner`，直接注册 `IconPackPublicationDeviceTest`；导入使用 `IconPackImportGateTestRunner`，直接注册 `IconPackImportGateDeviceTest`。两者不导入综合 `List.test`，不调用真实 TokenStore、图标注册表、偏好、账号初始化或生产 EntryAbility。common 的正常模块导出不等于调用这些服务。
+- 发布夹具在 `cloudFileDir` 下创建独占 `.icon-pub-test-XXXXXX`，在 `filesDir` 下创建独占 `.icon-pub-local-XXXXXX`，v2 receipt 保存该次精确云／本地／临时所有权路径。压缩与校验解压统一在 `tempDir/icon-pub-temp-XXXXXX` 的子目录，导入也使用独占 tempDir 根。所有 archive 内容、设备字段和图标均为合成值。清理分别尝试各根，失败如实上报并保留精确回收记录；只操作本次成功创建或 receipt 验证后的精确目录，不按通用前缀删除真实备份。mkdtemp 返回至保存记录之间的小窗口不保证任意断电后全回收。
+- 自定义 aa 参数实际保存在 `parameters['-s <name>']`。初次只读取无前缀键导致两轮 5/5 都运行 LOCAL，已明确撤销其云目录证明；修正双键读取后每个 case 输出固定 `ICON_FIXTURE_MODE=CLOUD`，后续只以 mode、用例数和零 Failure/Error 联合验收。
+
+### 已观察的结果
+
+- LOCAL 原生发布套件 **5/5**；修正参数后的 CLOUD 原生发布套件 **5/5，Failure=0、Error=0、Ignore=0，OHOS_REPORT_CODE=0**。
+- CLOUD 五个 case 使用真实 `FileIoFsGateway` 和原生 zlib：`mkdtemp`、READ_WRITE/fsync、实际 ZIP 压缩／解压；连续发布三次并保留最新两代；metadata 注入失败或源 ZIP 消失时旧 ZIP 保持可读；commit 已写入且真实 fsync 成功后注入异常时新代保持可读；原设备范围 commit 删除失败和空目录 rmdir 失败后均可用原范围重试；新代发布不改变合成旧 fixed-name ZIP／metadata，清除新代后旧格式仍可读。
+- 六个定点强停均等待 CLOUD mode 与固定检查点标记后 `aa force-stop`，再由新进程读取 receipt、完整解压验证选中 ZIP并回收夹具。每点 **1/1，Failure=0、Error=0、Pass=1、Ignore=0，OHOS_REPORT_CODE=0**：
+
+| 检查点 | 中断时机 | 新进程应选内容 | 实测 |
+|---|---|---|---|
+| directory | generation 目录创建后 | 上一完整已提交代 | 通过 |
+| zip | 新 ZIP 复制后 | 上一完整已提交代 | 通过 |
+| metadata | 新 sidecar 写入后、commit 前 | 上一完整已提交代 | 通过 |
+| commit | commit 写入返回后、commit fsync 前 | 已完整验证的新代 | 通过 |
+| commit-sync | commit fsync 返回后 | 已完整验证的新代 | 通过 |
+| prune | 删除旧代 ZIP 前 | 已完整验证的新代 | 通过 |
+
+- 导入隔离套件 **7/7，Failure=0、Error=0、Ignore=0，OHOS_REPORT_CODE=0**，真实设备 JSZip 与生产 `IconPackZipReader`／`IconPackZipGate`：合法包经过原生写入、getOriginalSize、预门控、decompressFile 和实际目录复扫；原始文件路径 `x/../pack.json` 与目录路径 `../foreign/` 均按 UNSAFE_ENTRY_PATH 拒绝且无解压目录；metadata 诚实声明超 1MB和实际 2MB但声明16字节均返回固定 META_TOO_LARGE；共享互斥忙碌拒绝与合成同名同版本身份拒绝通过。未调用注册表，不能将此描述为 UI 导入落库／多面板并发验收；实际展开用例证明本机真实库按固定上限拒绝，未采集设备堆峰值或逐 chunk 计数。
+- 最后一个 case **只读**列举专用路径范围：发布 receipt、files/cloud 下精确测试根以及 temp 下压缩／校验／导入测试根均不存在，输出 `ICON_FIXTURE_CLEANUP=AUDITED_ABSENT`。该审计没有对任何发现的目录执行猜测性删除，也不是用户数据未变证明。
+- 新 ohosTest HAP 构建成功，ArkTS 检查无错误（有异常传播建议级警告）；重新生成 LocalUnit **730/730** 并解析报告零失败／错误／忽略，最终完整 Node **431/431**（加入 controller 9 个忽略／退出／超时硬截止／输出脱敏回归）。覆盖行 **76.89%**、分支 **70.84%**，未降低基线。隐私、资源引用、严格 OpenSpec 与 git diff 格式检查通过；既有 en_US 24 个资源缺口仍仅回退 base。
+- 专用测试尾审发现的四项测试工具 P2 已修并有限独立复核关闭：严格检查正常退出／未超时、tests=pass与零忽略，清理 race timer和强停后宿主 hdc，普通 arm 失败必回收已知夹具，v2 receipt 覆盖独占 temp 根且各根独立尝试清理。修正后重新安装测试模块并用严格 controller 完整复跑 CLOUD5/5、六点各1/1及导入7/7；最新硬截止修正再定向复跑 commit1/1＋导入7/7与回收审计。最后 force-stop 专用测试进程，保留应用安装。源码复核不被表述为独立设备重验。
+- Node 导入回归原本依赖本机 entry/oh_modules；补齐干净 CI 的生产 HAR 准备，按 entry 锁文件校验 SHA-512、只提取 JSZip 核心至系统临时目录，不执行安装脚本。独立临时依赖环境实跑导入10/10通过，随后按CI的--github-env路径传递完整回归431/431通过；准备依赖需要公网下载，不声称整个 CI 无网络或远端 CI 已运行。
+
+### 测试入口失误与证据范围
+
+排查参数时曾误跑旧 `OpenHarmonyTestRunner` 综合注册，结果 **48 cases：35 Pass、13 Error**，不计入本轮发布／导入验收。多数错误位于 beforeAll 的 Ability monitor／Driver 初始化。源码核对确认 Hypium 在 beforeAll 失败后不执行 TokenBatch 的 body 或 afterEach，没有该失败钩子误删真实令牌的路径；ASSET 合成压力用例按随机 UUID 精确回收。但生产 Ability 在等待 monitor 前可能已启动，其他旧套件可能读全库、执行迁移或触及偏好。因此未做前后完整用户库审计，**不声称整个误跑过程完全未触及用户持久状态**。发现后不再执行综合 runner，也没有为“补证明”启动生产 UI、读取用户令牌、导出原始日志或截图。
+
+### 未覆盖，不关闭总验收门
+
+- 一台设备的 `cloudFileDir` 本地原生契约不是远端同步完成证明。本套件不调用 FileSync.start；双设备传播、云端删除最终一致性、跨设备 mkdtemp 唯一性与并发冲突未执行。
+- `aa force-stop` 是进程终止，不是断电。commit 写入后返回不等于多文件远端事务；本轮只验证上述六个准确窗口，不宣称每次旧代 unlink 前后均已逐一强停。
+- 注入 metadata/unlink/rmdir 与 post-fsync 异常验证生产失败控制流，不等于触发真实内核 fsync／磁盘满故障。主动移除合成源模拟丢失不是实际触发系统存储压力回收。
+- 直接 publication 快照／解压及原范围清理验证不涉及真实高层恢复落库、水位、自动账号门禁、UI 文案或部分恢复反馈。新 generation 高层 UI／恢复往返、真实系统临时回收、其他文件的原生解压资源上限与双设备传播仍待独立专用测试环境；不操作用户备份来填满验收勾选。
