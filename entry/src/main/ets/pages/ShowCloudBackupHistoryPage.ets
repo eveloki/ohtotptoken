@@ -15,9 +15,11 @@ import { SettingItem } from '../components/SettingItem';
 @Preview
 @ComponentV2
 export struct ShowCloudBackupHistoryPage {
-  pageInfos: NavPathStack | null = null;
   @Require @Param scrollEffectType: ScrollEffectType = ScrollEffectType.IMMERSIVE_GRADIENT_BLUR;
   @Param inMaterialSheet: boolean = false;
+  /** 作为历史面板栈根时隐藏返回箭头，系统返回改为关闭面板而非弹出空栈。 */
+  @Param sheetRoot: boolean = false;
+  @Event onCloseSheet: () => void = () => {};
   @Local backupRecords: CloudBackupRecord[] = [];
   @Local isLoading: boolean = false;
   @Local isActionRunning: boolean = false;
@@ -327,6 +329,12 @@ export struct ShowCloudBackupHistoryPage {
     .backgroundColor(this.pageBackground())
     .bindSheet($$this.isDetailVisible, this.BackupDetailSheet(), this.detailSheetOptions())
     .bindToScrollable([this.scroller])
+    .hideBackButton(this.sheetRoot)
+    .onBackPressed(() => {
+      if (!this.sheetRoot) { return false; }
+      this.onCloseSheet();
+      return true;
+    })
     .titleMode(HdsNavDestinationTitleMode.MODAL)
     .titleBar({
       style: {
@@ -346,7 +354,6 @@ export struct ShowCloudBackupHistoryPage {
       },
       content: { title: { mainTitle: $r('app.string.cloud_backup_history_title') } }
     })
-    .onReady((context: NavDestinationContext) => { this.pageInfos = context.pathStack; })
   }
 
   @Builder
