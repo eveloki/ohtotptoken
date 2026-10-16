@@ -492,19 +492,24 @@ export struct ShowCloudBackupHistoryPage {
     if (!this.canStartAction() || !this.selectionStillValid(record) || !this.canRestore(record)) {
       return;
     }
+    // 空备份（0 令牌）恢复是合法操作但不产生任何令牌，确认框改用警示文案与警示色。
+    const emptyBackup = record.tokenCountKnown === true && record.tokenCount === 0;
     this.confirmationOpen = true;
     try {
       this.getUIContext().showAlertDialog({
         systemMaterial: dialogSystemMaterial(),
         title: $r('app.string.cloud_backup_restore_confirm_title'),
-        message: $r('app.string.cloud_backup_restore_confirm_msg', record.date),
+        message: emptyBackup ? $r('app.string.cloud_backup_restore_empty_msg') :
+          $r('app.string.cloud_backup_restore_confirm_msg', record.date),
         autoCancel: true, alignment: DialogAlignment.Bottom, gridCount: 4,
         offset: { dx: 0, dy: -20 }, buttonDirection: DialogButtonDirection.VERTICAL,
         buttons: [
-          { value: $r('app.string.cloud_backup_restore_confirm_title'), action: () => {
-            this.confirmationOpen = false;
-            if (this.selectionStillValid(record) && this.canRestore(record)) { this.triggerRestore(record); }
-          } },
+          { value: $r('app.string.cloud_backup_restore_confirm_title'),
+            fontColor: emptyBackup ? $r('sys.color.ohos_id_color_warning') : $r('sys.color.font_emphasize'),
+            action: () => {
+              this.confirmationOpen = false;
+              if (this.selectionStillValid(record) && this.canRestore(record)) { this.triggerRestore(record); }
+            } },
           { value: $r('app.string.dialog_btn_cancel'), action: () => { this.confirmationOpen = false; } }
         ],
         cancel: () => { this.confirmationOpen = false; }
@@ -662,7 +667,8 @@ export struct ShowCloudBackupHistoryPage {
     try {
       const result = await this.backupManager.restoreFromBackupRecordResult(record.id);
       if (!this.isMounted) { return; }
-      this.actionMessage = result.success ? $r('app.string.cloud_backup_restore_success') :
+      this.actionMessage = result.success ?
+        $r('app.string.cloud_backup_restore_success_count', result.restoredCount) :
         this.actionFailureText(result, $r('app.string.cloud_backup_restore_failed'));
       showSnackBar(this.actionMessage, result.success ? SnackBarNotifyType.SUCCESS : SnackBarNotifyType.WARNING);
       if (result.success) {
